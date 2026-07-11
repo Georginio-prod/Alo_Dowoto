@@ -18,6 +18,8 @@ export default defineNuxtConfig({
     typeCheck: true
   },
   app: {
+    // Transition globale entre les pages (voir .page-* dans main.css).
+    pageTransition: { name: 'page', mode: 'out-in' },
     head: {
       link: [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
