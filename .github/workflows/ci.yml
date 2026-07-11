@@ -2,13 +2,13 @@ name: CI
 
 # Le CI vérifie tout : dépendances, lint (ESLint strict + règle des 300 lignes),
 # typage TypeScript (nuxt typecheck / vue-tsc) et build de production.
-# Il tourne sur chaque Pull Request vers develop/master et à chaque push sur develop.
+# Il tourne sur CHAQUE Pull Request (quelle que soit la branche de base, ce qui
+# couvre les PR empilées) et à chaque push sur develop/master.
 
 on:
   pull_request:
-    branches: [develop, master]
   push:
-    branches: [develop]
+    branches: [develop, master]
 
 # Annule les exécutions précédentes encore en cours sur la même réf.
 concurrency:
