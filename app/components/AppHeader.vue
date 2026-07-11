@@ -1,10 +1,12 @@
 <script setup lang="ts">
+const { open } = useChoiceModal()
+
 const query = ref('')
 
 function onSearch() {
   const q = query.value.trim()
   if (!q) return
-  // TODO: brancher sur la page de résultats de recherche (#39 / #55).
+  open(q)
 }
 </script>
 
