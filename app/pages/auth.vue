@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { SECTORS } from '~/data/sectors'
+
 type Tab = 'login' | 'signup'
 type Role = 'client' | 'prestataire'
 type Method = 'phone' | 'email'
@@ -29,6 +31,8 @@ const isVerifying = ref(false)
 const resendSeconds = ref(RESEND_DELAY)
 let resendTimer: ReturnType<typeof setInterval> | null = null
 
+const sectorSlug = ref('')
+
 const contactCta = computed(() => (activeTab.value === 'signup' ? 'Créer mon compte' : 'Se connecter'))
 const isOtpComplete = computed(() => otp.value.every((d) => d !== ''))
 const otpDestinationPrefix = computed(() => (method.value === 'phone' ? 'au' : 'à'))
@@ -37,6 +41,7 @@ const otpDestination = computed(() => (method.value === 'phone' ? `+228 ${phone.
 function selectTab(tab: Tab) {
   activeTab.value = tab
   role.value = 'client'
+  sectorSlug.value = ''
   resetContact()
   backToContact()
 }
@@ -130,9 +135,15 @@ async function verifyOtp() {
     // Résultats de matching, voir #39.
     navigateTo('/resultats')
   } else {
-    // Étape secteur, voir #26.
+    sectorSlug.value = ''
     step.value = 'sector'
   }
+}
+
+function submitSector() {
+  if (!sectorSlug.value) return
+  // Étape Abonnement, voir #29.
+  navigateTo('/abonnement')
 }
 
 onUnmounted(() => {
@@ -289,8 +300,33 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <div v-else class="text-center text-sm text-muted">
-          Étape secteur à venir (#26).
+        <div v-else>
+          <label for="auth-sector" class="mb-1 block text-[13px] font-semibold text-dark">
+            Secteur d'activité principal
+          </label>
+          <p class="mb-3 text-[13px] leading-relaxed text-muted">
+            Choisissez le secteur qui correspond le mieux à votre activité.
+          </p>
+
+          <select
+            id="auth-sector"
+            v-model="sectorSlug"
+            class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline bg-white px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
+          >
+            <option value="" disabled>Sélectionner un secteur…</option>
+            <option v-for="sector in SECTORS" :key="sector.slug" :value="sector.slug">
+              {{ sector.name }}
+            </option>
+          </select>
+
+          <button
+            type="button"
+            class="press w-full rounded-field bg-primary py-3.5 text-[15px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
+            :disabled="!sectorSlug"
+            @click="submitSector"
+          >
+            Continuer
+          </button>
         </div>
       </div>
     </div>
