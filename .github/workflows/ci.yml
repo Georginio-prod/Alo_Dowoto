@@ -1,0 +1,42 @@
+name: CI
+
+# Le CI vérifie tout : dépendances, lint (ESLint strict + règle des 300 lignes),
+# typage TypeScript (nuxt typecheck / vue-tsc) et build de production.
+# Il tourne sur chaque Pull Request vers develop/master et à chaque push sur develop.
+
+on:
+  pull_request:
+    branches: [develop, master]
+  push:
+    branches: [develop]
+
+# Annule les exécutions précédentes encore en cours sur la même réf.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint · Typecheck · Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Typecheck (nuxt typecheck)
+        run: npm run typecheck
+
+      - name: Build (nuxt build)
+        run: npm run build
