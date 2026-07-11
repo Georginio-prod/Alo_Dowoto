@@ -42,18 +42,18 @@ function onSearch() {
       </form>
 
       <div class="ml-auto flex shrink-0 items-center gap-2.5">
-        <button
-          type="button"
+        <NuxtLink
+          to="/auth"
           class="press px-2 py-2.5 text-[14.5px] font-semibold text-dark hover:text-primary"
         >
           Se connecter
-        </button>
-        <button
-          type="button"
+        </NuxtLink>
+        <NuxtLink
+          to="/auth?role=prestataire"
           class="press rounded-[9px] bg-dark px-5 py-2.5 text-[14.5px] font-semibold text-white hover:bg-[#1a3a28]"
         >
           Devenir prestataire
-        </button>
+        </NuxtLink>
       </div>
     </div>
   </header>
