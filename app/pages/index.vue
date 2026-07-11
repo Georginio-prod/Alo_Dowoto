@@ -1,5 +1,19 @@
 <script setup lang="ts">
-import { SECTORS } from '~/data/sectors'
+import { SECTORS, type Sector } from '~/data/sectors'
+
+const activeSector = ref<Sector | null>(null)
+
+function openSectorDrawer(sector: Sector) {
+  activeSector.value = sector
+}
+
+function closeSectorDrawer() {
+  activeSector.value = null
+}
+
+function onSelectSubSector() {
+  closeSectorDrawer()
+}
 </script>
 
 <template>
@@ -30,8 +44,10 @@ import { SECTORS } from '~/data/sectors'
           v-for="(sector, i) in SECTORS"
           :key="sector.slug"
           v-reveal
+          type="button"
           :style="{ '--reveal-delay': `${i * 40}ms` }"
           class="lift flex flex-col items-start gap-2.5 rounded-2xl border border-black/[0.08] bg-white p-4 text-left"
+          @click="openSectorDrawer(sector)"
         >
           <div
             class="flex h-9 w-9 items-center justify-center rounded-[10px] text-base"
@@ -44,5 +60,7 @@ import { SECTORS } from '~/data/sectors'
         </button>
       </div>
     </section>
+
+    <SectorDrawer :sector="activeSector" @close="closeSectorDrawer" @select="onSelectSubSector" />
   </div>
 </template>
