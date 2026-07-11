@@ -5,7 +5,7 @@ import { SECTORS } from '~/data/sectors'
 <template>
   <div>
     <NuxtRouteAnnouncer />
-    <div class="min-h-screen bg-bg text-[#1A1A1A]">
+    <div class="min-h-screen bg-bg text-ink">
       <header class="sticky top-0 z-20 border-b border-black/[0.08] bg-white px-6 py-3.5">
         <div class="mx-auto flex max-w-6xl items-center gap-4">
           <div class="text-xl font-extrabold tracking-tight text-dark">

@@ -1,18 +1,31 @@
 @import "tailwindcss";
 
 @theme {
+  /* ---- Couleurs de marque ---- */
   --color-primary: #14A800;
   --color-primary-hover: #109300;
   --color-dark: #0F2318;
-  --color-bg: #F7F7F7;
-  --color-muted: #6B7280;
+
+  /* ---- Couleurs sémantiques ---- */
+  --color-bg: #F7F7F7;          /* fond de page */
+  --color-surface: #FFFFFF;     /* cartes, header, panneaux */
+  --color-ink: #1A1A1A;         /* texte principal sur fond clair */
+  --color-muted: #6B7280;       /* texte secondaire / libellés */
+  --color-hairline: rgba(15, 35, 24, 0.08); /* filets et bordures discrètes */
+
+  /* ---- États ---- */
   --color-error: #D64545;
   --color-star: #E6A700;
+
+  /* ---- Typographie ---- */
   --font-sans: "Poppins", sans-serif;
+
+  /* ---- Rayons ---- */
   --radius-pill: 999px;
   --radius-card: 16px;
   --radius-field: 10px;
 
+  /* ---- Ombres ---- */
   --shadow-card-sm: 0 1px 3px rgba(15, 35, 24, 0.06);
   --shadow-card-md: 0 4px 12px rgba(15, 35, 24, 0.08), 0 2px 4px rgba(15, 35, 24, 0.04);
   --shadow-card-lg: 0 12px 32px rgba(15, 35, 24, 0.12), 0 4px 8px rgba(15, 35, 24, 0.05);
@@ -21,7 +34,7 @@
 @layer base {
   body {
     background: var(--color-bg);
-    color: #1A1A1A;
+    color: var(--color-ink);
     -webkit-font-smoothing: antialiased;
   }
 }
