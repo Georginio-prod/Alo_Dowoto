@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { SECTORS } from '~/data/sectors'
+import { SECTORS, type Sector } from '~/data/sectors'
+
+const emit = defineEmits<{
+  select: [sector: Sector]
+}>()
 </script>
 
 <template>
@@ -13,6 +17,7 @@ import { SECTORS } from '~/data/sectors'
         type="button"
         :style="{ '--reveal-delay': `${i * 40}ms` }"
         class="lift press flex flex-col items-start gap-2.5 rounded-2xl border border-hairline bg-surface p-4 text-left"
+        @click="emit('select', sector)"
       >
         <div
           class="flex h-9 w-9 items-center justify-center rounded-[10px] text-base"
