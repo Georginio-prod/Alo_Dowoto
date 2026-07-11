@@ -2,6 +2,12 @@
 type Tab = 'login' | 'signup'
 type Role = 'client' | 'prestataire'
 type Method = 'phone' | 'email'
+type Step = 'contact' | 'otp' | 'sector'
+
+// Pas de backend OTP disponible (#23) : "123456" fait office de code valide
+// pour pouvoir démontrer/tester les parcours de succès et d'échec.
+const MOCK_VALID_OTP = '123456'
+const RESEND_DELAY = 30
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -9,17 +15,30 @@ const route = useRoute()
 
 const activeTab = ref<Tab>(route.query.role ? 'signup' : 'login')
 const role = ref<Role>(route.query.role === 'prestataire' ? 'prestataire' : 'client')
+const step = ref<Step>('contact')
+
 const method = ref<Method>('phone')
 const phone = ref('')
 const email = ref('')
 const contactError = ref('')
 
+const otp = ref<string[]>(['', '', '', '', '', ''])
+const otpError = ref('')
+const otpInvalid = ref(false)
+const isVerifying = ref(false)
+const resendSeconds = ref(RESEND_DELAY)
+let resendTimer: ReturnType<typeof setInterval> | null = null
+
 const contactCta = computed(() => (activeTab.value === 'signup' ? 'Créer mon compte' : 'Se connecter'))
+const isOtpComplete = computed(() => otp.value.every((d) => d !== ''))
+const otpDestinationPrefix = computed(() => (method.value === 'phone' ? 'au' : 'à'))
+const otpDestination = computed(() => (method.value === 'phone' ? `+228 ${phone.value}` : email.value))
 
 function selectTab(tab: Tab) {
   activeTab.value = tab
   role.value = 'client'
   resetContact()
+  backToContact()
 }
 
 function selectRole(r: Role) {
@@ -49,8 +68,76 @@ function submitContact() {
     return
   }
   contactError.value = ''
-  // TODO: passer à l'étape de vérification OTP (#21).
+  step.value = 'otp'
+  otp.value = ['', '', '', '', '', '']
+  otpError.value = ''
+  otpInvalid.value = false
+  startResendTimer()
 }
+
+function backToContact() {
+  step.value = 'contact'
+  otp.value = ['', '', '', '', '', '']
+  otpError.value = ''
+  otpInvalid.value = false
+  stopResendTimer()
+}
+
+function onOtpChange(digits: string[]) {
+  otp.value = digits
+  otpError.value = ''
+  otpInvalid.value = false
+}
+
+function startResendTimer() {
+  resendSeconds.value = RESEND_DELAY
+  stopResendTimer()
+  resendTimer = setInterval(() => {
+    resendSeconds.value--
+    if (resendSeconds.value <= 0) stopResendTimer()
+  }, 1000)
+}
+
+function stopResendTimer() {
+  if (!resendTimer) return
+  clearInterval(resendTimer)
+  resendTimer = null
+}
+
+function resendCode() {
+  if (resendSeconds.value > 0) return
+  // TODO: appeler l'API de renvoi du code (#23).
+  startResendTimer()
+}
+
+async function verifyOtp() {
+  if (!isOtpComplete.value || isVerifying.value) return
+  isVerifying.value = true
+  const code = otp.value.join('')
+  // Simulation locale en l'absence de backend (#23).
+  await new Promise((resolve) => setTimeout(resolve, 500))
+  isVerifying.value = false
+
+  if (code !== MOCK_VALID_OTP) {
+    otpInvalid.value = true
+    otpError.value = 'Code invalide. Réessayez.'
+    otp.value = ['', '', '', '', '', '']
+    return
+  }
+
+  stopResendTimer()
+  if (role.value === 'client') {
+    // Résultats de matching, voir #39.
+    navigateTo('/resultats')
+  } else {
+    // Étape secteur, voir #26.
+    step.value = 'sector'
+  }
+}
+
+onUnmounted(() => {
+  stopResendTimer()
+})
 </script>
 
 <template>
@@ -104,7 +191,7 @@ function submitContact() {
           </div>
         </div>
 
-        <div>
+        <div v-if="step === 'contact'">
           <div class="mb-[18px] flex gap-2">
             <button
               type="button"
@@ -165,6 +252,45 @@ function submitContact() {
           <p class="mt-3.5 text-center text-[11.5px] leading-relaxed text-muted">
             En continuant, un code à 6 chiffres vous sera envoyé pour vérifier votre identité.
           </p>
+        </div>
+
+        <div v-else-if="step === 'otp'">
+          <p class="mb-[18px] text-[13.5px] leading-relaxed text-muted">
+            Code envoyé {{ otpDestinationPrefix }}
+            <strong class="text-dark">{{ otpDestination }}</strong>.
+            <button type="button" class="press font-semibold text-primary" @click="backToContact">
+              Modifier
+            </button>
+          </p>
+
+          <OtpInput
+            :model-value="otp"
+            :invalid="otpInvalid"
+            :disabled="isVerifying"
+            @update:model-value="onOtpChange"
+            @complete="verifyOtp"
+          />
+          <p v-if="otpError" class="mt-2 text-center text-[12.5px] text-error">{{ otpError }}</p>
+
+          <p class="mt-3 text-center text-[13px] text-muted">
+            <template v-if="resendSeconds > 0">Renvoyer dans {{ resendSeconds }}s</template>
+            <button v-else type="button" class="press font-semibold text-primary" @click="resendCode">
+              Renvoyer le code
+            </button>
+          </p>
+
+          <button
+            type="button"
+            class="press mt-3.5 w-full rounded-field bg-primary py-3.5 text-[15px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
+            :disabled="!isOtpComplete || isVerifying"
+            @click="verifyOtp"
+          >
+            {{ isVerifying ? 'Vérification…' : 'Vérifier le code' }}
+          </button>
+        </div>
+
+        <div v-else class="text-center text-sm text-muted">
+          Étape secteur à venir (#26).
         </div>
       </div>
     </div>
