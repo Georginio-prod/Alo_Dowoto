@@ -1,12 +1,19 @@
 <script setup lang="ts">
 type Tab = 'login' | 'signup'
+type Role = 'client' | 'prestataire'
 
 const route = useRoute()
 
 const activeTab = ref<Tab>(route.query.role ? 'signup' : 'login')
+const role = ref<Role>(route.query.role === 'prestataire' ? 'prestataire' : 'client')
 
 function selectTab(tab: Tab) {
   activeTab.value = tab
+  role.value = 'client'
+}
+
+function selectRole(r: Role) {
+  role.value = r
 }
 </script>
 
@@ -37,6 +44,28 @@ function selectTab(tab: Tab) {
           >
             Inscription
           </button>
+        </div>
+
+        <div v-if="activeTab === 'signup'" class="mb-5">
+          <div class="mb-2 text-[12.5px] font-medium text-muted">Vous êtes :</div>
+          <div class="flex gap-2">
+            <button
+              type="button"
+              class="press flex-1 rounded-field border-[1.5px] px-3 py-2.5 text-[13.5px] font-semibold"
+              :class="role === 'client' ? 'border-primary bg-primary/10 text-dark' : 'border-hairline bg-white text-muted'"
+              @click="selectRole('client')"
+            >
+              Client
+            </button>
+            <button
+              type="button"
+              class="press flex-1 rounded-field border-[1.5px] px-3 py-2.5 text-[13.5px] font-semibold"
+              :class="role === 'prestataire' ? 'border-primary bg-primary/10 text-dark' : 'border-hairline bg-white text-muted'"
+              @click="selectRole('prestataire')"
+            >
+              Prestataire
+            </button>
+          </div>
         </div>
 
         <div class="text-center text-sm text-muted">
