@@ -1,1 +1,110 @@
 @import "tailwindcss";
+
+@theme {
+  --color-primary: #14A800;
+  --color-primary-hover: #109300;
+  --color-dark: #0F2318;
+  --color-bg: #F7F7F7;
+  --color-muted: #6B7280;
+  --color-error: #D64545;
+  --color-star: #E6A700;
+  --font-sans: "Poppins", sans-serif;
+  --radius-pill: 999px;
+  --radius-card: 16px;
+  --radius-field: 10px;
+
+  --shadow-card-sm: 0 1px 3px rgba(15, 35, 24, 0.06);
+  --shadow-card-md: 0 4px 12px rgba(15, 35, 24, 0.08), 0 2px 4px rgba(15, 35, 24, 0.04);
+  --shadow-card-lg: 0 12px 32px rgba(15, 35, 24, 0.12), 0 4px 8px rgba(15, 35, 24, 0.05);
+}
+
+@layer base {
+  body {
+    background: var(--color-bg);
+    color: #1A1A1A;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Animations — apparition au scroll, lift, parallaxe, halo de hero.  */
+/* Désactivées si l'utilisateur préfère moins de mouvement.           */
+/* Technique portée depuis notre-attelier (même auteur), adaptée au   */
+/* vert WorkTogo au lieu du bleu/orange d'origine.                    */
+/* ------------------------------------------------------------------ */
+@layer utilities {
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+    will-change: opacity, transform;
+  }
+  [data-reveal].is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  .lift {
+    transition:
+      transform 0.22s ease,
+      box-shadow 0.22s ease,
+      border-color 0.22s ease;
+  }
+  .lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-card-lg);
+  }
+
+  .hero-glow {
+    position: absolute;
+    inset: -15% -10% auto -10%;
+    height: 560px;
+    background:
+      radial-gradient(520px 280px at 22% 18%, rgba(20, 168, 0, 0.12), transparent 70%),
+      radial-gradient(480px 260px at 78% 12%, rgba(15, 35, 24, 0.08), transparent 70%);
+    pointer-events: none;
+    z-index: -1;
+    animation: hero-pulse 9s ease-in-out infinite;
+  }
+  @keyframes hero-pulse {
+    0%, 100% { opacity: 0.65; }
+    50% { opacity: 1; }
+  }
+
+  [data-parallax] {
+    will-change: transform;
+  }
+
+  .float-soft {
+    animation: float-soft 7s ease-in-out infinite;
+  }
+  @keyframes float-soft {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  /* Reprises du prototype WorkTogo original */
+  @keyframes wt-pulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+  @keyframes wt-spin { to { transform: rotate(360deg); } }
+  @keyframes wt-shake {
+    10%, 90% { transform: translateX(-2px); }
+    20%, 80% { transform: translateX(3px); }
+    30%, 50%, 70% { transform: translateX(-5px); }
+    40%, 60% { transform: translateX(5px); }
+  }
+  @keyframes wt-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .lift:hover { transform: none; }
+  .hero-glow, .float-soft { animation: none; }
+  [data-parallax] { transform: none !important; }
+}
