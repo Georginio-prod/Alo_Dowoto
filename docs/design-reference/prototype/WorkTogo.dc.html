@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;-webkit-font-smoothing:antialiased}
+    input,select,button,textarea{font-family:'Poppins',sans-serif}
+    ::placeholder{color:#9CA3AF}
+    @keyframes wt-pulse{0%,100%{opacity:.55}50%{opacity:1}}
+    @keyframes wt-spin{to{transform:rotate(360deg)}}
+    @keyframes wt-shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(3px)}30%,50%,70%{transform:translateX(-5px)}40%,60%{transform:translateX(5px)}}
+    @keyframes wt-fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  </style>
+</helmet>
+
+<div style="min-height:100vh;background:#F7F7F7;font-family:'Poppins',sans-serif;color:#1A1A1A;position:relative">
+
+  <!-- ============ HOME ============ -->
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="Accueil">
+      <!-- header -->
+      <header style="position:sticky;top:0;z-index:20;background:#FFFFFF;border-bottom:1px solid rgba(0,0,0,0.08);padding:14px 24px">
+        <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <div style="font-size:22px;font-weight:800;color:#0F2318;letter-spacing:-0.5px;flex:0 0 auto">Work<span style="color:#14A800">Togo</span></div>
+
+          <div style="flex:1 1 320px;display:flex;align-items:center;gap:8px;background:#F7F7F7;border:1.5px solid rgba(0,0,0,0.1);border-radius:999px;padding:8px 8px 8px 18px;min-width:240px">
+            <svg width="18" height="18" viewBox="0 0 18 18" style="flex:0 0 auto;opacity:.55"><circle cx="8" cy="8" r="6" fill="none" stroke="#1A1A1A" stroke-width="1.6"></circle><line x1="12.3" y1="12.3" x2="17" y2="17" stroke="#1A1A1A" stroke-width="1.6" stroke-linecap="round"></line></svg>
+            <input type="text" placeholder="Rechercher un service : plomberie, ménage, développeur web…" value="{{ searchQuery }}" onChange="{{ setSearchQuery }}" onKeyDown="{{ onSearchKeyDown }}" aria-label="Rechercher un service" style="flex:1;border:none;background:transparent;outline:none;font-size:14.5px;color:#1A1A1A;min-width:0" />
+            <button onClick="{{ triggerSearch }}" style="flex:0 0 auto;background:#14A800;color:#fff;border:none;border-radius:999px;padding:9px 20px;font-weight:600;font-size:14px;cursor:pointer" style-hover="background:#109300">Rechercher</button>
+          </div>
+
+          <div style="flex:0 0 auto;display:flex;align-items:center;gap:10px;margin-left:auto">
+            <button onClick="{{ goLogin }}" style="background:transparent;border:none;color:#0F2318;font-weight:600;font-size:14.5px;cursor:pointer;padding:10px 8px" style-hover="color:#14A800">Se connecter</button>
+            <button onClick="{{ goBecomeProvider }}" style="background:#0F2318;color:#fff;border:none;border-radius:9px;padding:11px 20px;font-weight:600;font-size:14.5px;cursor:pointer" style-hover="background:#1a3a28">Devenir prestataire</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- hero -->
+      <section style="max-width:1200px;margin:0 auto;padding:48px 24px 8px;text-align:center">
+        <h1 style="font-size:clamp(26px,4vw,42px);font-weight:800;margin:0 0 12px;color:#0F2318;letter-spacing:-0.5px">Trouvez le bon prestataire, dans tous les secteurs</h1>
+        <p style="font-size:16px;color:#6B7280;margin:0 auto;max-width:560px;line-height:1.6">Artisanat, commerce, industrie, services à domicile… Comparez des professionnels vérifiés partout au Togo, sans compte requis pour chercher.</p>
+      </section>
+
+      <!-- sectors -->
+      <section style="max-width:1200px;margin:0 auto;padding:32px 24px 16px">
+        <h2 style="font-size:20px;font-weight:700;margin:0 0 18px;color:#0F2318">Parcourir par secteur</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px">
+          <sc-for list="{{ sectors }}" as="sector" hint-placeholder-count="10">
+            <button onClick="{{ sector.open }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:10px;text-align:left;background:#fff;border:1.5px solid rgba(0,0,0,0.08);border-radius:14px;padding:16px;cursor:pointer;transition:border-color .15s" style-hover="border-color:#14A800">
+              <div style="width:38px;height:38px;border-radius:10px;background:{{ sector.iconBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px">{{ sector.initial }}</div>
+              <div style="font-weight:600;font-size:14.5px;color:#0F2318;line-height:1.3">{{ sector.name }}</div>
+              <div style="font-size:12.5px;color:#6B7280">{{ sector.subCountLabel }}</div>
+            </button>
+          </sc-for>
+        </div>
+      </section>
+
+      <!-- how it works -->
+      <section style="background:#fff;margin-top:40px;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06)">
+        <div style="max-width:1200px;margin:0 auto;padding:48px 24px">
+          <h2 style="font-size:20px;font-weight:700;margin:0 0 28px;color:#0F2318;text-align:center">Comment ça marche</h2>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:28px">
+            <div style="text-align:center;padding:0 12px">
+              <div style="width:42px;height:42px;border-radius:999px;background:#14A800;color:#fff;font-weight:700;font-size:17px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">1</div>
+              <div style="font-weight:600;font-size:15.5px;color:#0F2318;margin-bottom:6px">Décrivez votre besoin</div>
+              <div style="font-size:13.5px;color:#6B7280;line-height:1.6">Recherchez un secteur ou tapez directement ce que vous cherchez.</div>
+            </div>
+            <div style="text-align:center;padding:0 12px">
+              <div style="width:42px;height:42px;border-radius:999px;background:#14A800;color:#fff;font-weight:700;font-size:17px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">2</div>
+              <div style="font-weight:600;font-size:15.5px;color:#0F2318;margin-bottom:6px">Comparez les prestataires</div>
+              <div style="font-size:13.5px;color:#6B7280;line-height:1.6">Consultez profils, avis et tarifs indicatifs près de chez vous.</div>
+            </div>
+            <div style="text-align:center;padding:0 12px">
+              <div style="width:42px;height:42px;border-radius:999px;background:#14A800;color:#fff;font-weight:700;font-size:17px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">3</div>
+              <div style="font-weight:600;font-size:15.5px;color:#0F2318;margin-bottom:6px">Contactez et faites-vous aider</div>
+              <div style="font-size:13.5px;color:#6B7280;line-height:1.6">Échangez directement avec le prestataire et validez la prestation.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer style="max-width:1200px;margin:0 auto;padding:24px;text-align:center;font-size:12.5px;color:#9CA3AF">© 2026 WorkTogo — Togo</footer>
+    </div>
+  </sc-if>
+
+  <!-- ============ SECTOR SUBDOMAIN DRAWER ============ -->
+  <sc-if value="{{ hasActiveSector }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Sous-secteurs" style="position:fixed;inset:0;background:rgba(15,35,24,0.45);z-index:40;display:flex;align-items:flex-end;justify-content:center" onClick="{{ closeSector }}">
+      <div style="background:#fff;width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:22px 22px 28px;max-height:78vh;overflow:auto;animation:wt-fade .18s ease-out" onClick="{{ stopClick }}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:34px;height:34px;border-radius:9px;background:{{ activeSector.iconBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">{{ activeSector.initial }}</div>
+            <div style="font-weight:700;font-size:17px;color:#0F2318">{{ activeSector.name }}</div>
+          </div>
+          <button onClick="{{ closeSector }}" aria-label="Fermer" style="background:#F7F7F7;border:none;border-radius:999px;width:32px;height:32px;font-size:16px;cursor:pointer;color:#6B7280">✕</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ activeSector.subItems }}" as="sub" hint-placeholder-count="5">
+            <button onClick="{{ sub.select }}" style="display:flex;align-items:center;justify-content:space-between;text-align:left;background:#F7F7F7;border:1.5px solid transparent;border-radius:10px;padding:14px 16px;cursor:pointer;font-size:14.5px;font-weight:500;color:#1A1A1A" style-hover="border-color:#14A800;background:#fff">
+              <span>{{ sub.name }}</span>
+              <span style="color:#14A800;font-weight:700">→</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ SEARCH MODAL (client vs prestataire) ============ -->
+  <sc-if value="{{ showModal }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Choix du profil" style="position:fixed;inset:0;background:rgba(15,35,24,0.5);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px">
+      <div style="background:#fff;border-radius:18px;max-width:680px;width:100%;padding:32px;animation:wt-fade .18s ease-out">
+        <div style="text-align:center;margin-bottom:26px">
+          <h2 style="font-size:20px;font-weight:700;color:#0F2318;margin:0 0 8px">{{ modalHeading }}</h2>
+          <p style="font-size:14px;color:#6B7280;margin:0">Choisissez comment vous voulez utiliser WorkTogo</p>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:16px">
+          <button onClick="{{ chooseClient }}" style="flex:1 1 260px;text-align:left;background:#F7F7F7;border:2px solid transparent;border-radius:14px;padding:22px;cursor:pointer" style-hover="border-color:#14A800;background:#fff">
+            <div style="font-size:13px;font-weight:700;color:#14A800;background:rgba(20,168,0,0.12);display:inline-block;padding:4px 10px;border-radius:999px;margin-bottom:14px">Inscription gratuite</div>
+            <div style="font-size:17px;font-weight:700;color:#0F2318;margin-bottom:8px">Je cherche un service</div>
+            <div style="font-size:13.5px;color:#6B7280;line-height:1.55">Trouvez un prestataire vérifié, comparez les tarifs et contactez-le gratuitement.</div>
+          </button>
+          <button onClick="{{ chooseProvider }}" style="flex:1 1 260px;text-align:left;background:#0F2318;border:2px solid transparent;border-radius:14px;padding:22px;cursor:pointer" style-hover="border-color:#14A800">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+              <span style="font-size:13px;font-weight:700;color:#fff;background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:999px">Essai gratuit {{ trialDays }} jours</span>
+              <span style="font-size:11px;font-weight:700;color:#0F2318;background:#fff;padding:4px 9px;border-radius:999px;white-space:nowrap">Abonnement requis</span>
+            </div>
+            <div style="font-size:17px;font-weight:700;color:#fff;margin-bottom:8px">Je propose un service</div>
+            <div style="font-size:13.5px;color:rgba(255,255,255,0.75);line-height:1.55">Recevez des demandes de clients près de chez vous et développez votre activité.</div>
+          </button>
+        </div>
+        <button onClick="{{ closeModal }}" style="display:block;margin:20px auto 0;background:transparent;border:none;color:#6B7280;font-size:13.5px;cursor:pointer">Annuler</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ AUTH ============ -->
+  <sc-if value="{{ isAuth }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Authentification" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:28px 20px 60px">
+      <div style="width:100%;max-width:440px">
+        <button onClick="{{ goHome }}" aria-label="Retour à l'accueil" style="background:none;border:none;color:#6B7280;font-size:14px;cursor:pointer;padding:8px 0;margin-bottom:8px">← Retour</button>
+
+        <div style="text-align:center;margin-bottom:22px">
+          <div style="font-size:22px;font-weight:800;color:#0F2318">Work<span style="color:#14A800">Togo</span></div>
+        </div>
+
+        <sc-if value="{{ showFlowSteps }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;justify-content:center;gap:6px;margin-bottom:24px;flex-wrap:wrap">
+            <sc-for list="{{ flowSteps }}" as="step" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:6px 10px;border-radius:999px;background:{{ step.bg }};color:{{ step.color }}">{{ step.label }}</div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:16px;padding:28px 26px;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+
+          <sc-if value="{{ showTabs }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;background:#F7F7F7;border-radius:10px;padding:4px;margin-bottom:22px">
+              <button onClick="{{ selectLoginTab }}" style="flex:1;text-align:center;border:none;border-radius:8px;padding:10px 0;font-weight:600;font-size:14px;cursor:pointer;background:{{ loginTabBg }};color:{{ loginTabColor }}">Connexion</button>
+              <button onClick="{{ selectSignupTab }}" style="flex:1;text-align:center;border:none;border-radius:8px;padding:10px 0;font-weight:600;font-size:14px;cursor:pointer;background:{{ signupTabBg }};color:{{ signupTabColor }}">Inscription</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isSignup }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-bottom:20px">
+              <div style="font-size:12.5px;color:#6B7280;margin-bottom:8px;font-weight:500">Vous êtes :</div>
+              <div style="display:flex;gap:8px">
+                <button onClick="{{ pickRoleClient }}" style="flex:1;padding:10px;border-radius:9px;font-size:13.5px;font-weight:600;cursor:pointer;border:1.5px solid {{ roleClientBorder }};background:{{ roleClientBg }};color:{{ roleClientColor }}">Client</button>
+                <button onClick="{{ pickRoleProvider }}" style="flex:1;padding:10px;border-radius:9px;font-size:13.5px;font-weight:600;cursor:pointer;border:1.5px solid {{ roleProviderBorder }};background:{{ roleProviderBg }};color:{{ roleProviderColor }}">Prestataire</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isStepInput }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <div style="display:flex;gap:8px;margin-bottom:18px">
+                <button onClick="{{ pickMethodPhone }}" style="flex:1;padding:9px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid rgba(0,0,0,0.1);background:{{ methodPhoneBg }};color:{{ methodPhoneColor }}">Téléphone</button>
+                <button onClick="{{ pickMethodEmail }}" style="flex:1;padding:9px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid rgba(0,0,0,0.1);background:{{ methodEmailBg }};color:{{ methodEmailColor }}">Email</button>
+              </div>
+
+              <sc-if value="{{ isMethodPhone }}" hint-placeholder-val="{{ true }}">
+                <label style="display:block;font-size:13px;font-weight:600;color:#0F2318;margin-bottom:6px">Numéro de téléphone</label>
+                <div style="display:flex;gap:8px;margin-bottom:6px">
+                  <div style="flex:0 0 64px;display:flex;align-items:center;justify-content:center;background:#F7F7F7;border:1.5px solid rgba(0,0,0,0.1);border-radius:10px;font-weight:600;font-size:14.5px;color:#0F2318">+228</div>
+                  <input type="tel" inputMode="numeric" placeholder="90 12 34 56" value="{{ phone }}" onChange="{{ setPhone }}" aria-label="Numéro de téléphone" style="flex:1;border:1.5px solid rgba(0,0,0,0.1);border-radius:10px;padding:0 14px;font-size:14.5px;outline:none;min-width:0" />
+                </div>
+              </sc-if>
+              <sc-if value="{{ isMethodEmail }}" hint-placeholder-val="{{ false }}">
+                <label style="display:block;font-size:13px;font-weight:600;color:#0F2318;margin-bottom:6px">Adresse email</label>
+                <input type="email" placeholder="vous@exemple.com" value="{{ email }}" onChange="{{ setEmail }}" aria-label="Adresse email" style="width:100%;border:1.5px solid rgba(0,0,0,0.1);border-radius:10px;padding:0 14px;height:46px;font-size:14.5px;outline:none;margin-bottom:6px" />
+              </sc-if>
+
+              <sc-if value="{{ contactError }}" hint-placeholder-val="{{ false }}">
+                <div style="color:#D64545;font-size:12.5px;margin:4px 0 10px">{{ contactError }}</div>
+              </sc-if>
+
+              <button onClick="{{ submitContact }}" style="width:100%;margin-top:14px;background:#14A800;color:#fff;border:none;border-radius:10px;padding:13px;font-weight:600;font-size:15px;cursor:pointer" style-hover="background:#109300">{{ contactCta }}</button>
+              <p style="font-size:11.5px;color:#9CA3AF;text-align:center;margin:14px 0 0;line-height:1.5">En continuant, un code à 6 chiffres vous sera envoyé pour vérifier votre identité.</p>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isStepOtp }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="font-size:13.5px;color:#6B7280;margin-bottom:18px;line-height:1.5">Code envoyé {{ otpDestinationPrefix }} <strong style="color:#0F2318">{{ otpDestination }}</strong>. <button onClick="{{ backToInput }}" style="background:none;border:none;color:#14A800;font-weight:600;cursor:pointer;padding:0;font-size:13.5px">Modifier</button></div>
+
+              <div style="display:flex;gap:8px;justify-content:center;margin-bottom:6px" role="group" aria-label="Code de vérification à 6 chiffres">
+                <input ref="{{ otpRef0 }}" value="{{ otp0 }}" onChange="{{ onOtp0Change }}" onKeyDown="{{ onOtp0KeyDown }}" inputMode="numeric" maxLength="1" aria-label="Chiffre 1" style="{{ otpBoxStyle }}" />
+                <input ref="{{ otpRef1 }}" value="{{ otp1 }}" onChange="{{ onOtp1Change }}" onKeyDown="{{ onOtp1KeyDown }}" inputMode="numeric" maxLength="1" aria-label="Chiffre 2" style="{{ otpBoxStyle }}" />
+                <input ref="{{ otpRef2 }}" value="{{ otp2 }}" onChange="{{ onOtp2Change }}" onKeyDown="{{ onOtp2KeyDown }}" inputMode="numeric" maxLength="1" aria-label="Chiffre 3" style="{{ otpBoxStyle }}" />
+                <input ref="{{ otpRef3 }}" value="{{ otp3 }}" onChange="{{ onOtp3Change }}" onKeyDown="{{ onOtp3KeyDown }}" inputMode="numeric" maxLength="1" aria-label="Chiffre 4" style="{{ otpBoxStyle }}" />
+                <input ref="{{ otpRef4 }}" value="{{ otp4 }}" onChange="{{ onOtp4Change }}" onKeyDown="{{ onOtp4KeyDown }}" inputMode="numeric" maxLength="1" aria-label="Chiffre 5" style="{{ otpBoxStyle }}" />
+                <input ref="{{ otpRef5 }}" value="{{ otp5 }}" onChange="{{ onOtp5Change }}" onKeyDown="{{ onOtp5KeyDown }}" inputMode="numeric" maxLength="1" aria-label="Chiffre 6" style="{{ otpBoxStyle }}" />
+              </div>
+
+              <sc-if value="{{ otpError }}" hint-placeholder-val="{{ false }}">
+                <div style="color:#D64545;font-size:12.5px;text-align:center;margin:10px 0 0">Code invalide. Réessayez.</div>
+              </sc-if>
+
+              <div style="text-align:center;margin:16px 0 4px;font-size:13px;color:#6B7280">
+                <sc-if value="{{ canResend }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ resendCode }}" style="background:none;border:none;color:#14A800;font-weight:600;cursor:pointer;font-size:13px">Renvoyer le code</button>
+                </sc-if>
+                <sc-if value="{{ canResend }}" hint-placeholder-val="{{ false }}"><span></span></sc-if>
+                <span>{{ resendLabel }}</span>
+              </div>
+
+              <button onClick="{{ verifyOtp }}" disabled="{{ verifyDisabled }}" style="width:100%;margin-top:14px;background:{{ verifyBg }};color:#fff;border:none;border-radius:10px;padding:13px;font-weight:600;font-size:15px;cursor:{{ verifyCursor }}">{{ verifyLabel }}</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isStepSector }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <label style="display:block;font-size:13px;font-weight:600;color:#0F2318;margin-bottom:6px">Secteur d'activité principal</label>
+              <p style="font-size:12.5px;color:#6B7280;margin:0 0 12px">Choisissez le secteur qui correspond le mieux à votre activité.</p>
+              <select value="{{ providerSector }}" onChange="{{ setProviderSector }}" aria-label="Secteur d'activité" style="width:100%;border:1.5px solid rgba(0,0,0,0.1);border-radius:10px;padding:12px 14px;font-size:14.5px;outline:none;background:#fff;margin-bottom:16px">
+                <option value="">Sélectionner un secteur…</option>
+                <sc-for list="{{ sectorNames }}" as="sn" hint-placeholder-count="10">
+                  <option value="{{ sn }}">{{ sn }}</option>
+                </sc-for>
+              </select>
+              <button onClick="{{ continueToSubscription }}" disabled="{{ sectorContinueDisabled }}" style="width:100%;background:{{ sectorContinueBg }};color:#fff;border:none;border-radius:10px;padding:13px;font-weight:600;font-size:15px;cursor:{{ sectorContinueCursor }}">Continuer</button>
+            </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ SUBSCRIPTION (3bis) ============ -->
+  <sc-if value="{{ isSubscription }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Abonnement prestataire" style="min-height:100vh;padding:28px 20px 80px;display:flex;flex-direction:column;align-items:center">
+      <div style="width:100%;max-width:900px">
+        <div style="display:flex;justify-content:center;gap:6px;margin-bottom:20px;flex-wrap:wrap">
+          <sc-for list="{{ flowSteps }}" as="step" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:6px 10px;border-radius:999px;background:{{ step.bg }};color:{{ step.color }}">{{ step.label }}</div>
+          </sc-for>
+        </div>
+        <div style="text-align:center;margin-bottom:28px">
+          <h1 style="font-size:24px;font-weight:800;color:#0F2318;margin:0 0 8px">Choisissez votre formule prestataire</h1>
+          <p style="font-size:14px;color:#6B7280;margin:0">Essai gratuit de {{ trialDays }} jours, sans engagement au-delà de la première période.</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;margin-bottom:24px">
+          <sc-for list="{{ plans }}" as="plan" hint-placeholder-count="3">
+            <button onClick="{{ plan.select }}" style="text-align:left;position:relative;background:#fff;border:2px solid {{ plan.borderColor }};border-radius:16px;padding:22px;cursor:pointer">
+              <sc-if value="{{ plan.tag }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;top:-11px;left:20px;background:#0F2318;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px">{{ plan.tag }}</div>
+              </sc-if>
+              <div style="font-weight:700;font-size:15.5px;color:#0F2318;margin-bottom:6px">{{ plan.label }}</div>
+              <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:2px">
+                <span style="font-size:26px;font-weight:800;color:#0F2318">{{ plan.priceLabel }}</span>
+                <span style="font-size:13px;color:#6B7280">{{ plan.period }}</span>
+              </div>
+              <div style="font-size:12.5px;color:#6B7280;margin-bottom:16px">{{ plan.billedNote }}</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{ plan.features }}" as="feat" hint-placeholder-count="5">
+                  <div style="display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:{{ feat.color }}">
+                    <span style="color:{{ feat.markColor }};font-weight:700">{{ feat.mark }}</span>
+                    <span>{{ feat.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="margin-top:16px;text-align:center;font-size:12.5px;font-weight:700;padding:8px;border-radius:8px;background:{{ plan.selectBg }};color:{{ plan.selectColor }}">{{ plan.selectLabel }}</div>
+            </button>
+          </sc-for>
+        </div>
+
+        <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:20px 22px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:12.5px;color:#6B7280;margin-bottom:2px">Formule sélectionnée</div>
+            <div style="font-size:16px;font-weight:700;color:#0F2318">{{ selectedPlanObj.label }} — {{ selectedPlanObj.priceLabel }}{{ selectedPlanObj.period }}</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <button onClick="{{ skipToDashboard }}" style="background:none;border:none;color:#6B7280;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline">Compléter mon profil plus tard</button>
+            <button onClick="{{ goToPayment }}" style="background:#14A800;color:#fff;border:none;border-radius:10px;padding:13px 24px;font-weight:600;font-size:14.5px;cursor:pointer" style-hover="background:#109300">Continuer vers le paiement</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ PAYMENT ============ -->
+  <sc-if value="{{ isPayment }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Paiement Mobile Money" style="min-height:100vh;padding:28px 20px 60px;display:flex;flex-direction:column;align-items:center">
+      <div style="width:100%;max-width:440px">
+        <div style="display:flex;justify-content:center;gap:6px;margin-bottom:20px;flex-wrap:wrap">
+          <sc-for list="{{ flowSteps }}" as="step" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:6px 10px;border-radius:999px;background:{{ step.bg }};color:{{ step.color }}">{{ step.label }}</div>
+          </sc-for>
+        </div>
+
+        <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:16px;padding:28px 26px">
+
+          <sc-if value="{{ isPaymentIdle }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <h2 style="font-size:18px;font-weight:700;color:#0F2318;margin:0 0 4px">Paiement Mobile Money</h2>
+              <p style="font-size:13px;color:#6B7280;margin:0 0 20px">{{ selectedPlanObj.label }} — {{ selectedPlanObj.priceLabel }} à régler aujourd'hui</p>
+
+              <div style="display:flex;gap:10px;margin-bottom:18px">
+                <button onClick="{{ pickFlooz }}" style="flex:1;padding:16px 10px;border-radius:12px;border:2px solid {{ floozBorder }};background:{{ floozBg }};cursor:pointer;text-align:center">
+                  <div style="width:30px;height:30px;border-radius:8px;background:#FF6600;margin:0 auto 8px"></div>
+                  <div style="font-weight:700;font-size:13.5px;color:#0F2318">Flooz</div>
+                </button>
+                <button onClick="{{ pickTmoney }}" style="flex:1;padding:16px 10px;border-radius:12px;border:2px solid {{ tmoneyBorder }};background:{{ tmoneyBg }};cursor:pointer;text-align:center">
+                  <div style="width:30px;height:30px;border-radius:8px;background:#FFC400;margin:0 auto 8px"></div>
+                  <div style="font-weight:700;font-size:13.5px;color:#0F2318">T-Money</div>
+                </button>
+              </div>
+
+              <label style="display:block;font-size:13px;font-weight:600;color:#0F2318;margin-bottom:6px">Numéro Mobile Money</label>
+              <div style="display:flex;gap:8px;margin-bottom:18px">
+                <div style="flex:0 0 64px;display:flex;align-items:center;justify-content:center;background:#F7F7F7;border:1.5px solid rgba(0,0,0,0.1);border-radius:10px;font-weight:600;font-size:14.5px;color:#0F2318">+228</div>
+                <input type="tel" inputMode="numeric" placeholder="90 12 34 56" value="{{ paymentPhone }}" onChange="{{ setPaymentPhone }}" aria-label="Numéro Mobile Money" style="flex:1;border:1.5px solid rgba(0,0,0,0.1);border-radius:10px;padding:0 14px;height:46px;font-size:14.5px;outline:none;min-width:0" />
+              </div>
+
+              <button onClick="{{ submitPayment }}" disabled="{{ paymentDisabled }}" style="width:100%;background:{{ paymentBtnBg }};color:#fff;border:none;border-radius:10px;padding:13px;font-weight:600;font-size:15px;cursor:{{ paymentBtnCursor }}">Payer {{ selectedPlanObj.priceLabel }}</button>
+              <p style="font-size:11.5px;color:#9CA3AF;text-align:center;margin:14px 0 0;line-height:1.5">Vous recevrez une demande de confirmation sur votre téléphone.</p>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isPaymentProcessing }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center;padding:20px 0">
+              <div style="width:40px;height:40px;border-radius:999px;border:3px solid rgba(20,168,0,0.2);border-top-color:#14A800;margin:0 auto 18px;animation:wt-spin .8s linear infinite"></div>
+              <div style="font-weight:600;font-size:15px;color:#0F2318;margin-bottom:6px">Confirmation en cours…</div>
+              <div style="font-size:13px;color:#6B7280">Validez la demande envoyée sur votre téléphone.</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isPaymentSuccess }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center;padding:12px 0">
+              <div style="width:48px;height:48px;border-radius:999px;background:rgba(20,168,0,0.12);color:#14A800;font-size:24px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">✓</div>
+              <div style="font-weight:700;font-size:17px;color:#0F2318;margin-bottom:8px">Paiement en cours de validation</div>
+              <div style="font-size:13.5px;color:#6B7280;line-height:1.6;margin-bottom:20px">Votre abonnement {{ selectedPlanObj.label }} sera activé dès confirmation. Vous pouvez compléter votre profil dès maintenant.</div>
+              <button onClick="{{ goDashboardFromPayment }}" style="width:100%;background:#14A800;color:#fff;border:none;border-radius:10px;padding:13px;font-weight:600;font-size:15px;cursor:pointer">Compléter mon profil</button>
+            </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ DASHBOARD (provider placeholder) ============ -->
+  <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Tableau de bord prestataire" style="min-height:100vh;padding:28px 20px 60px;display:flex;flex-direction:column;align-items:center">
+      <div style="width:100%;max-width:520px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:#0F2318;margin-bottom:22px">Work<span style="color:#14A800">Togo</span></div>
+        <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:16px;padding:32px 26px">
+          <div style="width:56px;height:56px;border-radius:999px;background:#F7F7F7;background-image:repeating-linear-gradient(45deg,#eee,#eee 6px,#f4f4f4 6px,#f4f4f4 12px);margin:0 auto 16px"></div>
+          <h2 style="font-size:19px;font-weight:700;color:#0F2318;margin:0 0 8px">Bienvenue sur WorkTogo, {{ providerSector }} !</h2>
+          <div style="display:inline-block;font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px;background:{{ subscriptionBadgeBg }};color:{{ subscriptionBadgeColor }};margin-bottom:18px">{{ subscriptionBadgeLabel }}</div>
+          <p style="font-size:13.5px;color:#6B7280;line-height:1.6;margin:0 0 22px">Complétez votre profil (photo, description, tarifs) pour commencer à recevoir des demandes de clients dans les secteurs sélectionnés.</p>
+          <button style="width:100%;background:#0F2318;color:#fff;border:none;border-radius:10px;padding:13px;font-weight:600;font-size:14.5px;cursor:pointer;margin-bottom:10px">Compléter mon profil</button>
+          <button onClick="{{ restart }}" style="width:100%;background:none;border:1.5px solid rgba(0,0,0,0.1);color:#6B7280;border-radius:10px;padding:12px;font-weight:600;font-size:13.5px;cursor:pointer">Recommencer la démo</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ RESULTS (client, post-connexion) ============ -->
+  <sc-if value="{{ isResults }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Résultats de recherche">
+      <header style="position:sticky;top:0;z-index:20;background:#FFFFFF;border-bottom:1px solid rgba(0,0,0,0.08);padding:14px 24px">
+        <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <button onClick="{{ goHome }}" style="background:none;border:none;font-size:20px;font-weight:800;color:#0F2318;cursor:pointer;padding:0">Work<span style="color:#14A800">Togo</span></button>
+          <div style="font-size:14px;color:#6B7280">Résultats pour <strong style="color:#0F2318">{{ resultsQueryLabel }}</strong></div>
+          <button onClick="{{ restart }}" style="margin-left:auto;background:none;border:1.5px dashed rgba(0,0,0,0.2);color:#9CA3AF;border-radius:8px;padding:7px 12px;font-size:11.5px;font-weight:600;cursor:pointer">↺ Recommencer la démo</button>
+        </div>
+      </header>
+
+      <div style="max-width:1200px;margin:0 auto;padding:24px;display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+
+        <!-- filters -->
+        <aside style="flex:0 0 240px;background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div style="font-weight:700;font-size:14.5px;color:#0F2318">Filtres</div>
+            <button onClick="{{ resetFilters }}" style="background:none;border:none;color:#14A800;font-size:12.5px;font-weight:600;cursor:pointer">Réinitialiser</button>
+          </div>
+
+          <div style="margin-bottom:20px">
+            <div style="font-size:12.5px;font-weight:600;color:#6B7280;margin-bottom:10px;text-transform:uppercase;letter-spacing:.03em">Sous-secteur</div>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <sc-for list="{{ subFilters }}" as="sf" hint-placeholder-count="5">
+                <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:#1A1A1A;cursor:pointer">
+                  <input type="checkbox" checked="{{ sf.checked }}" onChange="{{ sf.toggle }}" style="width:16px;height:16px;accent-color:#14A800" />
+                  {{ sf.name }}
+                </label>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="margin-bottom:20px">
+            <div style="font-size:12.5px;font-weight:600;color:#6B7280;margin-bottom:10px;text-transform:uppercase;letter-spacing:.03em">Ville</div>
+            <select value="{{ filterCity }}" onChange="{{ setFilterCity }}" aria-label="Filtrer par ville" style="width:100%;border:1.5px solid rgba(0,0,0,0.1);border-radius:9px;padding:9px 10px;font-size:13.5px;outline:none">
+              <sc-for list="{{ cities }}" as="c" hint-placeholder-count="7">
+                <option value="{{ c }}">{{ c }}</option>
+              </sc-for>
+            </select>
+          </div>
+
+          <div style="margin-bottom:20px">
+            <div style="font-size:12.5px;font-weight:600;color:#6B7280;margin-bottom:10px;text-transform:uppercase;letter-spacing:.03em">Note minimum</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <sc-for list="{{ ratingOptions }}" as="ro" hint-placeholder-count="4">
+                <button onClick="{{ ro.select }}" style="text-align:left;padding:7px 10px;border-radius:8px;border:1.5px solid {{ ro.border }};background:{{ ro.bg }};color:{{ ro.color }};font-size:13px;font-weight:600;cursor:pointer">{{ ro.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size:12.5px;font-weight:600;color:#6B7280;margin-bottom:10px;text-transform:uppercase;letter-spacing:.03em">Prix maximum : {{ maxPriceLabel }}</div>
+            <input type="range" min="500" max="6000" step="500" value="{{ maxPrice }}" onChange="{{ setMaxPrice }}" aria-label="Prix maximum" style="width:100%;accent-color:#14A800" />
+          </div>
+        </aside>
+
+        <!-- results grid -->
+        <main style="flex:1 1 480px;min-width:0">
+
+          <sc-if value="{{ resultsLoading }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px">
+              <sc-for list="{{ skeletonSlots }}" as="s" hint-placeholder-count="6">
+                <div style="background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:16px">
+                  <div style="width:100%;height:120px;border-radius:10px;background:#eee;margin-bottom:14px;animation:wt-pulse 1.4s ease-in-out infinite"></div>
+                  <div style="width:70%;height:14px;border-radius:4px;background:#eee;margin-bottom:8px;animation:wt-pulse 1.4s ease-in-out infinite"></div>
+                  <div style="width:50%;height:12px;border-radius:4px;background:#eee;animation:wt-pulse 1.4s ease-in-out infinite"></div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center;padding:60px 20px;background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:14px">
+              <div style="width:56px;height:56px;border-radius:999px;background:#F7F7F7;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:22px;color:#9CA3AF">⌕</div>
+              <div style="font-weight:700;font-size:16px;color:#0F2318;margin-bottom:6px">Aucun prestataire trouvé</div>
+              <div style="font-size:13.5px;color:#6B7280;margin-bottom:18px">Essayez d'élargir votre recherche ou de réinitialiser les filtres.</div>
+              <button onClick="{{ resetFilters }}" style="background:#14A800;color:#fff;border:none;border-radius:10px;padding:11px 22px;font-weight:600;font-size:13.5px;cursor:pointer">Réinitialiser les filtres</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showResultsGrid }}" hint-placeholder-val="{{ true }}">
+            <div style="{{ resultsContainerStyle }}">
+              <sc-for list="{{ filteredProviders }}" as="p" hint-placeholder-count="6">
+                <div style="{{ cardStyle }}">
+                  <div style="{{ p.photoBoxStyle }}">
+                    <div style="{{ photoStripeStyle }}"></div>
+                    <span style="position:relative;z-index:1;font-family:ui-monospace,monospace;font-size:11px;color:#9CA3AF;background:rgba(255,255,255,0.85);padding:2px 8px;border-radius:999px">photo</span>
+                  </div>
+                  <div style="{{ p.infoStyle }}">
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                      <span style="font-weight:700;font-size:15px;color:#0F2318">{{ p.name }}</span>
+                      <sc-if value="{{ p.verified }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:#14A800;background:rgba(20,168,0,0.12);padding:2px 8px;border-radius:999px">✓ Vérifié</span>
+                      </sc-if>
+                    </div>
+                    <div style="font-size:12.5px;color:#6B7280;margin:4px 0">{{ p.sub }} · {{ p.city }}</div>
+                    <div style="font-size:13px;color:#0F2318;margin-bottom:8px"><span style="color:#E6A700">{{ p.starsDisplay }}</span> <span style="color:#6B7280">{{ p.ratingLabel }} ({{ p.reviews }} avis)</span></div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+                      <span style="font-weight:700;font-size:14px;color:#0F2318">{{ p.priceLabel }}</span>
+                      <button style="background:#0F2318;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer">Voir le profil</button>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+        </main>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: {&quot;width&quot;: 1440, &quot;height&quot;: 900},
+  &quot;trialDays&quot;: {&quot;editor&quot;: &quot;int&quot;, &quot;default&quot;: 14, &quot;tsType&quot;: &quot;number&quot;, &quot;min&quot;: 0, &quot;max&quot;: 60, &quot;section&quot;: &quot;Abonnement prestataire&quot;},
+  &quot;providerCardStyle&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;cards&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;options&quot;: [&quot;cards&quot;, &quot;list&quot;], &quot;section&quot;: &quot;Résultats de recherche&quot;},
+  &quot;otpChannelDefault&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;phone&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;options&quot;: [&quot;phone&quot;, &quot;email&quot;], &quot;section&quot;: &quot;Authentification&quot;}
+}">
+const SECTORS_DATA = [
+  { id: 'btp', name: 'Artisanat & BTP', subs: ['Menuiserie', 'Maçonnerie', 'Plomberie', 'Électricité', 'Peinture & décoration', 'Soudure & métallerie'] },
+  { id: 'digital', name: 'Informatique & Digital', subs: ['Développement web & mobile', 'Réparation ordinateurs/téléphones', 'Marketing digital', 'Graphisme & design', 'Formation informatique'] },
+  { id: 'menage', name: 'Ménage & Maison', subs: ['Ménage à domicile', 'Repassage', 'Jardinage', "Garde d'enfants", 'Cuisine à domicile'] },
+  { id: 'beaute', name: 'Beauté & Bien-être', subs: ['Coiffure', 'Esthétique & soins', 'Manucure & pédicure', 'Massage', 'Maquillage événementiel'] },
+  { id: 'evenement', name: 'Événementiel', subs: ['Traiteur', 'Décoration de salle', 'DJ & sonorisation', 'Photographie & vidéo', 'Location de matériel'] },
+  { id: 'education', name: 'Éducation & Cours', subs: ['Soutien scolaire', 'Cours de langues', 'Cours de musique', 'Formation professionnelle', 'Coaching'] },
+  { id: 'transport', name: 'Transport & Livraison', subs: ['Livraison de colis', 'Déménagement', 'Location véhicule avec chauffeur', 'Course moto'] },
+  { id: 'commerce', name: 'Commerce', subs: ['Vente en gros', 'Import-export', 'Boutique en ligne', 'Distribution & revente'] },
+  { id: 'industrie', name: 'Industrie', subs: ['Fabrication métallique', 'Agroalimentaire', 'Textile & couture', 'Maintenance industrielle'] },
+  { id: 'sante', name: 'Santé & Bien-être', subs: ['Aide-soignant à domicile', 'Kinésithérapie', 'Nutrition & diététique', 'Sage-femme à domicile'] },
+];
+const ICON_COLORS = ['#14A800', '#0F2318', '#1C9A5B', '#0E6B3A', '#0A7B3E', '#123324'];
+const CITIES = ['Toutes les villes', 'Lomé', 'Kara', 'Sokodé', 'Kpalimé', 'Atakpamé', 'Dapaong'];
+const RATING_OPTIONS = [
+  { value: 0, label: 'Toutes les notes' },
+  { value: 3, label: '3★ et plus' },
+  { value: 4, label: '4★ et plus' },
+  { value: 4.5, label: '4.5★ et plus' },
+];
+const PROVIDERS_DATA = [
+  { id: 1, name: 'Akofa M.', sub: 'Ménage à domicile', city: 'Lomé', rating: 4.8, reviews: 32, price: 3000, verified: true },
+  { id: 2, name: 'Kossi A.', sub: 'Ménage à domicile', city: 'Lomé', rating: 4.6, reviews: 18, price: 2500, verified: true },
+  { id: 3, name: 'Essolakina T.', sub: 'Repassage', city: 'Lomé', rating: 4.9, reviews: 54, price: 1500, verified: true },
+  { id: 4, name: 'Yawa D.', sub: 'Jardinage', city: 'Kara', rating: 4.3, reviews: 9, price: 4000, verified: false },
+  { id: 5, name: 'Komi S.', sub: "Garde d'enfants", city: 'Lomé', rating: 4.7, reviews: 27, price: 3500, verified: true },
+  { id: 6, name: 'Adjoa K.', sub: 'Cuisine à domicile', city: 'Lomé', rating: 4.5, reviews: 12, price: 5000, verified: false },
+  { id: 7, name: 'Mawuli N.', sub: 'Ménage à domicile', city: 'Sokodé', rating: 4.2, reviews: 6, price: 2000, verified: false },
+  { id: 8, name: 'Ablavi F.', sub: 'Repassage', city: 'Kpalimé', rating: 4.8, reviews: 21, price: 1800, verified: true },
+];
+const PLAN_DEFS = [
+  { id: 'mensuel', label: 'Mensuel', price: 5000, period: '/mois', billedNote: 'Facturé chaque mois', tag: null,
+    features: [true, true, false, false, false] },
+  { id: 'trimestriel', label: 'Trimestriel', price: 13500, period: '/3 mois', billedNote: 'Soit 4 500 FCFA/mois', tag: 'Le plus populaire',
+    features: [true, true, true, false, true] },
+  { id: 'annuel', label: 'Annuel', price: 48000, period: '/an', billedNote: 'Soit 4 000 FCFA/mois', tag: 'Meilleure offre',
+    features: [true, true, true, true, true] },
+];
+const PLAN_FEATURE_LABELS = [
+  'Profil visible dans les résultats',
+  'Réception illimitée de demandes',
+  'Badge "Vérifié" inclus',
+  'Mise en avant en tête des résultats',
+  'Support prioritaire par chat',
+];
+const FCFA = n => n.toLocaleString('fr-FR') + ' FCFA';
+
+class Component extends DCLogic {
+  otpRef0 = React.createRef(); otpRef1 = React.createRef(); otpRef2 = React.createRef();
+  otpRef3 = React.createRef(); otpRef4 = React.createRef(); otpRef5 = React.createRef();
+  resendIntervalId = null;
+  otpTimeoutId = null;
+  paymentTimeoutId = null;
+
+  state = this.initial();
+
+  initial() {
+    return {
+      screen: 'home',
+      showModal: false,
+      activeSectorId: null,
+      role: null,
+      authTab: 'login',
+      authMethod: this.props.otpChannelDefault === 'email' ? 'email' : 'phone',
+      authStep: 'input',
+      phone: '', email: '',
+      contactError: '',
+      otp0: '', otp1: '', otp2: '', otp3: '', otp4: '', otp5: '',
+      otpError: false, verifying: false,
+      resendSeconds: 0,
+      providerSector: '',
+      selectedPlan: 'trimestriel',
+      paymentMethod: 'flooz',
+      paymentPhone: '',
+      paymentStatus: 'idle',
+      searchQuery: '',
+      pendingCategory: { sectorName: 'Ménage & Maison', subName: 'Ménage à domicile' },
+      resultsLoading: false,
+      selectedSubsectors: [],
+      filterCity: 'Toutes les villes',
+      filterMinRating: 0,
+      maxPrice: 6000,
+    };
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.resendIntervalId);
+    clearTimeout(this.otpTimeoutId);
+    clearTimeout(this.paymentTimeoutId);
+  }
+
+  stopClick = e => e.stopPropagation();
+
+  goHome = () => this.setState({ screen: 'home', showModal: false, activeSectorId: null });
+  restart = () => { clearInterval(this.resendIntervalId); clearTimeout(this.otpTimeoutId); clearTimeout(this.paymentTimeoutId); this.setState(this.initial()); };
+
+  setSearchQuery = e => this.setState({ searchQuery: e.target.value });
+  onSearchKeyDown = e => { if (e.key === 'Enter') this.triggerSearch(); };
+  triggerSearch = () => {
+    const q = this.state.searchQuery.trim();
+    if (!q) return;
+    this.setState({ pendingCategory: { sectorName: null, subName: q }, showModal: true });
+  };
+
+  openSector = id => this.setState({ activeSectorId: id });
+  closeSector = () => this.setState({ activeSectorId: null });
+  selectSubsector = (sectorName, sub) => this.setState({ pendingCategory: { sectorName, subName: sub }, activeSectorId: null, showModal: true });
+
+  goLogin = () => this.setState({ screen: 'auth', authTab: 'login', authStep: 'input', role: null });
+  goBecomeProvider = () => this.setState({ screen: 'auth', authTab: 'signup', role: 'provider', authStep: 'input' });
+  chooseClient = () => this.setState({ role: 'client', screen: 'auth', authTab: 'signup', authStep: 'input', showModal: false });
+  chooseProvider = () => this.setState({ role: 'provider', screen: 'auth', authTab: 'signup', authStep: 'input', showModal: false });
+  closeModal = () => this.setState({ showModal: false });
+
+  selectLoginTab = () => this.setState({ authTab: 'login', authStep: 'input', otpError: false });
+  selectSignupTab = () => this.setState(s => ({ authTab: 'signup', authStep: 'input', otpError: false, role: s.role || 'client' }));
+  pickRoleClient = () => this.setState({ role: 'client' });
+  pickRoleProvider = () => this.setState({ role: 'provider' });
+  pickMethodPhone = () => this.setState({ authMethod: 'phone', contactError: '' });
+  pickMethodEmail = () => this.setState({ authMethod: 'email', contactError: '' });
+  setPhone = e => this.setState({ phone: e.target.value.replace(/[^\d\s]/g, ''), contactError: '' });
+  setEmail = e => this.setState({ email: e.target.value, contactError: '' });
+
+  submitContact = () => {
+    if (this.state.authMethod === 'phone') {
+      const digits = this.state.phone.replace(/\D/g, '');
+      if (digits.length < 8) { this.setState({ contactError: 'Entrez un numéro valide (8 chiffres).' }); return; }
+    } else {
+      if (!/^\S+@\S+\.\S+$/.test(this.state.email)) { this.setState({ contactError: 'Entrez une adresse email valide.' }); return; }
+    }
+    this.setState({ authStep: 'otp', otp0: '', otp1: '', otp2: '', otp3: '', otp4: '', otp5: '', otpError: false });
+    this.startResendTimer();
+  };
+
+  startResendTimer = () => {
+    clearInterval(this.resendIntervalId);
+    this.setState({ resendSeconds: 30 });
+    this.resendIntervalId = setInterval(() => {
+      this.setState(s => {
+        if (s.resendSeconds <= 1) { clearInterval(this.resendIntervalId); return { resendSeconds: 0 }; }
+        return { resendSeconds: s.resendSeconds - 1 };
+      });
+    }, 1000);
+  };
+  resendCode = () => {
+    if (this.state.resendSeconds > 0) return;
+    this.setState({ otp0: '', otp1: '', otp2: '', otp3: '', otp4: '', otp5: '', otpError: false });
+    this.startResendTimer();
+  };
+  backToInput = () => { clearInterval(this.resendIntervalId); this.setState({ authStep: 'input', otpError: false }); };
+
+  makeOtpChange(index) {
+    return e => {
+      const val = e.target.value.replace(/\D/g, '').slice(-1);
+      this.setState({ ['otp' + index]: val, otpError: false });
+      if (val && index < 5) { const r = this['otpRef' + (index + 1)]; if (r && r.current) r.current.focus(); }
+    };
+  }
+  makeOtpKeyDown(index) {
+    return e => {
+      if (e.key === 'Backspace' && !this.state['otp' + index] && index > 0) {
+        const r = this['otpRef' + (index - 1)]; if (r && r.current) r.current.focus();
+      }
+    };
+  }
+  onOtp0Change = this.makeOtpChange(0); onOtp1Change = this.makeOtpChange(1); onOtp2Change = this.makeOtpChange(2);
+  onOtp3Change = this.makeOtpChange(3); onOtp4Change = this.makeOtpChange(4); onOtp5Change = this.makeOtpChange(5);
+  onOtp0KeyDown = this.makeOtpKeyDown(0); onOtp1KeyDown = this.makeOtpKeyDown(1); onOtp2KeyDown = this.makeOtpKeyDown(2);
+  onOtp3KeyDown = this.makeOtpKeyDown(3); onOtp4KeyDown = this.makeOtpKeyDown(4); onOtp5KeyDown = this.makeOtpKeyDown(5);
+
+  verifyOtp = () => {
+    const code = ['otp0','otp1','otp2','otp3','otp4','otp5'].map(k => this.state[k]).join('');
+    if (code.length < 6 || this.state.verifying) return;
+    this.setState({ verifying: true, otpError: false });
+    clearTimeout(this.otpTimeoutId);
+    this.otpTimeoutId = setTimeout(() => {
+      if (code === '000000') { this.setState({ verifying: false, otpError: true }); return; }
+      clearInterval(this.resendIntervalId);
+      if (this.state.authTab === 'signup' && this.state.role === 'provider') {
+        this.setState({ verifying: false, authStep: 'sector' });
+      } else {
+        this.setState({ verifying: false, screen: 'results', resultsLoading: true });
+        setTimeout(() => this.setState({ resultsLoading: false }), 800);
+      }
+    }, 900);
+  };
+
+  setProviderSector = e => this.setState({ providerSector: e.target.value });
+  continueToSubscription = () => { if (!this.state.providerSector) return; this.setState({ screen: 'subscription' }); };
+
+  selectPlan = id => this.setState({ selectedPlan: id });
+  goToPayment = () => this.setState({ screen: 'payment', paymentStatus: 'idle' });
+  skipToDashboard = () => this.setState({ screen: 'dashboard' });
+
+  pickFlooz = () => this.setState({ paymentMethod: 'flooz' });
+  pickTmoney = () => this.setState({ paymentMethod: 'tmoney' });
+  setPaymentPhone = e => this.setState({ paymentPhone: e.target.value.replace(/[^\d\s]/g, '') });
+  submitPayment = () => {
+    if (this.state.paymentPhone.replace(/\D/g, '').length < 8) return;
+    this.setState({ paymentStatus: 'processing' });
+    clearTimeout(this.paymentTimeoutId);
+    this.paymentTimeoutId = setTimeout(() => this.setState({ paymentStatus: 'success' }), 1200);
+  };
+  goDashboardFromPayment = () => this.setState({ screen: 'dashboard' });
+
+  toggleSubsectorFilter = name => this.setState(s => {
+    const has = s.selectedSubsectors.includes(name);
+    return { selectedSubsectors: has ? s.selectedSubsectors.filter(x => x !== name) : [...s.selectedSubsectors, name] };
+  });
+  setFilterCity = e => this.setState({ filterCity: e.target.value });
+  setFilterMinRating = v => this.setState({ filterMinRating: v });
+  setMaxPrice = e => this.setState({ maxPrice: Number(e.target.value) });
+  resetFilters = () => this.setState({ selectedSubsectors: [], filterCity: 'Toutes les villes', filterMinRating: 0, maxPrice: 6000 });
+
+  renderVals() {
+    const s = this.state;
+    const trialDays = this.props.trialDays ?? 14;
+    const providerCardStyle = this.props.providerCardStyle ?? 'cards';
+
+    const sectors = SECTORS_DATA.map((sec, i) => ({
+      id: sec.id, name: sec.name,
+      initial: sec.name[0],
+      iconBg: ICON_COLORS[i % ICON_COLORS.length],
+      subCountLabel: sec.subs.length + ' sous-secteurs',
+      open: () => this.openSector(sec.id),
+      subItems: sec.subs.map(sub => ({ name: sub, select: () => this.selectSubsector(sec.name, sub) })),
+    }));
+    const activeSectorRaw = SECTORS_DATA.find(x => x.id === s.activeSectorId) || null;
+    const activeSector = activeSectorRaw ? sectors.find(x => x.id === activeSectorRaw.id) : null;
+    const sectorNames = SECTORS_DATA.map(x => x.name);
+
+    const isHome = s.screen === 'home';
+    const isAuth = s.screen === 'auth';
+    const isSubscription = s.screen === 'subscription';
+    const isPayment = s.screen === 'payment';
+    const isDashboard = s.screen === 'dashboard';
+    const isResults = s.screen === 'results';
+
+    const modalHeading = s.pendingCategory && s.pendingCategory.subName
+      ? 'Recherche : "' + s.pendingCategory.subName + '"'
+      : 'Que souhaitez-vous faire ?';
+
+    // ---- auth derived ----
+    const isSignup = s.authTab === 'signup';
+    const showTabs = true;
+    const showFlowSteps = (isAuth && isSignup) || isSubscription || isPayment;
+    const stepDefs = s.role === 'provider'
+      ? ['Contact', 'Vérification', 'Secteur', 'Abonnement', 'Paiement']
+      : ['Contact', 'Vérification'];
+    let curIdx = 0;
+    if (isAuth) curIdx = s.authStep === 'otp' ? 1 : s.authStep === 'sector' ? 2 : 0;
+    else if (isSubscription) curIdx = 3;
+    else if (isPayment) curIdx = 4;
+    const flowSteps = stepDefs.map((label, i) => ({
+      label, bg: i === curIdx ? '#14A800' : i < curIdx ? 'rgba(20,168,0,0.12)' : '#F7F7F7',
+      color: i === curIdx ? '#fff' : i < curIdx ? '#14A800' : '#9CA3AF',
+    }));
+
+    const loginTabBg = s.authTab === 'login' ? '#fff' : 'transparent';
+    const loginTabColor = s.authTab === 'login' ? '#0F2318' : '#6B7280';
+    const signupTabBg = s.authTab === 'signup' ? '#fff' : 'transparent';
+    const signupTabColor = s.authTab === 'signup' ? '#0F2318' : '#6B7280';
+
+    const roleClientBorder = s.role === 'client' ? '#14A800' : 'rgba(0,0,0,0.12)';
+    const roleClientBg = s.role === 'client' ? 'rgba(20,168,0,0.08)' : '#fff';
+    const roleClientColor = s.role === 'client' ? '#0F2318' : '#6B7280';
+    const roleProviderBorder = s.role === 'provider' ? '#14A800' : 'rgba(0,0,0,0.12)';
+    const roleProviderBg = s.role === 'provider' ? 'rgba(20,168,0,0.08)' : '#fff';
+    const roleProviderColor = s.role === 'provider' ? '#0F2318' : '#6B7280';
+
+    const isStepInput = s.authStep === 'input';
+    const isStepOtp = s.authStep === 'otp';
+    const isStepSector = s.authStep === 'sector';
+    const isMethodPhone = s.authMethod === 'phone';
+    const isMethodEmail = s.authMethod === 'email';
+    const methodPhoneBg = isMethodPhone ? '#0F2318' : '#fff';
+    const methodPhoneColor = isMethodPhone ? '#fff' : '#6B7280';
+    const methodEmailBg = isMethodEmail ? '#0F2318' : '#fff';
+    const methodEmailColor = isMethodEmail ? '#fff' : '#6B7280';
+    const contactCta = s.authTab === 'login' ? 'Se connecter' : 'Créer mon compte';
+
+    const otpDestinationPrefix = isMethodPhone ? 'au' : 'à';
+    const otpDestination = isMethodPhone ? ('+228 ' + (s.phone || '…')) : (s.email || '…');
+    const otpBoxStyle = 'width:44px;height:54px;text-align:center;font-size:22px;font-weight:700;border-radius:10px;outline:none;border:1.5px solid ' + (s.otpError ? '#D64545' : 'rgba(0,0,0,0.12)') + (s.otpError ? ';animation:wt-shake .4s' : '');
+    const canResend = s.resendSeconds === 0;
+    const resendLabel = s.resendSeconds > 0 ? ('Renvoyer dans ' + s.resendSeconds + 's') : '';
+    const codeLen = ['otp0','otp1','otp2','otp3','otp4','otp5'].filter(k => s[k]).length;
+    const verifyDisabled = codeLen < 6 || s.verifying;
+    const verifyBg = verifyDisabled ? '#B7D9AC' : '#14A800';
+    const verifyCursor = verifyDisabled ? 'not-allowed' : 'pointer';
+    const verifyLabel = s.verifying ? 'Vérification…' : 'Vérifier le code';
+    const sectorContinueDisabled = !s.providerSector;
+    const sectorContinueBg = sectorContinueDisabled ? '#B7D9AC' : '#14A800';
+    const sectorContinueCursor = sectorContinueDisabled ? 'not-allowed' : 'pointer';
+
+    // ---- subscription ----
+    const plans = PLAN_DEFS.map(p => ({
+      id: p.id, label: p.label,
+      priceLabel: FCFA(p.price), period: p.period, billedNote: p.billedNote,
+      tag: p.tag,
+      borderColor: s.selectedPlan === p.id ? '#14A800' : 'rgba(0,0,0,0.1)',
+      select: () => this.selectPlan(p.id),
+      selectBg: s.selectedPlan === p.id ? '#14A800' : '#F7F7F7',
+      selectColor: s.selectedPlan === p.id ? '#fff' : '#6B7280',
+      selectLabel: s.selectedPlan === p.id ? 'Sélectionné' : 'Choisir cette formule',
+      features: PLAN_FEATURE_LABELS.map((label, i) => ({
+        label, mark: p.features[i] ? '✓' : '✕',
+        markColor: p.features[i] ? '#14A800' : '#D1D5DB',
+        color: p.features[i] ? '#1A1A1A' : '#9CA3AF',
+      })),
+    }));
+    const selectedPlanObj = plans.find(p => p.id === s.selectedPlan) || plans[0];
+
+    // ---- payment ----
+    const floozBorder = s.paymentMethod === 'flooz' ? '#14A800' : 'rgba(0,0,0,0.1)';
+    const floozBg = s.paymentMethod === 'flooz' ? 'rgba(20,168,0,0.06)' : '#fff';
+    const tmoneyBorder = s.paymentMethod === 'tmoney' ? '#14A800' : 'rgba(0,0,0,0.1)';
+    const tmoneyBg = s.paymentMethod === 'tmoney' ? 'rgba(20,168,0,0.06)' : '#fff';
+    const paymentDisabled = s.paymentPhone.replace(/\D/g, '').length < 8;
+    const paymentBtnBg = paymentDisabled ? '#B7D9AC' : '#14A800';
+    const paymentBtnCursor = paymentDisabled ? 'not-allowed' : 'pointer';
+    const isPaymentIdle = s.paymentStatus === 'idle';
+    const isPaymentProcessing = s.paymentStatus === 'processing';
+    const isPaymentSuccess = s.paymentStatus === 'success';
+    const subscriptionBadgeLabel = s.paymentStatus === 'success' || s.screen === 'dashboard' && s.paymentStatus !== 'idle' ? 'Abonnement en attente de validation' : 'Profil non abonné';
+    const subscriptionBadgeBg = 'rgba(20,168,0,0.12)';
+    const subscriptionBadgeColor = '#0F2318';
+
+    // ---- results ----
+    const menageSubs = SECTORS_DATA.find(x => x.id === 'menage').subs;
+    const subFilters = menageSubs.map(name => ({
+      name, checked: s.selectedSubsectors.includes(name),
+      toggle: () => this.toggleSubsectorFilter(name),
+    }));
+    const ratingOptions = RATING_OPTIONS.map(ro => ({
+      label: ro.label, select: () => this.setFilterMinRating(ro.value),
+      border: s.filterMinRating === ro.value ? '#14A800' : 'rgba(0,0,0,0.1)',
+      bg: s.filterMinRating === ro.value ? 'rgba(20,168,0,0.08)' : '#fff',
+      color: s.filterMinRating === ro.value ? '#0F2318' : '#6B7280',
+    }));
+    const maxPriceLabel = FCFA(s.maxPrice);
+    let filtered = PROVIDERS_DATA.filter(p =>
+      (s.selectedSubsectors.length === 0 || s.selectedSubsectors.includes(p.sub)) &&
+      (s.filterCity === 'Toutes les villes' || p.city === s.filterCity) &&
+      p.rating >= s.filterMinRating &&
+      p.price <= s.maxPrice
+    );
+    const isListMode = providerCardStyle === 'list';
+    const resultsContainerStyle = isListMode
+      ? 'display:flex;flex-direction:column;gap:14px'
+      : 'display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px';
+    const cardStyle = isListMode
+      ? 'background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:14px;display:flex;gap:16px;align-items:center'
+      : 'background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:0';
+    const photoBoxBase = isListMode
+      ? 'flex:0 0 96px;height:72px;border-radius:10px;background:#f0f0f0;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center'
+      : 'width:100%;height:130px;border-radius:10px;background:#f0f0f0;position:relative;overflow:hidden;margin-bottom:14px;display:flex;align-items:center;justify-content:center';
+    const photoStripeStyle = 'position:absolute;inset:0;background:repeating-linear-gradient(45deg,#e9e9e9,#e9e9e9 10px,#f2f2f2 10px,#f2f2f2 20px)';
+    const infoStyleBase = isListMode ? 'flex:1;min-width:0' : '';
+
+    const filteredProviders = filtered.map(p => ({
+      ...p,
+      priceLabel: 'À partir de ' + FCFA(p.price),
+      ratingLabel: p.rating.toFixed(1),
+      starsDisplay: '★'.repeat(Math.round(p.rating)) + '☆'.repeat(5 - Math.round(p.rating)),
+      photoBoxStyle: photoBoxBase,
+      infoStyle: infoStyleBase,
+    }));
+    const resultsQueryLabel = s.pendingCategory
+      ? (s.pendingCategory.subName + (s.pendingCategory.sectorName ? '' : ''))
+      : 'tous les prestataires';
+    const showEmpty = !s.resultsLoading && filteredProviders.length === 0;
+    const showResultsGrid = !s.resultsLoading && filteredProviders.length > 0;
+
+    return {
+      sectors, activeSector, hasActiveSector: !!activeSector, closeSector: this.closeSector, stopClick: this.stopClick,
+      sectorNames,
+      isHome, isAuth, isSubscription, isPayment, isDashboard, isResults,
+      showModal: s.showModal, modalHeading, chooseClient: this.chooseClient, chooseProvider: this.chooseProvider, closeModal: this.closeModal,
+      trialDays,
+      searchQuery: s.searchQuery, setSearchQuery: this.setSearchQuery, onSearchKeyDown: this.onSearchKeyDown, triggerSearch: this.triggerSearch,
+      goLogin: this.goLogin, goBecomeProvider: this.goBecomeProvider, goHome: this.goHome, restart: this.restart,
+
+      showFlowSteps, flowSteps, showTabs, isSignup,
+      selectLoginTab: this.selectLoginTab, selectSignupTab: this.selectSignupTab,
+      loginTabBg, loginTabColor, signupTabBg, signupTabColor,
+      pickRoleClient: this.pickRoleClient, pickRoleProvider: this.pickRoleProvider,
+      roleClientBorder, roleClientBg, roleClientColor, roleProviderBorder, roleProviderBg, roleProviderColor,
+      isStepInput, isStepOtp, isStepSector,
+      pickMethodPhone: this.pickMethodPhone, pickMethodEmail: this.pickMethodEmail,
+      isMethodPhone, isMethodEmail, methodPhoneBg, methodPhoneColor, methodEmailBg, methodEmailColor,
+      phone: s.phone, setPhone: this.setPhone, email: s.email, setEmail: this.setEmail,
+      contactError: s.contactError, submitContact: this.submitContact, contactCta,
+
+      otp0: s.otp0, otp1: s.otp1, otp2: s.otp2, otp3: s.otp3, otp4: s.otp4, otp5: s.otp5,
+      otpRef0: this.otpRef0, otpRef1: this.otpRef1, otpRef2: this.otpRef2, otpRef3: this.otpRef3, otpRef4: this.otpRef4, otpRef5: this.otpRef5,
+      onOtp0Change: this.onOtp0Change, onOtp1Change: this.onOtp1Change, onOtp2Change: this.onOtp2Change, onOtp3Change: this.onOtp3Change, onOtp4Change: this.onOtp4Change, onOtp5Change: this.onOtp5Change,
+      onOtp0KeyDown: this.onOtp0KeyDown, onOtp1KeyDown: this.onOtp1KeyDown, onOtp2KeyDown: this.onOtp2KeyDown, onOtp3KeyDown: this.onOtp3KeyDown, onOtp4KeyDown: this.onOtp4KeyDown, onOtp5KeyDown: this.onOtp5KeyDown,
+      otpBoxStyle, otpError: s.otpError, otpDestinationPrefix, otpDestination, backToInput: this.backToInput,
+      canResend, resendLabel, resendCode: this.resendCode,
+      verifyOtp: this.verifyOtp, verifyDisabled, verifyBg, verifyCursor, verifyLabel,
+
+      providerSector: s.providerSector, setProviderSector: this.setProviderSector,
+      continueToSubscription: this.continueToSubscription, sectorContinueDisabled, sectorContinueBg, sectorContinueCursor,
+
+      plans, selectedPlanObj, goToPayment: this.goToPayment, skipToDashboard: this.skipToDashboard,
+
+      floozBorder, floozBg, tmoneyBorder, tmoneyBg, pickFlooz: this.pickFlooz, pickTmoney: this.pickTmoney,
+      paymentPhone: s.paymentPhone, setPaymentPhone: this.setPaymentPhone, submitPayment: this.submitPayment,
+      paymentDisabled, paymentBtnBg, paymentBtnCursor,
+      isPaymentIdle, isPaymentProcessing, isPaymentSuccess, goDashboardFromPayment: this.goDashboardFromPayment,
+      subscriptionBadgeLabel, subscriptionBadgeBg, subscriptionBadgeColor,
+
+      subFilters, cities: CITIES, filterCity: s.filterCity, setFilterCity: this.setFilterCity,
+      ratingOptions, maxPrice: s.maxPrice, maxPriceLabel, setMaxPrice: this.setMaxPrice, resetFilters: this.resetFilters,
+      resultsLoading: s.resultsLoading, skeletonSlots: [0,1,2,3,4,5],
+      showEmpty, showResultsGrid, resultsContainerStyle, cardStyle, photoStripeStyle,
+      filteredProviders, resultsQueryLabel,
+    };
+  }
+}
+
+</script>
+</body>
+</html>
