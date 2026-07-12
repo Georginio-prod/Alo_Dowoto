@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { getProviderById } from '~~/server/utils/providerDirectory'
+import { hasReviewed } from '~~/server/utils/reviewStore'
 import { getUserById, type Role } from '~~/server/utils/userStore'
 
 /**
@@ -45,6 +46,8 @@ export interface ConversationSummary extends Conversation {
   /** Secteur/sous-secteur de l'autre partie quand connu (prestataire de l'annuaire de démo). */
   otherPartySector: string | null
   lastMessage: { body: string; createdAt: number } | null
+  /** L'utilisateur qui consulte a-t-il déjà noté cette collaboration (#60/#61) ? */
+  alreadyReviewed: boolean
 }
 
 const conversations = new Map<string, Conversation>()
@@ -146,5 +149,6 @@ export function toConversationSummary(conversation: Conversation, viewerId: stri
     otherPartyName,
     otherPartySector,
     lastMessage: last ? { body: last.body, createdAt: last.createdAt } : null,
+    alreadyReviewed: hasReviewed(conversation.id, viewerId),
   }
 }
