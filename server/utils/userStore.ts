@@ -44,6 +44,14 @@ export function findOrCreateUser(contact: string, role: Role | undefined): { use
   return { user, created: true }
 }
 
+/** Retrouve un utilisateur par id (ex. utilisé par la messagerie, #59). */
+export function getUserById(id: string): User | null {
+  for (const user of usersByContact.values()) {
+    if (user.id === id) return user
+  }
+  return null
+}
+
 export function createSession(userId: string): string {
   const token = randomUUID()
   sessions.set(token, { userId, expiresAt: Date.now() + SESSION_TTL_MS })
