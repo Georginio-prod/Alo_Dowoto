@@ -9,27 +9,21 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<SendOtpBody>(event)
 
   if (body?.method !== 'phone' && body?.method !== 'email') {
-    throw createError({ statusCode: 400, statusMessage: 'Méthode de contact invalide.' })
+    badRequest('Méthode de contact invalide.')
   }
 
   const contact = normalizeContact(body.method, body.value ?? '')
   if (!contact) {
-    throw createError({
-      statusCode: 400,
-      statusMessage:
-        body.method === 'phone'
-          ? 'Entrez un numéro valide (8 chiffres).'
-          : 'Entrez une adresse email valide.',
-    })
+    badRequest(
+      body.method === 'phone'
+        ? 'Entrez un numéro valide (8 chiffres).'
+        : 'Entrez une adresse email valide.',
+    )
   }
 
   const result = generateOtp(contact)
   if (!result.ok) {
-    throw createError({
-      statusCode: 429,
-      statusMessage: 'Veuillez patienter avant de renvoyer un code.',
-      data: { retryAfterSeconds: result.retryAfterSeconds },
-    })
+    tooManyRequests('Veuillez patienter avant de renvoyer un code.', { retryAfterSeconds: result.retryAfterSeconds })
   }
 
   // TODO(#23): brancher un provider SMS togolais (à définir) et un provider

@@ -9,33 +9,30 @@ interface InitiatePaymentBody {
 const SIMULATED_CONFIRMATION_DELAY_MS = 3000
 
 export default defineEventHandler(async (event) => {
-  const user = requireSessionUser(event)
-  if (user.role !== 'prestataire') {
-    throw createError({ statusCode: 403, statusMessage: 'Réservé aux comptes prestataire.' })
-  }
+  const user = requireProviderRole(event)
 
   const body = await readBody<InitiatePaymentBody>(event)
 
   if (body?.provider !== 'flooz' && body?.provider !== 'tmoney') {
-    throw createError({ statusCode: 400, statusMessage: 'Opérateur invalide.' })
+    badRequest('Opérateur invalide.')
   }
 
   const phone = normalizeContact('phone', body.phone ?? '')
   if (!phone) {
-    throw createError({ statusCode: 400, statusMessage: 'Entrez un numéro valide (8 chiffres).' })
+    badRequest('Entrez un numéro valide (8 chiffres).')
   }
 
   const subscription = body.subscriptionId ? getSubscriptionById(body.subscriptionId) : null
   if (!subscription || subscription.userId !== user.id) {
-    throw createError({ statusCode: 404, statusMessage: 'Abonnement introuvable.' })
+    notFound('Abonnement introuvable.')
   }
   if (subscription.status !== 'en_attente') {
-    throw createError({ statusCode: 409, statusMessage: 'Cet abonnement ne peut pas être payé (déjà actif).' })
+    conflict('Cet abonnement ne peut pas être payé (déjà actif).')
   }
 
   const plan = findPlan(subscription.plan)
   if (!plan) {
-    throw createError({ statusCode: 400, statusMessage: 'Formule invalide.' })
+    badRequest('Formule invalide.')
   }
 
   const payment = createPayment({
