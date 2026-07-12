@@ -24,3 +24,15 @@ export function requireProviderRole(event: H3Event): User {
   }
   return user
 }
+
+/**
+ * Exige un utilisateur connecté avec le rôle client — vérification répétée
+ * par les routes /api/quotas/contacts et /api/favorites (#65).
+ */
+export function requireClientRole(event: H3Event): User {
+  const user = requireSessionUser(event)
+  if (user.role !== 'client') {
+    forbidden('Réservé aux comptes client.')
+  }
+  return user
+}
