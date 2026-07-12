@@ -1,4 +1,13 @@
 <script setup lang="ts">
+import type { ProviderSearchResult } from '~~/server/utils/providerDirectory'
+
+interface SearchResponse {
+  results: ProviderSearchResult[]
+  total: number
+  page: number
+  pageSize: number
+}
+
 definePageMeta({ layout: 'blank' })
 
 const route = useRoute()
@@ -7,6 +16,11 @@ const searchTerm = computed(() => {
   const q = route.query.q
   return typeof q === 'string' ? q.trim() : ''
 })
+
+const { data, pending } = await useFetch<SearchResponse>('/api/providers/search', {
+  query: computed(() => ({ q: searchTerm.value || undefined, pageSize: 24 })),
+})
+const results = computed(() => data.value?.results ?? [])
 
 function restartDemo() {
   navigateTo('/')
@@ -44,8 +58,10 @@ function restartDemo() {
       </aside>
 
       <section class="min-w-0 flex-1">
-        <div class="rounded-card border border-hairline bg-surface p-5 shadow-card-sm">
-          <p class="text-[13px] font-semibold text-muted">Grille de résultats à venir (#41, #42)</p>
+        <p v-if="pending" class="text-[13px] text-muted">Chargement…</p>
+        <p v-else-if="results.length === 0" class="text-[13px] text-muted">Aucun résultat.</p>
+        <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
+          <ProviderCard v-for="provider in results" :key="provider.id" :provider="provider" />
         </div>
       </section>
     </div>
