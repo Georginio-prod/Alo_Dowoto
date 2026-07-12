@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { MatchBreakdown, MatchCandidate, MatchRequest, Urgency } from '~~/server/utils/matchingEngine'
-import type { ProviderSearchResult } from '~~/server/utils/providerDirectory'
+import { getEffectiveRating, type ProviderSearchResult } from '~~/server/utils/providerDirectory'
 
 /**
  * Store en mémoire pour les demandes clients et leurs correspondances
@@ -49,12 +49,16 @@ const requests = new Map<string, ServiceRequest>()
 const matchesByRequestId = new Map<string, MatchedProvider[]>()
 
 function toCandidate(provider: ProviderSearchResult): MatchCandidate {
+  // Note effective (#61) : reflète la moyenne recalculée à partir des avis
+  // dès qu'il y en a, sinon retombe sur la valeur figée de l'annuaire de
+  // démo — voir providerDirectory.getEffectiveRating.
+  const { rating, reviewCount } = getEffectiveRating(provider.id)
   return {
     providerId: provider.id,
     skills: [provider.subSector],
     location: provider.city,
-    rating: provider.rating,
-    reviewCount: provider.reviewCount,
+    rating,
+    reviewCount,
     // Pas de champ de disponibilité réel dans l'annuaire de démonstration
     // (#43) : approximé à partir du badge vérifié en attendant un vrai
     // signal de disponibilité côté prestataire.
@@ -80,16 +84,19 @@ export function computeMatches(request: ServiceRequest, limit = 5): MatchedProvi
   for (const result of ranked) {
     const provider = candidatesById.get(result.providerId)
     if (!provider) continue
+    // Même note effective que celle utilisée pour le scoring (#61) : la
+    // maquette affiche donc la moyenne à jour, cohérente avec le classement.
+    const { rating, reviewCount } = getEffectiveRating(provider.id)
     matches.push({
       providerId: provider.id,
       displayName: provider.displayName,
       subSector: provider.subSector,
       city: provider.city,
       verified: provider.verified,
-      rating: provider.rating,
-      reviewCount: provider.reviewCount,
+      rating,
+      reviewCount,
       priceFrom: provider.priceFrom,
-      experienceYears: Math.max(1, Math.round(provider.reviewCount / 8)),
+      experienceYears: Math.max(1, Math.round(reviewCount / 8)),
       score: { total: result.total, breakdown: result.breakdown },
     })
   }
