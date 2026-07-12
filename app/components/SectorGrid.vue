@@ -8,7 +8,12 @@ const emit = defineEmits<{
 
 <template>
   <section class="mx-auto max-w-6xl px-6 pb-16 pt-8">
-    <h2 v-reveal class="mb-4 text-lg font-bold text-dark">Parcourir par secteur</h2>
+    <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+      <h2 v-reveal class="text-lg font-bold text-dark">Parcourir par secteur</h2>
+      <NuxtLink to="/categories" class="press text-[13.5px] font-semibold text-primary hover:underline">
+        Toutes les catégories →
+      </NuxtLink>
+    </div>
     <div class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3.5">
       <button
         v-for="(sector, i) in SECTORS"

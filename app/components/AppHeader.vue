@@ -29,7 +29,7 @@ function onSearch() {
         <input
           v-model="query"
           type="text"
-          class="min-w-0 flex-1 border-none bg-transparent text-[14.5px] text-ink outline-none placeholder:text-muted"
+          class="min-w-0 flex-1 rounded-sm border-none bg-transparent text-[14.5px] text-ink outline-none placeholder:text-muted focus-visible:ring-2 focus-visible:ring-primary"
           placeholder="Rechercher un service : plomberie, ménage, développeur web…"
           aria-label="Rechercher un service"
         >
