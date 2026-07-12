@@ -29,6 +29,19 @@ const draft = ref('')
 const isSending = ref(false)
 const sendError = ref('')
 
+// Notation mutuelle de fin de collaboration (#60) : le serveur fait foi
+// (`conversation.alreadyReviewed`, recalculé côté API à chaque chargement),
+// `reviewJustSubmitted` ne sert qu'à basculer l'affichage immédiatement
+// après un envoi réussi, sans attendre le prochain `refresh()`.
+const reviewRating = ref(0)
+const reviewHoverRating = ref(0)
+const reviewComment = ref('')
+const isSubmittingReview = ref(false)
+const reviewError = ref('')
+const reviewJustSubmitted = ref(false)
+
+const alreadyReviewed = computed(() => conversation.value?.alreadyReviewed === true || reviewJustSubmitted.value)
+
 function formatTime(timestamp: number): string {
   return new Date(timestamp).toLocaleString('fr-FR', {
     day: '2-digit',
@@ -55,6 +68,35 @@ async function sendMessage() {
     sendError.value = "Le message n'a pas pu être envoyé. Réessayez."
   } finally {
     isSending.value = false
+  }
+}
+
+function setReviewRating(rating: number) {
+  reviewRating.value = rating
+}
+
+async function submitReview() {
+  if (reviewRating.value < 1 || isSubmittingReview.value) return
+
+  isSubmittingReview.value = true
+  reviewError.value = ''
+  try {
+    await $fetch(`/api/conversations/${conversationId.value}/review`, {
+      method: 'POST',
+      body: { rating: reviewRating.value, comment: reviewComment.value.trim() || undefined },
+    })
+    reviewJustSubmitted.value = true
+    await refresh()
+  } catch (fetchError) {
+    // 409 : déjà noté (ex. deux onglets ouverts) — on aligne simplement
+    // l'affichage sur cet état plutôt que d'afficher une erreur.
+    if ((fetchError as { statusCode?: number }).statusCode === 409) {
+      reviewJustSubmitted.value = true
+    } else {
+      reviewError.value = "L'avis n'a pas pu être publié. Réessayez."
+    }
+  } finally {
+    isSubmittingReview.value = false
   }
 }
 </script>
@@ -135,6 +177,53 @@ async function sendMessage() {
           </button>
         </form>
         <p v-if="sendError" class="mt-2 text-[12.5px] text-error">{{ sendError }}</p>
+
+        <div v-if="conversation" class="mt-5 rounded-card border border-hairline bg-surface p-4">
+          <p v-if="alreadyReviewed" class="text-[13px] font-semibold text-dark">
+            Merci, votre avis sur cette collaboration a déjà été publié.
+          </p>
+
+          <template v-else>
+            <p class="mb-3 text-[13.5px] font-semibold text-dark">
+              Comment s'est passée votre collaboration avec {{ conversation.otherPartyName }} ?
+            </p>
+
+            <div class="mb-3 flex gap-1" role="radiogroup" aria-label="Note de la collaboration">
+              <button
+                v-for="n in 5"
+                :key="n"
+                type="button"
+                class="press text-2xl leading-none"
+                :class="n <= (reviewHoverRating || reviewRating) ? 'text-star' : 'text-hairline'"
+                :aria-pressed="n <= reviewRating"
+                :aria-label="`${n} étoile(s)`"
+                @mouseenter="reviewHoverRating = n"
+                @mouseleave="reviewHoverRating = 0"
+                @click="setReviewRating(n)"
+              >
+                ★
+              </button>
+            </div>
+
+            <textarea
+              v-model="reviewComment"
+              rows="2"
+              placeholder="Commentaire (optionnel)"
+              aria-label="Commentaire sur la collaboration"
+              class="mb-3 w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13.5px] text-ink outline-none focus:border-primary"
+            />
+
+            <button
+              type="button"
+              class="press rounded-field bg-primary px-5 py-2.5 text-[13.5px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
+              :disabled="reviewRating < 1 || isSubmittingReview"
+              @click="submitReview"
+            >
+              {{ isSubmittingReview ? 'Publication…' : 'Publier' }}
+            </button>
+            <p v-if="reviewError" class="mt-2 text-[12.5px] text-error">{{ reviewError }}</p>
+          </template>
+        </div>
       </template>
     </div>
   </div>
