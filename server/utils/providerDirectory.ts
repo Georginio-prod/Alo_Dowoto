@@ -73,3 +73,12 @@ export function searchProviders(filters: ProviderSearchFilters): ProviderSearchR
     return true
   })
 }
+
+/**
+ * Nombre de prestataires de l'annuaire pour un secteur donné (#66, grille
+ * `/categories`). Repose sur `searchProviders` pour rester cohérent avec le
+ * filtrage utilisé par la recherche publique.
+ */
+export function countBySector(sector: string): number {
+  return searchProviders({ sector }).length
+}
