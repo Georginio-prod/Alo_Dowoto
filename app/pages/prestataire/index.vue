@@ -14,10 +14,21 @@ const BADGE_STYLES: Record<string, string> = {
 
 const { data: profileData } = await useFetch<{ profile: ProviderProfile | null }>('/api/providers/me')
 const { data: subscriptionData } = await useFetch<{ subscription: Subscription | null }>('/api/subscriptions/me')
+const { data: requestsQuotaData } = await useFetch<{ usage: { count: number; limit: number | null; month: string } }>(
+  '/api/quotas/requests-received',
+)
 
 const sectorName = computed(() => {
   const slug = profileData.value?.profile?.sector
   return SECTORS.find((sector) => sector.slug === slug)?.name ?? 'votre activité'
+})
+
+// Formule Annuel/Premium = quota illimité (`limit: null`, #63) : affiché
+// explicitement plutôt que de laisser deviner une limite numérique.
+const requestsUsageLabel = computed(() => {
+  const usage = requestsQuotaData.value?.usage
+  if (!usage) return '0 / 0'
+  return usage.limit === null ? `${usage.count} / Illimité` : `${usage.count} / ${usage.limit}`
 })
 
 const subscriptionBadge = computed(() => {
@@ -56,6 +67,10 @@ function restartDemo() {
     >
       {{ subscriptionBadge.label }}
     </span>
+
+    <p class="mb-4 rounded-pill bg-bg px-3 py-1 text-[12.5px] font-bold text-dark">
+      {{ requestsUsageLabel }} demandes reçues ce mois
+    </p>
 
     <p class="mb-6 max-w-[420px] text-[13.5px] leading-relaxed text-muted">
       Complétez votre profil (photo, description, tarifs) pour commencer à recevoir des demandes de clients dans

@@ -1,11 +1,18 @@
 import { randomUUID } from 'node:crypto'
-import type { MatchBreakdown, MatchCandidate, MatchRequest, Urgency } from '~~/server/utils/matchingEngine'
-import type { ProviderSearchResult } from '~~/server/utils/providerDirectory'
+import { DEFAULT_MATCH_WEIGHTS, rankProviders, type MatchBreakdown, type MatchCandidate, type MatchRequest, type Urgency } from '~~/server/utils/matchingEngine'
+import { getProviderRequestsUsage, incrementProviderRequestsReceived } from '~~/server/utils/quotaStore'
+import { searchProviders, type ProviderSearchResult } from '~~/server/utils/providerDirectory'
+import { getSubscriptionByUserId } from '~~/server/utils/subscriptionStore'
 
 /**
  * Store en mémoire pour les demandes clients et leurs correspondances
  * calculées (#56). Suffisant pour ce lot (pas de base de données encore en
  * place, voir #45/#46).
+ *
+ * Les fonctions des autres stores sont importées explicitement ici (plutôt
+ * que de compter sur l'auto-import de Nitro comme ailleurs) pour que
+ * `computeMatches` reste testable directement sous Vitest (#63), qui ne
+ * répond pas aux auto-imports serveur.
  */
 
 export interface ServiceRequest {
@@ -63,6 +70,29 @@ function toCandidate(provider: ProviderSearchResult): MatchCandidate {
   }
 }
 
+/**
+ * Un prestataire ayant atteint son quota mensuel de demandes reçues (#63,
+ * selon sa formule d'abonnement) n'est pas retiré du classement mais
+ * rétrogradé en fin de liste — il ne doit simplement jamais prendre la
+ * place d'un prestataire encore disponible.
+ *
+ * Choix pragmatique documenté : un prestataire de l'annuaire de
+ * démonstration (#43) sans aucun abonnement associé (`getSubscriptionByUserId`
+ * renvoie `null`) n'est pas concerné par cette règle, ces fiches ne
+ * correspondant pas à de vrais comptes prestataire. Un abonnement existant
+ * mais non actif (en attente/expiré) retombe en revanche sur un quota de 0
+ * (non éligible à recevoir de nouvelles demandes tant qu'il n'est pas actif).
+ */
+function isAtRequestsQuota(providerId: string): boolean {
+  const subscription = getSubscriptionByUserId(providerId)
+  if (!subscription) return false
+
+  const plan = subscription.status === 'actif' ? subscription.plan : null
+  const usage = getProviderRequestsUsage(providerId, plan)
+  if (usage.limit === null) return false
+  return usage.count >= usage.limit
+}
+
 /** Calcule (ou recalcule) le classement des prestataires pour une demande. */
 export function computeMatches(request: ServiceRequest, limit = 5): MatchedProvider[] {
   const candidates = searchProviders(request.sector ? { sector: request.sector } : {})
@@ -74,10 +104,17 @@ export function computeMatches(request: ServiceRequest, limit = 5): MatchedProvi
     budgetMax: request.budgetMax,
     urgency: request.urgency,
   }
-  const ranked = rankProviders(matchRequest, candidates.map(toCandidate), DEFAULT_MATCH_WEIGHTS, limit)
+
+  const available = candidates.filter((provider) => !isAtRequestsQuota(provider.id))
+  const atQuota = candidates.filter((provider) => isAtRequestsQuota(provider.id))
+
+  const rankedAvailable = rankProviders(matchRequest, available.map(toCandidate), DEFAULT_MATCH_WEIGHTS, limit)
+  const remainingSlots = limit - rankedAvailable.length
+  const rankedAtQuota =
+    remainingSlots > 0 ? rankProviders(matchRequest, atQuota.map(toCandidate), DEFAULT_MATCH_WEIGHTS, remainingSlots) : []
 
   const matches: MatchedProvider[] = []
-  for (const result of ranked) {
+  for (const result of [...rankedAvailable, ...rankedAtQuota]) {
     const provider = candidatesById.get(result.providerId)
     if (!provider) continue
     matches.push({
@@ -96,7 +133,14 @@ export function computeMatches(request: ServiceRequest, limit = 5): MatchedProvi
   return matches
 }
 
-/** Crée une demande et calcule immédiatement son top de correspondances. */
+/**
+ * Crée une demande et calcule immédiatement son top de correspondances.
+ * Chaque prestataire retenu dans ce top voit son compteur de demandes
+ * reçues du mois incrémenté (#63) — contrairement à
+ * `GET /api/requests/:id/matches` qui ne fait que recalculer un instantané
+ * sans incrémenter, pour ne pas compter plusieurs fois la même demande à
+ * chaque consultation.
+ */
 export function createServiceRequest(userId: string, input: CreateServiceRequestInput): ServiceRequest {
   const request: ServiceRequest = {
     id: randomUUID(),
@@ -105,7 +149,11 @@ export function createServiceRequest(userId: string, input: CreateServiceRequest
     createdAt: Date.now(),
   }
   requests.set(request.id, request)
-  matchesByRequestId.set(request.id, computeMatches(request))
+  const matches = computeMatches(request)
+  matchesByRequestId.set(request.id, matches)
+  for (const match of matches) {
+    incrementProviderRequestsReceived(match.providerId)
+  }
   return request
 }
 
