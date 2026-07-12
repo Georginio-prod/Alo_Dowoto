@@ -25,3 +25,7 @@ logs
 
 # Claude Code scheduler lock
 .claude/scheduled_tasks.lock
+
+# Base SQLite locale (Prisma) — voir prisma/migrations pour le schéma versionné
+prisma/dev.db
+prisma/dev.db-journal
