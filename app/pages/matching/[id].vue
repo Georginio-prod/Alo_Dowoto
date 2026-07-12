@@ -15,6 +15,13 @@ const { data, pending, error } = await useFetch<RequestResponse>(() => `/api/req
 
 const matches = computed(() => data.value?.matches ?? [])
 
+// Favoris déjà enregistrés par le client (#64), chargés une seule fois pour
+// tous les profils du top de matching plutôt qu'une requête par carte.
+const { data: favoritesData, refresh: refreshFavorites } = await useFetch<{ favorites: { providerId: string }[] }>(
+  '/api/favorites',
+)
+const favoriteProviderIds = computed(() => new Set((favoritesData.value?.favorites ?? []).map((f) => f.providerId)))
+
 function restartDemo() {
   navigateTo('/')
 }
@@ -66,7 +73,14 @@ function newRequest() {
       />
 
       <div v-else class="flex flex-col gap-4">
-        <MatchCard v-for="(match, index) in matches" :key="match.providerId" :match="match" :rank="index + 1" />
+        <MatchCard
+          v-for="(match, index) in matches"
+          :key="match.providerId"
+          :match="match"
+          :rank="index + 1"
+          :is-favorite="favoriteProviderIds.has(match.providerId)"
+          @favorite-changed="refreshFavorites"
+        />
       </div>
     </div>
   </div>
