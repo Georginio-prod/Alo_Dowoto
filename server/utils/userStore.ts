@@ -36,10 +36,7 @@ export function findOrCreateUser(contact: string, role: Role | undefined): { use
   if (existing) return { user: existing, created: false }
 
   if (!role) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Le rôle (client ou prestataire) est requis pour créer un compte.',
-    })
+    badRequest('Le rôle (client ou prestataire) est requis pour créer un compte.')
   }
 
   const user: User = { id: randomUUID(), contact, role, createdAt: Date.now() }

@@ -16,25 +16,25 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<VerifyOtpBody>(event)
 
   if (body?.method !== 'phone' && body?.method !== 'email') {
-    throw createError({ statusCode: 400, statusMessage: 'Méthode de contact invalide.' })
+    badRequest('Méthode de contact invalide.')
   }
 
   const contact = normalizeContact(body.method, body.value ?? '')
   if (!contact) {
-    throw createError({ statusCode: 400, statusMessage: 'Contact invalide.' })
+    badRequest('Contact invalide.')
   }
 
   const code = (body.code ?? '').trim()
   if (!/^\d{6}$/.test(code)) {
-    throw createError({ statusCode: 400, statusMessage: 'Code invalide. Réessayez.' })
+    badRequest('Code invalide. Réessayez.')
   }
 
   const result = verifyOtp(contact, code)
   if (!result.ok) {
-    throw createError({
-      statusCode: result.reason === 'too_many_attempts' ? 429 : 400,
-      statusMessage: ERROR_MESSAGES[result.reason],
-    })
+    if (result.reason === 'too_many_attempts') {
+      tooManyRequests(ERROR_MESSAGES[result.reason])
+    }
+    badRequest(ERROR_MESSAGES[result.reason])
   }
 
   return { verified: true }
