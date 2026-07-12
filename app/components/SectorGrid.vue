@@ -14,7 +14,7 @@ const emit = defineEmits<{
         Toutes les catégories →
       </NuxtLink>
     </div>
-    <div class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3.5">
+    <div class="grid grid-cols-2 gap-3.5 sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
       <button
         v-for="(sector, i) in SECTORS"
         :key="sector.slug"
