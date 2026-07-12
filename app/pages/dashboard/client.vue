@@ -12,8 +12,16 @@ definePageMeta({ layout: 'blank' })
 
 const { data: sessionData } = await useFetch<{ user: User }>('/api/auth/session')
 const { data: favoritesData } = await useFetch<{ favorites: { providerId: string }[] }>('/api/favorites')
+const { data: contactsQuotaData } = await useFetch<{ usage: { count: number; limit: number; month: string } }>(
+  '/api/quotas/contacts',
+)
 
 const favoritesCount = computed(() => favoritesData.value?.favorites.length ?? 0)
+const contactsUsageLabel = computed(() => {
+  const usage = contactsQuotaData.value?.usage
+  if (!usage) return '0 / 3'
+  return `${usage.count} / ${usage.limit}`
+})
 
 function restartDemo() {
   navigateTo('/')
@@ -40,17 +48,29 @@ function restartDemo() {
     </h1>
     <p class="mb-6 text-[13.5px] text-muted">Retrouvez vos prestataires favoris et vos demandes.</p>
 
-    <NuxtLink
-      to="/favoris"
-      class="press flex items-center justify-between rounded-card border border-hairline bg-surface p-5 shadow-card-sm hover:border-primary"
-    >
-      <div>
-        <p class="text-[14.5px] font-bold text-dark">Favoris</p>
-        <p class="text-[13px] text-muted">Prestataires sauvegardés pour les recontacter plus tard</p>
+    <div class="flex flex-col gap-3">
+      <div class="flex items-center justify-between rounded-card border border-hairline bg-surface p-5 shadow-card-sm">
+        <div>
+          <p class="text-[14.5px] font-bold text-dark">Contacts ce mois</p>
+          <p class="text-[13px] text-muted">Mises en relation gratuites incluses (formule gratuite)</p>
+        </div>
+        <span class="rounded-pill bg-bg px-3 py-1 text-[13px] font-bold text-dark">
+          {{ contactsUsageLabel }} Contacts ce mois
+        </span>
       </div>
-      <span class="rounded-pill bg-primary/12 px-3 py-1 text-[13px] font-bold text-primary">
-        {{ favoritesCount }}
-      </span>
-    </NuxtLink>
+
+      <NuxtLink
+        to="/favoris"
+        class="press flex items-center justify-between rounded-card border border-hairline bg-surface p-5 shadow-card-sm hover:border-primary"
+      >
+        <div>
+          <p class="text-[14.5px] font-bold text-dark">Favoris</p>
+          <p class="text-[13px] text-muted">Prestataires sauvegardés pour les recontacter plus tard</p>
+        </div>
+        <span class="rounded-pill bg-primary/12 px-3 py-1 text-[13px] font-bold text-primary">
+          {{ favoritesCount }}
+        </span>
+      </NuxtLink>
+    </div>
   </div>
 </template>
