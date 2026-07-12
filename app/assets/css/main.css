@@ -10,7 +10,7 @@
   --color-bg: #F7F7F7;          /* fond de page */
   --color-surface: #FFFFFF;     /* cartes, header, panneaux */
   --color-ink: #1A1A1A;         /* texte principal sur fond clair */
-  --color-muted: #6B7280;       /* texte secondaire / libellés */
+  --color-muted: #5C626E;       /* texte secondaire / libellés — contraste renforcé (voir docs/accessibility-audit.md) */
   --color-hairline: rgba(15, 35, 24, 0.08); /* filets et bordures discrètes */
 
   /* ---- États ---- */
