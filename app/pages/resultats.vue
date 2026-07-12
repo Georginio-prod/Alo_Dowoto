@@ -81,13 +81,21 @@ function restartDemo() {
           </p>
         </div>
 
-        <button
-          type="button"
-          class="press rounded-field border border-hairline bg-white px-3.5 py-2 text-[13px] font-semibold text-muted hover:text-dark"
-          @click="restartDemo"
-        >
-          ↺ Recommencer la démo
-        </button>
+        <div class="flex items-center gap-2">
+          <NuxtLink
+            :to="{ path: '/demande', query: searchTerm ? { q: searchTerm } : {} }"
+            class="press rounded-field bg-dark px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-[#1a3a28]"
+          >
+            Publier une demande précise
+          </NuxtLink>
+          <button
+            type="button"
+            class="press rounded-field border border-hairline bg-white px-3.5 py-2 text-[13px] font-semibold text-muted hover:text-dark"
+            @click="restartDemo"
+          >
+            ↺ Recommencer la démo
+          </button>
+        </div>
       </div>
     </header>
 
