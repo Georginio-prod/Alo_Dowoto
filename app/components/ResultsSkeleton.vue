@@ -1,5 +1,5 @@
 <template>
-  <div class="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4" role="status" aria-label="Chargement des résultats">
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(250px,1fr))]" role="status" aria-label="Chargement des résultats">
     <div
       v-for="n in 6"
       :key="n"

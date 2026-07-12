@@ -27,7 +27,7 @@ function providerCountLabel(slug: string) {
         chez vous.
       </p>
 
-      <div class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
         <NuxtLink
           v-for="sector in SECTORS"
           :key="sector.slug"
