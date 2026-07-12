@@ -33,7 +33,7 @@ function features(
   ]
 }
 
-export const PLANS: Plan[] = [
+export const PLANS: [Plan, Plan, Plan] = [
   {
     slug: 'mensuel',
     name: 'Mensuel',
