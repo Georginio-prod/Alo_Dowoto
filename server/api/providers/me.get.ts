@@ -1,8 +1,4 @@
 export default defineEventHandler((event) => {
-  const user = requireSessionUser(event)
-  if (user.role !== 'prestataire') {
-    throw createError({ statusCode: 403, statusMessage: 'Réservé aux comptes prestataire.' })
-  }
-
+  const user = requireProviderRole(event)
   return { profile: getProviderProfile(user.id) }
 })
