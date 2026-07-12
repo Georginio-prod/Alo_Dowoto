@@ -26,17 +26,24 @@ const subscriptionsByUserId = new Map<string, Subscription>()
 /**
  * Crée (ou remet en attente) l'abonnement d'un prestataire pour la formule
  * choisie. Tant qu'il n'est pas actif, resélectionner une formule met
- * simplement à jour l'abonnement existant.
+ * simplement à jour l'abonnement existant. Un abonnement déjà actif n'est
+ * jamais réécrit par ce chemin (pas de changement/downgrade de formule
+ * implicite — non couvert par le prototype actuel).
  */
 export function createPendingSubscription(userId: string, plan: PlanSlug): Subscription {
+  const existing = subscriptionsByUserId.get(userId)
+  if (existing?.status === 'actif') {
+    throw createError({ statusCode: 409, statusMessage: 'Un abonnement actif existe déjà.' })
+  }
+
   const subscription: Subscription = {
-    id: subscriptionsByUserId.get(userId)?.id ?? randomUUID(),
+    id: existing?.id ?? randomUUID(),
     userId,
     plan,
     status: 'en_attente',
     dateDebut: null,
     dateFin: null,
-    createdAt: subscriptionsByUserId.get(userId)?.createdAt ?? Date.now(),
+    createdAt: existing?.createdAt ?? Date.now(),
   }
   subscriptionsByUserId.set(userId, subscription)
   return subscription
