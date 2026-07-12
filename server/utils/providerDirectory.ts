@@ -1,3 +1,5 @@
+import { getAverageRating } from '~~/server/utils/reviewStore'
+
 /**
  * Annuaire des prestataires consultable par la recherche publique (#43).
  *
@@ -81,4 +83,21 @@ export function searchProviders(filters: ProviderSearchFilters): ProviderSearchR
  */
 export function countBySector(sector: string): number {
   return searchProviders({ sector }).length
+}
+
+/**
+ * Note/nombre d'avis « effectifs » d'un prestataire (#61) : dès qu'au moins
+ * un avis existe pour son id dans `reviewStore` (notations mutuelles de
+ * fin de collaboration), la moyenne recalculée prévaut sur la valeur figée
+ * de l'annuaire de démo. Sans avis, on retombe sur la fiche de l'annuaire.
+ * Point d'extension unique utilisé par `requestStore.toCandidate` pour que
+ * le moteur de scoring (#54) reflète immédiatement les nouvelles
+ * notations, sans dupliquer cette logique dans chaque appelant.
+ */
+export function getEffectiveRating(providerId: string): { rating: number, reviewCount: number } {
+  const { average, count } = getAverageRating(providerId)
+  if (count > 0) return { rating: average, reviewCount: count }
+
+  const provider = getProviderById(providerId)
+  return { rating: provider?.rating ?? 0, reviewCount: provider?.reviewCount ?? 0 }
 }
