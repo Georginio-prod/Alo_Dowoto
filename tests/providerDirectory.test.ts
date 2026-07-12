@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { searchProviders } from '~~/server/utils/providerDirectory'
+import { countBySector, searchProviders } from '~~/server/utils/providerDirectory'
 
 describe('searchProviders (#40 filtres de résultats)', () => {
   it('retourne tous les prestataires du secteur quand aucun autre filtre n’est actif', () => {
@@ -33,5 +33,16 @@ describe('searchProviders (#40 filtres de résultats)', () => {
     const results = searchProviders({ query: 'Kpalimé' })
     expect(results.length).toBeGreaterThan(0)
     expect(results.every((p) => p.city === 'Kpalimé')).toBe(true)
+  })
+})
+
+describe('countBySector (#66 grille /categories)', () => {
+  it('compte les prestataires du secteur, cohérent avec searchProviders', () => {
+    expect(countBySector('menage')).toBe(searchProviders({ sector: 'menage' }).length)
+    expect(countBySector('menage')).toBeGreaterThan(0)
+  })
+
+  it('renvoie 0 pour un secteur sans prestataire dans l’annuaire de démo', () => {
+    expect(countBySector('industrie')).toBe(0)
   })
 })
