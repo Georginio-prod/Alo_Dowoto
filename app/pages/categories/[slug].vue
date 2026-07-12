@@ -85,7 +85,7 @@ const results = computed(() => data.value?.results ?? [])
           action-label="Publier une demande"
           @action="navigateTo({ path: '/demande', query: { q: sector.name } })"
         />
-        <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
+        <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
           <ProviderCard v-for="provider in results" :key="provider.id" :provider="provider" />
         </div>
       </template>
