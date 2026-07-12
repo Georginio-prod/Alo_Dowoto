@@ -1,10 +1,18 @@
 <script setup lang="ts">
+import type { ConversationSummary } from '~~/server/utils/conversationStore'
 import type { MatchedProvider } from '~~/server/utils/requestStore'
 
-const props = defineProps<{
-  match: MatchedProvider
-  rank: number
-}>()
+const props = withDefaults(
+  defineProps<{
+    match: MatchedProvider
+    rank: number
+    /** État initial connu par le parent (ex. liste de favoris déjà chargée, #64). */
+    isFavorite?: boolean
+  }>(),
+  { isFavorite: false },
+)
+
+const emit = defineEmits<{ 'favorite-changed': [] }>()
 
 const SCORE_BARS: { key: keyof MatchedProvider['score']['breakdown']; label: string }[] = [
   { key: 'skills', label: 'Compétences' },
@@ -15,11 +23,58 @@ const SCORE_BARS: { key: keyof MatchedProvider['score']['breakdown']; label: str
 ]
 
 const filledStars = computed(() => Math.round(props.match.rating))
+const isContacting = ref(false)
 
-// Pas encore de canal de contact/de profil public dédié (#57, messagerie —
-// hors périmètre de ce lot). Boutons posés pour la maquette, sans action.
-function contact() {}
+// Premier contact depuis les résultats de matching (#58/#59) : crée (ou
+// retrouve, idempotent) la conversation avec ce prestataire puis ouvre le
+// thread de messagerie.
+async function contact() {
+  if (isContacting.value) return
+  isContacting.value = true
+  try {
+    const { conversation } = await $fetch<{ conversation: ConversationSummary }>('/api/conversations', {
+      method: 'POST',
+      body: { providerId: props.match.providerId },
+    })
+    navigateTo(`/messages/${conversation.id}`)
+  } catch (error) {
+    if ((error as { statusCode?: number }).statusCode === 401) {
+      navigateTo({ path: '/auth', query: { role: 'client' } })
+      return
+    }
+  } finally {
+    isContacting.value = false
+  }
+}
+
+// Pas encore de profil public dédié pour l'instant (hors périmètre de ce
+// lot). Bouton posé pour la maquette, sans action.
 function viewProfile() {}
+
+/** Ajoute/retire ce prestataire des favoris du client connecté (#64). */
+async function toggleFavorite() {
+  if (isTogglingFavorite.value) return
+  isTogglingFavorite.value = true
+  try {
+    if (favorite.value) {
+      await $fetch(`/api/favorites/${props.match.providerId}`, { method: 'DELETE' })
+      favorite.value = false
+    } else {
+      await $fetch('/api/favorites', { method: 'POST', body: { providerId: props.match.providerId } })
+      favorite.value = true
+    }
+    emit('favorite-changed')
+  } catch (error) {
+    if ((error as { statusCode?: number }).statusCode === 401) {
+      navigateTo({ path: '/auth', query: { role: 'client' } })
+      return
+    }
+    // Compte non-client ou erreur inattendue : on n'affiche pas d'erreur
+    // brute, le bouton reprend simplement son état précédent.
+  } finally {
+    isTogglingFavorite.value = false
+  }
+}
 </script>
 
 <template>
@@ -81,10 +136,11 @@ function viewProfile() {}
       <div class="mt-4 flex flex-wrap gap-2">
         <button
           type="button"
-          class="press rounded-field bg-dark px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#1a3a28]"
+          class="press rounded-field bg-dark px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#1a3a28] disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="isContacting"
           @click="contact"
         >
-          Contacter
+          {{ isContacting ? 'Ouverture…' : 'Contacter' }}
         </button>
         <button
           type="button"
@@ -92,6 +148,17 @@ function viewProfile() {}
           @click="viewProfile"
         >
           Voir le profil
+        </button>
+        <button
+          type="button"
+          class="press rounded-field border px-3 py-2 text-[13px] font-semibold"
+          :class="favorite ? 'border-primary bg-primary/10 text-primary' : 'border-hairline bg-white text-muted hover:text-dark'"
+          :disabled="isTogglingFavorite"
+          :aria-pressed="favorite"
+          :title="favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+          @click="toggleFavorite"
+        >
+          {{ favorite ? '★ Favori' : '☆ Favoris' }}
         </button>
       </div>
     </div>
