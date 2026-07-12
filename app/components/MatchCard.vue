@@ -2,10 +2,17 @@
 import type { ConversationSummary } from '~~/server/utils/conversationStore'
 import type { MatchedProvider } from '~~/server/utils/requestStore'
 
-const props = defineProps<{
-  match: MatchedProvider
-  rank: number
-}>()
+const props = withDefaults(
+  defineProps<{
+    match: MatchedProvider
+    rank: number
+    /** État initial connu par le parent (ex. liste de favoris déjà chargée, #64). */
+    isFavorite?: boolean
+  }>(),
+  { isFavorite: false },
+)
+
+const emit = defineEmits<{ 'favorite-changed': [] }>()
 
 const SCORE_BARS: { key: keyof MatchedProvider['score']['breakdown']; label: string }[] = [
   { key: 'skills', label: 'Compétences' },
@@ -43,6 +50,31 @@ async function contact() {
 // Pas encore de profil public dédié pour l'instant (hors périmètre de ce
 // lot). Bouton posé pour la maquette, sans action.
 function viewProfile() {}
+
+/** Ajoute/retire ce prestataire des favoris du client connecté (#64). */
+async function toggleFavorite() {
+  if (isTogglingFavorite.value) return
+  isTogglingFavorite.value = true
+  try {
+    if (favorite.value) {
+      await $fetch(`/api/favorites/${props.match.providerId}`, { method: 'DELETE' })
+      favorite.value = false
+    } else {
+      await $fetch('/api/favorites', { method: 'POST', body: { providerId: props.match.providerId } })
+      favorite.value = true
+    }
+    emit('favorite-changed')
+  } catch (error) {
+    if ((error as { statusCode?: number }).statusCode === 401) {
+      navigateTo({ path: '/auth', query: { role: 'client' } })
+      return
+    }
+    // Compte non-client ou erreur inattendue : on n'affiche pas d'erreur
+    // brute, le bouton reprend simplement son état précédent.
+  } finally {
+    isTogglingFavorite.value = false
+  }
+}
 </script>
 
 <template>
@@ -116,6 +148,17 @@ function viewProfile() {}
           @click="viewProfile"
         >
           Voir le profil
+        </button>
+        <button
+          type="button"
+          class="press rounded-field border px-3 py-2 text-[13px] font-semibold"
+          :class="favorite ? 'border-primary bg-primary/10 text-primary' : 'border-hairline bg-white text-muted hover:text-dark'"
+          :disabled="isTogglingFavorite"
+          :aria-pressed="favorite"
+          :title="favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+          @click="toggleFavorite"
+        >
+          {{ favorite ? '★ Favori' : '☆ Favoris' }}
         </button>
       </div>
     </div>
