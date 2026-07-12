@@ -11,6 +11,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "nuxt typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio"
@@ -26,8 +28,13 @@
   "devDependencies": {
     "@nuxt/eslint": "^1.16.0",
     "@types/node": "^26.1.1",
+    "@vitejs/plugin-vue": "^6.0.7",
+    "@vue/test-utils": "^2.4.11",
     "eslint": "^10.7.0",
+    "happy-dom": "^20.10.6",
     "prisma": "^6.19.3",
+    "unplugin-auto-import": "^21.0.0",
+    "vitest": "^4.1.10",
     "vue-tsc": "^3.3.7"
   },
   "overrides": {
