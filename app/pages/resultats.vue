@@ -112,7 +112,7 @@ function restartDemo() {
 
       <section class="min-w-0 flex-1">
         <ResultsSkeleton v-if="pending" />
-        <ResultsEmptyState v-else-if="results.length === 0" @reset="resetFilters" />
+        <ResultsEmptyState v-else-if="results.length === 0" @action="resetFilters" />
         <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
           <ProviderCard v-for="provider in results" :key="provider.id" :provider="provider" />
         </div>
