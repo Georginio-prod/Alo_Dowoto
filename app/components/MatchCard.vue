@@ -25,6 +25,16 @@ const SCORE_BARS: { key: keyof MatchedProvider['score']['breakdown']; label: str
 const filledStars = computed(() => Math.round(props.match.rating))
 const isContacting = ref(false)
 
+const favorite = ref(props.isFavorite)
+const isTogglingFavorite = ref(false)
+
+watch(
+  () => props.isFavorite,
+  (value) => {
+    favorite.value = value
+  },
+)
+
 // Premier contact depuis les résultats de matching (#58/#59) : crée (ou
 // retrouve, idempotent) la conversation avec ce prestataire puis ouvre le
 // thread de messagerie.
