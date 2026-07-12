@@ -1,0 +1,151 @@
+// Schéma de référence pour la persistance WorkTogo (#45).
+//
+// Ce schéma documente et prépare la future migration depuis les stores en
+// mémoire (server/utils/*Store.ts) vers une vraie base de données. Il n'est
+// pas encore branché à l'application : la bascule effective (choix du
+// provider de prod, connexion depuis les routes API, seed des secteurs) est
+// un chantier ultérieur distinct (voir #46 pour l'architecture API).
+//
+// Un aperçu du schéma sous forme de diagramme se trouve dans
+// docs/database-schema.md.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  client
+  prestataire
+}
+
+enum SubscriptionStatus {
+  en_attente
+  actif
+  expire
+}
+
+enum PaymentProvider {
+  flooz
+  tmoney
+}
+
+enum PaymentStatus {
+  pending
+  confirmed
+  failed
+}
+
+/// Compte utilisateur (client ou prestataire) — voir server/utils/userStore.ts.
+model User {
+  id        String   @id @default(uuid())
+  contact   String   @unique
+  role      Role
+  createdAt DateTime @default(now())
+
+  providerProfile ProviderProfile?
+  subscriptions   Subscription[]
+  payments        Payment[]
+  reviewsWritten  Review[]         @relation("ReviewAuthor")
+}
+
+/// Secteur d'activité — voir app/data/sectors.ts (#8).
+model Sector {
+  id    String @id @default(uuid())
+  slug  String @unique
+  name  String
+  emoji String
+  color String
+  ink   String
+
+  subSectors       SubSector[]
+  providerProfiles ProviderProfile[]
+}
+
+/// Sous-secteur rattaché à un secteur — voir app/data/sectors.ts (#8).
+model SubSector {
+  id       String  @id @default(uuid())
+  name     String
+  icon     String?
+  sectorId String
+  sector   Sector  @relation(fields: [sectorId], references: [id])
+
+  providerProfiles ProviderProfile[]
+
+  @@unique([sectorId, name])
+}
+
+/// Profil public d'un prestataire — voir server/utils/providerStore.ts (#26, #27).
+model ProviderProfile {
+  id            String     @id @default(uuid())
+  userId        String     @unique
+  user          User       @relation(fields: [userId], references: [id])
+  displayName   String
+  sectorId      String
+  sector        Sector     @relation(fields: [sectorId], references: [id])
+  subSectorId   String?
+  subSector     SubSector? @relation(fields: [subSectorId], references: [id])
+  city          String?
+  description   String?
+  photoUrl      String?
+  rateFrom      Int?
+  verified      Boolean    @default(false)
+  ratingAverage Float      @default(0)
+  reviewCount   Int        @default(0)
+  updatedAt     DateTime   @updatedAt
+
+  reviews Review[]
+
+  @@index([sectorId, city])
+}
+
+/// Avis client sur un prestataire — nouveau modèle, pas encore d'équivalent
+/// en mémoire (aucune route API d'avis dans le lot actuel).
+model Review {
+  id         String          @id @default(uuid())
+  providerId String
+  provider   ProviderProfile @relation(fields: [providerId], references: [id])
+  authorId   String
+  author     User            @relation("ReviewAuthor", fields: [authorId], references: [id])
+  rating     Int
+  comment    String?
+  createdAt  DateTime        @default(now())
+
+  @@index([providerId])
+}
+
+/// Abonnement prestataire — voir server/utils/subscriptionStore.ts (#29, #30).
+model Subscription {
+  id        String             @id @default(uuid())
+  userId    String
+  user      User               @relation(fields: [userId], references: [id])
+  plan      String
+  status    SubscriptionStatus @default(en_attente)
+  dateDebut DateTime?
+  dateFin   DateTime?
+  createdAt DateTime           @default(now())
+
+  payments Payment[]
+}
+
+/// Paiement Mobile Money lié à un abonnement — voir server/utils/paymentStore.ts (#32, #34).
+model Payment {
+  id             String          @id @default(uuid())
+  subscriptionId String
+  subscription   Subscription    @relation(fields: [subscriptionId], references: [id])
+  userId         String
+  user           User            @relation(fields: [userId], references: [id])
+  provider       PaymentProvider
+  phone          String
+  amount         Int
+  status         PaymentStatus   @default(pending)
+  operatorRef    String?
+  createdAt      DateTime        @default(now())
+  resolvedAt     DateTime?
+
+  @@index([subscriptionId])
+}
