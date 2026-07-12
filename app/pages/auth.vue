@@ -142,8 +142,7 @@ async function verifyOtp() {
 
   stopResendTimer()
   if (role.value === 'client') {
-    // Résultats de matching, voir #39.
-    navigateTo('/resultats')
+    navigateTo({ path: '/resultats', query: typeof route.query.q === 'string' && route.query.q.trim() ? { q: route.query.q } : {} })
   } else {
     sectorSlug.value = ''
     step.value = 'sector'
