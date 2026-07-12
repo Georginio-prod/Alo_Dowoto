@@ -84,6 +84,12 @@ function restartDemo() {
     >
       Compléter mon profil
     </button>
+    <NuxtLink
+      to="/messages"
+      class="press mb-2.5 w-full max-w-[320px] rounded-field border border-hairline bg-white py-3.5 text-center text-[14.5px] font-semibold text-muted hover:text-dark"
+    >
+      Voir mes messages
+    </NuxtLink>
     <button
       type="button"
       class="press w-full max-w-[320px] rounded-field border border-hairline bg-white py-3.5 text-[14.5px] font-semibold text-muted hover:text-dark"
