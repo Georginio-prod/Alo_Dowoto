@@ -21,6 +21,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Accueil', to: '/prestataire' },
   { label: 'Profil', to: null },
   { label: 'Demandes reçues', to: null },
+  { label: 'Messages', to: '/messages' },
   { label: 'Avis', to: null },
 ]
 
