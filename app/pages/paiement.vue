@@ -10,6 +10,13 @@ interface Subscription {
   status: 'en_attente' | 'actif' | 'expire'
 }
 
+interface Payment {
+  id: string
+  status: 'pending' | 'confirmed' | 'failed'
+}
+
+const POLL_INTERVAL_MS = 1500
+
 const subscription = ref<Subscription | null>(null)
 const plan = computed(() => (subscription.value ? findPlan(subscription.value.plan) : undefined))
 
@@ -18,8 +25,32 @@ const provider = ref<Provider>('flooz')
 const phone = ref('')
 const isSubmitting = ref(false)
 const submitError = ref('')
+let pollTimer: ReturnType<typeof setInterval> | null = null
 
 const isPhoneValid = computed(() => phone.value.replace(/\D/g, '').length >= 8)
+
+function stopPolling() {
+  if (!pollTimer) return
+  clearInterval(pollTimer)
+  pollTimer = null
+}
+
+function pollPayment(paymentId: string) {
+  stopPolling()
+  pollTimer = setInterval(async () => {
+    const { payment } = await $fetch<{ payment: Payment }>(`/api/payments/${paymentId}`)
+    if (payment.status === 'confirmed') {
+      stopPolling()
+      step.value = 'success'
+    } else if (payment.status === 'failed') {
+      stopPolling()
+      step.value = 'idle'
+      submitError.value = 'Le paiement a échoué. Réessayez.'
+    }
+  }, POLL_INTERVAL_MS)
+}
+
+onUnmounted(stopPolling)
 
 onMounted(async () => {
   try {
@@ -43,12 +74,12 @@ async function submitPayment() {
   isSubmitting.value = true
   submitError.value = ''
   try {
-    await $fetch('/api/payments/initiate', {
+    const { payment } = await $fetch<{ payment: Payment }>('/api/payments/initiate', {
       method: 'POST',
       body: { subscriptionId: subscription.value.id, provider: provider.value, phone: phone.value },
     })
-    // États processing/success, voir #33.
     step.value = 'processing'
+    pollPayment(payment.id)
   } catch {
     submitError.value = 'Le paiement n\'a pas pu être initié. Réessayez.'
   } finally {
@@ -125,8 +156,29 @@ async function submitPayment() {
         </p>
       </template>
 
-      <div v-else class="py-6 text-center text-sm text-muted">
-        Écran de confirmation à venir (#33).
+      <div v-else-if="step === 'processing'" class="py-6 text-center">
+        <div
+          class="mx-auto mb-4 h-10 w-10 animate-[wt-spin_0.8s_linear_infinite] rounded-full border-[3px] border-primary/20 border-t-primary"
+        />
+        <h2 class="mb-1.5 text-base font-bold text-dark">Confirmation en cours…</h2>
+        <p class="text-[13.5px] text-muted">Validez la demande envoyée sur votre téléphone.</p>
+      </div>
+
+      <div v-else class="py-6 text-center">
+        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/12 text-xl text-primary">
+          ✓
+        </div>
+        <h2 class="mb-1.5 text-base font-bold text-dark">Paiement en cours de validation</h2>
+        <p class="mb-5 text-[13.5px] leading-relaxed text-muted">
+          Votre abonnement {{ plan.name }} sera activé dès confirmation. Vous pouvez compléter votre profil dès
+          maintenant.
+        </p>
+        <NuxtLink
+          to="/dashboard"
+          class="press block w-full rounded-field bg-primary py-3.5 text-[15px] font-semibold text-white hover:bg-primary-hover"
+        >
+          Compléter mon profil
+        </NuxtLink>
       </div>
     </div>
   </div>
