@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { SECTORS } from '~/data/sectors'
 import type { ProviderSearchResult } from '~~/server/utils/providerDirectory'
 
 interface SearchResponse {
@@ -17,8 +18,41 @@ const searchTerm = computed(() => {
   return typeof q === 'string' ? q.trim() : ''
 })
 
+// Secteur dont dépend la liste de sous-secteurs de la sidebar (#40) : déduit
+// du terme recherché (nom de secteur ou de sous-secteur), avec un repli sur
+// « Ménage & Maison » (secteur de la maquette) si rien ne correspond.
+const activeSectorSlug = computed(() => {
+  const term = searchTerm.value.toLowerCase()
+  if (term) {
+    const bySubSector = SECTORS.find((s) => s.subSectors.some((sub) => sub.name.toLowerCase() === term))
+    if (bySubSector) return bySubSector.slug
+    const byName = SECTORS.find((s) => s.name.toLowerCase().includes(term))
+    if (byName) return byName.slug
+  }
+  return 'menage'
+})
+const subSectorOptions = computed(
+  () => SECTORS.find((s) => s.slug === activeSectorSlug.value)?.subSectors.map((sub) => sub.name) ?? [],
+)
+
+const filterSubSectors = ref<string[]>([])
+const filterCity = ref('')
+const filterRatingMin = ref<number | null>(null)
+const filterPriceMax = ref(6000)
+
+// Le texte libre ne sert qu'à choisir le secteur affiché (ci-dessus) : une
+// fois ce secteur résolu, la requête utilise les filtres structurés plutôt
+// que de recombiner `q` (qui ne matcherait pas, par ex., les sous-secteurs
+// ne contenant pas le terme recherché).
 const { data, pending } = await useFetch<SearchResponse>('/api/providers/search', {
-  query: computed(() => ({ q: searchTerm.value || undefined, pageSize: 24 })),
+  query: computed(() => ({
+    secteur: activeSectorSlug.value,
+    sous_secteur: filterSubSectors.value.length ? filterSubSectors.value : undefined,
+    ville: filterCity.value || undefined,
+    note_min: filterRatingMin.value ?? undefined,
+    prix_max: filterPriceMax.value,
+    pageSize: 24,
+  })),
 })
 const results = computed(() => data.value?.results ?? [])
 
@@ -52,9 +86,13 @@ function restartDemo() {
 
     <div class="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-6 lg:flex-row lg:items-start">
       <aside class="w-full shrink-0 lg:w-[240px]">
-        <div class="rounded-card border border-hairline bg-surface p-5 shadow-card-sm">
-          <p class="text-[13px] font-semibold text-muted">Filtres à venir (#40)</p>
-        </div>
+        <ResultsFilters
+          v-model:sub-sectors="filterSubSectors"
+          v-model:city="filterCity"
+          v-model:rating-min="filterRatingMin"
+          v-model:price-max="filterPriceMax"
+          :sub-sector-options="subSectorOptions"
+        />
       </aside>
 
       <section class="min-w-0 flex-1">
