@@ -1,10 +1,14 @@
 name: CI
 
 # Le CI vérifie tout : dépendances, lint (ESLint strict + règle des 300 lignes),
-# typage TypeScript (nuxt typecheck / vue-tsc), tests unitaires (Vitest) et
-# build de production.
+# typage TypeScript (nuxt typecheck / vue-tsc), génération du client Prisma,
+# tests unitaires (Vitest) et build de production.
 # Il tourne sur CHAQUE Pull Request (quelle que soit la branche de base, ce qui
 # couvre les PR empilées) et à chaque push sur develop/master.
+#
+# Le déploiement (#47) est géré séparément par .github/workflows/deploy.yml,
+# déclenché uniquement après le succès de CE workflow sur develop/master
+# (voir docs/deployment.md).
 
 on:
   pull_request:
@@ -20,6 +24,13 @@ jobs:
   quality:
     name: Lint · Typecheck · Build
     runs-on: ubuntu-latest
+    env:
+      # Prisma (prisma.config.ts) exige DATABASE_URL même pour `prisma
+      # generate`, qui ne fait que lire prisma/schema.prisma (aucune
+      # connexion réelle n'est ouverte). Valeur factice suffisante pour le CI
+      # — jamais utilisée pour se connecter à une vraie base. Voir
+      # docs/deployment.md.
+      DATABASE_URL: 'file:./ci.db'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,6 +46,9 @@ jobs:
 
       - name: Lint (ESLint)
         run: npm run lint
+
+      - name: Générer le client Prisma
+        run: npm run db:generate
 
       - name: Typecheck (nuxt typecheck)
         run: npm run typecheck
