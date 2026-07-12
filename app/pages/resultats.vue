@@ -56,6 +56,15 @@ const { data, pending } = await useFetch<SearchResponse>('/api/providers/search'
 })
 const results = computed(() => data.value?.results ?? [])
 
+// Favoris déjà enregistrés par le client (#64) : chargés une seule fois pour
+// tous les prestataires affichés plutôt qu'une requête par carte. Échoue
+// silencieusement (client non connecté ou compte prestataire) : les cartes
+// démarrent alors simplement non favorites.
+const { data: favoritesData, refresh: refreshFavorites } = await useFetch<{ favorites: { providerId: string }[] }>(
+  '/api/favorites',
+)
+const favoriteProviderIds = computed(() => new Set((favoritesData.value?.favorites ?? []).map((f) => f.providerId)))
+
 function resetFilters() {
   filterSubSectors.value = []
   filterCity.value = ''
@@ -120,7 +129,13 @@ function restartDemo() {
         <ResultsSkeleton v-if="pending" />
         <ResultsEmptyState v-else-if="results.length === 0" @action="resetFilters" />
         <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
-          <ProviderCard v-for="provider in results" :key="provider.id" :provider="provider" />
+          <ProviderCard
+            v-for="provider in results"
+            :key="provider.id"
+            :provider="provider"
+            :is-favorite="favoriteProviderIds.has(provider.id)"
+            @favorite-changed="refreshFavorites"
+          />
         </div>
       </section>
     </div>
