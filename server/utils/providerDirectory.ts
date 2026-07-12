@@ -52,6 +52,11 @@ function normalize(value: string): string {
   return value.trim().toLowerCase()
 }
 
+/** Retrouve une fiche de l'annuaire par id (ex. utilisé par la messagerie, #59). */
+export function getProviderById(id: string): ProviderSearchResult | null {
+  return DIRECTORY.find((provider) => provider.id === id) ?? null
+}
+
 export function searchProviders(filters: ProviderSearchFilters): ProviderSearchResult[] {
   const query = filters.query ? normalize(filters.query) : ''
 
