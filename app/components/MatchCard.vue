@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ConversationSummary } from '~~/server/utils/conversationStore'
 import type { MatchedProvider } from '~~/server/utils/requestStore'
 
 const props = withDefaults(
@@ -22,20 +23,32 @@ const SCORE_BARS: { key: keyof MatchedProvider['score']['breakdown']; label: str
 ]
 
 const filledStars = computed(() => Math.round(props.match.rating))
+const isContacting = ref(false)
 
-const favorite = ref(props.isFavorite)
-const isTogglingFavorite = ref(false)
+// Premier contact depuis les résultats de matching (#58/#59) : crée (ou
+// retrouve, idempotent) la conversation avec ce prestataire puis ouvre le
+// thread de messagerie.
+async function contact() {
+  if (isContacting.value) return
+  isContacting.value = true
+  try {
+    const { conversation } = await $fetch<{ conversation: ConversationSummary }>('/api/conversations', {
+      method: 'POST',
+      body: { providerId: props.match.providerId },
+    })
+    navigateTo(`/messages/${conversation.id}`)
+  } catch (error) {
+    if ((error as { statusCode?: number }).statusCode === 401) {
+      navigateTo({ path: '/auth', query: { role: 'client' } })
+      return
+    }
+  } finally {
+    isContacting.value = false
+  }
+}
 
-watch(
-  () => props.isFavorite,
-  (value) => {
-    favorite.value = value
-  },
-)
-
-// Pas encore de canal de contact/de profil public dédié (#57, messagerie —
-// hors périmètre de ce lot). Boutons posés pour la maquette, sans action.
-function contact() {}
+// Pas encore de profil public dédié pour l'instant (hors périmètre de ce
+// lot). Bouton posé pour la maquette, sans action.
 function viewProfile() {}
 
 /** Ajoute/retire ce prestataire des favoris du client connecté (#64). */
@@ -123,10 +136,11 @@ async function toggleFavorite() {
       <div class="mt-4 flex flex-wrap gap-2">
         <button
           type="button"
-          class="press rounded-field bg-dark px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#1a3a28]"
+          class="press rounded-field bg-dark px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#1a3a28] disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="isContacting"
           @click="contact"
         >
-          Contacter
+          {{ isContacting ? 'Ouverture…' : 'Contacter' }}
         </button>
         <button
           type="button"
