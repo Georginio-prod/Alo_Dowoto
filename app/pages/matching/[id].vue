@@ -6,6 +6,10 @@ interface RequestResponse {
   matches: MatchedProvider[]
 }
 
+interface ContactsQuotaResponse {
+  usage: { count: number; limit: number; month: string }
+}
+
 definePageMeta({ layout: 'blank' })
 
 const route = useRoute()
@@ -21,6 +25,18 @@ const { data: favoritesData, refresh: refreshFavorites } = await useFetch<{ favo
   '/api/favorites',
 )
 const favoriteProviderIds = computed(() => new Set((favoritesData.value?.favorites ?? []).map((f) => f.providerId)))
+
+// Quota client de contacts (#63) : chargé une seule fois pour toutes les
+// cartes, plutôt qu'un GET par carte. Le bouton « Contacter » de chaque
+// MatchCard se désactive dès que le quota gratuit (3/mois) est atteint.
+const { data: contactsQuotaData, refresh: refreshContactsQuota } = await useFetch<ContactsQuotaResponse>(
+  '/api/quotas/contacts',
+)
+const contactQuotaReached = computed(() => {
+  const usage = contactsQuotaData.value?.usage
+  if (!usage) return false
+  return usage.count >= usage.limit
+})
 
 function restartDemo() {
   navigateTo('/')
@@ -79,7 +95,9 @@ function newRequest() {
           :match="match"
           :rank="index + 1"
           :is-favorite="favoriteProviderIds.has(match.providerId)"
+          :contact-quota-reached="contactQuotaReached"
           @favorite-changed="refreshFavorites"
+          @contacted="refreshContactsQuota"
         />
       </div>
     </div>
