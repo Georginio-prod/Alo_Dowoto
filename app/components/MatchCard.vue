@@ -8,11 +8,13 @@ const props = withDefaults(
     rank: number
     /** État initial connu par le parent (ex. liste de favoris déjà chargée, #64). */
     isFavorite?: boolean
+    /** Quota de contacts du client déjà atteint ce mois-ci (#63). */
+    contactQuotaReached?: boolean
   }>(),
-  { isFavorite: false },
+  { isFavorite: false, contactQuotaReached: false },
 )
 
-const emit = defineEmits<{ 'favorite-changed': [] }>()
+const emit = defineEmits<{ 'favorite-changed': []; contacted: [] }>()
 
 const SCORE_BARS: { key: keyof MatchedProvider['score']['breakdown']; label: string }[] = [
   { key: 'skills', label: 'Compétences' },
@@ -23,7 +25,6 @@ const SCORE_BARS: { key: keyof MatchedProvider['score']['breakdown']; label: str
 ]
 
 const filledStars = computed(() => Math.round(props.match.rating))
-const isContacting = ref(false)
 
 const favorite = ref(props.isFavorite)
 const isTogglingFavorite = ref(false)
@@ -35,31 +36,50 @@ watch(
   },
 )
 
-// Premier contact depuis les résultats de matching (#58/#59) : crée (ou
-// retrouve, idempotent) la conversation avec ce prestataire puis ouvre le
-// thread de messagerie.
+// Pas encore de profil public dédié pour l'instant (hors périmètre de ce
+// lot). Bouton posé pour la maquette, sans action.
+function viewProfile() {}
+
+const isContacting = ref(false)
+const contactError = ref('')
+
+// Contact depuis les résultats de matching : une mise en relation consomme
+// d'abord un contact du quota mensuel client (#63, 429 au-delà de la limite),
+// puis crée (ou retrouve, idempotent) la conversation avec ce prestataire et
+// ouvre le thread de messagerie (#58/#59).
 async function contact() {
-  if (isContacting.value) return
+  if (props.contactQuotaReached || isContacting.value) return
   isContacting.value = true
+  contactError.value = ''
   try {
+    await $fetch('/api/quotas/contacts', { method: 'POST' })
+    // Le compteur de contacts a bougé : on prévient le parent pour qu'il
+    // resynchronise l'affichage du quota.
+    emit('contacted')
     const { conversation } = await $fetch<{ conversation: ConversationSummary }>('/api/conversations', {
       method: 'POST',
       body: { providerId: props.match.providerId },
     })
     navigateTo(`/messages/${conversation.id}`)
   } catch (error) {
-    if ((error as { statusCode?: number }).statusCode === 401) {
+    const statusCode = (error as { statusCode?: number }).statusCode
+    if (statusCode === 401) {
       navigateTo({ path: '/auth', query: { role: 'client' } })
       return
     }
+    if (statusCode === 429) {
+      contactError.value = 'Quota de contacts atteint ce mois-ci.'
+      // Le parent peut avoir un état de quota légèrement périmé (course
+      // possible entre deux onglets) : on lui signale quand même l'essai
+      // pour qu'il resynchronise l'affichage.
+      emit('contacted')
+      return
+    }
+    contactError.value = 'Impossible de contacter ce prestataire pour le moment. Réessayez plus tard.'
   } finally {
     isContacting.value = false
   }
 }
-
-// Pas encore de profil public dédié pour l'instant (hors périmètre de ce
-// lot). Bouton posé pour la maquette, sans action.
-function viewProfile() {}
 
 /** Ajoute/retire ce prestataire des favoris du client connecté (#64). */
 async function toggleFavorite() {
@@ -143,11 +163,13 @@ async function toggleFavorite() {
         </div>
       </div>
 
-      <div class="mt-4 flex flex-wrap gap-2">
+      <div class="mt-4 flex flex-wrap items-center gap-2">
         <button
           type="button"
-          class="press rounded-field bg-dark px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#1a3a28] disabled:cursor-not-allowed disabled:opacity-60"
-          :disabled="isContacting"
+          class="press rounded-field px-4 py-2 text-[13px] font-semibold"
+          :class="contactQuotaReached ? 'cursor-not-allowed bg-bg text-muted/60' : 'bg-dark text-white hover:bg-[#1a3a28]'"
+          :disabled="contactQuotaReached || isContacting"
+          :title="contactQuotaReached ? 'Quota de contacts atteint ce mois-ci' : undefined"
           @click="contact"
         >
           {{ isContacting ? 'Ouverture…' : 'Contacter' }}
@@ -170,6 +192,11 @@ async function toggleFavorite() {
         >
           {{ favorite ? '★ Favori' : '☆ Favoris' }}
         </button>
+
+        <p v-if="contactQuotaReached" class="w-full text-[11.5px] text-error">
+          Quota de contacts atteint ce mois-ci. Réessayez le mois prochain.
+        </p>
+        <p v-else-if="contactError" class="w-full text-[11.5px] text-error">{{ contactError }}</p>
       </div>
     </div>
   </div>
