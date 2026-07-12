@@ -33,7 +33,7 @@ const subscriptionsByUserId = new Map<string, Subscription>()
 export function createPendingSubscription(userId: string, plan: PlanSlug): Subscription {
   const existing = subscriptionsByUserId.get(userId)
   if (existing?.status === 'actif') {
-    throw createError({ statusCode: 409, statusMessage: 'Un abonnement actif existe déjà.' })
+    conflict('Un abonnement actif existe déjà.')
   }
 
   const subscription: Subscription = {

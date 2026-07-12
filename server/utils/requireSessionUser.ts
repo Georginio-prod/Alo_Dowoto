@@ -6,8 +6,21 @@ export function requireSessionUser(event: H3Event): User {
   const user = getSessionUser(token)
 
   if (!user) {
-    throw createError({ statusCode: 401, statusMessage: 'Non connecté.' })
+    unauthorized()
   }
 
+  return user
+}
+
+/**
+ * Exige un utilisateur connecté avec le rôle prestataire — vérification
+ * répétée par la plupart des routes /api/providers, /api/subscriptions et
+ * /api/payments.
+ */
+export function requireProviderRole(event: H3Event): User {
+  const user = requireSessionUser(event)
+  if (user.role !== 'prestataire') {
+    forbidden('Réservé aux comptes prestataire.')
+  }
   return user
 }

@@ -4,7 +4,7 @@ export default defineEventHandler((event) => {
   const payment = id ? getPayment(id) : null
 
   if (!payment || payment.userId !== user.id) {
-    throw createError({ statusCode: 404, statusMessage: 'Paiement introuvable.' })
+    notFound('Paiement introuvable.')
   }
 
   return { payment }

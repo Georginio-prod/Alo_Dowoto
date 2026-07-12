@@ -11,17 +11,17 @@ export default defineEventHandler(async (event) => {
   const signature = getHeader(event, 'x-webhook-signature')
 
   if (!isValidWebhookSignature(rawBody, signature)) {
-    throw createError({ statusCode: 401, statusMessage: 'Signature invalide.' })
+    unauthorized('Signature invalide.')
   }
 
   const body = JSON.parse(rawBody || '{}') as WebhookBody
   if (!body.paymentId || (body.status !== 'success' && body.status !== 'failed')) {
-    throw createError({ statusCode: 400, statusMessage: 'Requête webhook invalide.' })
+    badRequest('Requête webhook invalide.')
   }
 
   const payment = getPayment(body.paymentId)
   if (!payment) {
-    throw createError({ statusCode: 404, statusMessage: 'Paiement introuvable.' })
+    notFound('Paiement introuvable.')
   }
 
   // Idempotent : un paiement déjà résolu renvoie son état actuel sans être

@@ -15,19 +15,16 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<CreateSessionBody>(event)
 
   if (body?.method !== 'phone' && body?.method !== 'email') {
-    throw createError({ statusCode: 400, statusMessage: 'Méthode de contact invalide.' })
+    badRequest('Méthode de contact invalide.')
   }
 
   const contact = normalizeContact(body.method, body.value ?? '')
   if (!contact) {
-    throw createError({ statusCode: 400, statusMessage: 'Contact invalide.' })
+    badRequest('Contact invalide.')
   }
 
   if (!consumeVerifiedContact(contact)) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Ce contact n'a pas été vérifié par code OTP (voir /api/auth/otp/verify).",
-    })
+    unauthorized("Ce contact n'a pas été vérifié par code OTP (voir /api/auth/otp/verify).")
   }
 
   const role = body.role === 'client' || body.role === 'prestataire' ? body.role : undefined

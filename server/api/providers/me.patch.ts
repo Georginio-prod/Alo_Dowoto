@@ -10,20 +10,17 @@ interface PatchProviderBody {
 const VALID_SECTOR_SLUGS = new Set(SECTORS.map((sector) => sector.slug))
 
 export default defineEventHandler(async (event) => {
-  const user = requireSessionUser(event)
-  if (user.role !== 'prestataire') {
-    throw createError({ statusCode: 403, statusMessage: 'Réservé aux comptes prestataire.' })
-  }
+  const user = requireProviderRole(event)
 
   const body = await readBody<PatchProviderBody>(event)
   const existing = getProviderProfile(user.id)
   const sector = body?.sector ?? existing?.sector
 
   if (!sector || !VALID_SECTOR_SLUGS.has(sector)) {
-    throw createError({ statusCode: 400, statusMessage: 'Secteur invalide.' })
+    badRequest('Secteur invalide.')
   }
   if (body?.rateFrom !== undefined && (typeof body.rateFrom !== 'number' || body.rateFrom < 0)) {
-    throw createError({ statusCode: 400, statusMessage: 'Tarif invalide.' })
+    badRequest('Tarif invalide.')
   }
 
   const profile = upsertProviderProfile(user.id, {
