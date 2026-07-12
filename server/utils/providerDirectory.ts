@@ -52,7 +52,7 @@ function normalize(value: string): string {
   return value.trim().toLowerCase()
 }
 
-/** Retrouve un prestataire de l'annuaire par id (ex. pour enrichir une liste de favoris, #65). */
+/** Retrouve une fiche de l'annuaire par id (ex. utilisé par la messagerie, #59). */
 export function getProviderById(id: string): ProviderSearchResult | null {
   return DIRECTORY.find((provider) => provider.id === id) ?? null
 }
@@ -72,4 +72,13 @@ export function searchProviders(filters: ProviderSearchFilters): ProviderSearchR
     }
     return true
   })
+}
+
+/**
+ * Nombre de prestataires de l'annuaire pour un secteur donné (#66, grille
+ * `/categories`). Repose sur `searchProviders` pour rester cohérent avec le
+ * filtrage utilisé par la recherche publique.
+ */
+export function countBySector(sector: string): number {
+  return searchProviders({ sector }).length
 }
