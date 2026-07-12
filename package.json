@@ -10,9 +10,13 @@
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "db:migrate": "prisma migrate dev",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.3",
     "@tailwindcss/vite": "^4.3.2",
     "nuxt": "^4.4.8",
     "tailwindcss": "^4.3.2",
@@ -23,6 +27,7 @@
     "@nuxt/eslint": "^1.16.0",
     "@types/node": "^26.1.1",
     "eslint": "^10.7.0",
+    "prisma": "^6.19.3",
     "vue-tsc": "^3.3.7"
   },
   "overrides": {
