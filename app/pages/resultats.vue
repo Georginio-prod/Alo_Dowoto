@@ -56,6 +56,13 @@ const { data, pending } = await useFetch<SearchResponse>('/api/providers/search'
 })
 const results = computed(() => data.value?.results ?? [])
 
+function resetFilters() {
+  filterSubSectors.value = []
+  filterCity.value = ''
+  filterRatingMin.value = null
+  filterPriceMax.value = 6000
+}
+
 function restartDemo() {
   navigateTo('/')
 }
@@ -96,8 +103,8 @@ function restartDemo() {
       </aside>
 
       <section class="min-w-0 flex-1">
-        <p v-if="pending" class="text-[13px] text-muted">Chargement…</p>
-        <p v-else-if="results.length === 0" class="text-[13px] text-muted">Aucun résultat.</p>
+        <ResultsSkeleton v-if="pending" />
+        <ResultsEmptyState v-else-if="results.length === 0" @reset="resetFilters" />
         <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
           <ProviderCard v-for="provider in results" :key="provider.id" :provider="provider" />
         </div>
