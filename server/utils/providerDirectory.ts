@@ -52,7 +52,7 @@ function normalize(value: string): string {
   return value.trim().toLowerCase()
 }
 
-/** Retrouve un prestataire de l'annuaire par id (ex. pour enrichir une liste de favoris, #65). */
+/** Retrouve une fiche de l'annuaire par id (ex. utilisé par la messagerie, #59). */
 export function getProviderById(id: string): ProviderSearchResult | null {
   return DIRECTORY.find((provider) => provider.id === id) ?? null
 }
