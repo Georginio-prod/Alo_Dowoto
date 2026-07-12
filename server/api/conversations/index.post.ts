@@ -9,10 +9,7 @@ interface CreateConversationBody {
  * le premier contact dans ce prototype.
  */
 export default defineEventHandler(async (event) => {
-  const user = requireSessionUser(event)
-  if (user.role !== 'client') {
-    forbidden('Réservé aux comptes client.')
-  }
+  const user = requireClientRole(event)
 
   const body = await readBody<CreateConversationBody>(event)
   const providerId = body?.providerId?.trim()
