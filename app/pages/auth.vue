@@ -34,6 +34,16 @@ let resendTimer: ReturnType<typeof setInterval> | null = null
 const sectorSlug = ref('')
 
 const contactCta = computed(() => (activeTab.value === 'signup' ? 'Créer mon compte' : 'Se connecter'))
+const flowSteps = computed(() =>
+  role.value === 'prestataire'
+    ? ['Contact', 'Vérification', 'Secteur', 'Abonnement', 'Paiement']
+    : ['Contact', 'Vérification'],
+)
+const flowStepIndex = computed(() => {
+  if (step.value === 'contact') return 0
+  if (step.value === 'otp') return 1
+  return 2 // 'sector'
+})
 const isOtpComplete = computed(() => otp.value.every((d) => d !== ''))
 const otpDestinationPrefix = computed(() => (method.value === 'phone' ? 'au' : 'à'))
 const otpDestination = computed(() => (method.value === 'phone' ? `+228 ${phone.value}` : email.value))
@@ -159,6 +169,8 @@ onUnmounted(() => {
       <div class="mb-[22px] text-center">
         <div class="text-[22px] font-extrabold text-dark">Work<span class="text-primary">Togo</span></div>
       </div>
+
+      <FlowSteps v-if="activeTab === 'signup'" :steps="flowSteps" :current-index="flowStepIndex" />
 
       <div class="rounded-card border border-hairline bg-surface p-7 shadow-card-sm">
         <div class="mb-[22px] flex rounded-field bg-bg p-1">
