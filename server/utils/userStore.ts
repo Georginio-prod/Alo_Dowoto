@@ -13,6 +13,8 @@ export interface User {
   contact: string
   role: Role
   createdAt: number
+  /** Hash scrypt (server/utils/password.ts) — absent tant que #125 n'est pas complétée. */
+  passwordHash?: string
 }
 
 interface Session {
@@ -73,4 +75,31 @@ export function getSessionUser(token: string | undefined): User | null {
 
 export function destroySession(token: string | undefined) {
   if (token) sessions.delete(token)
+}
+
+/**
+ * Le compte n'est considéré comme finalisé qu'une fois un mot de passe
+ * défini (#125) — étape obligatoire juste après la vérification OTP.
+ */
+export function hasPassword(user: User): boolean {
+  return !!user.passwordHash
+}
+
+export function setPasswordHash(userId: string, passwordHash: string): void {
+  const user = getUserById(userId)
+  if (!user) return
+  user.passwordHash = passwordHash
+}
+
+export interface PublicUser {
+  id: string
+  contact: string
+  role: Role
+  createdAt: number
+  passwordSet: boolean
+}
+
+/** Vue publique d'un utilisateur : ne jamais exposer `passwordHash` au client. */
+export function toPublicUser(user: User): PublicUser {
+  return { id: user.id, contact: user.contact, role: user.role, createdAt: user.createdAt, passwordSet: hasPassword(user) }
 }
