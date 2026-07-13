@@ -24,6 +24,18 @@ const { data: sessionData } = await useFetch<{ user: User }>('/api/auth/session'
 const conversation = computed(() => data.value?.conversation ?? null)
 const messages = computed(() => data.value?.messages ?? [])
 const currentUserId = computed(() => sessionData.value?.user?.id ?? '')
+const currentUserContact = computed(() => sessionData.value?.user?.contact ?? '')
+
+// Formulaire obligatoire de première prise de contact (#129) : uniquement
+// pour le client, une seule fois par conversation (le serveur fait foi via
+// `conversation.firstContactDone`, recalculé à chaque chargement).
+const showFirstContactForm = computed(
+  () => conversation.value?.clientId === currentUserId.value && conversation.value?.firstContactDone === false,
+)
+
+function onFirstContactSubmitted() {
+  refresh()
+}
 
 const draft = ref('')
 const isSending = ref(false)
@@ -132,6 +144,14 @@ async function submitReview() {
         description="Cette conversation n'existe pas ou vous n'y avez pas accès."
         action-label="Retour à mes messages"
         @action="navigateTo('/messages')"
+      />
+
+      <FirstContactForm
+        v-else-if="showFirstContactForm && conversation"
+        :conversation-id="conversation.id"
+        :prefill-contact="currentUserContact"
+        :provider-name="conversation.otherPartyName"
+        @submitted="onFirstContactSubmitted"
       />
 
       <template v-else>
