@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { User } from '~~/server/utils/userStore'
+
 const { open } = useChoiceModal()
 
 const query = ref('')
@@ -8,6 +10,13 @@ function onSearch() {
   if (!q) return
   open(q)
 }
+
+// Visiteur non connecté : /api/auth/session répond 401, attendu — on ne
+// traite pas cette réponse comme une erreur bloquante pour le header.
+const { data: sessionData } = await useFetch<{ user: User }>('/api/auth/session', {
+  onResponseError: () => {},
+})
+const sessionUser = computed(() => sessionData.value?.user ?? null)
 </script>
 
 <template>
@@ -42,18 +51,21 @@ function onSearch() {
       </form>
 
       <div class="ml-auto flex shrink-0 items-center gap-2.5">
-        <NuxtLink
-          to="/auth"
-          class="press px-2 py-2.5 text-[14.5px] font-semibold text-dark hover:text-primary"
-        >
-          Se connecter
-        </NuxtLink>
-        <NuxtLink
-          to="/auth?role=prestataire"
-          class="press rounded-[9px] bg-dark px-5 py-2.5 text-[14.5px] font-semibold text-white hover:bg-[#1a3a28]"
-        >
-          Devenir prestataire
-        </NuxtLink>
+        <AccountMenu v-if="sessionUser" :user="sessionUser" />
+        <template v-else>
+          <NuxtLink
+            to="/auth"
+            class="press px-2 py-2.5 text-[14.5px] font-semibold text-dark hover:text-primary"
+          >
+            Se connecter
+          </NuxtLink>
+          <NuxtLink
+            to="/auth?role=prestataire"
+            class="press rounded-[9px] bg-dark px-5 py-2.5 text-[14.5px] font-semibold text-white hover:bg-[#1a3a28]"
+          >
+            Devenir prestataire
+          </NuxtLink>
+        </template>
       </div>
     </div>
   </header>
