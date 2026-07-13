@@ -1,7 +1,14 @@
 <script setup lang="ts">
+import type { ConversationSummary } from '~~/server/utils/conversationStore'
 import type { ProviderDetail } from '~~/server/utils/providerDirectory'
 
-/** Fenêtre « Voir le profil » d'un prestataire (#127), ouverte depuis ProviderCard/MatchCard. */
+/**
+ * Fenêtre « Voir le profil » d'un prestataire (#127), ouverte depuis
+ * ProviderCard/MatchCard. Le bouton « Contacter le prestataire » (#128)
+ * reprend exactement le flux déjà utilisé par MatchCard (quota mensuel de
+ * contacts #63 puis création/récupération de la conversation, #58/#59) pour
+ * que ce nouveau point d'entrée ne le contourne pas.
+ */
 
 const props = defineProps<{ providerId: string }>()
 const emit = defineEmits<{ close: [] }>()
@@ -9,6 +16,9 @@ const emit = defineEmits<{ close: [] }>()
 const provider = ref<ProviderDetail | null>(null)
 const isLoading = ref(true)
 const loadError = ref('')
+
+const isContacting = ref(false)
+const contactError = ref('')
 
 const filledStars = computed(() => (provider.value ? Math.round(provider.value.rating) : 0))
 
@@ -22,6 +32,33 @@ async function load() {
     loadError.value = 'Impossible de charger ce profil pour le moment.'
   } finally {
     isLoading.value = false
+  }
+}
+
+async function contactProvider() {
+  if (isContacting.value) return
+  isContacting.value = true
+  contactError.value = ''
+  try {
+    await $fetch('/api/quotas/contacts', { method: 'POST' })
+    const { conversation } = await $fetch<{ conversation: ConversationSummary }>('/api/conversations', {
+      method: 'POST',
+      body: { providerId: props.providerId },
+    })
+    navigateTo(`/messages/${conversation.id}`)
+  } catch (error) {
+    const statusCode = (error as { statusCode?: number }).statusCode
+    if (statusCode === 401) {
+      navigateTo({ path: '/auth', query: { role: 'client' } })
+      return
+    }
+    if (statusCode === 429) {
+      contactError.value = 'Quota de contacts atteint ce mois-ci. Réessayez le mois prochain.'
+      return
+    }
+    contactError.value = 'Impossible de contacter ce prestataire pour le moment. Réessayez plus tard.'
+  } finally {
+    isContacting.value = false
   }
 }
 
@@ -138,7 +175,18 @@ onUnmounted(() => {
           >
             Consulter le CV
           </a>
-          <p v-else class="mb-1.5 text-[12.5px] text-muted">CV non communiqué par ce prestataire.</p>
+          <p v-else class="mb-4 text-[12.5px] text-muted">CV non communiqué par ce prestataire.</p>
+
+          <p v-if="contactError" class="mb-2 text-[12.5px] text-error">{{ contactError }}</p>
+
+          <button
+            type="button"
+            class="press w-full rounded-field bg-primary py-3 text-[14.5px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
+            :disabled="isContacting"
+            @click="contactProvider"
+          >
+            {{ isContacting ? 'Ouverture…' : 'Contacter le prestataire' }}
+          </button>
         </template>
       </div>
     </div>
