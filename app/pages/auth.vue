@@ -119,19 +119,37 @@ function onPayoutSaved() {
           <div class="flex gap-2">
             <button
               type="button"
-              class="press flex-1 rounded-field border-[1.5px] px-3 py-2.5 text-[13.5px] font-semibold"
+              class="press relative flex-1 animate-[wt-fade_0.32s_ease-out] rounded-field border-[1.5px] px-3 py-2.5 text-left text-[13.5px] font-semibold"
               :class="role === 'client' ? 'border-primary bg-primary/10 text-dark' : 'border-hairline bg-white text-muted'"
+              :aria-pressed="role === 'client'"
               @click="selectRole('client')"
             >
-              Client
+              <span
+                v-if="role === 'client'"
+                class="absolute right-2 top-2 flex size-4 items-center justify-center rounded-full bg-primary text-[9px] text-white"
+                aria-hidden="true"
+              >✓</span>
+              <span class="block">Client</span>
+              <span class="mt-0.5 block text-[11px] font-normal" :class="role === 'client' ? 'text-dark/70' : 'text-muted'">
+                Je cherche un service
+              </span>
             </button>
             <button
               type="button"
-              class="press flex-1 rounded-field border-[1.5px] px-3 py-2.5 text-[13.5px] font-semibold"
+              class="press relative flex-1 animate-[wt-fade_0.32s_ease-out] rounded-field border-[1.5px] px-3 py-2.5 text-left text-[13.5px] font-semibold [animation-delay:60ms] [animation-fill-mode:backwards]"
               :class="role === 'prestataire' ? 'border-primary bg-primary/10 text-dark' : 'border-hairline bg-white text-muted'"
+              :aria-pressed="role === 'prestataire'"
               @click="selectRole('prestataire')"
             >
-              Prestataire
+              <span
+                v-if="role === 'prestataire'"
+                class="absolute right-2 top-2 flex size-4 items-center justify-center rounded-full bg-primary text-[9px] text-white"
+                aria-hidden="true"
+              >✓</span>
+              <span class="block">Prestataire</span>
+              <span class="mt-0.5 block text-[11px] font-normal" :class="role === 'prestataire' ? 'text-dark/70' : 'text-muted'">
+                Je propose un service
+              </span>
             </button>
           </div>
         </div>
