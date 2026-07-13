@@ -75,6 +75,11 @@ export function getConversationById(id: string): Conversation | null {
   return conversations.get(id) ?? null
 }
 
+/** Le contact a-t-il déjà été engagé entre ce client et ce prestataire (#127, démasquage des coordonnées) ? */
+export function hasConversation(clientId: string, providerId: string): boolean {
+  return !!findConversation(clientId, providerId)
+}
+
 /** Vérifie que l'utilisateur fait partie de la conversation (client ou prestataire). */
 export function isConversationParticipant(conversation: Conversation, userId: string): boolean {
   return conversation.clientId === userId || conversation.providerId === userId

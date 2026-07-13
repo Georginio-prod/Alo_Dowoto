@@ -16,6 +16,7 @@ const filledStars = computed(() => Math.round(props.provider.rating))
 
 const favorite = ref(props.isFavorite)
 const isTogglingFavorite = ref(false)
+const showProfile = ref(false)
 
 watch(
   () => props.isFavorite,
@@ -90,6 +91,7 @@ async function toggleFavorite() {
         <button
           type="button"
           class="press flex-1 rounded-field bg-dark py-2.5 text-[13.5px] font-semibold text-white hover:bg-[#1a3a28]"
+          @click="showProfile = true"
         >
           Voir le profil
         </button>
@@ -106,5 +108,7 @@ async function toggleFavorite() {
         </button>
       </div>
     </div>
+
+    <ProviderProfileModal v-if="showProfile" :provider-id="provider.id" @close="showProfile = false" />
   </div>
 </template>
