@@ -1,17 +1,11 @@
 <script setup lang="ts">
 import { SECTORS } from '~/data/sectors'
+import type { PublicUser } from '~~/server/utils/userStore'
 
 type Tab = 'login' | 'signup'
 type Role = 'client' | 'prestataire'
 type Method = 'phone' | 'email'
-type Step = 'contact' | 'otp' | 'sector'
-
-// Pas de backend OTP disponible (#23) : "123456" fait office de code valide
-// pour pouvoir démontrer/tester les parcours de succès et d'échec.
-const MOCK_VALID_OTP = '123456'
-const RESEND_DELAY = 30
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+type Step = 'contact' | 'otp' | 'password' | 'sector'
 
 const route = useRoute()
 
@@ -19,128 +13,50 @@ const activeTab = ref<Tab>(route.query.role ? 'signup' : 'login')
 const role = ref<Role>(route.query.role === 'prestataire' ? 'prestataire' : 'client')
 const step = ref<Step>('contact')
 
-const method = ref<Method>('phone')
-const phone = ref('')
-const email = ref('')
-const contactError = ref('')
-
-const otp = ref<string[]>(['', '', '', '', '', ''])
-const otpError = ref('')
-const otpInvalid = ref(false)
-const isVerifying = ref(false)
-const resendSeconds = ref(RESEND_DELAY)
-let resendTimer: ReturnType<typeof setInterval> | null = null
+const contactMethod = ref<Method>('phone')
+const contactValue = ref('')
 
 const sectorSlug = ref('')
 
 const contactCta = computed(() => (activeTab.value === 'signup' ? 'Créer mon compte' : 'Se connecter'))
 const flowSteps = computed(() =>
   role.value === 'prestataire'
-    ? ['Contact', 'Vérification', 'Secteur', 'Abonnement', 'Paiement']
-    : ['Contact', 'Vérification'],
+    ? ['Contact', 'Vérification', 'Mot de passe', 'Secteur', 'Abonnement', 'Paiement']
+    : ['Contact', 'Vérification', 'Mot de passe'],
 )
 const flowStepIndex = computed(() => {
   if (step.value === 'contact') return 0
   if (step.value === 'otp') return 1
-  return 2 // 'sector'
+  if (step.value === 'password') return 2
+  return 3 // 'sector'
 })
-const isOtpComplete = computed(() => otp.value.every((d) => d !== ''))
-const otpDestinationPrefix = computed(() => (method.value === 'phone' ? 'au' : 'à'))
-const otpDestination = computed(() => (method.value === 'phone' ? `+228 ${phone.value}` : email.value))
 
 function selectTab(tab: Tab) {
   activeTab.value = tab
   role.value = 'client'
   sectorSlug.value = ''
-  resetContact()
-  backToContact()
+  step.value = 'contact'
 }
 
 function selectRole(r: Role) {
   role.value = r
 }
 
-function selectMethod(m: Method) {
-  method.value = m
-  contactError.value = ''
-}
-
-function resetContact() {
-  method.value = 'phone'
-  phone.value = ''
-  email.value = ''
-  contactError.value = ''
-}
-
-function submitContact() {
-  if (method.value === 'phone') {
-    if (phone.value.replace(/\D/g, '').length < 8) {
-      contactError.value = 'Entrez un numéro valide (8 chiffres).'
-      return
-    }
-  } else if (!EMAIL_RE.test(email.value.trim())) {
-    contactError.value = 'Entrez une adresse email valide.'
-    return
-  }
-  contactError.value = ''
+function onContactSent(payload: { method: Method; value: string }) {
+  contactMethod.value = payload.method
+  contactValue.value = payload.value
   step.value = 'otp'
-  otp.value = ['', '', '', '', '', '']
-  otpError.value = ''
-  otpInvalid.value = false
-  startResendTimer()
 }
 
-function backToContact() {
-  step.value = 'contact'
-  otp.value = ['', '', '', '', '', '']
-  otpError.value = ''
-  otpInvalid.value = false
-  stopResendTimer()
+function onOtpVerified() {
+  step.value = 'password'
 }
 
-function onOtpChange(digits: string[]) {
-  otp.value = digits
-  otpError.value = ''
-  otpInvalid.value = false
+function landingPathFor(userRole: Role): string {
+  return userRole === 'prestataire' ? '/prestataire' : '/resultats'
 }
 
-function startResendTimer() {
-  resendSeconds.value = RESEND_DELAY
-  stopResendTimer()
-  resendTimer = setInterval(() => {
-    resendSeconds.value--
-    if (resendSeconds.value <= 0) stopResendTimer()
-  }, 1000)
-}
-
-function stopResendTimer() {
-  if (!resendTimer) return
-  clearInterval(resendTimer)
-  resendTimer = null
-}
-
-function resendCode() {
-  if (resendSeconds.value > 0) return
-  // TODO: appeler l'API de renvoi du code (#23).
-  startResendTimer()
-}
-
-async function verifyOtp() {
-  if (!isOtpComplete.value || isVerifying.value) return
-  isVerifying.value = true
-  const code = otp.value.join('')
-  // Simulation locale en l'absence de backend (#23).
-  await new Promise((resolve) => setTimeout(resolve, 500))
-  isVerifying.value = false
-
-  if (code !== MOCK_VALID_OTP) {
-    otpInvalid.value = true
-    otpError.value = 'Code invalide. Réessayez.'
-    otp.value = ['', '', '', '', '', '']
-    return
-  }
-
-  stopResendTimer()
+function onSignupPasswordSuccess() {
   if (role.value === 'client') {
     navigateTo({ path: '/resultats', query: typeof route.query.q === 'string' && route.query.q.trim() ? { q: route.query.q } : {} })
   } else {
@@ -149,15 +65,15 @@ async function verifyOtp() {
   }
 }
 
+function onLoginSuccess(user: PublicUser) {
+  navigateTo(landingPathFor(user.role))
+}
+
 function submitSector() {
   if (!sectorSlug.value) return
   // Étape Abonnement, voir #29.
   navigateTo('/abonnement')
 }
-
-onUnmounted(() => {
-  stopResendTimer()
-})
 </script>
 
 <template>
@@ -213,103 +129,25 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div v-if="step === 'contact'">
-          <div class="mb-[18px] flex gap-2">
-            <button
-              type="button"
-              class="press flex-1 rounded-[8px] border py-2.5 text-[13px] font-semibold"
-              :class="method === 'phone' ? 'border-transparent bg-dark text-white' : 'border-hairline bg-white text-muted'"
-              @click="selectMethod('phone')"
-            >
-              Téléphone
-            </button>
-            <button
-              type="button"
-              class="press flex-1 rounded-[8px] border py-2.5 text-[13px] font-semibold"
-              :class="method === 'email' ? 'border-transparent bg-dark text-white' : 'border-hairline bg-white text-muted'"
-              @click="selectMethod('email')"
-            >
-              Email
-            </button>
-          </div>
+        <AuthContactStep v-if="step === 'contact'" :cta="contactCta" @sent="onContactSent" />
 
-          <template v-if="method === 'phone'">
-            <label for="auth-phone" class="mb-1.5 block text-[13px] font-semibold text-dark">Numéro de téléphone</label>
-            <div class="mb-1.5 flex gap-2">
-              <div class="flex h-[46px] w-16 shrink-0 items-center justify-center rounded-field border-[1.5px] border-hairline bg-bg text-[14.5px] font-semibold text-dark">
-                +228
-              </div>
-              <input
-                id="auth-phone"
-                v-model="phone"
-                type="tel"
-                inputmode="numeric"
-                placeholder="90 12 34 56"
-                aria-label="Numéro de téléphone"
-                class="h-[46px] min-w-0 flex-1 rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
-              >
-            </div>
-          </template>
-          <template v-else>
-            <label for="auth-email" class="mb-1.5 block text-[13px] font-semibold text-dark">Adresse email</label>
-            <input
-              id="auth-email"
-              v-model="email"
-              type="email"
-              placeholder="vous@exemple.com"
-              aria-label="Adresse email"
-              class="mb-1.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
-            >
-          </template>
+        <AuthOtpStep
+          v-else-if="step === 'otp'"
+          :method="contactMethod"
+          :contact-value="contactValue"
+          @verified="onOtpVerified"
+          @back="step = 'contact'"
+        />
 
-          <p v-if="contactError" class="my-1 text-[12.5px] text-error">{{ contactError }}</p>
-
-          <button
-            type="button"
-            class="press mt-3.5 w-full rounded-field bg-primary py-3.5 text-[15px] font-semibold text-white hover:bg-primary-hover"
-            @click="submitContact"
-          >
-            {{ contactCta }}
-          </button>
-          <p class="mt-3.5 text-center text-[11.5px] leading-relaxed text-muted">
-            En continuant, un code à 6 chiffres vous sera envoyé pour vérifier votre identité.
-          </p>
-        </div>
-
-        <div v-else-if="step === 'otp'">
-          <p class="mb-[18px] text-[13.5px] leading-relaxed text-muted">
-            Code envoyé {{ otpDestinationPrefix }}
-            <strong class="text-dark">{{ otpDestination }}</strong>.
-            <button type="button" class="press font-semibold text-primary" @click="backToContact">
-              Modifier
-            </button>
-          </p>
-
-          <OtpInput
-            :model-value="otp"
-            :invalid="otpInvalid"
-            :disabled="isVerifying"
-            @update:model-value="onOtpChange"
-            @complete="verifyOtp"
-          />
-          <p v-if="otpError" class="mt-2 text-center text-[12.5px] text-error">{{ otpError }}</p>
-
-          <p class="mt-3 text-center text-[13px] text-muted">
-            <template v-if="resendSeconds > 0">Renvoyer dans {{ resendSeconds }}s</template>
-            <button v-else type="button" class="press font-semibold text-primary" @click="resendCode">
-              Renvoyer le code
-            </button>
-          </p>
-
-          <button
-            type="button"
-            class="press mt-3.5 w-full rounded-field bg-primary py-3.5 text-[15px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
-            :disabled="!isOtpComplete || isVerifying"
-            @click="verifyOtp"
-          >
-            {{ isVerifying ? 'Vérification…' : 'Vérifier le code' }}
-          </button>
-        </div>
+        <AuthPasswordStep
+          v-else-if="step === 'password'"
+          :mode="activeTab === 'signup' ? 'signup' : 'login'"
+          :method="contactMethod"
+          :contact-value="contactValue"
+          :role="role"
+          @signup-success="onSignupPasswordSuccess"
+          @login-success="onLoginSuccess"
+        />
 
         <div v-else>
           <label for="auth-sector" class="mb-1 block text-[13px] font-semibold text-dark">

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ConversationSummary, Message } from '~~/server/utils/conversationStore'
-import type { User } from '~~/server/utils/userStore'
+import type { PublicUser } from '~~/server/utils/userStore'
 
 interface MessagesResponse {
   conversation: ConversationSummary
@@ -19,7 +19,7 @@ const { data, pending, error, refresh } = await useFetch<MessagesResponse>(
 // des bulles) : aucun composable de session n'existe encore ailleurs dans
 // l'app (l'écran d'auth #21/#23 est encore simulé côté front), on interroge
 // donc directement la route de session existante (#24).
-const { data: sessionData } = await useFetch<{ user: User }>('/api/auth/session')
+const { data: sessionData } = await useFetch<{ user: PublicUser }>('/api/auth/session')
 
 const conversation = computed(() => data.value?.conversation ?? null)
 const messages = computed(() => data.value?.messages ?? [])

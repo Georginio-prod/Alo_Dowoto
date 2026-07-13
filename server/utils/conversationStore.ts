@@ -83,10 +83,9 @@ export function getConversationById(id: string): Conversation | null {
   return conversations.get(id) ?? null
 }
 
-/** Marque le formulaire de première prise de contact comme soumis (#129), une seule fois par conversation. */
-export function markFirstContactDone(conversationId: string): void {
-  const conversation = conversations.get(conversationId)
-  if (conversation) conversation.firstContactDone = true
+/** Le contact a-t-il déjà été engagé entre ce client et ce prestataire (#127, démasquage des coordonnées) ? */
+export function hasConversation(clientId: string, providerId: string): boolean {
+  return !!findConversation(clientId, providerId)
 }
 
 /** Vérifie que l'utilisateur fait partie de la conversation (client ou prestataire). */
