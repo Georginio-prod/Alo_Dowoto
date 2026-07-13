@@ -22,7 +22,7 @@ function onSelectSubSector(name: string) {
 <template>
   <div>
     <HeroSection />
-    <SectorGrid @select="openSectorDrawer" />
+    <SectorGrid @select="openSectorDrawer" @select-sub="(_sector, name) => onSelectSubSector(name)" />
     <HowItWorks />
     <SectorDrawer :sector="activeSector" @close="closeSectorDrawer" @select="onSelectSubSector" />
   </div>
