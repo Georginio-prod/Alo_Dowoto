@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { SignupProfile } from '~/components/AuthContactStep.vue'
 import { SECTORS } from '~/data/sectors'
 import type { PublicUser } from '~~/server/utils/userStore'
 
@@ -16,6 +17,7 @@ const step = ref<Step>('contact')
 const contactMethod = ref<Method>('phone')
 const contactValue = ref('')
 const otpDevCode = ref<string | undefined>(undefined)
+const signupProfile = ref<SignupProfile | undefined>(undefined)
 
 const sectorSlug = ref('')
 
@@ -44,10 +46,11 @@ function selectRole(r: Role) {
   role.value = r
 }
 
-function onContactSent(payload: { method: Method; value: string; devCode?: string }) {
+function onContactSent(payload: { method: Method; value: string; devCode?: string; profile?: SignupProfile }) {
   contactMethod.value = payload.method
   contactValue.value = payload.value
   otpDevCode.value = payload.devCode
+  signupProfile.value = payload.profile
   step.value = 'otp'
 }
 
@@ -154,7 +157,7 @@ function onPayoutSaved() {
           </div>
         </div>
 
-        <AuthContactStep v-if="step === 'contact'" :cta="contactCta" @sent="onContactSent" />
+        <AuthContactStep v-if="step === 'contact'" :cta="contactCta" :mode="activeTab" @sent="onContactSent" />
 
         <AuthOtpStep
           v-else-if="step === 'otp'"
@@ -171,6 +174,7 @@ function onPayoutSaved() {
           :method="contactMethod"
           :contact-value="contactValue"
           :role="role"
+          :profile="signupProfile"
           @signup-success="onSignupPasswordSuccess"
           @login-success="onLoginSuccess"
         />

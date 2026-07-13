@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { SignupProfile } from '~/components/AuthContactStep.vue'
 import type { PublicUser } from '~~/server/utils/userStore'
 
 /**
@@ -12,6 +13,8 @@ const props = defineProps<{
   method: 'phone' | 'email'
   contactValue: string
   role: 'client' | 'prestataire'
+  /** Collecté à la première page (#username/prénom/nom/localisation), requis à la création du compte. */
+  profile?: SignupProfile
 }>()
 
 const emit = defineEmits<{
@@ -71,7 +74,15 @@ async function submitSignupPassword() {
   try {
     await $fetch('/api/auth/session', {
       method: 'POST',
-      body: { method: props.method, value: props.contactValue, role: props.role },
+      body: {
+        method: props.method,
+        value: props.contactValue,
+        role: props.role,
+        username: props.profile?.username,
+        firstName: props.profile?.firstName,
+        lastName: props.profile?.lastName,
+        location: props.profile?.location,
+      },
     })
     await $fetch('/api/auth/password', {
       method: 'POST',
