@@ -98,6 +98,12 @@ function restartDemo() {
             Publier une demande précise
           </NuxtLink>
           <NuxtLink
+            to="/dashboard/client"
+            class="press rounded-field border border-hairline bg-white px-3.5 py-2 text-[13px] font-semibold text-muted hover:text-dark"
+          >
+            Mon espace
+          </NuxtLink>
+          <NuxtLink
             to="/messages"
             class="press rounded-field border border-hairline bg-white px-3.5 py-2 text-[13px] font-semibold text-muted hover:text-dark"
           >
