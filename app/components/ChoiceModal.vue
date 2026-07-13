@@ -23,10 +23,16 @@ function query() {
 }
 
 function chooseClient() {
+  // La modale est affichée par le layout via `v-if="isOpen"` (état externe
+  // au composant) : sans ce `cancel`, elle reste visible par-dessus la
+  // page de destination après la navigation, puisque rien d'autre ne la
+  // referme.
+  emit('cancel')
   navigateTo({ path: '/auth', query: { role: 'client', ...query() } })
 }
 
 function chooseProvider() {
+  emit('cancel')
   navigateTo({ path: '/auth', query: { role: 'prestataire', ...query() } })
 }
 
