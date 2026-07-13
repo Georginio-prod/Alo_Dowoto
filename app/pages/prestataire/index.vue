@@ -2,6 +2,14 @@
 import { SECTORS } from '~/data/sectors'
 import type { ProviderProfile } from '~~/server/utils/providerStore'
 import type { Subscription } from '~~/server/utils/subscriptionStore'
+import type { PublicUser } from '~~/server/utils/userStore'
+
+/**
+ * « Mon espace » prestataire : mêmes codes visuels que « Mon espace »
+ * chercheur (app/pages/dashboard/client.vue), inspirés d'une maquette de
+ * référence fournie par l'utilisateur — pour une expérience cohérente
+ * entre les deux profils.
+ */
 
 definePageMeta({ layout: 'dashboard-prestataire' })
 
@@ -12,11 +20,16 @@ const BADGE_STYLES: Record<string, string> = {
   expired: 'bg-error/10 text-error',
 }
 
+const { data: sessionData } = await useFetch<{ user: PublicUser }>('/api/auth/session')
 const { data: profileData } = await useFetch<{ profile: ProviderProfile | null }>('/api/providers/me')
 const { data: subscriptionData } = await useFetch<{ subscription: Subscription | null }>('/api/subscriptions/me')
 const { data: requestsQuotaData } = await useFetch<{ usage: { count: number; limit: number | null; month: string } }>(
   '/api/quotas/requests-received',
 )
+const { data: ratingData } = await useFetch<{ rating: { average: number; count: number } }>('/api/reviews/me')
+
+const user = computed(() => sessionData.value?.user ?? null)
+const rating = computed(() => ratingData.value?.rating ?? { average: 0, count: 0 })
 
 const sectorName = computed(() => {
   const slug = profileData.value?.profile?.sector
@@ -50,52 +63,60 @@ function restartDemo() {
 </script>
 
 <template>
-  <div class="flex flex-col items-center rounded-card border border-hairline bg-surface px-6 py-10 text-center">
-    <div
-      class="mb-4 flex size-20 items-center justify-center rounded-full bg-[repeating-linear-gradient(135deg,#e5e7eb_0_10px,#eef0f2_10px_20px)]"
-    >
-      <span class="rounded-pill bg-black/40 px-2 py-0.5 text-[10px] font-semibold text-white">photo</span>
+  <div>
+    <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <p class="mb-1 text-[11px] font-bold uppercase tracking-wide text-primary">Espace prestataire</p>
+        <h1 class="text-[21px] font-extrabold text-dark">Bonjour {{ user?.firstName || sectorName }}</h1>
+        <p class="mt-1 text-[13px] text-muted">
+          <span v-if="user?.location">📍 {{ user.location }} · </span>{{ sectorName }}
+        </p>
+      </div>
+      <span class="shrink-0 rounded-pill px-3 py-1.5 text-[12.5px] font-bold" :class="BADGE_STYLES[subscriptionBadge.tone]">
+        {{ subscriptionBadge.label }}
+      </span>
     </div>
 
-    <h1 class="mb-2 text-[19px] font-bold text-dark">
-      Bienvenue sur WorkTogo, {{ sectorName }} !
-    </h1>
+    <div class="mb-6 grid grid-cols-3 gap-3">
+      <div class="rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm">
+        <div class="text-[22px] font-extrabold text-dark">{{ requestsUsageLabel }}</div>
+        <div class="text-[11.5px] text-muted">Demandes reçues ce mois</div>
+      </div>
+      <div class="rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm">
+        <div class="text-[22px] font-extrabold text-dark">{{ rating.count > 0 ? rating.average.toFixed(1) : '—' }}</div>
+        <div class="text-[11.5px] text-muted">{{ rating.count }} avis</div>
+      </div>
+      <div class="rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm">
+        <div class="truncate text-[15px] font-extrabold text-dark">{{ sectorName }}</div>
+        <div class="text-[11.5px] text-muted">Secteur d'activité</div>
+      </div>
+    </div>
 
-    <span
-      class="mb-4 rounded-pill px-3 py-1 text-[12.5px] font-bold"
-      :class="BADGE_STYLES[subscriptionBadge.tone]"
-    >
-      {{ subscriptionBadge.label }}
-    </span>
-
-    <p class="mb-4 rounded-pill bg-bg px-3 py-1 text-[12.5px] font-bold text-dark">
-      {{ requestsUsageLabel }} demandes reçues ce mois
-    </p>
-
-    <p class="mb-6 max-w-[420px] text-[13.5px] leading-relaxed text-muted">
+    <p class="mb-6 max-w-[520px] text-[13.5px] leading-relaxed text-muted">
       Complétez votre profil (photo, description, tarifs) pour commencer à recevoir des demandes de clients dans
       les secteurs sélectionnés.
     </p>
 
-    <button
-      type="button"
-      class="press mb-2.5 w-full max-w-[320px] rounded-field bg-dark py-3.5 text-[14.5px] font-semibold text-white hover:bg-[#1a3a28]"
-      @click="completeProfile"
-    >
-      Compléter mon profil
-    </button>
-    <NuxtLink
-      to="/messages"
-      class="press mb-2.5 w-full max-w-[320px] rounded-field border border-hairline bg-white py-3.5 text-center text-[14.5px] font-semibold text-muted hover:text-dark"
-    >
-      Voir mes messages
-    </NuxtLink>
-    <button
-      type="button"
-      class="press w-full max-w-[320px] rounded-field border border-hairline bg-white py-3.5 text-[14.5px] font-semibold text-muted hover:text-dark"
-      @click="restartDemo"
-    >
-      Recommencer la démo
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <button
+        type="button"
+        class="press rounded-card border border-hairline bg-dark p-4 text-left shadow-card-sm hover:bg-[#1a3a28]"
+        @click="completeProfile"
+      >
+        <p class="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-white/70">Profil</p>
+        <p class="text-[13.5px] font-semibold text-white">Compléter mon profil</p>
+      </button>
+      <NuxtLink
+        to="/messages"
+        class="press rounded-card border border-hairline bg-surface p-4 shadow-card-sm hover:border-primary/40"
+      >
+        <p class="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-primary">Messages</p>
+        <p class="text-[13.5px] font-semibold text-dark">Voir mes messages</p>
+      </NuxtLink>
+    </div>
+
+    <button type="button" class="press mt-5 text-[13px] font-semibold text-muted hover:text-dark" @click="restartDemo">
+      ↺ Recommencer la démo
     </button>
   </div>
 </template>
