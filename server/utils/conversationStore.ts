@@ -88,6 +88,12 @@ export function hasConversation(clientId: string, providerId: string): boolean {
   return !!findConversation(clientId, providerId)
 }
 
+/** Marque le formulaire de première prise de contact comme soumis (#129), une seule fois par conversation. */
+export function markFirstContactDone(conversationId: string): void {
+  const conversation = conversations.get(conversationId)
+  if (conversation) conversation.firstContactDone = true
+}
+
 /** Vérifie que l'utilisateur fait partie de la conversation (client ou prestataire). */
 export function isConversationParticipant(conversation: Conversation, userId: string): boolean {
   return conversation.clientId === userId || conversation.providerId === userId
