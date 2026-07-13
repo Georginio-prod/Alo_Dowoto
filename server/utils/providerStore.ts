@@ -2,14 +2,18 @@
  * Store en mémoire pour les profils prestataires. Suffisant pour ce lot
  * (pas de base de données encore en place, voir #45/#46).
  *
- * Seul `sector` est renseigné par le prototype actuel (#26). Les champs
- * photo/description/tarifs sont anticipés pour une itération future et
- * restent facultatifs.
+ * `sector`, `city` et `payoutMethod` sont renseignés à l'inscription
+ * prestataire (#26, #123). Les champs photo/description/tarifs sont
+ * anticipés pour une itération future et restent facultatifs.
  */
+
+export type PayoutMethod = 'flooz' | 'tmoney' | 'virement'
 
 export interface ProviderProfile {
   userId: string
   sector: string
+  city?: string
+  payoutMethod?: PayoutMethod
   photoUrl?: string
   description?: string
   rateFrom?: number
@@ -18,6 +22,8 @@ export interface ProviderProfile {
 
 export interface ProviderProfilePatch {
   sector: string
+  city?: string
+  payoutMethod?: PayoutMethod
   photoUrl?: string
   description?: string
   rateFrom?: number
@@ -30,6 +36,8 @@ export function upsertProviderProfile(userId: string, patch: ProviderProfilePatc
   const profile: ProviderProfile = {
     userId,
     sector: patch.sector,
+    city: patch.city ?? existing?.city,
+    payoutMethod: patch.payoutMethod ?? existing?.payoutMethod,
     photoUrl: patch.photoUrl ?? existing?.photoUrl,
     description: patch.description ?? existing?.description,
     rateFrom: patch.rateFrom ?? existing?.rateFrom,
