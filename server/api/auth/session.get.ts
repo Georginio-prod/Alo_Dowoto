@@ -1,3 +1,3 @@
 export default defineEventHandler((event) => {
-  return { user: requireSessionUser(event) }
+  return { user: toPublicUser(requireSessionUser(event)) }
 })
