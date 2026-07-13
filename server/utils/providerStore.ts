@@ -50,3 +50,31 @@ export function upsertProviderProfile(userId: string, patch: ProviderProfilePatc
 export function getProviderProfile(userId: string): ProviderProfile | null {
   return profilesByUserId.get(userId) ?? null
 }
+
+export const PAYOUT_METHODS: PayoutMethod[] = ['flooz', 'tmoney', 'virement']
+
+export type RequiredOnboardingFields =
+  | { ok: true; city: string; payoutMethod: PayoutMethod }
+  | { ok: false; error: string }
+
+/**
+ * Localisation et mode de rémunération sont obligatoires à l'inscription
+ * prestataire (#124), contrôlés ici pour être réutilisés à la fois par
+ * providers/me.patch.ts (défense en profondeur côté serveur) et par les
+ * tests, indépendamment du transport HTTP. Une mise à jour partielle qui ne
+ * renvoie pas ces champs retombe sur la valeur déjà enregistrée (ex.
+ * complétion de profil après l'inscription).
+ */
+export function resolveRequiredOnboardingFields(
+  patch: { city?: string; payoutMethod?: PayoutMethod },
+  existing: ProviderProfile | null,
+): RequiredOnboardingFields {
+  const city = patch.city?.trim() || existing?.city
+  const payoutMethod = patch.payoutMethod ?? existing?.payoutMethod
+
+  if (!city) return { ok: false, error: 'La localisation est obligatoire.' }
+  if (!payoutMethod || !PAYOUT_METHODS.includes(payoutMethod)) {
+    return { ok: false, error: 'Le mode de rémunération WorkTogo est obligatoire.' }
+  }
+  return { ok: true, city, payoutMethod }
+}
