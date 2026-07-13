@@ -36,9 +36,7 @@ watch(
   },
 )
 
-// Pas encore de profil public dédié pour l'instant (hors périmètre de ce
-// lot). Bouton posé pour la maquette, sans action.
-function viewProfile() {}
+const showProfile = ref(false)
 
 const isContacting = ref(false)
 const contactError = ref('')
@@ -177,7 +175,7 @@ async function toggleFavorite() {
         <button
           type="button"
           class="press rounded-field border border-hairline bg-white px-4 py-2 text-[13px] font-semibold text-muted hover:text-dark"
-          @click="viewProfile"
+          @click="showProfile = true"
         >
           Voir le profil
         </button>
@@ -199,5 +197,7 @@ async function toggleFavorite() {
         <p v-else-if="contactError" class="w-full text-[11.5px] text-error">{{ contactError }}</p>
       </div>
     </div>
+
+    <ProviderProfileModal v-if="showProfile" :provider-id="match.providerId" @close="showProfile = false" />
   </div>
 </template>
