@@ -1,7 +1,10 @@
 import { SECTORS } from '~~/app/data/sectors'
+import type { PayoutMethod } from '~~/server/utils/providerStore'
 
 interface PatchProviderBody {
   sector?: string
+  city?: string
+  payoutMethod?: PayoutMethod
   photoUrl?: string
   description?: string
   rateFrom?: number
@@ -23,8 +26,17 @@ export default defineEventHandler(async (event) => {
     badRequest('Tarif invalide.')
   }
 
+  // Localisation et mode de rémunération obligatoires dès l'inscription
+  // (#124) : le serveur ne fait pas confiance à la validation front.
+  const requiredFields = resolveRequiredOnboardingFields(body ?? {}, existing)
+  if (!requiredFields.ok) {
+    badRequest(requiredFields.error)
+  }
+
   const profile = upsertProviderProfile(user.id, {
     sector,
+    city: requiredFields.city,
+    payoutMethod: requiredFields.payoutMethod,
     photoUrl: body?.photoUrl,
     description: body?.description,
     rateFrom: body?.rateFrom,
