@@ -35,11 +35,11 @@ onUnmounted(() => {
   <Teleport to="body">
     <div
       v-if="sector"
-      class="fixed inset-0 z-40 flex items-end justify-center bg-[rgba(15,35,24,0.45)]"
+      class="fixed inset-0 z-40 flex items-end justify-center bg-[rgba(15,35,24,0.45)] sm:items-center sm:p-5"
       @click.self="emit('close')"
     >
       <div
-        class="max-h-[78vh] w-full max-w-[560px] animate-[wt-fade_0.18s_ease-out] overflow-auto rounded-t-[18px] bg-white p-5 pb-7"
+        class="max-h-[78vh] w-full max-w-[560px] animate-[wt-fade_0.18s_ease-out] overflow-auto rounded-t-[18px] bg-white p-5 pb-7 sm:rounded-[18px]"
         role="dialog"
         aria-modal="true"
         :aria-label="sector.name"
