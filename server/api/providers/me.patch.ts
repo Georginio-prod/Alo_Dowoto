@@ -1,13 +1,17 @@
 import { SECTORS } from '~~/app/data/sectors'
+import type { PayoutMethod } from '~~/server/utils/providerStore'
 
 interface PatchProviderBody {
   sector?: string
+  city?: string
+  payoutMethod?: PayoutMethod
   photoUrl?: string
   description?: string
   rateFrom?: number
 }
 
 const VALID_SECTOR_SLUGS = new Set(SECTORS.map((sector) => sector.slug))
+const VALID_PAYOUT_METHODS = new Set<PayoutMethod>(['flooz', 'tmoney', 'virement'])
 
 export default defineEventHandler(async (event) => {
   const user = requireProviderRole(event)
@@ -22,9 +26,17 @@ export default defineEventHandler(async (event) => {
   if (body?.rateFrom !== undefined && (typeof body.rateFrom !== 'number' || body.rateFrom < 0)) {
     badRequest('Tarif invalide.')
   }
+  if (body?.payoutMethod !== undefined && !VALID_PAYOUT_METHODS.has(body.payoutMethod)) {
+    badRequest('Mode de rémunération invalide.')
+  }
+  if (body?.city !== undefined && body.city.trim().length === 0) {
+    badRequest('Localisation invalide.')
+  }
 
   const profile = upsertProviderProfile(user.id, {
     sector,
+    city: body?.city?.trim(),
+    payoutMethod: body?.payoutMethod,
     photoUrl: body?.photoUrl,
     description: body?.description,
     rateFrom: body?.rateFrom,
