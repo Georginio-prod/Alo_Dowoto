@@ -168,6 +168,13 @@ export function getServiceRequest(id: string): ServiceRequest | null {
   return requests.get(id) ?? null
 }
 
+/** Demandes du client, triées de la plus récente à la plus ancienne (« Mon espace », #64). */
+export function listRequestsByUser(userId: string): ServiceRequest[] {
+  return [...requests.values()]
+    .filter((request) => request.userId === userId)
+    .sort((a, b) => b.createdAt - a.createdAt)
+}
+
 export function getStoredMatches(requestId: string): MatchedProvider[] | null {
   return matchesByRequestId.get(requestId) ?? null
 }
