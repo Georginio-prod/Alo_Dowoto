@@ -9,6 +9,11 @@ interface CreateSessionBody {
   password?: string
   /** Session persistante (30 jours) vs. session de navigateur (#126, "Se souvenir de moi"). */
   rememberMe?: boolean
+  /** Collectés dès la première page d'inscription — obligatoires à la création du compte. */
+  username?: string
+  firstName?: string
+  lastName?: string
+  location?: string
 }
 
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
@@ -30,7 +35,12 @@ export default defineEventHandler(async (event) => {
   }
 
   const role = body.role === 'client' || body.role === 'prestataire' ? body.role : undefined
-  const { user, created } = findOrCreateUser(contact, role)
+  const { user, created } = findOrCreateUser(contact, role, {
+    username: body.username ?? '',
+    firstName: body.firstName ?? '',
+    lastName: body.lastName ?? '',
+    location: body.location ?? '',
+  })
 
   // Compte existant déjà finalisé : le mot de passe créé à l'inscription
   // (#125) est systématiquement redemandé et vérifié (#126). Un compte
