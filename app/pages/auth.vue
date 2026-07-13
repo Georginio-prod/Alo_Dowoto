@@ -5,7 +5,7 @@ import type { PublicUser } from '~~/server/utils/userStore'
 type Tab = 'login' | 'signup'
 type Role = 'client' | 'prestataire'
 type Method = 'phone' | 'email'
-type Step = 'contact' | 'otp' | 'password' | 'sector'
+type Step = 'contact' | 'otp' | 'password' | 'sector' | 'payout'
 
 const route = useRoute()
 
@@ -22,14 +22,15 @@ const sectorSlug = ref('')
 const contactCta = computed(() => (activeTab.value === 'signup' ? 'Créer mon compte' : 'Se connecter'))
 const flowSteps = computed(() =>
   role.value === 'prestataire'
-    ? ['Contact', 'Vérification', 'Mot de passe', 'Secteur', 'Abonnement', 'Paiement']
+    ? ['Contact', 'Vérification', 'Mot de passe', 'Secteur', 'Infos', 'Abonnement', 'Paiement']
     : ['Contact', 'Vérification', 'Mot de passe'],
 )
 const flowStepIndex = computed(() => {
   if (step.value === 'contact') return 0
   if (step.value === 'otp') return 1
   if (step.value === 'password') return 2
-  return 3 // 'sector'
+  if (step.value === 'sector') return 3
+  return 4 // 'payout'
 })
 
 function selectTab(tab: Tab) {
@@ -73,6 +74,10 @@ function onLoginSuccess(user: PublicUser) {
 
 function submitSector() {
   if (!sectorSlug.value) return
+  step.value = 'payout'
+}
+
+function onPayoutSaved() {
   // Étape Abonnement, voir #29.
   navigateTo('/abonnement')
 }
@@ -152,7 +157,7 @@ function submitSector() {
           @login-success="onLoginSuccess"
         />
 
-        <div v-else>
+        <div v-else-if="step === 'sector'">
           <label for="auth-sector" class="mb-1 block text-[13px] font-semibold text-dark">
             Secteur d'activité principal
           </label>
@@ -180,6 +185,8 @@ function submitSector() {
             Continuer
           </button>
         </div>
+
+        <AuthPayoutStep v-else :sector-slug="sectorSlug" @saved="onPayoutSaved" />
       </div>
     </div>
   </div>
