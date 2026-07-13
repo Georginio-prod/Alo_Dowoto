@@ -101,3 +101,68 @@ export function getEffectiveRating(providerId: string): { rating: number, review
   const provider = getProviderById(providerId)
   return { rating: provider?.rating ?? 0, reviewCount: provider?.reviewCount ?? 0 }
 }
+
+export interface ProviderDetail extends ProviderSearchResult {
+  rating: number
+  reviewCount: number
+  /** Approximation dérivée du nombre d'avis (pas de champ dédié, cf. requestStore.toCandidate). */
+  experienceYears: number
+  bio: string
+  availability: string
+  cvUrl: string | null
+  badges: { identity: boolean, skills: boolean }
+  phone: string
+  email: string
+  /** Coordonnées démasquées ou non (#127) — voir `getProviderDetail`. */
+  contactRevealed: boolean
+}
+
+/** Coordonnées de démonstration dérivées de façon stable à partir de l'id (annuaire de démo, #43). */
+function derivedContact(provider: ProviderSearchResult): { phone: string; email: string } {
+  const digits = provider.id.replace(/\D/g, '').padStart(8, '7').slice(-8)
+  const phone = `+228 ${digits.slice(0, 2)} ${digits.slice(2, 4)} ${digits.slice(4, 6)} ${digits.slice(6, 8)}`
+  const emailUser = normalize(provider.displayName).replace(/[^a-z]+/g, '.').replace(/^\.+|\.+$/g, '')
+  return { phone, email: `${emailUser}@worktogo-demo.tg` }
+}
+
+function maskPhone(phone: string): string {
+  const groups = phone.split(' ')
+  return groups.map((group, i) => (i === 0 || i === groups.length - 1 ? group : '••')).join(' ')
+}
+
+function maskEmail(email: string): string {
+  const atIndex = email.indexOf('@')
+  const user = email.slice(0, atIndex)
+  const domain = email.slice(atIndex + 1)
+  const visible = user.slice(0, 2)
+  return `${visible}${'•'.repeat(Math.max(user.length - visible.length, 3))}@${domain}`
+}
+
+/**
+ * Fiche complète d'un prestataire pour la fenêtre « Voir le profil » (#127).
+ * `contactRevealed` détermine si les coordonnées sont affichées en clair ou
+ * partiellement masquées — laissé à la charge de l'appelant (la route API
+ * sait, elle, si l'utilisateur courant a déjà engagé le contact).
+ */
+export function getProviderDetail(id: string, contactRevealed: boolean): ProviderDetail | null {
+  const provider = getProviderById(id)
+  if (!provider) return null
+
+  const { rating, reviewCount } = getEffectiveRating(id)
+  const experienceYears = Math.max(1, Math.round(reviewCount / 8))
+  const { phone, email } = derivedContact(provider)
+
+  return {
+    ...provider,
+    rating,
+    reviewCount,
+    experienceYears,
+    bio: `Prestataire ${provider.subSector.toLowerCase()} basé·e à ${provider.city}, ${experienceYears} an${experienceYears > 1 ? 's' : ''} d'expérience sur WorkTogo.`,
+    availability: provider.verified ? 'Disponible sous 48h' : 'Disponibilité à confirmer avec le prestataire',
+    cvUrl: provider.verified ? `/cv/${provider.id}.pdf` : null,
+    badges: { identity: provider.verified, skills: reviewCount >= 10 },
+    phone: contactRevealed ? phone : maskPhone(phone),
+    email: contactRevealed ? email : maskEmail(email),
+    contactRevealed,
+  }
+}

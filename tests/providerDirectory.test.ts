@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { countBySector, searchProviders } from '~~/server/utils/providerDirectory'
+import { countBySector, getProviderDetail, searchProviders } from '~~/server/utils/providerDirectory'
 
 describe('searchProviders (#40 filtres de résultats)', () => {
   it('retourne tous les prestataires du secteur quand aucun autre filtre n’est actif', () => {
@@ -44,5 +44,38 @@ describe('countBySector (#66 grille /categories)', () => {
 
   it('renvoie 0 pour un secteur sans prestataire dans l’annuaire de démo', () => {
     expect(countBySector('industrie')).toBe(0)
+  })
+})
+
+describe('getProviderDetail — fenêtre « Voir le profil » (#127)', () => {
+  it('renvoie null pour un id inconnu (cas limite)', () => {
+    expect(getProviderDetail('inconnu', false)).toBeNull()
+  })
+
+  it('masque les coordonnées tant que le contact n’est pas engagé', () => {
+    const detail = getProviderDetail('p01', false)
+    expect(detail).not.toBeNull()
+    expect(detail?.contactRevealed).toBe(false)
+    expect(detail?.phone).toContain('••')
+    expect(detail?.email).toContain('•')
+  })
+
+  it('démasque les coordonnées une fois le contact engagé', () => {
+    const masked = getProviderDetail('p01', false)
+    const revealed = getProviderDetail('p01', true)
+    expect(revealed?.contactRevealed).toBe(true)
+    expect(revealed?.phone).not.toContain('•')
+    expect(revealed?.email).not.toContain('•')
+    // Même prestataire, même source : uniquement le masquage doit différer.
+    expect(revealed?.displayName).toBe(masked?.displayName)
+  })
+
+  it('dérive un nombre d’années d’expérience et un statut CV cohérents avec le badge vérifié', () => {
+    const verified = getProviderDetail('p01', false) // Akofa M., vérifiée, 32 avis
+    expect(verified?.experienceYears).toBeGreaterThanOrEqual(1)
+    expect(verified?.cvUrl).not.toBeNull()
+
+    const unverified = getProviderDetail('p04', false) // Yawa D., non vérifiée
+    expect(unverified?.cvUrl).toBeNull()
   })
 })
