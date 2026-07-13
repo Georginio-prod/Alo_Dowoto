@@ -4,7 +4,7 @@
 type Method = 'phone' | 'email'
 
 defineProps<{ cta: string }>()
-const emit = defineEmits<{ sent: [payload: { method: Method; value: string }] }>()
+const emit = defineEmits<{ sent: [payload: { method: Method; value: string; devCode?: string }] }>()
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -36,8 +36,14 @@ async function submit() {
   isSubmitting.value = true
   contactError.value = ''
   try {
-    await $fetch('/api/auth/otp/send', { method: 'POST', body: { method: method.value, value: contactValue.value } })
-    emit('sent', { method: method.value, value: contactValue.value })
+    // `devCode` n'est renvoyé que hors production (voir server/api/auth/otp/send.post.ts)
+    // — en l'absence de provider SMS/email réel (#23), c'est le seul moyen de
+    // tester le parcours sans lire les logs serveur.
+    const { devCode } = await $fetch<{ devCode?: string }>('/api/auth/otp/send', {
+      method: 'POST',
+      body: { method: method.value, value: contactValue.value },
+    })
+    emit('sent', { method: method.value, value: contactValue.value, devCode })
   } catch (error) {
     const statusMessage = (error as { statusMessage?: string })?.statusMessage
     contactError.value = statusMessage || "L'envoi du code a échoué. Réessayez."

@@ -15,6 +15,7 @@ const step = ref<Step>('contact')
 
 const contactMethod = ref<Method>('phone')
 const contactValue = ref('')
+const otpDevCode = ref<string | undefined>(undefined)
 
 const sectorSlug = ref('')
 
@@ -42,9 +43,10 @@ function selectRole(r: Role) {
   role.value = r
 }
 
-function onContactSent(payload: { method: Method; value: string }) {
+function onContactSent(payload: { method: Method; value: string; devCode?: string }) {
   contactMethod.value = payload.method
   contactValue.value = payload.value
+  otpDevCode.value = payload.devCode
   step.value = 'otp'
 }
 
@@ -135,6 +137,7 @@ function submitSector() {
           v-else-if="step === 'otp'"
           :method="contactMethod"
           :contact-value="contactValue"
+          :dev-code="otpDevCode"
           @verified="onOtpVerified"
           @back="step = 'contact'"
         />
