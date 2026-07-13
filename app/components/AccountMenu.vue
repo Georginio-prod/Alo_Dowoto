@@ -17,6 +17,7 @@ const isLoggingOut = ref(false)
 
 const roleLabel = computed(() => (props.user.role === 'prestataire' ? 'Prestataire' : 'Chercheur'))
 const initial = computed(() => props.user.contact.replace(/^\+?228/, '').trim().charAt(0).toUpperCase() || '?')
+const mySpacePath = computed(() => (props.user.role === 'prestataire' ? '/prestataire' : '/dashboard/client'))
 
 function toggleMenu() {
   isOpen.value = !isOpen.value
@@ -103,6 +104,14 @@ onUnmounted(() => {
       role="menu"
       class="absolute right-0 top-[calc(100%+8px)] z-30 w-64 animate-[wt-fade_0.16s_ease-out] rounded-card border border-hairline bg-surface p-1.5 shadow-card-md"
     >
+      <NuxtLink
+        :to="mySpacePath"
+        role="menuitem"
+        class="press block w-full rounded-field px-3 py-2.5 text-left text-[13.5px] font-semibold text-dark hover:bg-bg"
+        @click="closeMenu"
+      >
+        Mon espace
+      </NuxtLink>
       <button
         type="button"
         role="menuitem"
