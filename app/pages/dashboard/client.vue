@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { User } from '~~/server/utils/userStore'
+import type { PublicUser } from '~~/server/utils/userStore'
 
 /**
  * Dashboard client minimal (#64) : n'existait pas encore côté client
@@ -10,7 +10,7 @@ import type { User } from '~~/server/utils/userStore'
 
 definePageMeta({ layout: 'blank' })
 
-const { data: sessionData } = await useFetch<{ user: User }>('/api/auth/session')
+const { data: sessionData } = await useFetch<{ user: PublicUser }>('/api/auth/session')
 const { data: favoritesData } = await useFetch<{ favorites: { providerId: string }[] }>('/api/favorites')
 const { data: contactsQuotaData } = await useFetch<{ usage: { count: number; limit: number; month: string } }>(
   '/api/quotas/contacts',
