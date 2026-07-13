@@ -3,7 +3,7 @@
 
 type Method = 'phone' | 'email'
 
-const props = defineProps<{ method: Method; contactValue: string }>()
+const props = defineProps<{ method: Method; contactValue: string; devCode?: string }>()
 const emit = defineEmits<{ verified: []; back: [] }>()
 
 const RESEND_DELAY = 30
@@ -14,6 +14,11 @@ const otpInvalid = ref(false)
 const isVerifying = ref(false)
 const resendSeconds = ref(RESEND_DELAY)
 let resendTimer: ReturnType<typeof setInterval> | null = null
+
+// `devCode` n'est renvoyé par l'API que hors production (pas de provider
+// SMS/email réel, #23) : affiché tel quel pour permettre de tester le
+// parcours sans lire les logs serveur. Mis à jour au renvoi du code.
+const currentDevCode = ref(props.devCode)
 
 const isOtpComplete = computed(() => otp.value.every((d) => d !== ''))
 const destinationPrefix = computed(() => (props.method === 'phone' ? 'au' : 'à'))
@@ -37,7 +42,11 @@ function stopResendTimer() {
 async function resendCode() {
   if (resendSeconds.value > 0) return
   try {
-    await $fetch('/api/auth/otp/send', { method: 'POST', body: { method: props.method, value: props.contactValue } })
+    const { devCode } = await $fetch<{ devCode?: string }>('/api/auth/otp/send', {
+      method: 'POST',
+      body: { method: props.method, value: props.contactValue },
+    })
+    currentDevCode.value = devCode
   } catch {
     // Cooldown serveur (429) indépendant du timer local : on l'ignore, le
     // bouton redevient actif au prochain tick.
@@ -83,6 +92,13 @@ onUnmounted(stopResendTimer)
       <button type="button" class="press font-semibold text-primary" @click="emit('back')">
         Modifier
       </button>
+    </p>
+
+    <p
+      v-if="currentDevCode"
+      class="mb-3.5 rounded-field border border-dashed border-primary/40 bg-primary/5 px-3.5 py-2.5 text-center text-[13px] text-dark"
+    >
+      Mode développement — code : <strong class="font-mono tracking-widest">{{ currentDevCode }}</strong>
     </p>
 
     <OtpInput
