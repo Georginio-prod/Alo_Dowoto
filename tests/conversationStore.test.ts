@@ -4,6 +4,7 @@ import {
   findOrCreateConversation,
   getMessages,
   listConversationsForUser,
+  markFirstContactDone,
 } from '~~/server/utils/conversationStore'
 
 /** Attend le prochain tick d'horloge pour garantir des `createdAt` distincts et déterministes. */
@@ -66,5 +67,26 @@ describe('conversationStore (#59 API backend — messagerie)', () => {
 
     const list = listConversationsForUser('client-5')
     expect(list[0]?.id).toBe(newer.id)
+  })
+})
+
+describe('conversationStore — première prise de contact (#129)', () => {
+  it("une nouvelle conversation n'a pas encore de première prise de contact", () => {
+    const conversation = findOrCreateConversation('client-6', 'p07')
+    expect(conversation.firstContactDone).toBe(false)
+  })
+
+  it('markFirstContactDone ne s’applique qu’à la conversation ciblée', () => {
+    const target = findOrCreateConversation('client-7', 'p08')
+    const other = findOrCreateConversation('client-7', 'p09')
+
+    markFirstContactDone(target.id)
+
+    expect(target.firstContactDone).toBe(true)
+    expect(other.firstContactDone).toBe(false)
+  })
+
+  it('ignore silencieusement un id de conversation inconnu (cas limite)', () => {
+    expect(() => markFirstContactDone('id-inexistant')).not.toThrow()
   })
 })

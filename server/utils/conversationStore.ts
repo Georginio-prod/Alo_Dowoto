@@ -29,6 +29,8 @@ export interface Conversation {
   clientId: string
   providerId: string
   createdAt: number
+  /** Formulaire obligatoire de première prise de contact déjà soumis (#129) ? */
+  firstContactDone: boolean
 }
 
 export interface Message {
@@ -65,7 +67,13 @@ export function findOrCreateConversation(clientId: string, providerId: string): 
   const existing = findConversation(clientId, providerId)
   if (existing) return existing
 
-  const conversation: Conversation = { id: randomUUID(), clientId, providerId, createdAt: Date.now() }
+  const conversation: Conversation = {
+    id: randomUUID(),
+    clientId,
+    providerId,
+    createdAt: Date.now(),
+    firstContactDone: false,
+  }
   conversations.set(conversation.id, conversation)
   messagesByConversationId.set(conversation.id, [])
   return conversation
