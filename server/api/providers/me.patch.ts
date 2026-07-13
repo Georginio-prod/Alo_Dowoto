@@ -11,7 +11,6 @@ interface PatchProviderBody {
 }
 
 const VALID_SECTOR_SLUGS = new Set(SECTORS.map((sector) => sector.slug))
-const VALID_PAYOUT_METHODS = new Set<PayoutMethod>(['flooz', 'tmoney', 'virement'])
 
 export default defineEventHandler(async (event) => {
   const user = requireProviderRole(event)
@@ -26,17 +25,18 @@ export default defineEventHandler(async (event) => {
   if (body?.rateFrom !== undefined && (typeof body.rateFrom !== 'number' || body.rateFrom < 0)) {
     badRequest('Tarif invalide.')
   }
-  if (body?.payoutMethod !== undefined && !VALID_PAYOUT_METHODS.has(body.payoutMethod)) {
-    badRequest('Mode de rémunération invalide.')
-  }
-  if (body?.city !== undefined && body.city.trim().length === 0) {
-    badRequest('Localisation invalide.')
+
+  // Localisation et mode de rémunération obligatoires dès l'inscription
+  // (#124) : le serveur ne fait pas confiance à la validation front.
+  const requiredFields = resolveRequiredOnboardingFields(body ?? {}, existing)
+  if (!requiredFields.ok) {
+    badRequest(requiredFields.error)
   }
 
   const profile = upsertProviderProfile(user.id, {
     sector,
-    city: body?.city?.trim(),
-    payoutMethod: body?.payoutMethod,
+    city: requiredFields.city,
+    payoutMethod: requiredFields.payoutMethod,
     photoUrl: body?.photoUrl,
     description: body?.description,
     rateFrom: body?.rateFrom,
