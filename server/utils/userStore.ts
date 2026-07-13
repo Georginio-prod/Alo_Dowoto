@@ -15,6 +15,18 @@ export interface User {
   createdAt: number
   /** Hash scrypt (server/utils/password.ts) — absent tant que #125 n'est pas complétée. */
   passwordHash?: string
+  /** Collectés dès la première page d'inscription, pour chercheur et prestataire. */
+  username: string
+  firstName: string
+  lastName: string
+  location: string
+}
+
+export interface NewUserProfile {
+  username: string
+  firstName: string
+  lastName: string
+  location: string
 }
 
 interface Session {
@@ -31,17 +43,39 @@ const sessions = new Map<string, Session>()
 
 /**
  * Retrouve l'utilisateur associé à un contact, ou en crée un nouveau (le
- * rôle est alors obligatoire et définitif — voir #19).
+ * rôle est alors obligatoire et définitif — voir #19). `profile` est
+ * obligatoire à la création : le nom d'utilisateur, le prénom, le nom et la
+ * localisation sont collectés dès la première page d'inscription, pour les
+ * deux types de compte.
  */
-export function findOrCreateUser(contact: string, role: Role | undefined): { user: User; created: boolean } {
+export function findOrCreateUser(
+  contact: string,
+  role: Role | undefined,
+  profile?: NewUserProfile,
+): { user: User; created: boolean } {
   const existing = usersByContact.get(contact)
   if (existing) return { user: existing, created: false }
 
   if (!role) {
     badRequest('Le rôle (client ou prestataire) est requis pour créer un compte.')
   }
+  if (!profile) {
+    badRequest("Nom d'utilisateur, prénom, nom et localisation sont requis pour créer un compte.")
+  }
+  if (!profile.username.trim() || !profile.firstName.trim() || !profile.lastName.trim() || !profile.location.trim()) {
+    badRequest("Nom d'utilisateur, prénom, nom et localisation sont requis pour créer un compte.")
+  }
 
-  const user: User = { id: randomUUID(), contact, role, createdAt: Date.now() }
+  const user: User = {
+    id: randomUUID(),
+    contact,
+    role,
+    createdAt: Date.now(),
+    username: profile.username.trim(),
+    firstName: profile.firstName.trim(),
+    lastName: profile.lastName.trim(),
+    location: profile.location.trim(),
+  }
   usersByContact.set(contact, user)
   return { user, created: true }
 }
@@ -97,9 +131,23 @@ export interface PublicUser {
   role: Role
   createdAt: number
   passwordSet: boolean
+  username: string
+  firstName: string
+  lastName: string
+  location: string
 }
 
 /** Vue publique d'un utilisateur : ne jamais exposer `passwordHash` au client. */
 export function toPublicUser(user: User): PublicUser {
-  return { id: user.id, contact: user.contact, role: user.role, createdAt: user.createdAt, passwordSet: hasPassword(user) }
+  return {
+    id: user.id,
+    contact: user.contact,
+    role: user.role,
+    createdAt: user.createdAt,
+    passwordSet: hasPassword(user),
+    username: user.username,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    location: user.location,
+  }
 }
