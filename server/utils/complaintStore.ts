@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import type { ComplaintCategory } from '~/data/complaintCategories'
 
 /**
  * Store en mémoire pour les réclamations déposées depuis /reclamation.
@@ -8,18 +9,15 @@ import { randomUUID } from 'node:crypto'
  * (voir #45/#46). Pas d'interface d'administration pour consulter/traiter
  * les réclamations dans ce lot — hors périmètre, seule la soumission est
  * couverte.
+ *
+ * La liste des catégories (COMPLAINT_CATEGORIES) vit dans
+ * app/data/complaintCategories.ts, pas ici : ce fichier importe
+ * `node:crypto` et ne doit jamais être importé (en valeur) depuis du code
+ * client, sous peine d'échec du build Vite (module Node externalisé côté
+ * navigateur).
  */
 
-export type ComplaintCategory = 'prestataire' | 'chercheur' | 'paiement' | 'compte' | 'technique' | 'autre'
-
-export const COMPLAINT_CATEGORIES: { value: ComplaintCategory; label: string }[] = [
-  { value: 'prestataire', label: 'Problème avec un prestataire' },
-  { value: 'chercheur', label: 'Problème avec un chercheur' },
-  { value: 'paiement', label: 'Paiement ou abonnement' },
-  { value: 'compte', label: 'Mon compte' },
-  { value: 'technique', label: 'Problème technique' },
-  { value: 'autre', label: 'Autre' },
-]
+export type { ComplaintCategory }
 
 export interface Complaint {
   id: string
