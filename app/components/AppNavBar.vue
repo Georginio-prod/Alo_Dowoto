@@ -138,11 +138,11 @@ onUnmounted(() => {
                   v-for="sector in column"
                   :key="sector.slug"
                   :to="`/categories/${sector.slug}`"
-                  class="press flex items-start gap-2.5 rounded-field p-1.5 hover:bg-bg"
+                  class="group press flex items-start gap-2.5 rounded-field p-1.5 hover:bg-bg"
                   @click="closeMenu"
                 >
                   <span
-                    class="flex size-8 shrink-0 items-center justify-center rounded-[9px] text-[15px]"
+                    class="flex size-8 shrink-0 items-center justify-center rounded-[9px] text-[15px] transition-transform duration-200 ease-out group-hover:scale-110"
                     :style="{ background: sector.color, color: sector.ink }"
                   >
                     {{ sector.emoji }}
@@ -177,16 +177,16 @@ onUnmounted(() => {
             <div class="grid flex-1 grid-cols-2 gap-x-8 gap-y-4">
               <div>
                 <p class="mb-3 text-[11px] font-bold uppercase tracking-wide text-muted">Avantages</p>
-                <div class="flex flex-col gap-3.5">
-                  <div>
+                <div class="flex flex-col gap-1">
+                  <div class="-mx-1.5 rounded-field px-1.5 py-1.5 transition-colors duration-150 hover:bg-bg">
                     <div class="text-[13.5px] font-semibold text-dark">Profil vérifié</div>
                     <div class="text-[12px] text-muted">Badge de confiance visible par les clients</div>
                   </div>
-                  <div>
+                  <div class="-mx-1.5 rounded-field px-1.5 py-1.5 transition-colors duration-150 hover:bg-bg">
                     <div class="text-[13.5px] font-semibold text-dark">Paiement Mobile Money</div>
                     <div class="text-[12px] text-muted">Flooz et T-Money, simple et rapide</div>
                   </div>
-                  <div>
+                  <div class="-mx-1.5 rounded-field px-1.5 py-1.5 transition-colors duration-150 hover:bg-bg">
                     <div class="text-[13.5px] font-semibold text-dark">Essai gratuit 14 jours</div>
                     <div class="text-[12px] text-muted">Sans engagement au-delà de la première période</div>
                   </div>
@@ -194,16 +194,16 @@ onUnmounted(() => {
               </div>
               <div>
                 <p class="mb-3 text-[11px] font-bold uppercase tracking-wide text-muted">Au quotidien</p>
-                <div class="flex flex-col gap-3.5">
-                  <div>
+                <div class="flex flex-col gap-1">
+                  <div class="-mx-1.5 rounded-field px-1.5 py-1.5 transition-colors duration-150 hover:bg-bg">
                     <div class="text-[13.5px] font-semibold text-dark">Demandes ciblées</div>
                     <div class="text-[12px] text-muted">Uniquement dans votre secteur et votre ville</div>
                   </div>
-                  <div>
+                  <div class="-mx-1.5 rounded-field px-1.5 py-1.5 transition-colors duration-150 hover:bg-bg">
                     <div class="text-[13.5px] font-semibold text-dark">Messagerie intégrée</div>
                     <div class="text-[12px] text-muted">Échangez directement avec vos clients</div>
                   </div>
-                  <div>
+                  <div class="-mx-1.5 rounded-field px-1.5 py-1.5 transition-colors duration-150 hover:bg-bg">
                     <div class="text-[13.5px] font-semibold text-dark">Support dédié</div>
                     <div class="text-[12px] text-muted">Une équipe à votre écoute</div>
                   </div>

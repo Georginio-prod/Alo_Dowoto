@@ -91,7 +91,7 @@ async function submit() {
         v-for="n in 5"
         :key="n"
         type="button"
-        class="press text-2xl leading-none"
+        class="press inline-block text-2xl leading-none transition-transform duration-150 ease-out hover:scale-125"
         :class="n <= (hoverRating || rating) ? 'text-star' : 'text-hairline'"
         :aria-pressed="n <= rating"
         :aria-label="`${n} étoile(s)`"

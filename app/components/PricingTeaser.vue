@@ -19,21 +19,31 @@ import { PLANS } from '~/data/plans'
           :key="plan.slug"
           v-reveal
           :style="{ '--reveal-delay': `${i * 80}ms` }"
-          class="relative rounded-card border-2 bg-white p-5"
-          :class="plan.tag ? 'border-primary' : 'border-hairline'"
         >
+          <!-- `v-reveal` reste sur ce wrapper : sa règle `[data-reveal].is-visible
+          { transform: none }` a la même spécificité CSS que l'utilitaire Tailwind
+          `hover:-translate-y-1` — sur le même élément, l'ordre de génération de
+          Tailwind peut la faire gagner et bloquer l'effet de survol en
+          permanence une fois l'apparition terminée. Le survol vit donc sur cet
+          élément interne distinct (comme SectorGrid.vue : wrapper `v-reveal` +
+          bouton animé au survol). -->
           <div
-            v-if="plan.tag"
-            class="absolute -top-3 left-5 rounded-pill bg-dark px-2.5 py-1 text-[11px] font-bold text-white"
+            class="relative rounded-card border-2 bg-white p-5 transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-1 hover:shadow-card-md"
+            :class="plan.tag ? 'border-primary hover:border-primary' : 'border-hairline hover:border-primary/40'"
           >
-            {{ plan.tag }}
+            <div
+              v-if="plan.tag"
+              class="badge-glow absolute -top-3 left-5 rounded-pill bg-dark px-2.5 py-1 text-[11px] font-bold text-white"
+            >
+              {{ plan.tag }}
+            </div>
+            <div class="mb-1 text-[13.5px] font-semibold text-dark">{{ plan.name }}</div>
+            <div class="mb-1">
+              <span class="text-xl font-extrabold text-dark">{{ plan.priceLabel }}</span>
+              <span class="text-[12.5px] text-muted">{{ plan.period }}</span>
+            </div>
+            <div class="text-[12px] text-muted">{{ plan.note }}</div>
           </div>
-          <div class="mb-1 text-[13.5px] font-semibold text-dark">{{ plan.name }}</div>
-          <div class="mb-1">
-            <span class="text-xl font-extrabold text-dark">{{ plan.priceLabel }}</span>
-            <span class="text-[12.5px] text-muted">{{ plan.period }}</span>
-          </div>
-          <div class="text-[12px] text-muted">{{ plan.note }}</div>
         </div>
       </div>
 
