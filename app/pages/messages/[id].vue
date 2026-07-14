@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import type { ConversationSummary, Message } from '~~/server/utils/conversationStore'
-import type { PublicUser } from '~~/server/utils/userStore'
 
 interface MessagesResponse {
   conversation: ConversationSummary
   messages: Message[]
 }
 
-definePageMeta({ layout: 'blank' })
+definePageMeta({ layout: 'messages', middleware: 'auth' })
 
 const route = useRoute()
 const conversationId = computed(() => String(route.params.id))
@@ -15,16 +14,16 @@ const conversationId = computed(() => String(route.params.id))
 const { data, pending, error, refresh } = await useFetch<MessagesResponse>(
   () => `/api/conversations/${conversationId.value}/messages`,
 )
-// Nécessaire côté client pour savoir quels messages sont "les miens" (alignement
-// des bulles) : aucun composable de session n'existe encore ailleurs dans
-// l'app (l'écran d'auth #21/#23 est encore simulé côté front), on interroge
-// donc directement la route de session existante (#24).
-const { data: sessionData } = await useFetch<{ user: PublicUser }>('/api/auth/session')
+// Nécessaire côté client pour savoir quels messages sont "les miens" (alignement des bulles).
+const { user: sessionUser } = useSession()
+// Pour que la barre latérale reflète le dernier message / la première prise
+// de contact / l'avis sans attendre une navigation (voir useConversations.ts).
+const { refresh: refreshConversationList } = useConversations()
 
 const conversation = computed(() => data.value?.conversation ?? null)
 const messages = computed(() => data.value?.messages ?? [])
-const currentUserId = computed(() => sessionData.value?.user?.id ?? '')
-const currentUserContact = computed(() => sessionData.value?.user?.contact ?? '')
+const currentUserId = computed(() => sessionUser.value?.id ?? '')
+const currentUserContact = computed(() => sessionUser.value?.contact ?? '')
 
 // Formulaire obligatoire de première prise de contact (#129) : uniquement
 // pour le client, une seule fois par conversation (le serveur fait foi via
@@ -35,6 +34,7 @@ const showFirstContactForm = computed(
 
 function onFirstContactSubmitted() {
   refresh()
+  refreshConversationList()
 }
 
 const draft = ref('')
@@ -76,6 +76,7 @@ async function sendMessage() {
     })
     draft.value = ''
     await refresh()
+    refreshConversationList()
   } catch {
     sendError.value = "Le message n'a pas pu être envoyé. Réessayez."
   } finally {
@@ -114,28 +115,22 @@ async function submitReview() {
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col">
-    <header class="border-b border-hairline bg-surface">
-      <div class="mx-auto flex max-w-[720px] items-center gap-3 px-5 py-4">
-        <NuxtLink to="/messages" class="press text-sm text-muted">← Retour</NuxtLink>
+  <div class="flex h-full flex-col">
+    <header class="flex shrink-0 items-center gap-3 border-b border-hairline px-4 py-3">
+      <NuxtLink to="/messages" class="press text-lg text-muted sm:hidden" aria-label="Retour aux messages">←</NuxtLink>
 
-        <template v-if="conversation">
-          <div
-            class="flex size-9 shrink-0 items-center justify-center rounded-full bg-[repeating-linear-gradient(135deg,#e5e7eb_0_10px,#eef0f2_10px_20px)]"
-          >
-            <span class="rounded-pill bg-black/40 px-1 py-0.5 text-[7px] font-semibold text-white">photo</span>
+      <template v-if="conversation">
+        <ConversationAvatar :name="conversation.otherPartyName" :seed="conversation.id" size="sm" />
+        <div class="min-w-0">
+          <div class="truncate text-[14.5px] font-bold text-dark">{{ conversation.otherPartyName }}</div>
+          <div v-if="conversation.otherPartySector" class="truncate text-[12px] text-muted">
+            {{ conversation.otherPartySector }}
           </div>
-          <div class="min-w-0">
-            <div class="truncate text-[14.5px] font-bold text-dark">{{ conversation.otherPartyName }}</div>
-            <div v-if="conversation.otherPartySector" class="truncate text-[12px] text-muted">
-              {{ conversation.otherPartySector }}
-            </div>
-          </div>
-        </template>
-      </div>
+        </div>
+      </template>
     </header>
 
-    <div class="mx-auto flex w-full max-w-[720px] flex-1 flex-col px-5 py-6">
+    <div class="flex min-h-0 flex-1 flex-col px-4 py-4">
       <p v-if="pending" class="text-[13px] text-muted">Chargement…</p>
 
       <ResultsEmptyState
@@ -180,7 +175,7 @@ async function submitReview() {
           </div>
         </div>
 
-        <form class="flex gap-2 border-t border-hairline pt-4" @submit.prevent="sendMessage">
+        <form class="flex shrink-0 gap-2 border-t border-hairline pt-4" @submit.prevent="sendMessage">
           <input
             v-model="draft"
             type="text"
@@ -196,9 +191,9 @@ async function submitReview() {
             Envoyer
           </button>
         </form>
-        <p v-if="sendError" class="mt-2 text-[12.5px] text-error">{{ sendError }}</p>
+        <p v-if="sendError" class="mt-2 shrink-0 text-[12.5px] text-error">{{ sendError }}</p>
 
-        <div v-if="conversation" class="mt-5 rounded-card border border-hairline bg-surface p-4">
+        <div v-if="conversation" class="mt-5 shrink-0 overflow-y-auto rounded-card border border-hairline bg-surface p-4">
           <p v-if="alreadyReviewed" class="text-[13px] font-semibold text-dark">
             Merci, votre avis sur cette collaboration a déjà été publié.
           </p>
