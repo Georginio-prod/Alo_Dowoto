@@ -20,14 +20,15 @@ const props = withDefaults(defineProps<{ name: string; seed?: string; size?: 'sm
 
 const initial = computed(() => props.name.trim().charAt(0).toUpperCase() || '?')
 
+const FALLBACK_COLOR = { bg: '#57534E', ink: '#FFFFFF' }
+
 // Hash simple sur `seed` (ou le nom) pour une couleur stable par conversation,
 // plutôt qu'une couleur qui change à chaque re-rendu.
 const colors = computed(() => {
   const key = props.seed || props.name
   let hash = 0
   for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0
-  // `hash % PALETTE.length` est toujours un index valide du tableau non vide ci-dessus.
-  return PALETTE[hash % PALETTE.length]!
+  return PALETTE[hash % PALETTE.length] ?? FALLBACK_COLOR
 })
 
 const sizeClasses = computed(() => (props.size === 'sm' ? 'size-9 text-[13px]' : 'size-11 text-[15px]'))
