@@ -90,6 +90,8 @@ async function submitPayment() {
 
 <template>
   <div class="mx-auto max-w-[440px] px-5 pb-16 pt-7">
+    <NuxtLink to="/" class="press mb-2 inline-block py-2 text-sm text-muted">← Retour</NuxtLink>
+
     <FlowSteps
       :steps="['Contact', 'Vérification', 'Secteur', 'Abonnement', 'Paiement']"
       :current-index="4"
