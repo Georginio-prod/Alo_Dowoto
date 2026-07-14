@@ -31,23 +31,30 @@ function onPosted() {
         :key="testimonial.id"
         v-reveal
         :style="{ '--reveal-delay': `${i * 60}ms` }"
-        class="flex flex-col rounded-card border border-hairline bg-surface p-5"
       >
-        <div class="mb-2.5 flex gap-0.5" aria-hidden="true">
-          <span v-for="n in 5" :key="n" :class="n <= testimonial.rating ? 'text-star' : 'text-hairline'">★</span>
-        </div>
-        <p class="mb-4 flex-1 text-[13.5px] leading-relaxed text-ink">« {{ testimonial.message }} »</p>
-        <div class="flex items-center gap-2.5">
-          <ConversationAvatar :name="testimonial.name" :seed="testimonial.id" size="sm" />
-          <div class="min-w-0">
-            <div class="truncate text-[13px] font-semibold text-dark">{{ testimonial.name }}</div>
-            <div class="text-[11.5px] text-muted">{{ roleLabel(testimonial.role) }} · {{ formatDate(testimonial.createdAt) }}</div>
+        <!-- Survol sur un élément distinct du wrapper `v-reveal` : voir la
+        note dans PricingTeaser.vue (conflit de spécificité CSS entre
+        `[data-reveal].is-visible` et les utilitaires `hover:` de Tailwind
+        quand les deux ciblent le même élément). -->
+        <div class="group flex h-full flex-col rounded-card border border-hairline bg-surface p-5 transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-1 hover:border-primary/30 hover:shadow-card-md">
+          <div class="mb-2.5 flex gap-0.5" aria-hidden="true">
+            <span v-for="n in 5" :key="n" :class="n <= testimonial.rating ? 'text-star' : 'text-hairline'">★</span>
+          </div>
+          <p class="mb-4 flex-1 text-[13.5px] leading-relaxed text-ink">« {{ testimonial.message }} »</p>
+          <div class="flex items-center gap-2.5">
+            <div class="transition-transform duration-200 ease-out group-hover:scale-110">
+              <ConversationAvatar :name="testimonial.name" :seed="testimonial.id" size="sm" />
+            </div>
+            <div class="min-w-0">
+              <div class="truncate text-[13px] font-semibold text-dark">{{ testimonial.name }}</div>
+              <div class="text-[11.5px] text-muted">{{ roleLabel(testimonial.role) }} · {{ formatDate(testimonial.createdAt) }}</div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="mx-auto max-w-xl">
+    <div v-reveal class="mx-auto max-w-xl">
       <LeaveTestimonialForm @posted="onPosted" />
     </div>
   </section>
