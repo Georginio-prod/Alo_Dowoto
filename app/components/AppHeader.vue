@@ -26,8 +26,8 @@ function onSearch() {
 </script>
 
 <template>
-  <header class="sticky top-0 z-20 border-b border-hairline bg-surface px-6 py-3.5">
-    <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4">
+  <header class="sticky top-0 z-20 border-b border-hairline bg-surface">
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-6 py-3.5">
       <NuxtLink to="/" class="shrink-0 text-xl font-extrabold tracking-tight text-dark">
         Work<span class="text-primary">Togo</span>
       </NuxtLink>
@@ -74,5 +74,7 @@ function onSearch() {
         </template>
       </div>
     </div>
+
+    <AppNavBar />
   </header>
 </template>
