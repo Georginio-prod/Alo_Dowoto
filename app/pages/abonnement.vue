@@ -64,6 +64,11 @@ function completeProfileLater() {
       />
     </div>
 
+    <div class="mb-8 mt-12">
+      <h2 class="mb-4 text-lg font-bold text-dark">Fonctionnalités clés</h2>
+      <PlanComparisonTable :selected-slug="selectedSlug" />
+    </div>
+
     <div class="fixed inset-x-0 bottom-0 border-t border-hairline bg-surface px-5 py-4">
       <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4">
         <div>
