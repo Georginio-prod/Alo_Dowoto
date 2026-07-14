@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { PublicUser } from '~~/server/utils/userStore'
 import type { ServiceRequest } from '~~/server/utils/requestStore'
 
 /**
@@ -10,16 +9,15 @@ import type { ServiceRequest } from '~~/server/utils/requestStore'
  * cohérente entre les deux profils.
  */
 
-definePageMeta({ layout: 'blank' })
+definePageMeta({ layout: 'blank', middleware: 'auth' })
 
-const { data: sessionData } = await useFetch<{ user: PublicUser }>('/api/auth/session')
+const { user } = useSession()
 const { data: favoritesData } = await useFetch<{ favorites: { providerId: string }[] }>('/api/favorites')
 const { data: contactsQuotaData } = await useFetch<{ usage: { count: number; limit: number; month: string } }>(
   '/api/quotas/contacts',
 )
 const { data: requestsData } = await useFetch<{ requests: ServiceRequest[] }>('/api/requests')
 
-const user = computed(() => sessionData.value?.user ?? null)
 const myRequests = computed(() => requestsData.value?.requests ?? [])
 const favoritesCount = computed(() => favoritesData.value?.favorites.length ?? 0)
 const contactsUsageLabel = computed(() => {

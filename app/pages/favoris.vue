@@ -7,7 +7,7 @@ interface FavoriteItem {
   provider: ProviderSearchResult | null
 }
 
-definePageMeta({ layout: 'blank' })
+definePageMeta({ layout: 'blank', middleware: 'auth' })
 
 const { data, pending, refresh } = await useFetch<{ favorites: FavoriteItem[] }>('/api/favorites')
 const favorites = computed(() => data.value?.favorites ?? [])

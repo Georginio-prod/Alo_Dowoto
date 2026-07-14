@@ -22,6 +22,8 @@ const emit = defineEmits<{
   'login-success': [user: PublicUser]
 }>()
 
+const { set: setSession } = useSession()
+
 const signupPassword = ref('')
 const signupConfirmPassword = ref('')
 const loginPassword = ref('')
@@ -72,7 +74,7 @@ async function submitSignupPassword() {
 
   isSubmitting.value = true
   try {
-    await $fetch('/api/auth/session', {
+    const { user } = await $fetch<{ user: PublicUser }>('/api/auth/session', {
       method: 'POST',
       body: {
         method: props.method,
@@ -88,9 +90,18 @@ async function submitSignupPassword() {
       method: 'POST',
       body: { password: signupPassword.value, confirmPassword: signupConfirmPassword.value },
     })
+    setSession(user)
     emit('signup-success')
   } catch (error) {
-    passwordError.value = extractErrorMessage(error, 'La création du compte a échoué. Réessayez.')
+    const statusMessage = (error as { statusMessage?: string })?.statusMessage
+    // Contact déjà associé à un compte finalisé (voir server/api/auth/session.post.ts) :
+    // le formulaire ci-dessus ne propose que des champs de *nouveau* mot de
+    // passe, donc renvoyer tel quel « Mot de passe requis. » serait
+    // incompréhensible ici — on oriente explicitement vers la connexion.
+    passwordError.value =
+      statusMessage === 'Mot de passe requis.'
+        ? 'Un compte existe déjà avec ce contact. Utilisez l\'onglet « Connexion » ci-dessus.'
+        : extractErrorMessage(error, 'La création du compte a échoué. Réessayez.')
   } finally {
     isSubmitting.value = false
   }
@@ -105,6 +116,7 @@ async function submitLoginPassword() {
       method: 'POST',
       body: { method: props.method, value: props.contactValue, password: loginPassword.value, rememberMe: rememberMe.value },
     })
+    setSession(user)
     emit('login-success', user)
   } catch (error) {
     passwordError.value = extractErrorMessage(error, 'Mot de passe incorrect.')

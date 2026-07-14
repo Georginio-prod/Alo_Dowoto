@@ -1,22 +1,28 @@
 <script setup lang="ts">
-import type { User } from '~~/server/utils/userStore'
-
 const { open } = useChoiceModal()
 
 const query = ref('')
 
+// État partagé (voir useSession.ts) : ne refait pas la requête si un autre
+// composant (ex. le middleware `auth`) l'a déjà résolue pour cette
+// navigation, et reste à jour après une connexion/déconnexion ailleurs
+// dans l'app puisque `sessionUser` est la même ref partagée.
+const { user: sessionUser, ensure } = useSession()
+await ensure()
+
 function onSearch() {
   const q = query.value.trim()
   if (!q) return
+
+  // Déjà connecté en tant que chercheur : la modale de choix de compte n'a
+  // plus lieu d'être, on va directement aux résultats (voir index.vue#onSelectSubSector).
+  if (sessionUser.value?.role === 'client') {
+    navigateTo({ path: '/resultats', query: { q } })
+    return
+  }
+
   open(q)
 }
-
-// Visiteur non connecté : /api/auth/session répond 401, attendu — on ne
-// traite pas cette réponse comme une erreur bloquante pour le header.
-const { data: sessionData } = await useFetch<{ user: User }>('/api/auth/session', {
-  onResponseError: () => {},
-})
-const sessionUser = computed(() => sessionData.value?.user ?? null)
 </script>
 
 <template>
