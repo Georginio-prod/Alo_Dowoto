@@ -88,6 +88,17 @@ export function getUserById(id: string): User | null {
   return null
 }
 
+/** Met à jour les informations de profil (nom d'utilisateur, prénom, nom, localisation) d'un compte existant. */
+export function updateUserProfile(userId: string, profile: NewUserProfile): User {
+  const user = getUserById(userId)
+  if (!user) notFound('Utilisateur introuvable.')
+  user.username = profile.username
+  user.firstName = profile.firstName
+  user.lastName = profile.lastName
+  user.location = profile.location
+  return user
+}
+
 export function createSession(userId: string): string {
   const token = randomUUID()
   sessions.set(token, { userId, expiresAt: Date.now() + SESSION_TTL_MS })
