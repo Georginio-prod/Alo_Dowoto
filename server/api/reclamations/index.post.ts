@@ -1,4 +1,4 @@
-import type { ComplaintCategory } from '~~/server/utils/complaintStore'
+import { COMPLAINT_CATEGORIES, type ComplaintCategory } from '~/data/complaintCategories'
 
 interface CreateComplaintBody {
   category?: string
@@ -7,7 +7,7 @@ interface CreateComplaintBody {
   contactEmail?: string
 }
 
-const VALID_CATEGORIES: ComplaintCategory[] = ['prestataire', 'chercheur', 'paiement', 'compte', 'technique', 'autre']
+const VALID_CATEGORIES: ComplaintCategory[] = COMPLAINT_CATEGORIES.map((option) => option.value)
 
 /**
  * Ouvert à tout visiteur (pas de session requise) : un problème d'accès au

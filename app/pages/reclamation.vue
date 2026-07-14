@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { COMPLAINT_CATEGORIES } from '~~/server/utils/complaintStore'
+import { COMPLAINT_CATEGORIES } from '~/data/complaintCategories'
 
 useHead({ title: 'Réclamation — WorkTogo' })
 
