@@ -9,16 +9,26 @@ import type { PublicUser } from '~~/server/utils/userStore'
 
 const props = defineProps<{ user: PublicUser }>()
 const { clear: clearSession } = useSession()
+const { open: openChoiceModal } = useChoiceModal()
 
 const root = ref<HTMLElement | null>(null)
 const isOpen = ref(false)
-const confirming = ref<'logout' | 'payment' | null>(null)
+const confirming = ref<'logout' | 'payment' | 'switch-account' | null>(null)
 const notice = ref('')
 const isLoggingOut = ref(false)
 
 const roleLabel = computed(() => (props.user.role === 'prestataire' ? 'Prestataire' : 'Chercheur'))
 const initial = computed(() => props.user.contact.replace(/^\+?228/, '').trim().charAt(0).toUpperCase() || '?')
 const mySpacePath = computed(() => (props.user.role === 'prestataire' ? '/prestataire' : '/dashboard/client'))
+
+// « Changer de compte » (#167) : un contact n'a qu'un seul rôle, fixé à la
+// création (voir userStore.ts) — impossible de "devenir" l'autre rôle sur
+// le même compte. La question tranche donc explicitement s'il faut
+// proposer une connexion (compte déjà existant, avec un autre contact) ou
+// une inscription (pas encore de compte, voir ChoiceModal.vue), plutôt que
+// de deviner une réponse que l'app ne peut pas connaître.
+const otherRole = computed(() => (props.user.role === 'prestataire' ? 'client' : 'prestataire'))
+const otherRoleLabel = computed(() => (otherRole.value === 'prestataire' ? 'prestataire' : 'chercheur'))
 
 function toggleMenu() {
   isOpen.value = !isOpen.value
@@ -38,7 +48,7 @@ function showComingSoon(feature: string) {
   notice.value = `${feature} : fonctionnalité à venir.`
 }
 
-function askConfirm(action: 'logout' | 'payment') {
+function askConfirm(action: 'logout' | 'payment' | 'switch-account') {
   confirming.value = action
   notice.value = ''
 }
@@ -66,6 +76,16 @@ async function confirmLogout() {
 function confirmPaymentChange() {
   confirming.value = null
   showComingSoon('Changer le mode de paiement')
+}
+
+function switchAccountHasAccount() {
+  closeMenu()
+  navigateTo({ path: '/auth', query: { role: otherRole.value, mode: 'login' } })
+}
+
+function switchAccountNoAccount() {
+  closeMenu()
+  openChoiceModal()
 }
 
 function onKeydown(e: KeyboardEvent) {
@@ -131,13 +151,25 @@ onUnmounted(() => {
       >
         Modifier mon profil
       </NuxtLink>
+      <div v-if="confirming === 'switch-account'" class="rounded-field bg-bg p-3">
+        <p class="mb-2 text-[12.5px] text-dark">Avez-vous déjà un compte {{ otherRoleLabel }} ?</p>
+        <div class="flex gap-2">
+          <button type="button" class="press flex-1 rounded-field bg-primary py-1.5 text-[12.5px] font-semibold text-white" @click="switchAccountHasAccount">
+            Oui
+          </button>
+          <button type="button" class="press flex-1 rounded-field border border-hairline bg-white py-1.5 text-[12.5px] font-semibold text-muted" @click="switchAccountNoAccount">
+            Non
+          </button>
+        </div>
+      </div>
       <button
+        v-else
         type="button"
         role="menuitem"
         class="press block w-full rounded-field px-3 py-2.5 text-left text-[13.5px] text-dark hover:bg-bg"
-        @click="showComingSoon('Changer la photo de profil')"
+        @click="askConfirm('switch-account')"
       >
-        Changer la photo de profil
+        Changer de compte
       </button>
       <NuxtLink
         to="/mot-de-passe"

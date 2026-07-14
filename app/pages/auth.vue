@@ -10,7 +10,11 @@ type Step = 'contact' | 'otp' | 'password' | 'sector' | 'payout'
 
 const route = useRoute()
 
-const activeTab = ref<Tab>(route.query.role ? 'signup' : 'login')
+// `mode=login` force l'onglet Connexion même quand `role` est fourni dans
+// l'URL (ex. « Changer de compte » → « J'ai déjà un compte prestataire »,
+// voir AccountMenu.vue) — sans ça, la présence de `role` seule bascule
+// toujours sur Inscription.
+const activeTab = ref<Tab>(route.query.mode === 'login' ? 'login' : route.query.role ? 'signup' : 'login')
 const role = ref<Role>(route.query.role === 'prestataire' ? 'prestataire' : 'client')
 const step = ref<Step>('contact')
 
