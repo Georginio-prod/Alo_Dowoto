@@ -2,7 +2,6 @@
 import { SECTORS } from '~/data/sectors'
 import type { ProviderProfile } from '~~/server/utils/providerStore'
 import type { Subscription } from '~~/server/utils/subscriptionStore'
-import type { PublicUser } from '~~/server/utils/userStore'
 
 /**
  * « Mon espace » prestataire : mêmes codes visuels que « Mon espace »
@@ -11,7 +10,7 @@ import type { PublicUser } from '~~/server/utils/userStore'
  * entre les deux profils.
  */
 
-definePageMeta({ layout: 'dashboard-prestataire' })
+definePageMeta({ layout: 'dashboard-prestataire', middleware: 'auth', authRole: 'prestataire' })
 
 const BADGE_STYLES: Record<string, string> = {
   none: 'bg-bg text-muted',
@@ -20,7 +19,7 @@ const BADGE_STYLES: Record<string, string> = {
   expired: 'bg-error/10 text-error',
 }
 
-const { data: sessionData } = await useFetch<{ user: PublicUser }>('/api/auth/session')
+const { user } = useSession()
 const { data: profileData } = await useFetch<{ profile: ProviderProfile | null }>('/api/providers/me')
 const { data: subscriptionData } = await useFetch<{ subscription: Subscription | null }>('/api/subscriptions/me')
 const { data: requestsQuotaData } = await useFetch<{ usage: { count: number; limit: number | null; month: string } }>(
@@ -28,7 +27,6 @@ const { data: requestsQuotaData } = await useFetch<{ usage: { count: number; lim
 )
 const { data: ratingData } = await useFetch<{ rating: { average: number; count: number } }>('/api/reviews/me')
 
-const user = computed(() => sessionData.value?.user ?? null)
 const rating = computed(() => ratingData.value?.rating ?? { average: 0, count: 0 })
 
 const sectorName = computed(() => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { User } from '~~/server/utils/userStore'
+import type { PublicUser } from '~~/server/utils/userStore'
 
 /**
  * Icône de statut de compte + menu déroulant d'actions rapides (#130),
@@ -7,7 +7,8 @@ import type { User } from '~~/server/utils/userStore'
  * dès qu'une session existe.
  */
 
-const props = defineProps<{ user: User }>()
+const props = defineProps<{ user: PublicUser }>()
+const { clear: clearSession } = useSession()
 
 const root = ref<HTMLElement | null>(null)
 const isOpen = ref(false)
@@ -51,6 +52,10 @@ async function confirmLogout() {
   isLoggingOut.value = true
   try {
     await $fetch('/api/auth/session', { method: 'DELETE' })
+    // État partagé (useSession.ts) : sans ce `clear()`, l'en-tête restait
+    // affiché comme connecté après une déconnexion tant qu'aucune
+    // navigation ne remontait AppHeader (ex. déconnexion depuis "/").
+    clearSession()
   } finally {
     isLoggingOut.value = false
     closeMenu()
@@ -68,7 +73,13 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 function onClickOutside(e: MouseEvent) {
-  if (isOpen.value && root.value && !root.value.contains(e.target as Node)) closeMenu()
+  // `composedPath()` capture le chemin au moment du clic, contrairement à
+  // `root.contains(e.target)` : un clic sur « Se déconnecter » remplace ce
+  // bouton par le panneau de confirmation avant que ce gestionnaire (sur
+  // `window`, donc après tous les autres) ne s'exécute, ce qui détache la
+  // cible du DOM et faisait échouer `contains` — fermant le menu avant que
+  // la confirmation ait pu s'afficher.
+  if (isOpen.value && root.value && !e.composedPath().includes(root.value)) closeMenu()
 }
 
 onMounted(() => {
