@@ -34,9 +34,9 @@ const steps: Step[] = [
           :key="step.n"
           v-reveal
           :style="{ '--reveal-delay': `${i * 80}ms` }"
-          class="px-3 text-center"
+          class="group px-3 text-center"
         >
-          <div class="mx-auto mb-3.5 flex size-[42px] items-center justify-center rounded-pill bg-primary text-[17px] font-bold text-white">
+          <div class="mx-auto mb-3.5 flex size-[42px] items-center justify-center rounded-pill bg-primary text-[17px] font-bold text-white transition-transform duration-200 ease-out group-hover:scale-110">
             {{ step.n }}
           </div>
           <div class="mb-1.5 text-[15.5px] font-semibold text-dark">{{ step.title }}</div>
