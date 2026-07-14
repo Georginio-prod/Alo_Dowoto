@@ -8,15 +8,13 @@ import type { PublicUser } from '~~/server/utils/userStore'
  */
 
 const props = defineProps<{ user: PublicUser }>()
-const { clear: clearSession, set: setSession } = useSession()
+const { clear: clearSession } = useSession()
 
 const root = ref<HTMLElement | null>(null)
 const isOpen = ref(false)
 const confirming = ref<'logout' | 'payment' | null>(null)
 const notice = ref('')
 const isLoggingOut = ref(false)
-const showChangePassword = ref(false)
-const showEditProfile = ref(false)
 
 const roleLabel = computed(() => (props.user.role === 'prestataire' ? 'Prestataire' : 'Chercheur'))
 const initial = computed(() => props.user.contact.replace(/^\+?228/, '').trim().charAt(0).toUpperCase() || '?')
@@ -68,25 +66,6 @@ async function confirmLogout() {
 function confirmPaymentChange() {
   confirming.value = null
   showComingSoon('Changer le mode de paiement')
-}
-
-function openEditProfile() {
-  closeMenu()
-  showEditProfile.value = true
-}
-
-function onProfileSaved(updatedUser: PublicUser) {
-  showEditProfile.value = false
-  setSession(updatedUser)
-}
-
-function openChangePassword() {
-  closeMenu()
-  showChangePassword.value = true
-}
-
-function onPasswordChanged() {
-  showChangePassword.value = false
 }
 
 function onKeydown(e: KeyboardEvent) {
@@ -144,14 +123,14 @@ onUnmounted(() => {
       >
         Mon espace
       </NuxtLink>
-      <button
-        type="button"
+      <NuxtLink
+        to="/profil"
         role="menuitem"
         class="press block w-full rounded-field px-3 py-2.5 text-left text-[13.5px] text-dark hover:bg-bg"
-        @click="openEditProfile"
+        @click="closeMenu"
       >
         Modifier mon profil
-      </button>
+      </NuxtLink>
       <button
         type="button"
         role="menuitem"
@@ -160,14 +139,14 @@ onUnmounted(() => {
       >
         Changer la photo de profil
       </button>
-      <button
-        type="button"
+      <NuxtLink
+        to="/mot-de-passe"
         role="menuitem"
         class="press block w-full rounded-field px-3 py-2.5 text-left text-[13.5px] text-dark hover:bg-bg"
-        @click="openChangePassword"
+        @click="closeMenu"
       >
         Changer le mot de passe
-      </button>
+      </NuxtLink>
       <NuxtLink
         to="/messages"
         role="menuitem"
@@ -239,8 +218,5 @@ onUnmounted(() => {
         Se déconnecter
       </button>
     </div>
-
-    <EditProfileModal v-if="showEditProfile" :user="user" @cancel="showEditProfile = false" @saved="onProfileSaved" />
-    <ChangePasswordModal v-if="showChangePassword" @cancel="showChangePassword = false" @changed="onPasswordChanged" />
   </div>
 </template>
