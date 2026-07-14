@@ -73,7 +73,7 @@ onUnmounted(() => {
 
 <template>
   <div ref="root" class="relative hidden border-t border-hairline lg:block" @keydown="onKeydown" @mouseleave="scheduleClose">
-    <nav class="mx-auto flex max-w-6xl items-center gap-1 px-6" aria-label="Navigation principale">
+    <nav class="mx-auto flex max-w-6xl items-center justify-center gap-1 px-6" aria-label="Navigation principale">
       <button
         type="button"
         class="press flex items-center gap-1 rounded-field px-3 py-2.5 text-[13.5px] font-semibold text-dark hover:bg-bg"
