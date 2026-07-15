@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { isVerified } from '~~/server/utils/verificationStore'
 
 /**
  * Store en mémoire pour les utilisateurs et les sessions. Suffisant pour ce
@@ -146,6 +147,8 @@ export interface PublicUser {
   firstName: string
   lastName: string
   location: string
+  /** Identité vérifiée (carte d'identité + photo passeport, voir server/utils/verificationStore.ts). */
+  verified: boolean
 }
 
 /** Vue publique d'un utilisateur : ne jamais exposer `passwordHash` au client. */
@@ -160,5 +163,6 @@ export function toPublicUser(user: User): PublicUser {
     firstName: user.firstName,
     lastName: user.lastName,
     location: user.location,
+    verified: isVerified(user.id),
   }
 }

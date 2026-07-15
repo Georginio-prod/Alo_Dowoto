@@ -6,7 +6,7 @@ import type { PublicUser } from '~~/server/utils/userStore'
 type Tab = 'login' | 'signup'
 type Role = 'client' | 'prestataire'
 type Method = 'phone' | 'email'
-type Step = 'contact' | 'otp' | 'password' | 'sector' | 'payout'
+type Step = 'contact' | 'otp' | 'password' | 'identity' | 'sector' | 'payout'
 
 const route = useRoute()
 
@@ -28,15 +28,16 @@ const sectorSlug = ref('')
 const contactCta = computed(() => (activeTab.value === 'signup' ? 'Créer mon compte' : 'Se connecter'))
 const flowSteps = computed(() =>
   role.value === 'prestataire'
-    ? ['Contact', 'Vérification', 'Mot de passe', 'Secteur', 'Infos', 'Abonnement', 'Paiement']
-    : ['Contact', 'Vérification', 'Mot de passe'],
+    ? ['Contact', 'Vérification', 'Mot de passe', 'Identité', 'Secteur', 'Infos', 'Abonnement', 'Paiement']
+    : ['Contact', 'Vérification', 'Mot de passe', 'Identité'],
 )
 const flowStepIndex = computed(() => {
   if (step.value === 'contact') return 0
   if (step.value === 'otp') return 1
   if (step.value === 'password') return 2
-  if (step.value === 'sector') return 3
-  return 4 // 'payout'
+  if (step.value === 'identity') return 3
+  if (step.value === 'sector') return 4
+  return 5 // 'payout'
 })
 
 function selectTab(tab: Tab) {
@@ -67,6 +68,10 @@ function landingPathFor(userRole: Role): string {
 }
 
 function onSignupPasswordSuccess() {
+  step.value = 'identity'
+}
+
+function onIdentityStepDone() {
   if (role.value === 'client') {
     navigateTo({ path: '/resultats', query: typeof route.query.q === 'string' && route.query.q.trim() ? { q: route.query.q } : {} })
   } else {
@@ -182,6 +187,8 @@ function onPayoutSaved() {
           @signup-success="onSignupPasswordSuccess"
           @login-success="onLoginSuccess"
         />
+
+        <AuthIdentityStep v-else-if="step === 'identity'" :role="role" @done="onIdentityStepDone" />
 
         <div v-else-if="step === 'sector'">
           <label for="auth-sector" class="mb-1 block text-[13px] font-semibold text-dark">

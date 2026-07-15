@@ -17,6 +17,9 @@ export default defineEventHandler(async (event) => {
   if (user.role !== 'client') {
     forbidden('Réservé aux comptes client.')
   }
+  if (!isVerified(user.id)) {
+    forbidden("Vérifiez votre identité avant de publier votre première demande (carte d'identité + photo passeport).")
+  }
 
   const body = await readBody<CreateRequestBody>(event)
 

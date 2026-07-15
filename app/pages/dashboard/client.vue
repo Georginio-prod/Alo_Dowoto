@@ -64,6 +64,17 @@ function restartDemo() {
       </NuxtLink>
     </div>
 
+    <NuxtLink
+      v-if="!user?.verified"
+      to="/profil"
+      class="press mb-6 flex items-center justify-between gap-3 rounded-card border border-primary/30 bg-primary/8 p-4 hover:border-primary/50"
+    >
+      <p class="text-[13px] font-semibold text-dark">
+        Vérifiez votre identité pour pouvoir publier votre première demande.
+      </p>
+      <span class="shrink-0 font-bold text-primary">→</span>
+    </NuxtLink>
+
     <div class="mb-6 grid grid-cols-3 gap-3">
       <div class="rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm">
         <div class="text-[22px] font-extrabold text-dark">{{ myRequests.length }}</div>

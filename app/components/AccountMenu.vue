@@ -128,6 +128,7 @@ onUnmounted(() => {
         {{ initial }}
       </span>
       <span class="rounded-pill bg-primary/12 px-2 py-0.5 text-[11px] font-bold text-primary">{{ roleLabel }}</span>
+      <span v-if="user.verified" class="text-[12px] text-primary" title="Identité vérifiée" aria-hidden="true">✓</span>
     </button>
 
     <div

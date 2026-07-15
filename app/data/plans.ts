@@ -20,7 +20,6 @@ export interface Plan {
 function features(
   profilVisible: boolean,
   receptionDemandes: boolean,
-  badgeVerifie: boolean,
   miseEnAvant: boolean,
   supportPrioritaire: boolean,
 ): PlanFeature[] {
@@ -31,7 +30,11 @@ function features(
     // ligne dit seulement "vous en recevez", le détail chiffré est dans
     // PLAN_COMPARISON ci-dessous plutôt que de promettre "illimité" à tort.
     { label: 'Réception de demandes clients', included: receptionDemandes },
-    { label: 'Badge "Vérifié" inclus', included: badgeVerifie },
+    // Le badge « Vérifié » vient de la vérification d'identité
+    // (server/utils/verificationStore.ts), pas de la formule choisie : il
+    // est donc identique quelle que soit la formule, et n'est plus un
+    // paramètre de cette fonction.
+    { label: 'Badge "Vérifié" (vérification d\'identité)', included: true },
     { label: 'Mise en avant en tête des résultats', included: miseEnAvant },
     { label: 'Support prioritaire par chat', included: supportPrioritaire },
   ]
@@ -46,7 +49,7 @@ export const PLANS: [Plan, Plan, Plan] = [
     period: '/mois',
     note: 'Facturé chaque mois',
     durationDays: 30,
-    features: features(true, true, false, false, false),
+    features: features(true, true, false, false),
   },
   {
     slug: 'trimestriel',
@@ -57,7 +60,7 @@ export const PLANS: [Plan, Plan, Plan] = [
     note: 'Soit 4 500 FCFA/mois',
     tag: 'Le plus populaire',
     durationDays: 90,
-    features: features(true, true, true, false, true),
+    features: features(true, true, false, true),
   },
   {
     slug: 'annuel',
@@ -68,7 +71,7 @@ export const PLANS: [Plan, Plan, Plan] = [
     note: 'Soit 4 000 FCFA/mois',
     tag: 'Meilleure offre',
     durationDays: 365,
-    features: features(true, true, true, true, true),
+    features: features(true, true, true, true),
   },
 ]
 
@@ -102,7 +105,7 @@ export const PLAN_COMPARISON: PlanComparisonCategory[] = [
     title: 'Visibilité',
     rows: [
       { label: 'Profil visible dans les résultats de recherche', values: { mensuel: true, trimestriel: true, annuel: true } },
-      { label: 'Badge « Vérifié » sur le profil', values: { mensuel: false, trimestriel: true, annuel: true } },
+      { label: 'Badge « Vérifié » (vérification d\'identité, même pour toutes les formules)', values: { mensuel: true, trimestriel: true, annuel: true } },
       { label: 'Mise en avant en tête des résultats', values: { mensuel: false, trimestriel: false, annuel: true } },
     ],
   },
