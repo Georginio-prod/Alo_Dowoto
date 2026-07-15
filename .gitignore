@@ -23,7 +23,7 @@ logs
 .env.*
 !.env.example
 
-# Claude Code scheduler lock
+# Scheduler lock file
 .claude/scheduled_tasks.lock
 
 # Base SQLite locale (Prisma) — voir prisma/migrations pour le schéma versionné
