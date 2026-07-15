@@ -29,13 +29,14 @@ export const CGU: LegalPage = {
         'L\'inscription requiert un numéro de téléphone ou une adresse email valide, vérifié par code à usage unique, ainsi qu\'un mot de passe. L\'utilisateur choisit lors de l\'inscription s\'il agit en tant que chercheur ou prestataire ; ce rôle est définitif pour le compte créé.',
         'L\'utilisateur s\'engage à fournir des informations exactes, à jour et complètes lors de son inscription et à les maintenir à jour, ainsi qu\'à préserver la confidentialité de son mot de passe. Toute activité effectuée depuis un compte est présumée effectuée par son titulaire.',
         'L\'inscription est réservée aux personnes majeures ou légalement capables de contracter au regard du droit togolais.',
+        'La vérification d\'identité (carte d\'identité et photo passeport) est facultative au moment de l\'inscription, mais devient obligatoire avant qu\'un chercheur publie sa première demande ou qu\'un prestataire puisse être contacté par un client — voir l\'article 4 ci-dessous.',
       ],
     },
     {
       heading: '4. Rôle de WorkTogo',
       body: [
         'WorkTogo agit exclusivement en qualité d\'intermédiaire technique de mise en relation. WorkTogo n\'est pas partie au contrat de prestation de service conclu, le cas échéant, entre un chercheur et un prestataire, et n\'intervient ni dans sa négociation, ni dans son exécution, ni dans son paiement.',
-        'La vérification des profils prestataires (badge « Vérifié ») porte sur les éléments déclaratifs fournis par le prestataire et ne constitue ni une garantie de compétence, ni une certification professionnelle, ni un contrôle d\'antécédents judiciaires.',
+        'La vérification des profils (badge « Vérifié ») repose sur la carte d\'identité et la photo passeport télé-versées par l\'utilisateur, chercheur ou prestataire, et confirme uniquement la cohérence des éléments déclaratifs fournis. Elle ne constitue ni une garantie de compétence, ni une certification professionnelle, ni un contrôle d\'antécédents judiciaires.',
       ],
     },
     {

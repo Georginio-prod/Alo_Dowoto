@@ -114,6 +114,14 @@ async function submit() {
           {{ isSubmitting ? 'Enregistrement…' : 'Enregistrer' }}
         </button>
       </div>
+
+      <div class="mt-5 rounded-card border border-hairline bg-surface p-7 shadow-card-sm">
+        <h2 class="mb-1.5 text-lg font-bold text-dark">Vérification d'identité</h2>
+        <p class="mb-5 text-[13px] leading-relaxed text-muted">
+          Obligatoire avant votre première demande (chercheur) ou avant de pouvoir être contacté (prestataire).
+        </p>
+        <IdentityVerificationForm />
+      </div>
     </div>
   </div>
 </template>

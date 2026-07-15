@@ -55,7 +55,7 @@ const FAQ_CATEGORIES: FaqCategory[] = [
       },
       {
         question: 'Comment obtenir le badge « Vérifié » ?',
-        answer: 'Le badge « Vérifié » est inclus dès la formule Trimestriel. Il signale aux chercheurs que votre profil a été contrôlé, et renforce la confiance dans vos échanges.',
+        answer: 'En vérifiant votre identité (carte d\'identité + photo passeport) depuis « Modifier mon profil ». C\'est indépendant de votre formule d\'abonnement, mais obligatoire pour pouvoir être contacté par un client.',
       },
       {
         question: 'Comment fonctionne le paiement de mon abonnement ?',
@@ -88,6 +88,10 @@ const FAQ_CATEGORIES: FaqCategory[] = [
         answer: 'Un compte est associé à un seul rôle, définitif. Depuis le menu du compte, « Changer de compte » vous oriente soit vers la connexion à un compte existant de l\'autre rôle (si vous en avez déjà un, avec un autre numéro ou email), soit vers la création d\'un nouveau compte.',
       },
       {
+        question: 'Pourquoi dois-je vérifier mon identité ?',
+        answer: 'La vérification (carte d\'identité + photo passeport fond blanc) est facultative à l\'inscription, mais obligatoire ensuite : pour un chercheur, avant de publier sa première demande ; pour un prestataire, avant de pouvoir être contacté par un client. Elle certifie votre compte (badge « Vérifié ») et renforce la confiance entre utilisateurs. Complétez-la à tout moment depuis « Modifier mon profil ».',
+      },
+      {
         question: 'Comment supprimer mon compte ?',
         answer: 'La suppression en libre-service n\'est pas encore disponible. Contactez le support avec votre demande : nous procéderons à la suppression de votre compte et de vos données, sous réserve des durées de conservation légalement requises.',
       },
@@ -102,8 +106,8 @@ const FAQ_CATEGORIES: FaqCategory[] = [
         answer: 'Non. Vos coordonnées ne sont partagées qu\'avec la personne que vous contactez vous-même via la messagerie. Le détail complet figure dans la Politique de confidentialité.',
       },
       {
-        question: 'Comment WorkTogo vérifie-t-il les prestataires ?',
-        answer: 'Le badge « Vérifié » repose sur un contrôle des informations déclarées par le prestataire. Il ne remplace pas votre propre vigilance : comparez les avis, échangez avant de vous engager, et signalez tout comportement suspect.',
+        question: 'Comment WorkTogo vérifie-t-il les comptes ?',
+        answer: 'Le badge « Vérifié » repose sur la carte d\'identité et la photo passeport télé-versées par l\'utilisateur, chercheur ou prestataire. Il confirme la cohérence des éléments déclarés, sans remplacer votre propre vigilance : comparez les avis, échangez avant de vous engager, et signalez tout comportement suspect.',
       },
       {
         question: 'Comment signaler un problème avec un chercheur ou un prestataire ?',

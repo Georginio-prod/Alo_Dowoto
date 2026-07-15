@@ -56,6 +56,11 @@ async function contactProvider() {
       contactError.value = 'Quota de contacts atteint ce mois-ci. Réessayez le mois prochain.'
       return
     }
+    if (statusCode === 403) {
+      contactError.value = (error as { statusMessage?: string }).statusMessage
+        || 'Vérifiez votre identité avant de contacter un prestataire.'
+      return
+    }
     contactError.value = 'Impossible de contacter ce prestataire pour le moment. Réessayez plus tard.'
   } finally {
     isContacting.value = false

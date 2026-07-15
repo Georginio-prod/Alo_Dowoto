@@ -19,6 +19,7 @@ export const CONFIDENTIALITE: LegalPage = {
       list: [
         'Données d\'identification : nom, numéro de téléphone, adresse email, mot de passe (stocké de façon chiffrée) ;',
         'Données de profil : secteur d\'activité, description, zone d\'intervention, tarifs indicatifs, photo (pour les prestataires) ;',
+        'Données de vérification d\'identité : photo de la carte d\'identité et photo passeport, télé-versées volontairement pour certifier votre compte (chercheur ou prestataire) — jamais affichées aux autres utilisateurs ;',
         'Données d\'usage : messages échangés via la messagerie, demandes de contact, avis et notations, favoris ;',
         'Données de paiement : références de transaction Mobile Money liées à un abonnement (WorkTogo ne stocke aucun code secret ou identifiant Mobile Money) ;',
         'Données techniques : cookies et identifiants de session nécessaires au fonctionnement du service (voir la page Cookies).',
@@ -30,6 +31,7 @@ export const CONFIDENTIALITE: LegalPage = {
       list: [
         'Créer et gérer votre compte et vous authentifier ;',
         'Permettre la mise en relation entre chercheurs et prestataires ;',
+        'Certifier l\'identité des comptes (badge « Vérifié »), requis avant la première demande d\'un chercheur ou le premier contact reçu par un prestataire ;',
         'Afficher les profils, avis et notations sur la plateforme ;',
         'Gérer les abonnements et paiements des prestataires ;',
         'Assurer le support, traiter vos réclamations et répondre à vos demandes ;',
@@ -45,7 +47,7 @@ export const CONFIDENTIALITE: LegalPage = {
     {
       heading: 'Partage des données',
       body: [
-        'Vos données de profil (nom, secteur, avis, notation) sont visibles par les autres utilisateurs dans le cadre normal du service de mise en relation. WorkTogo ne vend ni ne loue vos données personnelles à des tiers à des fins commerciales.',
+        'Vos données de profil (nom, secteur, avis, notation) sont visibles par les autres utilisateurs dans le cadre normal du service de mise en relation. La carte d\'identité et la photo passeport télé-versées pour la vérification ne sont en revanche jamais partagées avec d\'autres utilisateurs : seul le résultat (compte vérifié ou non) est visible. WorkTogo ne vend ni ne loue vos données personnelles à des tiers à des fins commerciales.',
         'Vos données peuvent être communiquées à des prestataires techniques strictement nécessaires au fonctionnement du service (hébergement, envoi de codes de vérification, traitement des paiements Mobile Money), tenus à une obligation de confidentialité, ou aux autorités compétentes lorsque la loi togolaise l\'exige.',
       ],
     },
