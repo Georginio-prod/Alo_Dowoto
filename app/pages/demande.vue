@@ -19,6 +19,7 @@ const budgetMax = ref<number | null>(null)
 const urgency = ref<Urgency | ''>('')
 const location = ref('')
 const formError = ref('')
+const needsVerification = ref(false)
 const isSubmitting = ref(false)
 
 onMounted(() => {
@@ -36,6 +37,7 @@ function selectUrgency(value: Urgency) {
 async function submit() {
   if (isSubmitting.value) return
   formError.value = ''
+  needsVerification.value = false
 
   const skills = skillsInput.value.split(',').map((skill) => skill.trim()).filter(Boolean)
 
@@ -75,8 +77,15 @@ async function submit() {
     })
     navigateTo(`/matching/${request.id}`)
   } catch (error) {
-    if ((error as { statusCode?: number }).statusCode === 401) {
+    const statusCode = (error as { statusCode?: number }).statusCode
+    if (statusCode === 401) {
       navigateTo({ path: '/auth', query: { role: 'client' } })
+      return
+    }
+    if (statusCode === 403) {
+      const statusMessage = (error as { statusMessage?: string }).statusMessage
+      formError.value = statusMessage || 'Vérifiez votre identité avant de publier une demande.'
+      needsVerification.value = true
       return
     }
     formError.value = 'Une erreur est survenue. Réessayez.'
@@ -164,7 +173,10 @@ async function submit() {
           class="mb-1.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
         >
 
-        <p v-if="formError" class="my-1 text-[12.5px] text-error">{{ formError }}</p>
+        <p v-if="formError" class="my-1 text-[12.5px] text-error">
+          {{ formError }}
+          <NuxtLink v-if="needsVerification" to="/profil" class="font-semibold underline">Vérifier mon identité</NuxtLink>
+        </p>
 
         <button
           type="submit"
