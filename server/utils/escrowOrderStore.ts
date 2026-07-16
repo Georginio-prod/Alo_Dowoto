@@ -14,15 +14,17 @@ import { creditWallet, debitWallet, PLATFORM_WALLET_USER_ID } from '~~/server/ut
  * demande (voir server/api/conversations/[id]/messages.get.ts).
  *
  * Cycle de vie : awaiting_payment → in_escrow (#194) → delivered → released
- * (#195, double validation). `delivered` déclenche un délai de validation
- * tacite (`TACIT_VALIDATION_DELAY_MS`) : si le chercheur ne confirme ni ne
- * conteste dans ce délai, la commande est libérée automatiquement à la
- * prochaine lecture (voir `applyTacitValidationIfExpired`) — pas de tâche
- * planifiée nécessaire tant que le processus reste unique (prototype en
- * mémoire).
+ * (#195, double validation) ; le prestataire peut aussi annuler après le
+ * débit (in_escrow ou delivered) → refunded (#196, remboursement intégral
+ * et automatique, motif obligatoire). `delivered` déclenche un délai de
+ * validation tacite (`TACIT_VALIDATION_DELAY_MS`) : si le chercheur ne
+ * confirme ni ne conteste dans ce délai, la commande est libérée
+ * automatiquement à la prochaine lecture (voir `applyTacitValidationIfExpired`)
+ * — pas de tâche planifiée nécessaire tant que le processus reste unique
+ * (prototype en mémoire).
  */
 
-export type EscrowOrderStatus = 'awaiting_payment' | 'in_escrow' | 'delivered' | 'released'
+export type EscrowOrderStatus = 'awaiting_payment' | 'in_escrow' | 'delivered' | 'released' | 'refunded'
 
 export interface EscrowOrder {
   id: string
@@ -35,6 +37,9 @@ export interface EscrowOrder {
   paidAt: number | null
   deliveredAt: number | null
   releasedAt: number | null
+  cancelledAt: number | null
+  /** Motif obligatoire de l'annulation prestataire (#196), à des fins de modération/fiabilité. */
+  cancelReason: string | null
 }
 
 /**
@@ -69,6 +74,8 @@ export function createEscrowOrder(input: {
     paidAt: null,
     deliveredAt: null,
     releasedAt: null,
+    cancelledAt: null,
+    cancelReason: null,
   }
   ordersByConversationId.set(input.conversationId, order)
   return order
@@ -154,5 +161,31 @@ export function confirmEscrowOrderReceipt(conversationId: string): ConfirmReceip
   if (order.status !== 'delivered') return { ok: false, error: 'invalid_status' }
 
   releaseOrderFunds(order)
+  return { ok: true, order }
+}
+
+export type CancelEscrowOrderResult =
+  | { ok: true; order: EscrowOrder }
+  | { ok: false; error: 'not_found' | 'invalid_status' | 'reason_required' }
+
+/**
+ * Le prestataire annule après le débit du chercheur (#196) : remboursement
+ * intégral et automatique, aucune commission prélevée. Autorisé tant que la
+ * commande est en séquestre ou livrée mais pas encore validée (`in_escrow`
+ * ou `delivered`) — plus possible une fois les fonds libérés (`released`).
+ * Le motif est obligatoire, à des fins de modération et de statistiques de
+ * fiabilité du prestataire.
+ */
+export function cancelEscrowOrder(conversationId: string, reason: string): CancelEscrowOrderResult {
+  const order = ordersByConversationId.get(conversationId)
+  if (!order) return { ok: false, error: 'not_found' }
+  if (order.status !== 'in_escrow' && order.status !== 'delivered') return { ok: false, error: 'invalid_status' }
+  if (!reason.trim()) return { ok: false, error: 'reason_required' }
+
+  creditWallet({ walletUserId: order.clientId, type: 'escrow_refund', amount: order.amount, reference: order.id, counterpartyUserId: order.providerId })
+
+  order.status = 'refunded'
+  order.cancelledAt = Date.now()
+  order.cancelReason = reason.trim()
   return { ok: true, order }
 }

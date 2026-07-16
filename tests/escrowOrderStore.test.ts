@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { describe, expect, it, vi } from 'vitest'
 import {
+  cancelEscrowOrder,
   confirmEscrowOrderReceipt,
   createEscrowOrder,
   ESCROW_COMMISSION_RATE,
@@ -165,5 +166,73 @@ describe('escrowOrderStore — double validation et libération (#195)', () => {
 
     expect(order?.status).toBe('delivered')
     expect(getBalance(provider)).toBe(0)
+  })
+})
+
+describe('cancelEscrowOrder — annulation prestataire et remboursement (#196)', () => {
+  it('rembourse intégralement le chercheur quand la commande est en séquestre (in_escrow)', () => {
+    const conversationId = id()
+    const client = id()
+    creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
+    createEscrowOrder({ conversationId, clientId: client, providerId: id(), amount: 3000 })
+    payEscrowOrder(conversationId)
+
+    const result = cancelEscrowOrder(conversationId, 'Empêchement de dernière minute')
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.order.status).toBe('refunded')
+      expect(result.order.cancelReason).toBe('Empêchement de dernière minute')
+    }
+    expect(getBalance(client)).toBe(5000)
+  })
+
+  it('rembourse intégralement (sans commission) même si la prestation a déjà été marquée terminée (delivered)', () => {
+    const conversationId = id()
+    const client = id()
+    const provider = id()
+    creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
+    createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount: 3000 })
+    payEscrowOrder(conversationId)
+    markEscrowOrderDelivered(conversationId)
+
+    const result = cancelEscrowOrder(conversationId, 'Finalement indisponible')
+
+    expect(result.ok).toBe(true)
+    expect(getBalance(client)).toBe(3000)
+    expect(getBalance(provider)).toBe(0)
+  })
+
+  it('refuse sans motif', () => {
+    const conversationId = id()
+    const client = id()
+    creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
+    createEscrowOrder({ conversationId, clientId: client, providerId: id(), amount: 3000 })
+    payEscrowOrder(conversationId)
+
+    expect(cancelEscrowOrder(conversationId, '   ')).toEqual({ ok: false, error: 'reason_required' })
+    expect(getBalance(client)).toBe(0)
+  })
+
+  it('refuse d’annuler une commande non payée', () => {
+    const conversationId = id()
+    createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 3000 })
+    expect(cancelEscrowOrder(conversationId, 'motif')).toEqual({ ok: false, error: 'invalid_status' })
+  })
+
+  it('refuse d’annuler une commande déjà libérée', () => {
+    const conversationId = id()
+    const client = id()
+    creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
+    createEscrowOrder({ conversationId, clientId: client, providerId: id(), amount: 3000 })
+    payEscrowOrder(conversationId)
+    markEscrowOrderDelivered(conversationId)
+    confirmEscrowOrderReceipt(conversationId)
+
+    expect(cancelEscrowOrder(conversationId, 'motif')).toEqual({ ok: false, error: 'invalid_status' })
+  })
+
+  it('renvoie not_found pour une conversation sans commande', () => {
+    expect(cancelEscrowOrder(id(), 'motif')).toEqual({ ok: false, error: 'not_found' })
   })
 })
