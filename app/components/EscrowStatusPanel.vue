@@ -78,6 +78,32 @@ async function handleCancelOrder() {
     isCancelling.value = false
   }
 }
+
+// Litige (#197, epic #191) : le chercheur conteste la qualité de la
+// prestation au lieu de confirmer la réception, gèle les fonds en attendant
+// une équipe de médiation WorkTogo.
+const showDisputeForm = ref(false)
+const disputeReason = ref('')
+const isDisputing = ref(false)
+const disputeError = ref('')
+
+async function handleOpenDispute() {
+  if (isDisputing.value || !disputeReason.value.trim()) return
+  isDisputing.value = true
+  disputeError.value = ''
+  try {
+    await $fetch(`/api/conversations/${props.conversationId}/dispute`, {
+      method: 'POST',
+      body: { reason: disputeReason.value.trim() },
+    })
+    showDisputeForm.value = false
+    emit('changed')
+  } catch {
+    disputeError.value = "Le litige n'a pas pu être ouvert. Réessayez."
+  } finally {
+    isDisputing.value = false
+  }
+}
 </script>
 
 <template>
@@ -103,17 +129,51 @@ async function handleCancelOrder() {
 
     <template v-else-if="escrowOrder.status === 'delivered' && isViewerClient">
       <p class="text-[13px] text-dark">
-        Le prestataire a marqué la prestation comme terminée. Confirmez la réception pour libérer le paiement
-        (validation automatique sous 72h sans réponse).
+        Le prestataire a marqué la prestation comme terminée. Confirmez la réception pour libérer le paiement, ou
+        contestez la qualité de la prestation (validation automatique sous 72h sans réponse).
       </p>
-      <button
-        type="button"
-        class="press mt-2 rounded-field bg-primary px-4 py-2 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
-        :disabled="isConfirmingReceipt"
-        @click="handleConfirmReceipt"
-      >
-        {{ isConfirmingReceipt ? 'Confirmation…' : 'Confirmer la réception' }}
-      </button>
+      <div class="mt-2 flex flex-wrap gap-2">
+        <button
+          type="button"
+          class="press rounded-field bg-primary px-4 py-2 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
+          :disabled="isConfirmingReceipt"
+          @click="handleConfirmReceipt"
+        >
+          {{ isConfirmingReceipt ? 'Confirmation…' : 'Confirmer la réception' }}
+        </button>
+        <button
+          v-if="!showDisputeForm"
+          type="button"
+          class="press rounded-field border border-error px-4 py-2 text-[13px] font-semibold text-error"
+          @click="showDisputeForm = true"
+        >
+          Contester la prestation
+        </button>
+      </div>
+
+      <div v-if="showDisputeForm" class="mt-3 space-y-2 border-t border-hairline pt-3">
+        <textarea
+          v-model="disputeReason"
+          rows="2"
+          placeholder="Motif du litige (obligatoire)"
+          aria-label="Motif du litige"
+          class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
+        />
+        <div class="flex gap-2">
+          <button
+            type="button"
+            class="press rounded-field border border-error px-4 py-2 text-[12.5px] font-semibold text-error disabled:cursor-not-allowed disabled:opacity-45"
+            :disabled="!disputeReason.trim() || isDisputing"
+            @click="handleOpenDispute"
+          >
+            {{ isDisputing ? 'Envoi…' : 'Confirmer le litige' }}
+          </button>
+          <button type="button" class="press text-[12.5px] text-muted" @click="showDisputeForm = false">
+            Retour
+          </button>
+        </div>
+        <p v-if="disputeError" class="text-[12.5px] text-error">{{ disputeError }}</p>
+      </div>
     </template>
 
     <p v-else-if="escrowOrder.status === 'delivered' && isViewerProvider" class="text-[13px] text-muted">
@@ -126,6 +186,11 @@ async function handleCancelOrder() {
 
     <p v-else-if="escrowOrder.status === 'refunded'" class="text-[13px] text-dark">
       Commande annulée par le prestataire, chercheur remboursé intégralement.
+    </p>
+
+    <p v-else-if="escrowOrder.status === 'disputed'" class="text-[13px] text-dark">
+      Litige ouvert : les fonds restent gelés en séquestre en attendant l'arbitrage de l'équipe de médiation
+      WorkTogo.
     </p>
 
     <p v-if="deliverError" class="mt-2 text-[12.5px] text-error">{{ deliverError }}</p>

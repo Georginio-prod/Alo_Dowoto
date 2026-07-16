@@ -6,7 +6,9 @@ import {
   createEscrowOrder,
   ESCROW_COMMISSION_RATE,
   getEscrowOrderByConversationId,
+  listDisputedOrders,
   markEscrowOrderDelivered,
+  openEscrowDispute,
   payEscrowOrder,
   TACIT_VALIDATION_DELAY_MS,
 } from '~~/server/utils/escrowOrderStore'
@@ -234,5 +236,86 @@ describe('cancelEscrowOrder — annulation prestataire et remboursement (#196)',
 
   it('renvoie not_found pour une conversation sans commande', () => {
     expect(cancelEscrowOrder(id(), 'motif')).toEqual({ ok: false, error: 'not_found' })
+  })
+})
+
+describe('openEscrowDispute — litige sur une commande en séquestre (#197)', () => {
+  it('gèle les fonds sans les libérer ni les rembourser', () => {
+    const conversationId = id()
+    const client = id()
+    const provider = id()
+    creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
+    createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount: 3000 })
+    payEscrowOrder(conversationId)
+    markEscrowOrderDelivered(conversationId)
+
+    const result = openEscrowDispute(conversationId, 'Prestation non conforme')
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.order.status).toBe('disputed')
+      expect(result.order.disputeReason).toBe('Prestation non conforme')
+    }
+    expect(getBalance(client)).toBe(2000)
+    expect(getBalance(provider)).toBe(0)
+  })
+
+  it('refuse sans motif', () => {
+    const conversationId = id()
+    const client = id()
+    creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
+    createEscrowOrder({ conversationId, clientId: client, providerId: id(), amount: 3000 })
+    payEscrowOrder(conversationId)
+    markEscrowOrderDelivered(conversationId)
+
+    expect(openEscrowDispute(conversationId, '  ')).toEqual({ ok: false, error: 'reason_required' })
+  })
+
+  it('refuse tant que la prestation n’a pas été marquée terminée', () => {
+    const conversationId = id()
+    const client = id()
+    creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
+    createEscrowOrder({ conversationId, clientId: client, providerId: id(), amount: 3000 })
+    payEscrowOrder(conversationId)
+
+    expect(openEscrowDispute(conversationId, 'motif')).toEqual({ ok: false, error: 'invalid_status' })
+  })
+
+  it('une commande en litige n’est jamais libérée automatiquement, même après le délai de validation tacite', () => {
+    const conversationId = id()
+    const client = id()
+    const provider = id()
+    let now = 1_000_000
+    const spy = vi.spyOn(Date, 'now').mockImplementation(() => now)
+
+    creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
+    createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount: 3000 })
+    payEscrowOrder(conversationId)
+    markEscrowOrderDelivered(conversationId)
+    openEscrowDispute(conversationId, 'Prestation non conforme')
+    now += TACIT_VALIDATION_DELAY_MS + 1
+
+    const order = getEscrowOrderByConversationId(conversationId)
+
+    spy.mockRestore()
+
+    expect(order?.status).toBe('disputed')
+    expect(getBalance(provider)).toBe(0)
+  })
+
+  it('renvoie not_found pour une conversation sans commande', () => {
+    expect(openEscrowDispute(id(), 'motif')).toEqual({ ok: false, error: 'not_found' })
+  })
+
+  it('listDisputedOrders liste uniquement les commandes en litige', () => {
+    const conversationId = id()
+    const client = id()
+    creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
+    createEscrowOrder({ conversationId, clientId: client, providerId: id(), amount: 3000 })
+    payEscrowOrder(conversationId)
+    markEscrowOrderDelivered(conversationId)
+    openEscrowDispute(conversationId, 'motif')
+
+    expect(listDisputedOrders().some((order) => order.conversationId === conversationId)).toBe(true)
   })
 })
