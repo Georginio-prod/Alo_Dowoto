@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import type { ConversationSummary, Message } from '~~/server/utils/conversationStore'
+import type { EscrowOrder } from '~~/server/utils/escrowOrderStore'
 
 interface MessagesResponse {
   conversation: ConversationSummary
   messages: Message[]
+  escrowOrder: EscrowOrder | null
+  awaitingPayment: boolean
 }
 
 definePageMeta({ layout: 'messages', middleware: 'auth' })
@@ -35,6 +38,39 @@ const showFirstContactForm = computed(
 function onFirstContactSubmitted() {
   refresh()
   refreshConversationList()
+}
+
+// Paiement en séquestre obligatoire avant transmission au prestataire (#194,
+// epic #191) : tant que la commande n'est pas payée, le chercheur voit une
+// invite de paiement (au lieu du fil) et le prestataire un message d'attente
+// (le serveur ne renvoie d'ailleurs aucun contenu de message dans ce cas,
+// voir messages.get.ts — cette page ne fait que refléter cet état).
+const escrowOrder = computed(() => data.value?.escrowOrder ?? null)
+const isViewerClient = computed(() => conversation.value?.clientId === currentUserId.value)
+const showPaymentPrompt = computed(
+  () => isViewerClient.value && escrowOrder.value?.status === 'awaiting_payment',
+)
+const showAwaitingPaymentNotice = computed(() => data.value?.awaitingPayment === true && !isViewerClient.value)
+
+const isPaying = ref(false)
+const payError = ref('')
+
+async function handlePayEscrowOrder() {
+  if (isPaying.value) return
+  isPaying.value = true
+  payError.value = ''
+  try {
+    await $fetch(`/api/conversations/${conversationId.value}/pay`, { method: 'POST' })
+    await refresh()
+    refreshConversationList()
+  } catch (fetchError) {
+    payError.value =
+      (fetchError as { statusCode?: number }).statusCode === 402
+        ? 'Solde insuffisant. Rechargez votre portefeuille WorkTogo puis réessayez.'
+        : "Le paiement n'a pas pu être effectué. Réessayez."
+  } finally {
+    isPaying.value = false
+  }
 }
 
 const draft = ref('')
@@ -148,6 +184,31 @@ async function submitReview() {
         :provider-name="conversation.otherPartyName"
         @submitted="onFirstContactSubmitted"
       />
+
+      <div v-else-if="showPaymentPrompt" class="rounded-card border border-hairline bg-surface p-5">
+        <p class="text-[14.5px] font-semibold text-dark">Paiement sécurisé requis</p>
+        <p class="mt-1 text-[13px] text-muted">
+          Votre demande ne sera transmise à {{ conversation?.otherPartyName }} qu'une fois le paiement confirmé.
+          Les fonds restent en séquestre WorkTogo jusqu'à la fin de la prestation.
+        </p>
+        <p class="mt-3 text-[18px] font-bold text-dark">{{ escrowOrder?.amount.toLocaleString('fr-FR') }} F CFA</p>
+        <button
+          type="button"
+          class="press mt-3 rounded-field bg-primary px-5 py-2.5 text-[13.5px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
+          :disabled="isPaying"
+          @click="handlePayEscrowOrder"
+        >
+          {{ isPaying ? 'Paiement…' : 'Payer et transmettre ma demande' }}
+        </button>
+        <p v-if="payError" class="mt-2 text-[12.5px] text-error">{{ payError }}</p>
+      </div>
+
+      <div v-else-if="showAwaitingPaymentNotice" class="rounded-card border border-hairline bg-surface p-5 text-center">
+        <p class="text-[14.5px] font-semibold text-dark">En attente du paiement du chercheur</p>
+        <p class="mt-1 text-[13px] text-muted">
+          Le détail de cette demande vous sera transmis dès que le paiement sera confirmé côté chercheur.
+        </p>
+      </div>
 
       <template v-else>
         <div class="flex-1 space-y-3 overflow-y-auto pb-4">

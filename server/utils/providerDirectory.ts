@@ -1,4 +1,5 @@
 import { getAverageRating } from '~~/server/utils/reviewStore'
+import { getProviderProfile } from '~~/server/utils/providerStore'
 
 /**
  * Annuaire des prestataires consultable par la recherche publique (#43).
@@ -100,6 +101,21 @@ export function getEffectiveRating(providerId: string): { rating: number, review
 
   const provider = getProviderById(providerId)
   return { rating: provider?.rating ?? 0, reviewCount: provider?.reviewCount ?? 0 }
+}
+
+/**
+ * Tarif fixe d'un prestataire pour le paiement bloquant en séquestre (#194)
+ * — cette itération ne gère que le tarif fixe affiché, pas le devis à
+ * valider (choix produit à trancher, voir l'epic #191). Priorité à la fiche
+ * de démonstration (ids `p01`..`p14`, voir en-tête de fichier) puis, à
+ * défaut, au tarif renseigné par un vrai compte prestataire. `null` si
+ * aucun tarif n'est disponible (le prestataire n'a pas encore configuré son
+ * tarif de base).
+ */
+export function resolveProviderRate(providerId: string): number | null {
+  const directoryEntry = getProviderById(providerId)
+  if (directoryEntry) return directoryEntry.priceFrom
+  return getProviderProfile(providerId)?.rateFrom ?? null
 }
 
 export interface ProviderDetail extends ProviderSearchResult {
