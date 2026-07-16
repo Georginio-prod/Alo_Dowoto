@@ -50,6 +50,14 @@ const subscriptionBadge = computed(() => {
   return { label: 'Profil non abonné', tone: 'none' }
 })
 
+// Rappel non intrusif tant que le profil n'est pas complété à 100 % (#186) :
+// un compte qui a cliqué « Compléter mon profil plus tard » à l'étape
+// Abonnement n'a pas encore choisi de formule. Volontairement limité à cette
+// étape (plutôt qu'aux champs photo/description/tarifs, encore facultatifs
+// et sans page dédiée dans ce lot, voir providerStore.ts) : c'est la seule
+// étape concrètement « reprenable » aujourd'hui.
+const profileIncomplete = computed(() => !subscriptionData.value?.subscription)
+
 // La page de complétion de profil (photo/description/tarifs) n'est pas
 // encore développée dans ce lot — bouton posé pour la maquette, sans
 // action pour l'instant.
@@ -82,6 +90,17 @@ function restartDemo() {
     >
       <p class="text-[13px] font-semibold text-dark">
         Vérifiez votre identité pour pouvoir être contacté par vos premiers clients.
+      </p>
+      <span class="shrink-0 font-bold text-primary">→</span>
+    </NuxtLink>
+
+    <NuxtLink
+      v-if="profileIncomplete"
+      to="/abonnement"
+      class="press mb-6 flex items-center justify-between gap-3 rounded-card border border-primary/30 bg-primary/8 p-4 hover:border-primary/50"
+    >
+      <p class="text-[13px] font-semibold text-dark">
+        Votre profil n'est pas complet : choisissez une formule pour profiter de toutes les fonctionnalités.
       </p>
       <span class="shrink-0 font-bold text-primary">→</span>
     </NuxtLink>
