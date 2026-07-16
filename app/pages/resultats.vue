@@ -93,7 +93,7 @@ function restartDemo() {
         <div class="flex items-center gap-2">
           <NuxtLink
             :to="{ path: '/demande', query: searchTerm ? { q: searchTerm } : {} }"
-            class="press rounded-field bg-dark px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-[#1a3a28]"
+            class="press rounded-field bg-dark px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-dark-hover"
           >
             Publier une demande précise
           </NuxtLink>

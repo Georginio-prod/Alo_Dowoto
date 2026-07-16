@@ -90,7 +90,7 @@ async function toggleFavorite() {
       <div class="mt-auto flex gap-2">
         <button
           type="button"
-          class="press flex-1 rounded-field bg-dark py-2.5 text-[13.5px] font-semibold text-white hover:bg-[#1a3a28]"
+          class="press flex-1 rounded-field bg-dark py-2.5 text-[13.5px] font-semibold text-white hover:bg-dark-hover"
           @click="showProfile = true"
         >
           Voir le profil

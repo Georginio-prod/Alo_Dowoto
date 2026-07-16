@@ -5,6 +5,7 @@
   --color-primary: #14A800;
   --color-primary-hover: #109300;
   --color-dark: #0F2318;
+  --color-dark-hover: #1A3A28; /* survol des CTA sur fond --color-dark, ex. AppHeader, ProviderCard */
 
   /* ---- Couleurs sémantiques ---- */
   --color-bg: #F7F7F7;          /* fond de page */
@@ -31,7 +32,51 @@
   --shadow-card-lg: 0 12px 32px rgba(15, 35, 24, 0.12), 0 4px 8px rgba(15, 35, 24, 0.05);
 }
 
+/* ------------------------------------------------------------------ */
+/* Thème sombre « Dusk » (#188) — sombre atténué, pas noir pur.       */
+/* Activé en posant [data-theme="dark"] sur <html> (voir              */
+/* app/plugins/theme.client.ts et app/composables/useTheme.ts). Comme  */
+/* les composants consomment déjà les tokens --color-* définis         */
+/* ci-dessus (bg-surface, text-ink, border-hairline, …), il suffit de  */
+/* réassigner ces mêmes variables : aucun composant n'a besoin d'être  */
+/* dupliqué ou modifié pour supporter le thème sombre.                 */
+/* ------------------------------------------------------------------ */
+:root[data-theme='dark'] {
+  --color-bg: #1C1F26;          /* fond de page */
+  --color-surface: #252A34;     /* cartes, header, panneaux */
+  --color-ink: #EDEEF0;         /* texte principal sur fond sombre */
+  --color-muted: #A7ADBA;       /* texte secondaire / libellés */
+  --color-hairline: #343A46;    /* filets et bordures discrètes */
+
+  /* Accent : même teinte que le thème clair, éclaircie de ~7% pour
+     conserver un contraste AA sur fond sombre. */
+  --color-primary: #18CC00;
+  --color-primary-hover: #16B700;
+
+  /* États succès/erreur : mêmes teintes que le thème clair, luminosité
+     +10% pour rester lisibles sur fond sombre. */
+  --color-error: #DF6F6F;
+  --color-star: #FFC01A;
+
+  /* Ombres recalculées sur une base neutre (plutôt que --color-dark) :
+     à luminosité de fond réduite, une ombre teintée du même vert que le
+     fond clair devenait quasi invisible. */
+  --shadow-card-sm: 0 1px 3px rgba(0, 0, 0, 0.24);
+  --shadow-card-md: 0 4px 12px rgba(0, 0, 0, 0.32), 0 2px 4px rgba(0, 0, 0, 0.16);
+  --shadow-card-lg: 0 12px 32px rgba(0, 0, 0, 0.48), 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
 @layer base {
+  /* Transition douce lors de la bascule clair/sombre (#188). Spécificité
+     volontairement minimale (sélecteur universel) : les transitions plus
+     spécifiques déjà en place (.lift, .press, [data-reveal], .page-enter-*)
+     déclarent leur propre `transition` complète et restent donc
+     prioritaires — celle-ci ne s'applique qu'aux éléments qui n'en ont
+     pas déjà une pour ces propriétés. */
+  * {
+    transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+  }
+
   body {
     background: var(--color-bg);
     color: var(--color-ink);

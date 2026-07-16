@@ -170,7 +170,7 @@ async function toggleFavorite() {
         <button
           type="button"
           class="press rounded-field px-4 py-2 text-[13px] font-semibold"
-          :class="contactQuotaReached ? 'cursor-not-allowed bg-bg text-muted/60' : 'bg-dark text-white hover:bg-[#1a3a28]'"
+          :class="contactQuotaReached ? 'cursor-not-allowed bg-bg text-muted/60' : 'bg-dark text-white hover:bg-dark-hover'"
           :disabled="contactQuotaReached || isContacting"
           :title="contactQuotaReached ? 'Quota de contacts atteint ce mois-ci' : undefined"
           @click="contact"

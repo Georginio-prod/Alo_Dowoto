@@ -128,7 +128,7 @@ function restartDemo() {
     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <button
         type="button"
-        class="press rounded-card border border-hairline bg-dark p-4 text-left shadow-card-sm hover:bg-[#1a3a28]"
+        class="press rounded-card border border-hairline bg-dark p-4 text-left shadow-card-sm hover:bg-dark-hover"
         @click="completeProfile"
       >
         <p class="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-white/70">Profil</p>

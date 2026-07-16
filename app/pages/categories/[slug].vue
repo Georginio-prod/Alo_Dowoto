@@ -53,7 +53,7 @@ const results = computed(() => data.value?.results ?? [])
         <NuxtLink
           v-if="sector"
           :to="{ path: '/demande', query: { q: sector.name } }"
-          class="press rounded-field bg-dark px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-[#1a3a28]"
+          class="press rounded-field bg-dark px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-dark-hover"
         >
           Publier une demande
         </NuxtLink>
