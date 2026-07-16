@@ -63,6 +63,21 @@ export async function verifyOtp(contact: string, code: string): Promise<VerifyOt
 }
 
 /**
+ * Marque un contact comme vérifié sans passer par un OTP — utilisé quand
+ * l'identité est prouvée autrement (email Google vérifié, #219). Le TTL est
+ * plus large que celui de l'OTP : l'utilisateur doit encore compléter le
+ * formulaire d'inscription après le retour de Google.
+ */
+export async function markContactVerified(contact: string, ttlMs = 15 * 60 * 1000): Promise<void> {
+  const expiresAt = new Date(Date.now() + ttlMs)
+  await prisma.verifiedContact.upsert({
+    where: { contact },
+    create: { contact, expiresAt },
+    update: { expiresAt },
+  })
+}
+
+/**
  * Consomme (à usage unique) la preuve qu'un contact vient de valider son
  * code OTP. Utilisé par #24 pour autoriser la création de session sans
  * dupliquer la logique de vérification.

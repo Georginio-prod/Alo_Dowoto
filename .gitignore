@@ -31,3 +31,6 @@ prisma/dev.db
 prisma/dev.db-journal
 tests/setup/test.db
 tests/setup/test.db-journal
+
+# Base éphémère de prisma migrate diff
+shadow.db

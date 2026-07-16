@@ -94,6 +94,27 @@ export async function getUserById(id: string): Promise<User | null> {
   return row ? toUser(row) : null
 }
 
+/** Retrouve un utilisateur par contact normalisé (connexion Google, #219). */
+export async function getUserByContact(contact: string): Promise<User | null> {
+  const row = await prisma.user.findUnique({ where: { contact } })
+  return row ? toUser(row) : null
+}
+
+/** Retrouve un utilisateur par identifiant Google (`sub` OpenID Connect, #219). */
+export async function getUserByGoogleId(googleId: string): Promise<User | null> {
+  const row = await prisma.user.findUnique({ where: { googleId } })
+  return row ? toUser(row) : null
+}
+
+/**
+ * Lie un compte Google à un compte existant (#219) — appelé au premier
+ * login Google d'un compte créé par email, pour retrouver le compte par
+ * `googleId` aux connexions suivantes même si l'email Google change.
+ */
+export async function linkGoogleId(userId: string, googleId: string): Promise<void> {
+  await prisma.user.updateMany({ where: { id: userId }, data: { googleId } })
+}
+
 /** Met à jour les informations de profil (nom d'utilisateur, prénom, nom, localisation) d'un compte existant. */
 export async function updateUserProfile(userId: string, profile: NewUserProfile): Promise<User> {
   const existing = await prisma.user.findUnique({ where: { id: userId } })
