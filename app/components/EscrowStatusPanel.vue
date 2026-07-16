@@ -49,6 +49,35 @@ async function handleConfirmReceipt() {
     isConfirmingReceipt.value = false
   }
 }
+
+// Annulation prestataire et remboursement automatique (#196, epic #191) :
+// autorisée tant que les fonds ne sont pas encore libérés (in_escrow ou
+// delivered), motif obligatoire à des fins de modération.
+const canCancel = computed(
+  () => props.isViewerProvider && (props.escrowOrder.status === 'in_escrow' || props.escrowOrder.status === 'delivered'),
+)
+const showCancelForm = ref(false)
+const cancelReason = ref('')
+const isCancelling = ref(false)
+const cancelError = ref('')
+
+async function handleCancelOrder() {
+  if (isCancelling.value || !cancelReason.value.trim()) return
+  isCancelling.value = true
+  cancelError.value = ''
+  try {
+    await $fetch(`/api/conversations/${props.conversationId}/cancel`, {
+      method: 'POST',
+      body: { reason: cancelReason.value.trim() },
+    })
+    showCancelForm.value = false
+    emit('changed')
+  } catch {
+    cancelError.value = "L'annulation n'a pas pu être effectuée. Réessayez."
+  } finally {
+    isCancelling.value = false
+  }
+}
 </script>
 
 <template>
@@ -95,7 +124,46 @@ async function handleConfirmReceipt() {
       Prestation terminée, paiement libéré{{ isViewerProvider ? ' vers votre solde WorkTogo' : '' }}.
     </p>
 
+    <p v-else-if="escrowOrder.status === 'refunded'" class="text-[13px] text-dark">
+      Commande annulée par le prestataire, chercheur remboursé intégralement.
+    </p>
+
     <p v-if="deliverError" class="mt-2 text-[12.5px] text-error">{{ deliverError }}</p>
     <p v-if="receiptError" class="mt-2 text-[12.5px] text-error">{{ receiptError }}</p>
+
+    <div v-if="canCancel" class="mt-3 border-t border-hairline pt-3">
+      <button
+        v-if="!showCancelForm"
+        type="button"
+        class="press text-[12.5px] font-semibold text-error underline"
+        @click="showCancelForm = true"
+      >
+        Annuler la commande
+      </button>
+
+      <div v-else class="space-y-2">
+        <textarea
+          v-model="cancelReason"
+          rows="2"
+          placeholder="Motif de l'annulation (obligatoire)"
+          aria-label="Motif de l'annulation"
+          class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
+        />
+        <div class="flex gap-2">
+          <button
+            type="button"
+            class="press rounded-field border border-error px-4 py-2 text-[12.5px] font-semibold text-error disabled:cursor-not-allowed disabled:opacity-45"
+            :disabled="!cancelReason.trim() || isCancelling"
+            @click="handleCancelOrder"
+          >
+            {{ isCancelling ? 'Annulation…' : 'Confirmer l\'annulation et rembourser' }}
+          </button>
+          <button type="button" class="press text-[12.5px] text-muted" @click="showCancelForm = false">
+            Retour
+          </button>
+        </div>
+        <p v-if="cancelError" class="text-[12.5px] text-error">{{ cancelError }}</p>
+      </div>
+    </div>
   </div>
 </template>
