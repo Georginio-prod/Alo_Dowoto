@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { SECTORS } from '~/data/sectors'
-import type { ProviderSearchResult } from '~~/server/utils/providerDirectory'
+import type { FeaturedProviderResult, ProviderSearchResult } from '~~/server/utils/providerDirectory'
 
 interface SearchResponse {
   results: ProviderSearchResult[]
@@ -9,9 +9,15 @@ interface SearchResponse {
   pageSize: number
 }
 
+interface FeaturedResponse {
+  results: FeaturedProviderResult[]
+}
+
 definePageMeta({ layout: 'blank' })
 
 const route = useRoute()
+const { user, ensure } = useSession()
+await ensure()
 
 const searchTerm = computed(() => {
   const q = route.query.q
@@ -55,6 +61,30 @@ const { data, pending } = await useFetch<SearchResponse>('/api/providers/search'
   })),
 })
 const results = computed(() => data.value?.results ?? [])
+
+// Sections « accueil » (#187) : uniquement pertinentes en navigation libre
+// (aucun terme recherché) — une recherche précise (q) bascule la page en
+// vue résultats focalisée, où mettre en avant d'autres profils que ceux
+// recherchés n'aurait pas de sens.
+const showHomeSections = computed(() => !searchTerm.value)
+
+// « Meilleurs prestataires » (#187) : classement calculé dynamiquement côté
+// serveur (score de mise en avant, moyenne bayésienne des avis) plutôt que
+// figé en dur — voir server/api/providers/featured.get.ts.
+const { data: featuredData } = await useFetch<FeaturedResponse>('/api/providers/featured', {
+  query: { limit: 6 },
+})
+const featuredProviders = computed(() => featuredData.value?.results ?? [])
+
+// « Prestataires près de vous » (#187) : basé sur la localisation du
+// chercheur connecté (collectée à l'inscription, userStore.location). Pas
+// de géolocalisation réelle dans ce prototype : simple filtrage par ville,
+// cohérent avec le filtre « Ville » déjà utilisé par la liste complète.
+const nearbyCity = computed(() => user.value?.location || '')
+const { data: nearbyData } = await useFetch<SearchResponse>('/api/providers/search', {
+  query: computed(() => ({ ville: nearbyCity.value || undefined, pageSize: 6 })),
+})
+const nearbyProviders = computed(() => (nearbyCity.value ? (nearbyData.value?.results ?? []) : []))
 
 // Favoris déjà enregistrés par le client (#64) : chargés une seule fois pour
 // tous les prestataires affichés plutôt qu'une requête par carte. Échoue
@@ -120,6 +150,36 @@ function restartDemo() {
       </div>
     </header>
 
+    <div v-if="showHomeSections" class="mx-auto max-w-[1200px] px-5 pt-6">
+      <section v-if="featuredProviders.length" class="mb-8">
+        <h2 class="mb-3 text-[15px] font-bold text-dark">Meilleurs prestataires</h2>
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
+          <ProviderCard
+            v-for="provider in featuredProviders"
+            :key="`featured-${provider.id}`"
+            :provider="provider"
+            :badge="provider.badge"
+            :is-favorite="favoriteProviderIds.has(provider.id)"
+            @favorite-changed="refreshFavorites"
+          />
+        </div>
+      </section>
+
+      <section v-if="nearbyProviders.length" class="mb-8">
+        <h2 class="mb-3 text-[15px] font-bold text-dark">Prestataires près de vous</h2>
+        <p class="mb-3 text-[12.5px] text-muted">Basé sur votre localisation : {{ nearbyCity }}</p>
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
+          <ProviderCard
+            v-for="provider in nearbyProviders"
+            :key="`nearby-${provider.id}`"
+            :provider="provider"
+            :is-favorite="favoriteProviderIds.has(provider.id)"
+            @favorite-changed="refreshFavorites"
+          />
+        </div>
+      </section>
+    </div>
+
     <div class="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-6 lg:flex-row lg:items-start">
       <aside class="w-full shrink-0 lg:w-[240px]">
         <ResultsFilters
@@ -132,6 +192,7 @@ function restartDemo() {
       </aside>
 
       <section class="min-w-0 flex-1">
+        <h2 v-if="showHomeSections" class="mb-3 text-[15px] font-bold text-dark">Tous les prestataires</h2>
         <ResultsSkeleton v-if="pending" />
         <ResultsEmptyState v-else-if="results.length === 0" @action="resetFilters" />
         <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">

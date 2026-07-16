@@ -1,4 +1,5 @@
 import { getAverageRating } from '~~/server/utils/reviewStore'
+import type { FeaturedCandidate } from '~~/server/utils/matchingEngine'
 
 /**
  * Annuaire des prestataires consultable par la recherche publique (#43).
@@ -102,6 +103,38 @@ export function getEffectiveRating(providerId: string): { rating: number, review
   return { rating: provider?.rating ?? 0, reviewCount: provider?.reviewCount ?? 0 }
 }
 
+/** Approximation du nombre d'années d'expérience à partir du nombre d'avis (pas de champ dédié pour l'instant). */
+export function estimateExperienceYears(reviewCount: number): number {
+  return Math.max(1, Math.round(reviewCount / 8))
+}
+
+/**
+ * Candidats prêts à être classés par `rankFeaturedProviders` (#187) : reprend
+ * la note effective (#61) et approxime l'ancienneté à partir du nombre
+ * d'avis, comme `getProviderDetail`. `sector`, s'il est fourni, restreint la
+ * mise en avant aux prestataires de ce secteur (cohérence avec la page
+ * consultée) — sinon tout l'annuaire est éligible.
+ */
+export function getFeaturedCandidates(sector?: string): FeaturedCandidate[] {
+  const providers = searchProviders(sector ? { sector } : {})
+  return providers.map((provider) => {
+    const { rating, reviewCount } = getEffectiveRating(provider.id)
+    return {
+      providerId: provider.id,
+      rating,
+      reviewCount,
+      verified: provider.verified,
+      experienceYears: estimateExperienceYears(reviewCount),
+    }
+  })
+}
+
+/** Fiche prestataire enrichie du score de mise en avant (#187, accueil chercheur). */
+export interface FeaturedProviderResult extends ProviderSearchResult {
+  featuredScore: number
+  badge: 'top' | 'recommande'
+}
+
 export interface ProviderDetail extends ProviderSearchResult {
   rating: number
   reviewCount: number
@@ -149,7 +182,7 @@ export function getProviderDetail(id: string, contactRevealed: boolean): Provide
   if (!provider) return null
 
   const { rating, reviewCount } = getEffectiveRating(id)
-  const experienceYears = Math.max(1, Math.round(reviewCount / 8))
+  const experienceYears = estimateExperienceYears(reviewCount)
   const { phone, email } = derivedContact(provider)
 
   return {
