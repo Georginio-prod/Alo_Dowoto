@@ -71,6 +71,31 @@
     box-shadow: var(--shadow-card-lg);
   }
 
+  /* Survol harmonisé — cartes tarifs (PricingTeaser) et témoignages
+     (TestimonialsSection), même charte de mouvement que les cartes secteurs
+     (SectorGrid) (#184) : un seul `transform` combiné (léger lift + zoom) et
+     une seule courbe d'easing pour toutes les propriétés animées — évite le
+     « saccadé » causé par le cumul de propriétés/timings différents.
+     Vit toujours sur un élément distinct du wrapper `v-reveal` : la classe
+     `[data-reveal].is-visible { transform: none }` (ci-dessus) ne cible donc
+     jamais cet élément et ne peut pas entrer en conflit de spécificité avec
+     ce survol. Le survol ne se déclenche que sur les pointeurs qui le
+     supportent réellement (`hover: hover`, souris) ; sur tactile, `:active`
+     fournit un retour équivalent au tap. */
+  .card-hover {
+    transition: all 0.2s ease-out;
+  }
+  @media (hover: hover) {
+    .card-hover:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: var(--shadow-card-md);
+    }
+  }
+  .card-hover:active {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: var(--shadow-card-md);
+  }
+
   .hero-glow {
     position: absolute;
     inset: -15% -10% auto -10%;
@@ -152,6 +177,8 @@
     transition: none !important;
   }
   .lift:hover { transform: none; }
+  .card-hover:hover,
+  .card-hover:active { transform: none; box-shadow: none; }
   .hero-glow, .float-soft, .badge-glow { animation: none; }
   [data-parallax] { transform: none !important; }
   .page-enter-active,
