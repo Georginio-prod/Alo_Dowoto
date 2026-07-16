@@ -47,6 +47,7 @@ function onFirstContactSubmitted() {
 // voir messages.get.ts — cette page ne fait que refléter cet état).
 const escrowOrder = computed(() => data.value?.escrowOrder ?? null)
 const isViewerClient = computed(() => conversation.value?.clientId === currentUserId.value)
+const isViewerProvider = computed(() => conversation.value?.providerId === currentUserId.value)
 const showPaymentPrompt = computed(
   () => isViewerClient.value && escrowOrder.value?.status === 'awaiting_payment',
 )
@@ -71,6 +72,13 @@ async function handlePayEscrowOrder() {
   } finally {
     isPaying.value = false
   }
+}
+
+// Double validation avant libération des fonds (#195, epic #191) : la
+// logique de mutation vit dans EscrowStatusPanel.vue, cette page ne fait que
+// rafraîchir ses données quand le composant émet `changed`.
+function onEscrowStatusChanged() {
+  refresh()
 }
 
 const draft = ref('')
@@ -211,6 +219,15 @@ async function submitReview() {
       </div>
 
       <template v-else>
+        <EscrowStatusPanel
+          v-if="escrowOrder && escrowOrder.status !== 'awaiting_payment'"
+          :escrow-order="escrowOrder"
+          :conversation-id="conversationId"
+          :is-viewer-client="isViewerClient"
+          :is-viewer-provider="isViewerProvider"
+          @changed="onEscrowStatusChanged"
+        />
+
         <div class="flex-1 space-y-3 overflow-y-auto pb-4">
           <p v-if="messages.length === 0" class="text-center text-[13px] text-muted">
             Aucun message. Écrivez le premier pour démarrer la conversation.
