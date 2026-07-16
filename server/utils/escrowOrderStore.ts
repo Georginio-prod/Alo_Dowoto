@@ -21,10 +21,13 @@ import { creditWallet, debitWallet, PLATFORM_WALLET_USER_ID } from '~~/server/ut
  * confirme ni ne conteste dans ce délai, la commande est libérée
  * automatiquement à la prochaine lecture (voir `applyTacitValidationIfExpired`)
  * — pas de tâche planifiée nécessaire tant que le processus reste unique
- * (prototype en mémoire).
+ * (prototype en mémoire). Le chercheur peut aussi, à la place de confirmer,
+ * ouvrir un litige (#197) : `delivered` → `disputed`, ce qui gèle les fonds
+ * (ni libération ni remboursement automatique) et interrompt la validation
+ * tacite, en attendant l'arbitrage d'une équipe de médiation WorkTogo.
  */
 
-export type EscrowOrderStatus = 'awaiting_payment' | 'in_escrow' | 'delivered' | 'released' | 'refunded'
+export type EscrowOrderStatus = 'awaiting_payment' | 'in_escrow' | 'delivered' | 'released' | 'refunded' | 'disputed'
 
 export interface EscrowOrder {
   id: string
@@ -40,6 +43,9 @@ export interface EscrowOrder {
   cancelledAt: number | null
   /** Motif obligatoire de l'annulation prestataire (#196), à des fins de modération/fiabilité. */
   cancelReason: string | null
+  disputedAt: number | null
+  /** Motif du litige ouvert par le chercheur (#197), transmis à l'équipe de médiation. */
+  disputeReason: string | null
 }
 
 /**
@@ -76,6 +82,8 @@ export function createEscrowOrder(input: {
     releasedAt: null,
     cancelledAt: null,
     cancelReason: null,
+    disputedAt: null,
+    disputeReason: null,
   }
   ordersByConversationId.set(input.conversationId, order)
   return order
@@ -188,4 +196,33 @@ export function cancelEscrowOrder(conversationId: string, reason: string): Cance
   order.cancelledAt = Date.now()
   order.cancelReason = reason.trim()
   return { ok: true, order }
+}
+
+export type OpenDisputeResult =
+  | { ok: true; order: EscrowOrder }
+  | { ok: false; error: 'not_found' | 'invalid_status' | 'reason_required' }
+
+/**
+ * Le chercheur conteste la qualité de la prestation au lieu de confirmer la
+ * réception (#197) : gèle les fonds (aucune libération ni remboursement
+ * automatique) et notifie une équipe de médiation WorkTogo. Seule une
+ * commande `delivered` (prestation marquée terminée par le prestataire, en
+ * attente de validation) peut être contestée — passé ce point, le litige
+ * relève de la médiation, pas de cette route.
+ */
+export function openEscrowDispute(conversationId: string, reason: string): OpenDisputeResult {
+  const order = ordersByConversationId.get(conversationId)
+  if (!order) return { ok: false, error: 'not_found' }
+  if (order.status !== 'delivered') return { ok: false, error: 'invalid_status' }
+  if (!reason.trim()) return { ok: false, error: 'reason_required' }
+
+  order.status = 'disputed'
+  order.disputedAt = Date.now()
+  order.disputeReason = reason.trim()
+  return { ok: true, order }
+}
+
+/** Commandes en litige en attente d'arbitrage, pour une future interface de médiation WorkTogo (#197). */
+export function listDisputedOrders(): EscrowOrder[] {
+  return [...ordersByConversationId.values()].filter((order) => order.status === 'disputed')
 }
