@@ -66,8 +66,7 @@ async function submit() {
     rating.value = 0
     emit('posted', testimonial)
   } catch (fetchError) {
-    const statusMessage = (fetchError as { statusMessage?: string })?.statusMessage
-    error.value = statusMessage || "La publication de votre avis a échoué. Réessayez."
+    error.value = apiErrorMessage(fetchError, "La publication de votre avis a échoué. Réessayez.")
   } finally {
     isSubmitting.value = false
   }

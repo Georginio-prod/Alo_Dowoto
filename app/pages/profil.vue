@@ -41,8 +41,7 @@ async function submit() {
     setSession(updated)
     success.value = true
   } catch (fetchError) {
-    const statusMessage = (fetchError as { statusMessage?: string })?.statusMessage
-    error.value = statusMessage || 'La modification du profil a échoué. Réessayez.'
+    error.value = apiErrorMessage(fetchError, 'La modification du profil a échoué. Réessayez.')
   } finally {
     isSubmitting.value = false
   }

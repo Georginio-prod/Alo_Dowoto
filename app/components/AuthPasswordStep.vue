@@ -54,10 +54,6 @@ const passwordsMatch = computed(
   () => signupPassword.value.length > 0 && signupPassword.value === signupConfirmPassword.value,
 )
 
-function extractErrorMessage(error: unknown, fallback: string): string {
-  const statusMessage = (error as { statusMessage?: string })?.statusMessage
-  return statusMessage || fallback
-}
 
 async function submitSignupPassword() {
   if (isSubmitting.value) return
@@ -93,15 +89,15 @@ async function submitSignupPassword() {
     setSession(user)
     emit('signup-success')
   } catch (error) {
-    const statusMessage = (error as { statusMessage?: string })?.statusMessage
+    const message = apiErrorMessage(error, '')
     // Contact déjà associé à un compte finalisé (voir server/api/auth/session.post.ts) :
     // le formulaire ci-dessus ne propose que des champs de *nouveau* mot de
     // passe, donc renvoyer tel quel « Mot de passe requis. » serait
     // incompréhensible ici — on oriente explicitement vers la connexion.
     passwordError.value =
-      statusMessage === 'Mot de passe requis.'
+      message === 'Mot de passe requis.'
         ? 'Un compte existe déjà avec ce contact. Utilisez l\'onglet « Connexion » ci-dessus.'
-        : extractErrorMessage(error, 'La création du compte a échoué. Réessayez.')
+        : message || 'La création du compte a échoué. Réessayez.'
   } finally {
     isSubmitting.value = false
   }
@@ -119,7 +115,7 @@ async function submitLoginPassword() {
     setSession(user)
     emit('login-success', user)
   } catch (error) {
-    passwordError.value = extractErrorMessage(error, 'Mot de passe incorrect.')
+    passwordError.value = apiErrorMessage(error, 'Mot de passe incorrect.')
   } finally {
     isSubmitting.value = false
   }

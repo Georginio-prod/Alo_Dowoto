@@ -27,8 +27,7 @@ async function submit() {
     })
     emit('submitted')
   } catch (error) {
-    const statusMessage = (error as { statusMessage?: string })?.statusMessage
-    submitError.value = statusMessage || 'La demande n\'a pas pu être envoyée. Réessayez.'
+    submitError.value = apiErrorMessage(error, 'La demande n\'a pas pu être envoyée. Réessayez.')
   } finally {
     isSubmitting.value = false
   }

@@ -52,8 +52,7 @@ async function submit() {
     newPassword.value = ''
     confirmPassword.value = ''
   } catch (fetchError) {
-    const statusMessage = (fetchError as { statusMessage?: string })?.statusMessage
-    error.value = statusMessage || 'Le changement de mot de passe a échoué. Réessayez.'
+    error.value = apiErrorMessage(fetchError, 'Le changement de mot de passe a échoué. Réessayez.')
   } finally {
     isSubmitting.value = false
   }
