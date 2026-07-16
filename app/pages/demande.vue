@@ -83,8 +83,7 @@ async function submit() {
       return
     }
     if (statusCode === 403) {
-      const statusMessage = (error as { statusMessage?: string }).statusMessage
-      formError.value = statusMessage || 'Vérifiez votre identité avant de publier une demande.'
+      formError.value = apiErrorMessage(error, 'Vérifiez votre identité avant de publier une demande.')
       needsVerification.value = true
       return
     }

@@ -105,8 +105,7 @@ async function submit() {
     })
     emit('sent', { method: method.value, value: contactValue.value, devCode, profile })
   } catch (error) {
-    const statusMessage = (error as { statusMessage?: string })?.statusMessage
-    contactError.value = statusMessage || "L'envoi du code a échoué. Réessayez."
+    contactError.value = apiErrorMessage(error, "L'envoi du code a échoué. Réessayez.")
   } finally {
     isSubmitting.value = false
   }

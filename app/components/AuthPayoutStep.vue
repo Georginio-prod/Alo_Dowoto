@@ -53,8 +53,7 @@ async function submit() {
     })
     emit('saved')
   } catch (error) {
-    const statusMessage = (error as { statusMessage?: string })?.statusMessage
-    saveError.value = statusMessage || "L'enregistrement a échoué. Réessayez."
+    saveError.value = apiErrorMessage(error, "L'enregistrement a échoué. Réessayez.")
   } finally {
     isSaving.value = false
   }

@@ -75,8 +75,7 @@ async function submit() {
     await refreshSession()
     emit('submitted')
   } catch (fetchError) {
-    const statusMessage = (fetchError as { statusMessage?: string })?.statusMessage
-    error.value = statusMessage || 'L\'envoi de vos documents a échoué. Réessayez.'
+    error.value = apiErrorMessage(fetchError, 'L\'envoi de vos documents a échoué. Réessayez.')
   } finally {
     isSubmitting.value = false
   }

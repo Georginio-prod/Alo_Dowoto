@@ -72,8 +72,7 @@ async function verify() {
     emit('verified')
   } catch (error) {
     otpInvalid.value = true
-    const statusMessage = (error as { statusMessage?: string })?.statusMessage
-    otpError.value = statusMessage || 'Code invalide. Réessayez.'
+    otpError.value = apiErrorMessage(error, 'Code invalide. Réessayez.')
     otp.value = ['', '', '', '', '', '']
   } finally {
     isVerifying.value = false
