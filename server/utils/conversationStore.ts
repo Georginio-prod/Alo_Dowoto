@@ -136,7 +136,7 @@ export function addMessage(conversationId: string, senderId: string, senderRole:
  * de l'autre partie, dernier message) du point de vue de `viewerId` — évite
  * de dupliquer cette résolution dans chaque route (liste et thread, #58).
  */
-export function toConversationSummary(conversation: Conversation, viewerId: string): ConversationSummary {
+export async function toConversationSummary(conversation: Conversation, viewerId: string): Promise<ConversationSummary> {
   const isViewerClient = viewerId === conversation.clientId
   const otherPartyId = isViewerClient ? conversation.providerId : conversation.clientId
 
@@ -151,13 +151,13 @@ export function toConversationSummary(conversation: Conversation, viewerId: stri
       otherPartyName = directoryEntry.displayName
       otherPartySector = directoryEntry.subSector
     } else {
-      const providerUser = getUserById(otherPartyId)
+      const providerUser = await getUserById(otherPartyId)
       if (providerUser) otherPartyName = providerUser.contact
     }
   } else {
     // L'autre partie est le client : pas de fiche annuaire pour les
     // clients, seul le compte utilisateur (contact) est disponible.
-    const clientUser = getUserById(otherPartyId)
+    const clientUser = await getUserById(otherPartyId)
     if (clientUser) otherPartyName = clientUser.contact
   }
 

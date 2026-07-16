@@ -19,5 +19,11 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     include: ['tests/**/*.test.ts'],
+    // Base SQLite jetable pour les stores branchés sur Prisma (#218) — créée
+    // par le globalSetup, URL partagée avec les workers via `env`.
+    globalSetup: ['tests/setup/prismaTestDb.ts'],
+    env: {
+      DATABASE_URL: `file:${fileURLToPath(new URL('./tests/setup/test.db', import.meta.url))}`,
+    },
   },
 })

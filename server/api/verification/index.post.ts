@@ -11,7 +11,7 @@ interface SubmitVerificationBody {
  * contacté (server/api/conversations).
  */
 export default defineEventHandler(async (event) => {
-  const user = requireSessionUser(event)
+  const user = await requireSessionUser(event)
   const body = await readBody<SubmitVerificationBody>(event)
 
   const idCardImage = body?.idCardImage

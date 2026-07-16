@@ -3,8 +3,8 @@
  * Démarre le délai de validation tacite de 72h côté chercheur (voir
  * server/utils/escrowOrderStore.ts).
  */
-export default defineEventHandler((event) => {
-  const user = requireSessionUser(event)
+export default defineEventHandler(async (event) => {
+  const user = await requireSessionUser(event)
   const id = getRouterParam(event, 'id')
   const conversation = id ? getConversationById(id) : null
 

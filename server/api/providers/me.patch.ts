@@ -13,7 +13,7 @@ interface PatchProviderBody {
 const VALID_SECTOR_SLUGS = new Set(SECTORS.map((sector) => sector.slug))
 
 export default defineEventHandler(async (event) => {
-  const user = requireProviderRole(event)
+  const user = await requireProviderRole(event)
 
   const body = await readBody<PatchProviderBody>(event)
   const existing = getProviderProfile(user.id)

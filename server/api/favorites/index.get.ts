@@ -4,8 +4,8 @@ export interface FavoriteItem {
   provider: ReturnType<typeof getProviderById>
 }
 
-export default defineEventHandler((event) => {
-  const user = requireClientRole(event)
+export default defineEventHandler(async (event) => {
+  const user = await requireClientRole(event)
   const favorites: FavoriteItem[] = listFavorites(user.id).map((favorite) => ({
     providerId: favorite.providerId,
     createdAt: favorite.createdAt,

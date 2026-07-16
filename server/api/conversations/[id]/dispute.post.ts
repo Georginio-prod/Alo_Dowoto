@@ -8,7 +8,7 @@ interface DisputeBody {
  * équipe de médiation WorkTogo, motif obligatoire.
  */
 export default defineEventHandler(async (event) => {
-  const user = requireClientRole(event)
+  const user = await requireClientRole(event)
   const id = getRouterParam(event, 'id')
   const conversation = id ? getConversationById(id) : null
 

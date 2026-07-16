@@ -12,7 +12,7 @@ interface FirstContactBody {
  * ce formulaire sur cette même conversation.
  */
 export default defineEventHandler(async (event) => {
-  const user = requireClientRole(event)
+  const user = await requireClientRole(event)
   const id = getRouterParam(event, 'id')
   const conversation = id ? getConversationById(id) : null
 
@@ -52,5 +52,5 @@ export default defineEventHandler(async (event) => {
   const order = createEscrowOrder({ conversationId: conversation.id, clientId: user.id, providerId: conversation.providerId, amount })
 
   setResponseStatus(event, 201)
-  return { conversation: toConversationSummary(conversation, user.id), message, order }
+  return { conversation: await toConversationSummary(conversation, user.id), message, order }
 })

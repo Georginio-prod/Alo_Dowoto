@@ -30,12 +30,12 @@ export default defineEventHandler(async (event) => {
     badRequest('Contact invalide.')
   }
 
-  if (!consumeVerifiedContact(contact)) {
+  if (!await consumeVerifiedContact(contact)) {
     unauthorized("Ce contact n'a pas été vérifié par code OTP (voir /api/auth/otp/verify).")
   }
 
   const role = body.role === 'client' || body.role === 'prestataire' ? body.role : undefined
-  const { user, created } = findOrCreateUser(contact, role, {
+  const { user, created } = await findOrCreateUser(contact, role, {
     username: body.username ?? '',
     firstName: body.firstName ?? '',
     lastName: body.lastName ?? '',
@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const token = createSession(user.id)
+  const token = await createSession(user.id)
   setCookie(event, SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',

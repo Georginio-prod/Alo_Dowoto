@@ -12,7 +12,7 @@ const TEST_PROFILE: NewUserProfile = { username: 'marie90', firstName: 'Marie', 
  * dans l'esprit des autres tests de ce dossier qui ciblent les stores.
  */
 async function attemptLogin(contact: string, password: string): Promise<'ok' | 'missing_password' | 'invalid'> {
-  const { user } = findOrCreateUser(contact, 'client', TEST_PROFILE)
+  const { user } = await findOrCreateUser(contact, 'client', TEST_PROFILE)
   if (!hasPassword(user)) return 'ok' // compte non finalisé : voir #125
 
   if (!password) return 'missing_password'
@@ -20,34 +20,34 @@ async function attemptLogin(contact: string, password: string): Promise<'ok' | '
   return valid ? 'ok' : 'invalid'
 }
 
-describe('parcours de connexion — mot de passe obligatoire (#126)', () => {
+describe('parcours de connexion — mot de passe obligatoire (#126), persistance #218', () => {
   it('refuse la connexion sans mot de passe pour un compte finalisé', async () => {
     const contact = '+22892220001'
-    const { user } = findOrCreateUser(contact, 'client', TEST_PROFILE)
-    setPasswordHash(user.id, await hashPassword('Sup3r$ecret'))
+    const { user } = await findOrCreateUser(contact, 'client', TEST_PROFILE)
+    await setPasswordHash(user.id, await hashPassword('Sup3r$ecret'))
 
     expect(await attemptLogin(contact, '')).toBe('missing_password')
   })
 
   it('refuse un mot de passe incorrect (cas limite)', async () => {
     const contact = '+22892220002'
-    const { user } = findOrCreateUser(contact, 'client', TEST_PROFILE)
-    setPasswordHash(user.id, await hashPassword('Sup3r$ecret'))
+    const { user } = await findOrCreateUser(contact, 'client', TEST_PROFILE)
+    await setPasswordHash(user.id, await hashPassword('Sup3r$ecret'))
 
     expect(await attemptLogin(contact, 'mauvais-mot-de-passe')).toBe('invalid')
   })
 
   it('accepte le mot de passe correct', async () => {
     const contact = '+22892220003'
-    const { user } = findOrCreateUser(contact, 'client', TEST_PROFILE)
-    setPasswordHash(user.id, await hashPassword('Sup3r$ecret'))
+    const { user } = await findOrCreateUser(contact, 'client', TEST_PROFILE)
+    await setPasswordHash(user.id, await hashPassword('Sup3r$ecret'))
 
     expect(await attemptLogin(contact, 'Sup3r$ecret')).toBe('ok')
   })
 
   it("laisse passer un compte pas encore finalisé (onboarding interrompu, cas limite)", async () => {
     const contact = '+22892220004'
-    findOrCreateUser(contact, 'client', TEST_PROFILE)
+    await findOrCreateUser(contact, 'client', TEST_PROFILE)
 
     expect(await attemptLogin(contact, '')).toBe('ok')
   })

@@ -6,8 +6,8 @@
  * une 500 brute : on répond explicitement 429 avec un message clair (#63),
  * que le bouton « Contacter » du client utilise pour se désactiver.
  */
-export default defineEventHandler((event) => {
-  const user = requireClientRole(event)
+export default defineEventHandler(async (event) => {
+  const user = await requireClientRole(event)
 
   const usage = getClientContactsUsage(user.id)
   if (usage.count >= CLIENT_CONTACTS_MONTHLY_LIMIT) {

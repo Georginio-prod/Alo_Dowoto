@@ -15,7 +15,7 @@ interface SetPasswordBody {
  *    qu'une session détournée ne verrouille le vrai titulaire du compte.
  */
 export default defineEventHandler(async (event) => {
-  const user = requireSessionUser(event)
+  const user = await requireSessionUser(event)
 
   const body = await readBody<SetPasswordBody>(event)
   const password = body?.password ?? ''
@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const passwordHash = await hashPassword(password)
-  setPasswordHash(user.id, passwordHash)
+  await setPasswordHash(user.id, passwordHash)
 
   return { user: toPublicUser({ ...user, passwordHash }) }
 })

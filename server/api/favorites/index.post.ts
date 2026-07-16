@@ -3,7 +3,7 @@ interface AddFavoriteBody {
 }
 
 export default defineEventHandler(async (event) => {
-  const user = requireClientRole(event)
+  const user = await requireClientRole(event)
 
   const body = await readBody<AddFavoriteBody>(event)
   const providerId = body?.providerId?.trim()

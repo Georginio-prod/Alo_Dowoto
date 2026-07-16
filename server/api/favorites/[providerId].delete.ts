@@ -1,5 +1,5 @@
-export default defineEventHandler((event) => {
-  const user = requireClientRole(event)
+export default defineEventHandler(async (event) => {
+  const user = await requireClientRole(event)
 
   const providerId = getRouterParam(event, 'providerId')
   if (!providerId) {

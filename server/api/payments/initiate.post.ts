@@ -9,7 +9,7 @@ interface InitiatePaymentBody {
 const SIMULATED_CONFIRMATION_DELAY_MS = 3000
 
 export default defineEventHandler(async (event) => {
-  const user = requireProviderRole(event)
+  const user = await requireProviderRole(event)
 
   const body = await readBody<InitiatePaymentBody>(event)
 

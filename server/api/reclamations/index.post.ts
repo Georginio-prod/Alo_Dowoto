@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
   // Réclamation ouverte à tout visiteur (voir plus haut) : on rattache le
   // compte si une session existe, sans jamais l'exiger.
   const token = getCookie(event, SESSION_COOKIE)
-  const user = getSessionUser(token)
+  const user = await getSessionUser(token)
 
   const complaint = addComplaint(category, subject, message, contactEmail, user?.id ?? null)
   return { reference: complaintReference(complaint) }

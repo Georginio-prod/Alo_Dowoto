@@ -1,8 +1,8 @@
 const DEFAULT_LIMIT = 5
 const MAX_LIMIT = 20
 
-export default defineEventHandler((event) => {
-  const user = requireSessionUser(event)
+export default defineEventHandler(async (event) => {
+  const user = await requireSessionUser(event)
   const id = getRouterParam(event, 'id')
   const request = id ? getServiceRequest(id) : null
 

@@ -4,8 +4,8 @@
  * séquestre. Tant que cette route n'a pas été appelée avec succès, le
  * prestataire ne voit pas le détail de la demande (voir messages.get.ts).
  */
-export default defineEventHandler((event) => {
-  const user = requireClientRole(event)
+export default defineEventHandler(async (event) => {
+  const user = await requireClientRole(event)
   const id = getRouterParam(event, 'id')
   const conversation = id ? getConversationById(id) : null
 

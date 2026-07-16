@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
     badRequest('Code invalide. Réessayez.')
   }
 
-  const result = verifyOtp(contact, code)
+  const result = await verifyOtp(contact, code)
   if (!result.ok) {
     if (result.reason === 'too_many_attempts') {
       tooManyRequests(ERROR_MESSAGES[result.reason])

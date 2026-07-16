@@ -1,10 +1,12 @@
 import { randomUUID } from 'node:crypto'
+import type { User as PrismaUser } from '@prisma/client'
+import { prisma } from '~~/server/utils/prisma'
 import { isVerified } from '~~/server/utils/verificationStore'
 
 /**
- * Store en mémoire pour les utilisateurs et les sessions. Suffisant pour ce
- * lot (pas de base de données encore en place, voir #45/#46) mais ne
- * survit pas à un redémarrage ni à plusieurs instances du serveur.
+ * Persistance des utilisateurs et des sessions en base (Prisma/SQLite,
+ * #218) : contrairement aux anciens stores en mémoire, comptes et sessions
+ * survivent aux redémarrages du serveur.
  */
 
 export type Role = 'client' | 'prestataire'
@@ -30,17 +32,23 @@ export interface NewUserProfile {
   location: string
 }
 
-interface Session {
-  userId: string
-  expiresAt: number
-}
-
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000
 
 export const SESSION_COOKIE = 'wt_session'
 
-const usersByContact = new Map<string, User>()
-const sessions = new Map<string, Session>()
+function toUser(row: PrismaUser): User {
+  return {
+    id: row.id,
+    contact: row.contact,
+    role: row.role as Role,
+    createdAt: row.createdAt.getTime(),
+    ...(row.passwordHash ? { passwordHash: row.passwordHash } : {}),
+    username: row.username,
+    firstName: row.firstName,
+    lastName: row.lastName,
+    location: row.location,
+  }
+}
 
 /**
  * Retrouve l'utilisateur associé à un contact, ou en crée un nouveau (le
@@ -49,13 +57,13 @@ const sessions = new Map<string, Session>()
  * localisation sont collectés dès la première page d'inscription, pour les
  * deux types de compte.
  */
-export function findOrCreateUser(
+export async function findOrCreateUser(
   contact: string,
   role: Role | undefined,
   profile?: NewUserProfile,
-): { user: User; created: boolean } {
-  const existing = usersByContact.get(contact)
-  if (existing) return { user: existing, created: false }
+): Promise<{ user: User; created: boolean }> {
+  const existing = await prisma.user.findUnique({ where: { contact } })
+  if (existing) return { user: toUser(existing), created: false }
 
   if (!role) {
     badRequest('Le rôle (client ou prestataire) est requis pour créer un compte.')
@@ -67,60 +75,63 @@ export function findOrCreateUser(
     badRequest("Nom d'utilisateur, prénom, nom et localisation sont requis pour créer un compte.")
   }
 
-  const user: User = {
-    id: randomUUID(),
-    contact,
-    role,
-    createdAt: Date.now(),
-    username: profile.username.trim(),
-    firstName: profile.firstName.trim(),
-    lastName: profile.lastName.trim(),
-    location: profile.location.trim(),
-  }
-  usersByContact.set(contact, user)
-  return { user, created: true }
+  const row = await prisma.user.create({
+    data: {
+      contact,
+      role,
+      username: profile.username.trim(),
+      firstName: profile.firstName.trim(),
+      lastName: profile.lastName.trim(),
+      location: profile.location.trim(),
+    },
+  })
+  return { user: toUser(row), created: true }
 }
 
 /** Retrouve un utilisateur par id (ex. utilisé par la messagerie, #59). */
-export function getUserById(id: string): User | null {
-  for (const user of usersByContact.values()) {
-    if (user.id === id) return user
-  }
-  return null
+export async function getUserById(id: string): Promise<User | null> {
+  const row = await prisma.user.findUnique({ where: { id } })
+  return row ? toUser(row) : null
 }
 
 /** Met à jour les informations de profil (nom d'utilisateur, prénom, nom, localisation) d'un compte existant. */
-export function updateUserProfile(userId: string, profile: NewUserProfile): User {
-  const user = getUserById(userId)
-  if (!user) notFound('Utilisateur introuvable.')
-  user.username = profile.username
-  user.firstName = profile.firstName
-  user.lastName = profile.lastName
-  user.location = profile.location
-  return user
+export async function updateUserProfile(userId: string, profile: NewUserProfile): Promise<User> {
+  const existing = await prisma.user.findUnique({ where: { id: userId } })
+  if (!existing) notFound('Utilisateur introuvable.')
+  const row = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      username: profile.username,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      location: profile.location,
+    },
+  })
+  return toUser(row)
 }
 
-export function createSession(userId: string): string {
+export async function createSession(userId: string): Promise<string> {
   const token = randomUUID()
-  sessions.set(token, { userId, expiresAt: Date.now() + SESSION_TTL_MS })
+  await prisma.session.create({
+    data: { token, userId, expiresAt: new Date(Date.now() + SESSION_TTL_MS) },
+  })
   return token
 }
 
-export function getSessionUser(token: string | undefined): User | null {
+export async function getSessionUser(token: string | undefined): Promise<User | null> {
   if (!token) return null
-  const session = sessions.get(token)
-  if (!session || session.expiresAt < Date.now()) {
-    sessions.delete(token)
+  const session = await prisma.session.findUnique({ where: { token }, include: { user: true } })
+  if (!session) return null
+  if (session.expiresAt.getTime() < Date.now()) {
+    await prisma.session.delete({ where: { token } }).catch(() => {})
     return null
   }
-  for (const user of usersByContact.values()) {
-    if (user.id === session.userId) return user
-  }
-  return null
+  return toUser(session.user)
 }
 
-export function destroySession(token: string | undefined) {
-  if (token) sessions.delete(token)
+export async function destroySession(token: string | undefined): Promise<void> {
+  if (!token) return
+  await prisma.session.deleteMany({ where: { token } })
 }
 
 /**
@@ -131,10 +142,8 @@ export function hasPassword(user: User): boolean {
   return !!user.passwordHash
 }
 
-export function setPasswordHash(userId: string, passwordHash: string): void {
-  const user = getUserById(userId)
-  if (!user) return
-  user.passwordHash = passwordHash
+export async function setPasswordHash(userId: string, passwordHash: string): Promise<void> {
+  await prisma.user.updateMany({ where: { id: userId }, data: { passwordHash } })
 }
 
 export interface PublicUser {

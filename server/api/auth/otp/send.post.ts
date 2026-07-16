@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
     )
   }
 
-  const result = generateOtp(contact)
+  const result = await generateOtp(contact)
   if (!result.ok) {
     tooManyRequests('Veuillez patienter avant de renvoyer un code.', { retryAfterSeconds: result.retryAfterSeconds })
   }
