@@ -1,7 +1,15 @@
 import { randomUUID } from 'node:crypto'
-import { describe, expect, it } from 'vitest'
-import { createEscrowOrder, getEscrowOrderByConversationId, payEscrowOrder } from '~~/server/utils/escrowOrderStore'
-import { creditWallet, getBalance } from '~~/server/utils/walletStore'
+import { describe, expect, it, vi } from 'vitest'
+import {
+  confirmEscrowOrderReceipt,
+  createEscrowOrder,
+  ESCROW_COMMISSION_RATE,
+  getEscrowOrderByConversationId,
+  markEscrowOrderDelivered,
+  payEscrowOrder,
+  TACIT_VALIDATION_DELAY_MS,
+} from '~~/server/utils/escrowOrderStore'
+import { creditWallet, getBalance, PLATFORM_WALLET_USER_ID } from '~~/server/utils/walletStore'
 
 function id(): string {
   return randomUUID()
@@ -70,5 +78,92 @@ describe('escrowOrderStore (#194 devis, engagement et paiement bloquant)', () =>
 
   it('payEscrowOrder renvoie not_found pour une conversation sans commande', () => {
     expect(payEscrowOrder(id())).toEqual({ ok: false, error: 'not_found' })
+  })
+})
+
+function payAndDeliver(conversationId: string, client: string, provider: string, amount: number) {
+  creditWallet({ walletUserId: client, type: 'recharge', amount, reference: 'REF' })
+  createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount })
+  payEscrowOrder(conversationId)
+  return markEscrowOrderDelivered(conversationId)
+}
+
+describe('escrowOrderStore — double validation et libération (#195)', () => {
+  it('markEscrowOrderDelivered échoue si la commande n’est pas en séquestre', () => {
+    const conversationId = id()
+    createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 3000 })
+    expect(markEscrowOrderDelivered(conversationId)).toEqual({ ok: false, error: 'invalid_status' })
+  })
+
+  it('markEscrowOrderDelivered passe la commande en "delivered"', () => {
+    const conversationId = id()
+    const result = payAndDeliver(conversationId, id(), id(), 3000)
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.order.status).toBe('delivered')
+      expect(result.order.deliveredAt).not.toBeNull()
+    }
+  })
+
+  it('confirmEscrowOrderReceipt libère les fonds nets de commission vers le prestataire et crédite la commission', () => {
+    const conversationId = id()
+    const client = id()
+    const provider = id()
+    payAndDeliver(conversationId, client, provider, 10000)
+
+    const result = confirmEscrowOrderReceipt(conversationId)
+
+    const expectedCommission = Math.round(10000 * ESCROW_COMMISSION_RATE)
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.order.status).toBe('released')
+    expect(getBalance(provider)).toBe(10000 - expectedCommission)
+    expect(getBalance(PLATFORM_WALLET_USER_ID)).toBe(expectedCommission)
+  })
+
+  it('confirmEscrowOrderReceipt échoue tant que la prestation n’est pas marquée terminée', () => {
+    const conversationId = id()
+    const client = id()
+    const provider = id()
+    creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
+    createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount: 3000 })
+    payEscrowOrder(conversationId)
+
+    expect(confirmEscrowOrderReceipt(conversationId)).toEqual({ ok: false, error: 'invalid_status' })
+  })
+
+  it('une commande livrée depuis plus de 72h est libérée automatiquement à la prochaine lecture (validation tacite)', () => {
+    const conversationId = id()
+    const client = id()
+    const provider = id()
+    let now = 1_000_000
+    const spy = vi.spyOn(Date, 'now').mockImplementation(() => now)
+
+    payAndDeliver(conversationId, client, provider, 5000)
+    now += TACIT_VALIDATION_DELAY_MS + 1
+
+    const order = getEscrowOrderByConversationId(conversationId)
+
+    spy.mockRestore()
+
+    expect(order?.status).toBe('released')
+    expect(getBalance(provider)).toBe(5000 - Math.round(5000 * ESCROW_COMMISSION_RATE))
+  })
+
+  it('une commande livrée depuis moins de 72h n’est pas libérée automatiquement', () => {
+    const conversationId = id()
+    const client = id()
+    const provider = id()
+    let now = 1_000_000
+    const spy = vi.spyOn(Date, 'now').mockImplementation(() => now)
+
+    payAndDeliver(conversationId, client, provider, 5000)
+    now += TACIT_VALIDATION_DELAY_MS - 1000
+
+    const order = getEscrowOrderByConversationId(conversationId)
+
+    spy.mockRestore()
+
+    expect(order?.status).toBe('delivered')
+    expect(getBalance(provider)).toBe(0)
   })
 })
