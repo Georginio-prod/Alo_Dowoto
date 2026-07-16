@@ -4,13 +4,13 @@
  * démasquées que si l'utilisateur connecté est le client qui a déjà engagé
  * le contact avec ce prestataire (conversation existante, #58/#59).
  */
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
   if (!id) {
     badRequest('Identifiant prestataire manquant.')
   }
 
-  const viewer = getSessionUser(getCookie(event, SESSION_COOKIE))
+  const viewer = await getSessionUser(getCookie(event, SESSION_COOKIE))
   const contactRevealed = !!viewer && viewer.role === 'client' && hasConversation(viewer.id, id)
 
   const provider = getProviderDetail(id, contactRevealed)

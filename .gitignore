@@ -29,3 +29,5 @@ logs
 # Base SQLite locale (Prisma) — voir prisma/migrations pour le schéma versionné
 prisma/dev.db
 prisma/dev.db-journal
+tests/setup/test.db
+tests/setup/test.db-journal

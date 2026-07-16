@@ -1,6 +1,6 @@
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   const token = getCookie(event, SESSION_COOKIE)
-  destroySession(token)
+  await destroySession(token)
   deleteCookie(event, SESSION_COOKIE, { path: '/' })
   return { ok: true }
 })

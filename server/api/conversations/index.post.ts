@@ -9,7 +9,7 @@ interface CreateConversationBody {
  * le premier contact dans ce prototype.
  */
 export default defineEventHandler(async (event) => {
-  const user = requireClientRole(event)
+  const user = await requireClientRole(event)
   if (!isVerified(user.id)) {
     forbidden("Vérifiez votre identité avant de contacter un prestataire (carte d'identité + photo passeport).")
   }
@@ -25,11 +25,11 @@ export default defineEventHandler(async (event) => {
   // conversationStore.ts. Un vrai prestataire non vérifié ne doit pas pouvoir être
   // contacté : c'est le seul moment où sa vérification est réellement testable dans
   // ce prototype (le matching public reste branché sur l'annuaire de démo, #45/#46).
-  const providerUser = getUserById(providerId)
+  const providerUser = await getUserById(providerId)
   if (providerUser && !isVerified(providerUser.id)) {
     forbidden("Ce prestataire n'a pas encore terminé sa vérification d'identité.")
   }
 
   const conversation = findOrCreateConversation(user.id, providerId)
-  return { conversation: toConversationSummary(conversation, user.id) }
+  return { conversation: await toConversationSummary(conversation, user.id) }
 })

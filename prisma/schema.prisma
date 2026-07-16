@@ -1,10 +1,11 @@
-// Schéma de référence pour la persistance WorkTogo (#45).
+// Schéma de persistance WorkTogo (#45).
 //
-// Ce schéma documente et prépare la future migration depuis les stores en
-// mémoire (server/utils/*Store.ts) vers une vraie base de données. Il n'est
-// pas encore branché à l'application : la bascule effective (choix du
-// provider de prod, connexion depuis les routes API, seed des secteurs) est
-// un chantier ultérieur distinct (voir #46 pour l'architecture API).
+// Depuis #218, la partie authentification (User, Session, OtpCode,
+// VerifiedContact) est réellement branchée à l'application via
+// server/utils/prisma.ts : les comptes, sessions et codes OTP survivent aux
+// redémarrages du serveur. Les autres modèles (secteurs, profils
+// prestataires, abonnements, paiements) documentent et préparent la bascule
+// des stores en mémoire restants (chantier #46).
 //
 // Un aperçu du schéma sous forme de diagramme se trouve dans
 // docs/database-schema.md.
@@ -47,10 +48,49 @@ model User {
   role      Role
   createdAt DateTime @default(now())
 
+  /// Hash scrypt (server/utils/password.ts) — null tant que l'inscription
+  /// n'est pas finalisée (#125).
+  passwordHash String?
+
+  /// Profil collecté dès la première page d'inscription (#125).
+  username  String @default("")
+  firstName String @default("")
+  lastName  String @default("")
+  location  String @default("")
+
+  sessions        Session[]
   providerProfile ProviderProfile?
   subscriptions   Subscription[]
   payments        Payment[]
   reviewsWritten  Review[]         @relation("ReviewAuthor")
+}
+
+/// Session authentifiée (cookie wt_session) — voir server/utils/userStore.ts (#218).
+model Session {
+  token     String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// Code OTP en attente de vérification pour un contact (téléphone/email
+/// normalisé) — voir server/utils/otpStore.ts (#23, #218).
+model OtpCode {
+  contact    String   @id
+  code       String
+  expiresAt  DateTime
+  attempts   Int      @default(0)
+  lastSentAt DateTime
+}
+
+/// Preuve (à usage unique) qu'un contact vient de valider son code OTP,
+/// consommée à la création de session — voir server/utils/otpStore.ts (#24, #218).
+model VerifiedContact {
+  contact   String   @id
+  expiresAt DateTime
 }
 
 /// Secteur d'activité — voir app/data/sectors.ts (#8).

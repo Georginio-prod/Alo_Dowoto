@@ -5,7 +5,7 @@ interface CreateSubscriptionBody {
 }
 
 export default defineEventHandler(async (event) => {
-  const user = requireProviderRole(event)
+  const user = await requireProviderRole(event)
 
   const body = await readBody<CreateSubscriptionBody>(event)
   const plan = findPlan(body?.plan ?? '')

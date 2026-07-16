@@ -3,8 +3,8 @@
  * libère les fonds en séquestre vers le solde du prestataire, net de la
  * commission WorkTogo.
  */
-export default defineEventHandler((event) => {
-  const user = requireClientRole(event)
+export default defineEventHandler(async (event) => {
+  const user = await requireClientRole(event)
   const id = getRouterParam(event, 'id')
   const conversation = id ? getConversationById(id) : null
 

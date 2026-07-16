@@ -7,7 +7,7 @@ interface CancelEscrowBody {
  * epic #191) : remboursement intégral et automatique, motif obligatoire.
  */
 export default defineEventHandler(async (event) => {
-  const user = requireSessionUser(event)
+  const user = await requireSessionUser(event)
   const id = getRouterParam(event, 'id')
   const conversation = id ? getConversationById(id) : null
 

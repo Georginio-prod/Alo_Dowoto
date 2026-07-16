@@ -1,9 +1,9 @@
 import type { H3Event } from 'h3'
 import type { User } from '~~/server/utils/userStore'
 
-export function requireSessionUser(event: H3Event): User {
+export async function requireSessionUser(event: H3Event): Promise<User> {
   const token = getCookie(event, SESSION_COOKIE)
-  const user = getSessionUser(token)
+  const user = await getSessionUser(token)
 
   if (!user) {
     unauthorized()
@@ -17,8 +17,8 @@ export function requireSessionUser(event: H3Event): User {
  * répétée par la plupart des routes /api/providers, /api/subscriptions et
  * /api/payments.
  */
-export function requireProviderRole(event: H3Event): User {
-  const user = requireSessionUser(event)
+export async function requireProviderRole(event: H3Event): Promise<User> {
+  const user = await requireSessionUser(event)
   if (user.role !== 'prestataire') {
     forbidden('Réservé aux comptes prestataire.')
   }
@@ -29,8 +29,8 @@ export function requireProviderRole(event: H3Event): User {
  * Exige un utilisateur connecté avec le rôle client — vérification répétée
  * par les routes /api/quotas/contacts et /api/favorites (#65).
  */
-export function requireClientRole(event: H3Event): User {
-  const user = requireSessionUser(event)
+export async function requireClientRole(event: H3Event): Promise<User> {
+  const user = await requireSessionUser(event)
   if (user.role !== 'client') {
     forbidden('Réservé aux comptes client.')
   }

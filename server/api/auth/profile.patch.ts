@@ -11,7 +11,7 @@ interface UpdateProfileBody {
  * ceux collectés à l'inscription (voir findOrCreateUser).
  */
 export default defineEventHandler(async (event) => {
-  const user = requireSessionUser(event)
+  const user = await requireSessionUser(event)
 
   const body = await readBody<UpdateProfileBody>(event)
   const username = body?.username?.trim() ?? ''
@@ -23,6 +23,6 @@ export default defineEventHandler(async (event) => {
     badRequest("Nom d'utilisateur, prénom, nom et localisation sont requis.")
   }
 
-  const updated = updateUserProfile(user.id, { username, firstName, lastName, location })
+  const updated = await updateUserProfile(user.id, { username, firstName, lastName, location })
   return { user: toPublicUser(updated) }
 })

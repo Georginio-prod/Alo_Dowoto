@@ -1,4 +1,4 @@
-export default defineEventHandler((event) => {
-  const user = requireProviderRole(event)
+export default defineEventHandler(async (event) => {
+  const user = await requireProviderRole(event)
   return { subscription: getSubscriptionByUserId(user.id) }
 })

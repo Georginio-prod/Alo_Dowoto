@@ -10,7 +10,7 @@ interface SubmitReviewBody {
  * clientId/providerId).
  */
 export default defineEventHandler(async (event) => {
-  const user = requireSessionUser(event)
+  const user = await requireSessionUser(event)
   const id = getRouterParam(event, 'id')
   const conversation = id ? getConversationById(id) : null
 

@@ -8,7 +8,7 @@ const SIMULATED_CONFIRMATION_DELAY_MS = 3000
 const MIN_RECHARGE_AMOUNT = 500
 
 export default defineEventHandler(async (event) => {
-  const user = requireSessionUser(event)
+  const user = await requireSessionUser(event)
 
   const body = await readBody<RechargeBody>(event)
 

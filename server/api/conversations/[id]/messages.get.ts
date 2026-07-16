@@ -1,5 +1,5 @@
-export default defineEventHandler((event) => {
-  const user = requireSessionUser(event)
+export default defineEventHandler(async (event) => {
+  const user = await requireSessionUser(event)
   const id = getRouterParam(event, 'id')
   const conversation = id ? getConversationById(id) : null
 
@@ -18,7 +18,7 @@ export default defineEventHandler((event) => {
   const isViewerProvider = user.id === conversation.providerId
   if (isViewerProvider && order && order.status === 'awaiting_payment') {
     return {
-      conversation: toConversationSummary(conversation, user.id),
+      conversation: await toConversationSummary(conversation, user.id),
       messages: [],
       escrowOrder: order,
       awaitingPayment: true,
@@ -26,7 +26,7 @@ export default defineEventHandler((event) => {
   }
 
   return {
-    conversation: toConversationSummary(conversation, user.id),
+    conversation: await toConversationSummary(conversation, user.id),
     messages: getMessages(conversation.id),
     escrowOrder: order,
     awaitingPayment: false,

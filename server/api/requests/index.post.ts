@@ -13,7 +13,7 @@ interface CreateRequestBody {
 const VALID_URGENCY = new Set<Urgency>(['immediate', 'semaine', 'flexible'])
 
 export default defineEventHandler(async (event) => {
-  const user = requireSessionUser(event)
+  const user = await requireSessionUser(event)
   if (user.role !== 'client') {
     forbidden('Réservé aux comptes client.')
   }
