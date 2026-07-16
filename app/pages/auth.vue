@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SignupProfile } from '~/components/AuthContactStep.vue'
+import type { PendingGoogleSignup, SignupProfile } from '~/components/AuthContactStep.vue'
 import { SECTORS } from '~/data/sectors'
 import type { PublicUser } from '~~/server/utils/userStore'
 
@@ -17,6 +17,43 @@ const route = useRoute()
 const activeTab = ref<Tab>(route.query.mode === 'login' ? 'login' : route.query.role ? 'signup' : 'login')
 const role = ref<Role>(route.query.role === 'prestataire' ? 'prestataire' : 'client')
 const step = ref<Step>('contact')
+
+// --- Continuer avec Google (#219) -----------------------------------------
+
+// Erreurs renvoyées par /api/auth/google/callback (voir la correspondance
+// des codes côté serveur).
+const GOOGLE_ERRORS: Record<string, string> = {
+  google_config: "La connexion avec Google n'est pas configurée sur ce serveur. Utilisez le formulaire ci-dessous.",
+  google_denied: 'Connexion avec Google annulée.',
+  google_state: 'La vérification de sécurité Google a échoué. Réessayez.',
+  google_failed: 'La connexion avec Google a échoué. Réessayez.',
+  google_email: "Votre adresse email Google n'est pas vérifiée — utilisez le formulaire classique.",
+}
+const googleError = computed(() =>
+  typeof route.query.error === 'string' ? (GOOGLE_ERRORS[route.query.error] ?? '') : '',
+)
+
+// Retour d'inscription Google (`?google=1`) : le callback a déposé le profil
+// (email vérifié, prénom, nom) dans un cookie httpOnly — jamais dans l'URL.
+// `useRequestFetch` transmet ce cookie pendant le SSR (même raison que dans
+// useSession.ts).
+const googlePending = ref<PendingGoogleSignup | null>(null)
+if (route.query.google === '1') {
+  try {
+    const { pending } = await useRequestFetch()<{ pending: PendingGoogleSignup | null }>('/api/auth/google/pending')
+    googlePending.value = pending
+  } catch {
+    googlePending.value = null
+  }
+  if (googlePending.value) activeTab.value = 'signup'
+}
+
+function startGoogle() {
+  // Redirection plein écran (pas un appel API) : le serveur pose le cookie
+  // `state` puis renvoie vers l'écran de consentement Google.
+  const target = activeTab.value === 'signup' ? `/api/auth/google?role=${role.value}` : '/api/auth/google'
+  navigateTo(target, { external: true })
+}
 
 const contactMethod = ref<Method>('phone')
 const contactValue = ref('')
@@ -51,12 +88,14 @@ function selectRole(r: Role) {
   role.value = r
 }
 
-function onContactSent(payload: { method: Method; value: string; devCode?: string; profile?: SignupProfile }) {
+function onContactSent(payload: { method: Method; value: string; devCode?: string; profile?: SignupProfile; skipOtp?: boolean }) {
   contactMethod.value = payload.method
   contactValue.value = payload.value
   otpDevCode.value = payload.devCode
   signupProfile.value = payload.profile
-  step.value = 'otp'
+  // Inscription via Google : l'email est déjà vérifié côté serveur (#219),
+  // on passe directement à la création du mot de passe.
+  step.value = payload.skipOtp ? 'password' : 'otp'
 }
 
 function onOtpVerified() {
@@ -107,6 +146,13 @@ function onPayoutSaved() {
       <FlowSteps v-if="activeTab === 'signup'" :steps="flowSteps" :current-index="flowStepIndex" />
 
       <div class="rounded-card border border-hairline bg-surface p-7 shadow-card-sm">
+        <p
+          v-if="googleError"
+          class="mb-4 rounded-field border border-error/30 bg-error/5 px-3.5 py-2.5 text-[13px] text-error"
+        >
+          {{ googleError }}
+        </p>
+
         <div class="mb-[22px] flex rounded-field bg-bg p-1">
           <button
             type="button"
@@ -166,7 +212,14 @@ function onPayoutSaved() {
           </div>
         </div>
 
-        <AuthContactStep v-if="step === 'contact'" :cta="contactCta" :mode="activeTab" @sent="onContactSent" />
+        <AuthContactStep
+          v-if="step === 'contact'"
+          :cta="contactCta"
+          :mode="activeTab"
+          :google="activeTab === 'signup' ? googlePending : null"
+          @sent="onContactSent"
+          @google="startGoogle"
+        />
 
         <AuthOtpStep
           v-else-if="step === 'otp'"

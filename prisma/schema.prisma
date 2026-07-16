@@ -52,6 +52,11 @@ model User {
   /// n'est pas finalisée (#125).
   passwordHash String?
 
+  /// Identifiant Google (`sub` OpenID Connect) lié au compte — permet la
+  /// connexion « Continuer avec Google » (#219). Lié automatiquement au
+  /// premier login Google d'un compte existant avec le même email.
+  googleId String? @unique
+
   /// Profil collecté dès la première page d'inscription (#125).
   username  String @default("")
   firstName String @default("")

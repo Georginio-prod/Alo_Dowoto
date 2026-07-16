@@ -36,8 +36,7 @@ async function submit() {
     })
     reference.value = ref
   } catch (fetchError) {
-    const statusMessage = (fetchError as { statusMessage?: string })?.statusMessage
-    error.value = statusMessage || "L'envoi de votre réclamation a échoué. Réessayez."
+    error.value = apiErrorMessage(fetchError, "L'envoi de votre réclamation a échoué. Réessayez.")
   } finally {
     isSubmitting.value = false
   }
