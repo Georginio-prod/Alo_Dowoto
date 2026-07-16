@@ -29,6 +29,11 @@ export function conflict(message: string): never {
   throw createError({ statusCode: 409, statusMessage: message })
 }
 
+/** Solde de portefeuille insuffisant pour un paiement en séquestre (#194). */
+export function paymentRequired(message: string): never {
+  throw createError({ statusCode: 402, statusMessage: message })
+}
+
 export function tooManyRequests(message: string, data?: Record<string, unknown>): never {
   throw createError({ statusCode: 429, statusMessage: message, data })
 }

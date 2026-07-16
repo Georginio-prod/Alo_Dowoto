@@ -62,6 +62,7 @@ function onSearch() {
       </form>
 
       <div class="ml-auto flex shrink-0 items-center gap-2.5">
+        <WalletBalanceChip v-if="sessionUser?.role === 'client'" />
         <button
           type="button"
           class="press grid size-9 shrink-0 place-items-center rounded-pill border border-hairline text-dark hover:text-primary"

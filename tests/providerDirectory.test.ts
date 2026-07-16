@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { countBySector, getProviderDetail, searchProviders } from '~~/server/utils/providerDirectory'
+import { countBySector, getProviderDetail, resolveProviderRate, searchProviders } from '~~/server/utils/providerDirectory'
+import { upsertProviderProfile } from '~~/server/utils/providerStore'
 
 describe('searchProviders (#40 filtres de résultats)', () => {
   it('retourne tous les prestataires du secteur quand aucun autre filtre n’est actif', () => {
@@ -77,5 +78,20 @@ describe('getProviderDetail — fenêtre « Voir le profil » (#127)', () => {
 
     const unverified = getProviderDetail('p04', false) // Yawa D., non vérifiée
     expect(unverified?.cvUrl).toBeNull()
+  })
+})
+
+describe('resolveProviderRate — tarif fixe pour le paiement en séquestre (#194)', () => {
+  it('renvoie le tarif de l’annuaire de démonstration en priorité', () => {
+    expect(resolveProviderRate('p01')).toBe(3000)
+  })
+
+  it('retombe sur le tarif d’un vrai compte prestataire hors annuaire de démo', () => {
+    upsertProviderProfile('real-provider-1', { sector: 'menage', rateFrom: 4200 })
+    expect(resolveProviderRate('real-provider-1')).toBe(4200)
+  })
+
+  it('renvoie null quand aucun tarif n’est disponible', () => {
+    expect(resolveProviderRate('provider-sans-tarif')).toBeNull()
   })
 })
