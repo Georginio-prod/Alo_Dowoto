@@ -35,12 +35,22 @@ export default defineEventHandler(async (event) => {
     badRequest('Vos coordonnées sont requises pour envoyer votre demande.')
   }
 
+  // Paiement en séquestre obligatoire avant transmission au prestataire
+  // (#194, epic #191) : cette itération ne gère que le tarif fixe affiché
+  // (pas de devis à valider, choix produit encore à trancher). Sans tarif
+  // configuré, la demande ne peut pas être engagée.
+  const amount = resolveProviderRate(conversation.providerId)
+  if (amount === null) {
+    conflict('Ce prestataire n\'a pas encore configuré de tarif fixe : demande impossible pour le moment.')
+  }
+
   const messageLines = [description, `Contact : ${contact}`]
   if (urgency) messageLines.push(`Urgence / délai souhaité : ${urgency}`)
 
   const message = addMessage(conversation.id, user.id, user.role, messageLines.join('\n\n'))
   markFirstContactDone(conversation.id)
+  const order = createEscrowOrder({ conversationId: conversation.id, clientId: user.id, providerId: conversation.providerId, amount })
 
   setResponseStatus(event, 201)
-  return { conversation: toConversationSummary(conversation, user.id), message }
+  return { conversation: toConversationSummary(conversation, user.id), message, order }
 })
