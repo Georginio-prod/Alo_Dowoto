@@ -3,6 +3,8 @@ import { PLANS, findPlan, type PlanSlug } from '~/data/plans'
 
 const { trialDays = 14 } = defineProps<{ trialDays?: number }>()
 
+const { user } = useSession()
+
 const selectedSlug = ref((PLANS.find((plan) => plan.tag) ?? PLANS[0]).slug)
 const selectedPlan = computed(() => findPlan(selectedSlug.value) ?? PLANS[0])
 const isSubmitting = ref(false)
@@ -32,9 +34,16 @@ async function continueToPayment() {
   }
 }
 
+// « Compléter mon profil plus tard » doit renvoyer vers le tableau de bord
+// correspondant au type de compte connecté (#186) : `/dashboard` n'existe
+// pas en tant que route et renvoyait donc vers une page inexistante pour
+// tout le monde. Cette page n'est aujourd'hui atteinte que par le parcours
+// d'inscription prestataire (voir AuthPayoutStep → onPayoutSaved), mais elle
+// reste aussi liée depuis la nav publique (« Formules et tarifs ») et donc
+// potentiellement accessible à un chercheur connecté — le routage reste
+// défensif pour les deux rôles plutôt que de supposer prestataire.
 function completeProfileLater() {
-  // Tableau de bord prestataire, voir #36/#37.
-  navigateTo('/dashboard')
+  navigateTo(user.value?.role === 'prestataire' ? '/prestataire' : '/dashboard/client')
 }
 </script>
 
