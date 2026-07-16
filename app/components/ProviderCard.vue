@@ -6,13 +6,17 @@ const props = withDefaults(
     provider: ProviderSearchResult
     /** État initial connu par le parent (ex. liste de favoris déjà chargée, #64). */
     isFavorite?: boolean
+    /** Étiquette de mise en avant affichée sur les profils recommandés (#187). */
+    badge?: 'top' | 'recommande' | null
   }>(),
-  { isFavorite: false },
+  { isFavorite: false, badge: null },
 )
 
 const emit = defineEmits<{ 'favorite-changed': [] }>()
 
 const filledStars = computed(() => Math.round(props.provider.rating))
+
+const badgeLabel = computed(() => (props.badge === 'top' ? 'Top prestataire' : props.badge === 'recommande' ? 'Recommandé' : null))
 
 const favorite = ref(props.isFavorite)
 const isTogglingFavorite = ref(false)
@@ -57,10 +61,19 @@ async function toggleFavorite() {
 </script>
 
 <template>
-  <div class="flex flex-col overflow-hidden rounded-card border border-hairline bg-surface shadow-card-sm">
+  <div
+    class="flex flex-col overflow-hidden rounded-card border shadow-card-sm"
+    :class="badge ? 'border-primary/40 bg-surface' : 'border-hairline bg-surface'"
+  >
     <div
-      class="flex h-[140px] items-center justify-center bg-[repeating-linear-gradient(135deg,#e5e7eb_0_10px,#eef0f2_10px_20px)]"
+      class="relative flex h-[140px] items-center justify-center bg-[repeating-linear-gradient(135deg,#e5e7eb_0_10px,#eef0f2_10px_20px)]"
     >
+      <span
+        v-if="badgeLabel"
+        class="absolute left-2 top-2 rounded-pill bg-primary px-2.5 py-1 text-[11px] font-bold text-white shadow-card-sm"
+      >
+        ★ {{ badgeLabel }}
+      </span>
       <span class="rounded-pill bg-black/40 px-2.5 py-1 text-[11px] font-semibold text-white">photo</span>
     </div>
 
@@ -90,7 +103,7 @@ async function toggleFavorite() {
       <div class="mt-auto flex gap-2">
         <button
           type="button"
-          class="press flex-1 rounded-field bg-dark py-2.5 text-[13.5px] font-semibold text-white hover:bg-[#1a3a28]"
+          class="press flex-1 rounded-field bg-dark py-2.5 text-[13.5px] font-semibold text-white hover:bg-dark-hover"
           @click="showProfile = true"
         >
           Voir le profil

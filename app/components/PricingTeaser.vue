@@ -21,15 +21,19 @@ import { PLANS } from '~/data/plans'
           :style="{ '--reveal-delay': `${i * 80}ms` }"
         >
           <!-- `v-reveal` reste sur ce wrapper : sa règle `[data-reveal].is-visible
-          { transform: none }` a la même spécificité CSS que l'utilitaire Tailwind
-          `hover:-translate-y-1` — sur le même élément, l'ordre de génération de
+          { transform: none }` a la même spécificité CSS que les utilitaires
+          Tailwind `hover:*` — sur le même élément, l'ordre de génération de
           Tailwind peut la faire gagner et bloquer l'effet de survol en
           permanence une fois l'apparition terminée. Le survol vit donc sur cet
           élément interne distinct (comme SectorGrid.vue : wrapper `v-reveal` +
-          bouton animé au survol). -->
+          bouton animé au survol), via l'utilitaire `.card-hover` (main.css)
+          qui centralise la charte de mouvement (#184) : un seul `transform`
+          combiné + une seule courbe d'easing, survol actif uniquement sur les
+          pointeurs qui le supportent (`hover: hover`), avec un équivalent
+          `:active` pour le tap tactile. -->
           <div
-            class="relative rounded-card border-2 bg-white p-5 transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-1 hover:shadow-card-md"
-            :class="plan.tag ? 'border-primary hover:border-primary' : 'border-hairline hover:border-primary/40'"
+            class="card-hover relative rounded-card border-2 bg-white p-5"
+            :class="plan.tag ? 'border-primary hover:border-primary active:border-primary' : 'border-hairline hover:border-primary/40 active:border-primary/40'"
           >
             <div
               v-if="plan.tag"
@@ -48,7 +52,7 @@ import { PLANS } from '~/data/plans'
       </div>
 
       <div class="mt-7 text-center">
-        <NuxtLink to="/abonnement" class="press text-[13.5px] font-semibold text-primary hover:underline">
+        <NuxtLink to="/formules" class="press text-[13.5px] font-semibold text-primary hover:underline">
           Comparer toutes les fonctionnalités des formules →
         </NuxtLink>
       </div>

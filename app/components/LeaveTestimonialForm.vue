@@ -14,6 +14,26 @@ const error = ref('')
 const success = ref(false)
 const isSubmitting = ref(false)
 
+const messageTextarea = ref<HTMLTextAreaElement | null>(null)
+
+function resizeMessageTextarea() {
+  const el = messageTextarea.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight}px`
+}
+
+onMounted(() => {
+  resizeMessageTextarea()
+})
+
+// Le v-model peut réinitialiser `message` de façon programmatique (ex. après
+// une publication réussie) sans déclencher l'évènement `input` du DOM : on
+// observe la valeur pour garder la hauteur du textarea synchronisée dans ce cas.
+watch(message, () => {
+  nextTick(resizeMessageTextarea)
+})
+
 function setRating(n: number) {
   rating.value = n
 }
@@ -106,10 +126,12 @@ async function submit() {
     <label for="testimonial-message" class="mb-1.5 block text-[13px] font-semibold text-dark">Votre avis</label>
     <textarea
       id="testimonial-message"
+      ref="messageTextarea"
       v-model="message"
       rows="3"
       placeholder="Décrivez votre expérience sur WorkTogo…"
-      class="mb-3.5 w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-primary"
+      class="mb-3.5 w-full resize-none overflow-hidden rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-primary"
+      @input="resizeMessageTextarea"
     />
 
     <p v-if="success" class="mb-2 text-[12.5px] font-semibold text-primary">

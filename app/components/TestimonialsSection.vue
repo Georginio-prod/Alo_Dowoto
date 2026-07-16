@@ -35,8 +35,10 @@ function onPosted() {
         <!-- Survol sur un élément distinct du wrapper `v-reveal` : voir la
         note dans PricingTeaser.vue (conflit de spécificité CSS entre
         `[data-reveal].is-visible` et les utilitaires `hover:` de Tailwind
-        quand les deux ciblent le même élément). -->
-        <div class="group flex h-full flex-col rounded-card border border-hairline bg-surface p-5 transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-1 hover:border-primary/30 hover:shadow-card-md">
+        quand les deux ciblent le même élément). Même utilitaire
+        `.card-hover` (main.css) que PricingTeaser.vue et SectorGrid.vue pour
+        une charte de mouvement unique (#184). -->
+        <div class="card-hover group flex h-full flex-col rounded-card border border-hairline bg-surface p-5 hover:border-primary/30 active:border-primary/30">
           <div class="mb-2.5 flex gap-0.5" aria-hidden="true">
             <span v-for="n in 5" :key="n" :class="n <= testimonial.rating ? 'text-star' : 'text-hairline'">★</span>
           </div>
@@ -54,7 +56,7 @@ function onPosted() {
       </div>
     </div>
 
-    <div v-reveal class="mx-auto max-w-xl">
+    <div v-reveal class="mx-auto max-w-[720px]">
       <LeaveTestimonialForm @posted="onPosted" />
     </div>
   </section>

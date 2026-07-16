@@ -139,3 +139,101 @@ export function rankProviders(
     .sort((a, b) => b.total - a.total)
     .slice(0, limit)
 }
+
+/**
+ * Mise en avant des meilleurs prestataires sur l'accueil chercheur (#187).
+ *
+ * Contrairement à `scoreProvider`, ce classement n'est adossé à aucune
+ * demande précise (pas de compétences/localisation/budget à comparer) : il
+ * ne réutilise donc que les briques pures du moteur (`clamp01`,
+ * `bayesianRating`) plutôt que de forcer `scoreProvider` à travers une
+ * fausse « demande neutre », ce qui aurait dilué la sémantique de ses
+ * sous-scores (skills/location/budget) sans rien y gagner.
+ */
+
+export interface FeaturedCandidate {
+  providerId: string
+  rating: number
+  reviewCount: number
+  verified: boolean
+  /** Approximation dérivée du nombre d'avis, voir providerDirectory.estimateExperienceYears. */
+  experienceYears: number
+}
+
+export interface FeaturedWeights {
+  rating: number
+  verified: number
+  experience: number
+}
+
+export interface FeaturedResult {
+  providerId: string
+  total: number
+  /** Note ajustée par bayesianRating (sur 5), utile pour l'affichage/debug. */
+  adjustedRating: number
+}
+
+/** Pondération par défaut du score de mise en avant (#187). */
+export const DEFAULT_FEATURED_WEIGHTS: FeaturedWeights = {
+  rating: 0.7,
+  verified: 0.15,
+  experience: 0.15,
+}
+
+/** Note moyenne « de référence » utilisée tant qu'un prestataire n'a aucun avis. */
+export const FEATURED_PRIOR_MEAN = 3.5
+/** Nombre d'avis fictifs attribués à la moyenne de référence (force du lissage). */
+export const FEATURED_PRIOR_WEIGHT = 5
+
+/**
+ * Moyenne bayésienne : ramène la note d'un prestataire avec peu d'avis vers
+ * une moyenne de référence (`priorMean`), pondérée par un nombre d'avis
+ * fictif (`priorWeight`). Empêche qu'un seul avis à 5★ écrase des
+ * prestataires établis avec des dizaines d'avis solides — c'est cet écart
+ * que la simple moyenne (`rating`) ne corrige pas (#187).
+ */
+export function bayesianRating(
+  avg: number,
+  count: number,
+  priorMean: number = FEATURED_PRIOR_MEAN,
+  priorWeight: number = FEATURED_PRIOR_WEIGHT,
+): number {
+  if (count <= 0) return priorMean
+  return (priorWeight * priorMean + count * avg) / (priorWeight + count)
+}
+
+function scoreExperience(experienceYears: number): number {
+  // 5 ans et plus valent le score maximum ; en dessous, proportionnel.
+  return clamp01(experienceYears / 5)
+}
+
+/** Calcule le score de mise en avant d'un prestataire (#187). */
+export function scoreFeaturedProvider(
+  candidate: FeaturedCandidate,
+  weights: FeaturedWeights = DEFAULT_FEATURED_WEIGHTS,
+): FeaturedResult {
+  const adjustedRating = bayesianRating(candidate.rating, candidate.reviewCount)
+  const ratingScore = clamp01(adjustedRating / 5)
+  const verifiedScore = candidate.verified ? 1 : 0
+  const experienceScore = scoreExperience(candidate.experienceYears)
+
+  const total = ratingScore * weights.rating + verifiedScore * weights.verified + experienceScore * weights.experience
+
+  return {
+    providerId: candidate.providerId,
+    total: Math.round(total * 100),
+    adjustedRating: Math.round(adjustedRating * 100) / 100,
+  }
+}
+
+/** Classe les prestataires par score de mise en avant décroissant (#187). */
+export function rankFeaturedProviders(
+  candidates: FeaturedCandidate[],
+  weights: FeaturedWeights = DEFAULT_FEATURED_WEIGHTS,
+  limit = 6,
+): FeaturedResult[] {
+  return candidates
+    .map((candidate) => scoreFeaturedProvider(candidate, weights))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, limit)
+}
