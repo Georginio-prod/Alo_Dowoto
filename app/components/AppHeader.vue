@@ -10,11 +10,6 @@ const query = ref('')
 const { user: sessionUser, ensure } = useSession()
 await ensure()
 
-// Bascule clair/sombre (#188) : `theme` est un `useState` partagé, initialisé
-// dès le chargement de la page par `app/plugins/theme.client.ts` (choix
-// mémorisé, sinon `prefers-color-scheme`), donc déjà à jour ici.
-const { theme, toggle: toggleTheme } = useTheme()
-
 function onSearch() {
   const q = query.value.trim()
   if (!q) return
@@ -63,31 +58,6 @@ function onSearch() {
 
       <div class="ml-auto flex shrink-0 items-center gap-2.5">
         <WalletBalanceChip v-if="sessionUser?.role === 'client'" />
-        <button
-          type="button"
-          class="press grid size-9 shrink-0 place-items-center rounded-pill border border-hairline text-dark hover:text-primary"
-          :aria-label="theme === 'dark' ? 'Activer le thème clair' : 'Activer le thème sombre'"
-          :aria-pressed="theme === 'dark'"
-          @click="toggleTheme"
-        >
-          <svg v-if="theme === 'dark'" class="size-[18px]" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="4.5" fill="currentColor" />
-            <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
-              <line x1="12" y1="2.5" x2="12" y2="5" />
-              <line x1="12" y1="19" x2="12" y2="21.5" />
-              <line x1="2.5" y1="12" x2="5" y2="12" />
-              <line x1="19" y1="12" x2="21.5" y2="12" />
-              <line x1="4.9" y1="4.9" x2="6.6" y2="6.6" />
-              <line x1="17.4" y1="17.4" x2="19.1" y2="19.1" />
-              <line x1="17.4" y1="6.6" x2="19.1" y2="4.9" />
-              <line x1="4.9" y1="19.1" x2="6.6" y2="17.4" />
-            </g>
-          </svg>
-          <svg v-else class="size-[18px]" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" fill="currentColor" />
-          </svg>
-        </button>
-
         <AccountMenu v-if="sessionUser" :user="sessionUser" />
         <template v-else>
           <NuxtLink
