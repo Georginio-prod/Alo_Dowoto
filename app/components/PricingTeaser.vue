@@ -48,7 +48,7 @@ import { PLANS } from '~/data/plans'
       </div>
 
       <div class="mt-7 text-center">
-        <NuxtLink to="/abonnement" class="press text-[13.5px] font-semibold text-primary hover:underline">
+        <NuxtLink to="/formules" class="press text-[13.5px] font-semibold text-primary hover:underline">
           Comparer toutes les fonctionnalités des formules →
         </NuxtLink>
       </div>
