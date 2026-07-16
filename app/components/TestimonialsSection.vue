@@ -54,7 +54,7 @@ function onPosted() {
       </div>
     </div>
 
-    <div v-reveal class="mx-auto max-w-xl">
+    <div v-reveal class="mx-auto max-w-[720px]">
       <LeaveTestimonialForm @posted="onPosted" />
     </div>
   </section>
