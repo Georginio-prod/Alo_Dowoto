@@ -52,16 +52,12 @@ const subscriptionBadge = computed(() => {
 
 // Rappel non intrusif tant que le profil n'est pas complété à 100 % (#186) :
 // un compte qui a cliqué « Compléter mon profil plus tard » à l'étape
-// Abonnement n'a pas encore choisi de formule. Volontairement limité à cette
-// étape (plutôt qu'aux champs photo/description/tarifs, encore facultatifs
-// et sans page dédiée dans ce lot, voir providerStore.ts) : c'est la seule
-// étape concrètement « reprenable » aujourd'hui.
+// Abonnement n'a pas encore choisi de formule. Le hub /profil (voir
+// app/pages/profil.vue) couvre la vue d'ensemble complète (identité,
+// vérification, profil professionnel, abonnement) ; ce bandeau reste ciblé
+// sur l'abonnement spécifiquement, seule étape bloquante pour recevoir des
+// demandes.
 const profileIncomplete = computed(() => !subscriptionData.value?.subscription)
-
-// La page de complétion de profil (photo/description/tarifs) n'est pas
-// encore développée dans ce lot — bouton posé pour la maquette, sans
-// action pour l'instant.
-function completeProfile() {}
 
 function restartDemo() {
   navigateTo('/')
@@ -126,14 +122,13 @@ function restartDemo() {
     </p>
 
     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <button
-        type="button"
-        class="press rounded-card border border-hairline bg-dark p-4 text-left shadow-card-sm hover:bg-dark-hover"
-        @click="completeProfile"
+      <NuxtLink
+        to="/profil"
+        class="press rounded-card border border-hairline bg-dark p-4 shadow-card-sm hover:bg-dark-hover"
       >
         <p class="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-white/70">Profil</p>
         <p class="text-[13.5px] font-semibold text-white">Compléter mon profil</p>
-      </button>
+      </NuxtLink>
       <NuxtLink
         to="/messages"
         class="press rounded-card border border-hairline bg-surface p-4 shadow-card-sm hover:border-primary/40"
