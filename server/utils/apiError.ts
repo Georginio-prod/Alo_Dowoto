@@ -42,3 +42,8 @@ export function paymentRequired(message: string): never {
 export function tooManyRequests(message: string, data?: Record<string, unknown>): never {
   throw createError({ statusCode: 429, message, data })
 }
+
+/** Un service externe (provider SMS, opérateur…) a échoué ou est injoignable (#23). */
+export function badGateway(message: string): never {
+  throw createError({ statusCode: 502, statusMessage: message })
+}

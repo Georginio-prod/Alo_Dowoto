@@ -26,6 +26,12 @@ logs
 # Scheduler lock file
 .claude/scheduled_tasks.lock
 
+# Artefacts de compilation TypeScript émis à côté des sources — le projet est
+# 100% .ts/.vue, tout .js sous app/ ou server/ est une sortie de build
+# accidentelle (tsc sans --noEmit) et ne doit jamais être committé.
+app/**/*.js
+server/**/*.js
+
 # Base SQLite locale (Prisma) — voir prisma/migrations pour le schéma versionné
 prisma/dev.db
 prisma/dev.db-journal
