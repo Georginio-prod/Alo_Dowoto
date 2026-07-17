@@ -1,4 +1,6 @@
 import type { ContactMethod } from '~~/server/utils/contact'
+import { isEmailConfigured, sendEmail } from '~~/server/utils/email'
+import { isSmsConfigured, sendSms } from '~~/server/utils/sms'
 
 interface SendOtpBody {
   method?: ContactMethod
@@ -26,15 +28,35 @@ export default defineEventHandler(async (event) => {
     tooManyRequests('Veuillez patienter avant de renvoyer un code.', { retryAfterSeconds: result.retryAfterSeconds })
   }
 
-  // TODO(#23): brancher un provider SMS togolais (à définir) et un provider
-  // email réel. En attendant, on journalise l'envoi côté serveur.
-  console.warn(`[otp] Code ${result.code} pour ${contact} (expire dans ${result.expiresInSeconds}s)`)
+  // Envoi réel quand un provider est configuré (#23) : SMS via Twilio
+  // (server/utils/sms.ts) ou email via Brevo (server/utils/email.ts).
+  const expiresInMinutes = Math.floor(result.expiresInSeconds / 60)
+  const message = `WorkTogo : votre code de vérification est ${result.code}. Il expire dans ${expiresInMinutes} minutes.`
+  const reallySent
+    = body.method === 'phone' ? isSmsConfigured() : isEmailConfigured()
+
+  if (reallySent) {
+    const sent = body.method === 'phone'
+      ? await sendSms(contact, message)
+      : await sendEmail(contact, 'Votre code de vérification WorkTogo', message)
+    if (!sent.ok) {
+      console.error(`[otp] Échec d'envoi ${body.method === 'phone' ? 'du SMS' : "de l'email"} à ${contact} : ${sent.error}`)
+      badGateway(
+        body.method === 'phone'
+          ? 'Impossible d’envoyer le SMS pour le moment. Réessayez dans quelques instants.'
+          : 'Impossible d’envoyer l’email pour le moment. Réessayez dans quelques instants.',
+      )
+    }
+  } else {
+    // Repli développement : le code est journalisé côté serveur.
+    console.warn(`[otp] Code ${result.code} pour ${contact} (expire dans ${result.expiresInSeconds}s)`)
+  }
 
   return {
     ok: true,
     expiresInSeconds: result.expiresInSeconds,
-    // Uniquement hors production, pour permettre de tester le parcours de
-    // bout en bout sans provider SMS/email réel.
-    ...(process.env.NODE_ENV !== 'production' ? { devCode: result.code } : {}),
+    // Uniquement hors production et quand aucun envoi réel n'a eu lieu, pour
+    // permettre de tester le parcours de bout en bout sans provider SMS/email.
+    ...(process.env.NODE_ENV !== 'production' && !reallySent ? { devCode: result.code } : {}),
   }
 })
