@@ -15,7 +15,11 @@ const props = defineProps<{
 
 const LERP_POSITION = 0.18
 const LERP_RADIUS = 0.22
-const TARGET_RADIUS = 90
+// Volontairement modeste : HeroSection.vue a `overflow-hidden` sur la
+// section (nécessaire pour .hero-glow) — un cercle trop grand par rapport
+// à la hauteur d'une ligne du titre dépasse de la boîte de texte et se
+// retrouve coupé net par cet overflow au lieu de rester rond.
+const TARGET_RADIUS = 40
 const SETTLE_EPSILON = 0.5
 
 const rootEl = ref<HTMLElement | null>(null)
