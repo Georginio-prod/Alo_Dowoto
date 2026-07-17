@@ -25,6 +25,12 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // L'utilisateur consulte réellement les messages ici : on marque la
+  // conversation comme lue de son point de vue avant de construire le
+  // résumé, pour que son compteur de non-lus reflète l'état à jour côté UI
+  // (#225, barre de raccourci messagerie).
+  markConversationRead(conversation.id, user.id)
+
   return {
     conversation: await toConversationSummary(conversation, user.id),
     messages: getMessages(conversation.id),

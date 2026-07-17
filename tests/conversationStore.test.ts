@@ -4,7 +4,9 @@ import {
   findOrCreateConversation,
   getMessages,
   listConversationsForUser,
+  markConversationRead,
   markFirstContactDone,
+  toConversationSummary,
 } from '~~/server/utils/conversationStore'
 
 /** Attend le prochain tick d'horloge pour garantir des `createdAt` distincts et déterministes. */
@@ -88,5 +90,53 @@ describe('conversationStore — première prise de contact (#129)', () => {
 
   it('ignore silencieusement un id de conversation inconnu (cas limite)', () => {
     expect(() => markFirstContactDone('id-inexistant')).not.toThrow()
+  })
+})
+
+describe('conversationStore — compteur de non-lus (#225, barre de raccourci messagerie)', () => {
+  it("compte les messages de l'autre partie comme non lus tant que le fil n'a jamais été consulté", async () => {
+    const conversation = findOrCreateConversation('client-10', 'p10')
+    addMessage(conversation.id, 'client-10', 'client', 'Bonjour')
+    addMessage(conversation.id, 'p10', 'prestataire', 'Bonjour, je suis disponible.')
+    addMessage(conversation.id, 'p10', 'prestataire', 'Vous êtes toujours intéressé ?')
+
+    const summary = await toConversationSummary(conversation, 'client-10')
+    // Le message du client lui-même ne compte pas comme non lu de son propre point de vue.
+    expect(summary.unreadCount).toBe(2)
+  })
+
+  it('remet le compteur à zéro pour le lecteur après markConversationRead', async () => {
+    const conversation = findOrCreateConversation('client-11', 'p11')
+    addMessage(conversation.id, 'p11', 'prestataire', 'Disponible dès demain.')
+
+    markConversationRead(conversation.id, 'client-11')
+
+    const summary = await toConversationSummary(conversation, 'client-11')
+    expect(summary.unreadCount).toBe(0)
+  })
+
+  it("ne compte que les messages reçus après la dernière lecture, pas les anciens ni ceux de l'autre côté", async () => {
+    const conversation = findOrCreateConversation('client-12', 'p12')
+    addMessage(conversation.id, 'p12', 'prestataire', 'Premier message, déjà lu.')
+    markConversationRead(conversation.id, 'client-12')
+    tick()
+    addMessage(conversation.id, 'p12', 'prestataire', 'Nouveau message après lecture.')
+
+    const clientSummary = await toConversationSummary(conversation, 'client-12')
+    expect(clientSummary.unreadCount).toBe(1)
+
+    // Le prestataire ne doit jamais voir ses propres messages comptés comme non lus.
+    const providerSummary = await toConversationSummary(conversation, 'p12')
+    expect(providerSummary.unreadCount).toBe(0)
+  })
+
+  it('markConversationRead ne s’applique qu’au lecteur ciblé, pas à l’autre partie', async () => {
+    const conversation = findOrCreateConversation('client-13', 'p13')
+    addMessage(conversation.id, 'client-13', 'client', 'Bonjour, disponible ?')
+
+    markConversationRead(conversation.id, 'client-13')
+
+    const providerSummary = await toConversationSummary(conversation, 'p13')
+    expect(providerSummary.unreadCount).toBe(1)
   })
 })
