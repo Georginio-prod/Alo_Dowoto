@@ -169,6 +169,20 @@
     0%, 100% { box-shadow: 0 0 0 0 rgba(20, 168, 0, 0.35); }
     50% { box-shadow: 0 0 0 6px rgba(20, 168, 0, 0); }
   }
+
+  /* Apparition/disparition des avatars de la barre de raccourci messagerie (#225). */
+  .fmb-enter-active,
+  .fmb-leave-active {
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .fmb-enter-from,
+  .fmb-leave-to {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  .fmb-leave-active {
+    position: absolute;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -187,4 +201,8 @@
   .page-enter-from,
   .page-leave-to { opacity: 1 !important; transform: none !important; }
   .press:active { transform: none; }
+  .fmb-enter-active,
+  .fmb-leave-active { transition: none !important; }
+  .fmb-enter-from,
+  .fmb-leave-to { opacity: 1 !important; transform: none !important; }
 }

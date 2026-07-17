@@ -50,10 +50,14 @@ export interface ConversationSummary extends Conversation {
   lastMessage: { body: string; createdAt: number } | null
   /** L'utilisateur qui consulte a-t-il déjà noté cette collaboration (#60/#61) ? */
   alreadyReviewed: boolean
+  /** Messages de l'autre partie reçus depuis la dernière visite du fil par ce viewer (#225). */
+  unreadCount: number
 }
 
 const conversations = new Map<string, Conversation>()
 const messagesByConversationId = new Map<string, Message[]>()
+/** Horodatage de dernière lecture par (conversationId, userId) — en mémoire, comme le reste de ce store (#225). */
+const lastReadAtByConversationId = new Map<string, Map<string, number>>()
 
 function findConversation(clientId: string, providerId: string): Conversation | undefined {
   for (const conversation of conversations.values()) {
@@ -120,6 +124,23 @@ export function getMessages(conversationId: string): Message[] {
   return messagesByConversationId.get(conversationId) ?? []
 }
 
+/** Marque une conversation comme lue par cet utilisateur à l'instant présent (#225, badges de non-lus). */
+export function markConversationRead(conversationId: string, userId: string): void {
+  let byUser = lastReadAtByConversationId.get(conversationId)
+  if (!byUser) {
+    byUser = new Map()
+    lastReadAtByConversationId.set(conversationId, byUser)
+  }
+  byUser.set(userId, Date.now())
+}
+
+/** Nombre de messages de l'autre partie reçus depuis la dernière lecture (jamais lue = tout est non lu). */
+function unreadCountFor(conversationId: string, viewerId: string): number {
+  const lastReadAt = lastReadAtByConversationId.get(conversationId)?.get(viewerId) ?? 0
+  const messages = messagesByConversationId.get(conversationId) ?? []
+  return messages.filter((message) => message.senderId !== viewerId && message.createdAt > lastReadAt).length
+}
+
 export function addMessage(conversationId: string, senderId: string, senderRole: Role, body: string): Message {
   const message: Message = { id: randomUUID(), conversationId, senderId, senderRole, body, createdAt: Date.now() }
   const list = messagesByConversationId.get(conversationId)
@@ -169,5 +190,6 @@ export async function toConversationSummary(conversation: Conversation, viewerId
     otherPartySector,
     lastMessage: last ? { body: last.body, createdAt: last.createdAt } : null,
     alreadyReviewed: hasReviewed(conversation.id, viewerId),
+    unreadCount: unreadCountFor(conversation.id, viewerId),
   }
 }
