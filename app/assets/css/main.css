@@ -170,29 +170,18 @@
     50% { box-shadow: 0 0 0 6px rgba(20, 168, 0, 0); }
   }
 
-  /* Curseur magnétique (#226, MagneticText.vue) : cercle qui suit le
-     pointeur et révèle `hoverText` en négatif. Position et rayon pilotés
-     en JS via --mx/--my/--mr (inertie par frame) ; --mr par défaut à 0
-     garantit un cercle invisible avant tout survol (SSR compris). */
-  .magnetic-text {
-    position: relative;
-    display: inline-block;
-    --mx: 50%;
-    --my: 50%;
-    --mr: 0px;
+  /* Apparition/disparition des avatars de la barre de raccourci messagerie (#225). */
+  .fmb-enter-active,
+  .fmb-leave-active {
+    transition: opacity 0.18s ease, transform 0.18s ease;
   }
-  .magnetic-text__reveal {
+  .fmb-enter-from,
+  .fmb-leave-to {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  .fmb-leave-active {
     position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding-inline: 0.75em;
-    text-align: center;
-    background: var(--color-primary);
-    color: #fff;
-    pointer-events: none;
-    clip-path: circle(var(--mr) at var(--mx) var(--my));
   }
 }
 
@@ -212,4 +201,8 @@
   .page-enter-from,
   .page-leave-to { opacity: 1 !important; transform: none !important; }
   .press:active { transform: none; }
+  .fmb-enter-active,
+  .fmb-leave-active { transition: none !important; }
+  .fmb-enter-from,
+  .fmb-leave-to { opacity: 1 !important; transform: none !important; }
 }
