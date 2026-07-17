@@ -8,7 +8,10 @@
       class="float-soft mx-auto mb-6 w-full max-w-md"
     >
     <h1 v-reveal class="mx-auto mb-3 max-w-2xl text-[clamp(26px,4vw,42px)] font-extrabold tracking-tight text-dark">
-      Trouvez le bon prestataire, dans tous les secteurs
+      <MagneticText
+        text="Trouvez le bon prestataire, dans tous les secteurs"
+        hover-text="On s'occupe de tout, vous choisissez."
+      />
     </h1>
     <p v-reveal class="mx-auto max-w-lg text-base leading-relaxed text-muted">
       Artisanat, commerce, industrie, services à domicile… Comparez des professionnels vérifiés partout au Togo.
