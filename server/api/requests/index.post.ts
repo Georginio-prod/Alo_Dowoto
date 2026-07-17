@@ -1,17 +1,8 @@
-import type { Urgency } from '~~/server/utils/matchingEngine'
-
-interface CreateRequestBody {
-  title?: string
-  skills?: string[]
-  description?: string
-  budgetMax?: number
-  urgency?: Urgency
-  location?: string
-  sector?: string
-}
-
-const VALID_URGENCY = new Set<Urgency>(['immediate', 'semaine', 'flexible'])
-
+/**
+ * Publication d'une demande de service par un client vérifié (#43).
+ * La validation du corps est déclarative et testée (server/utils/apiValidation.ts,
+ * createServiceRequestSchema) — les messages d'erreur sont inchangés.
+ */
 export default defineEventHandler(async (event) => {
   const user = await requireSessionUser(event)
   if (user.role !== 'client') {
@@ -21,39 +12,16 @@ export default defineEventHandler(async (event) => {
     forbidden("Vérifiez votre identité avant de publier votre première demande (carte d'identité + photo passeport).")
   }
 
-  const body = await readBody<CreateRequestBody>(event)
-
-  const title = body?.title?.trim()
-  if (!title) {
-    badRequest('Le titre de la demande est requis.')
-  }
-
-  const skills = (body?.skills ?? []).map((skill) => skill.trim()).filter(Boolean)
-  if (skills.length === 0) {
-    badRequest('Indiquez au moins une compétence recherchée.')
-  }
-
-  if (typeof body?.budgetMax !== 'number' || !Number.isFinite(body.budgetMax) || body.budgetMax <= 0) {
-    badRequest('Budget maximum invalide.')
-  }
-
-  if (!body?.urgency || !VALID_URGENCY.has(body.urgency)) {
-    badRequest('Urgence invalide.')
-  }
-
-  const location = body?.location?.trim()
-  if (!location) {
-    badRequest('La localisation est requise.')
-  }
+  const body = await readSchemaBody(event, createServiceRequestSchema)
 
   const request = createServiceRequest(user.id, {
-    title,
-    skills,
-    description: body?.description?.trim() ?? '',
+    title: body.title,
+    skills: body.skills,
+    description: body.description,
     budgetMax: body.budgetMax,
     urgency: body.urgency,
-    location,
-    sector: body?.sector,
+    location: body.location,
+    sector: body.sector,
   })
 
   setResponseStatus(event, 201)
