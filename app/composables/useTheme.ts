@@ -9,15 +9,12 @@ export interface ThemeOption {
 const CLAIR: ThemeOption = { id: 'clair', label: 'Clair', dot: '#14A800' }
 
 /**
- * Thèmes disponibles, dans l'ordre de bascule du bouton. Les 4 thèmes sombres
- * sont définis (variables CSS) dans app/assets/css/themes.css.
+ * Thèmes disponibles, dans l'ordre de bascule du bouton. Le thème sombre est
+ * défini (variables CSS) dans app/assets/css/themes.css.
  */
 export const THEMES: ThemeOption[] = [
   CLAIR,
-  { id: 'whatsapp', label: 'WhatsApp', dot: '#1FC98C' },
-  { id: 'darkmatter', label: 'Darkmatter', dot: '#E68A4E' },
   { id: 'northern', label: 'Northern Lights', dot: '#38C15E' },
-  { id: 'harbor', label: 'Harbor Steel', dot: '#C4A03A' },
 ]
 
 const STORAGE_KEY = 'wt-theme'
