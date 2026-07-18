@@ -15,8 +15,14 @@ chantier séparé, une fois l'architecture API stabilisée (#46).
 - **ORM :** [Prisma](https://www.prisma.io/) — migrations versionnées,
   client TypeScript généré et typé, bon support SQLite/PostgreSQL.
 - **Provider de dev :** SQLite (fichier local, zéro dépendance externe).
-  En production, `datasource.url` peut pointer vers PostgreSQL sans changer
-  le schéma (mêmes types, à l'exception des enums qui restent portables).
+
+> **⚠️ Portabilité SQLite → PostgreSQL — précision (pré-audit).**
+> Le passage à PostgreSQL **n'est pas** un simple changement de `datasource.url` :
+> `datasource.provider` est fixé à `"sqlite"` dans `schema.prisma`. Migrer vers
+> Postgres impose de **changer le provider** *et* de **régénérer les migrations**
+> (les migrations SQLite existantes ne rejouent pas telles quelles sur Postgres).
+> C'est une opération de bascule à part entière, à planifier avec le choix
+> d'hébergement (voir `docs/deployment.md`) — pas un swap d'URL transparent.
 
 ## Diagramme (ERD)
 
@@ -110,6 +116,18 @@ erDiagram
 | `Review`            | *(aucun équivalent)*                    | Nouveau modèle : aucune route API d'avis n'existe encore dans ce lot, mais `ProviderProfile.ratingAverage`/`reviewCount` en dépendent conceptuellement. |
 | `Subscription`      | `server/utils/subscriptionStore.ts` (#29, #30) | `status` reprend les valeurs `en_attente \| actif \| expire` déjà utilisées. |
 | `Payment`           | `server/utils/paymentStore.ts` (#32, #34) | `provider` (`flooz \| tmoney`) et `status` (`pending \| confirmed \| failed`) repris à l'identique. |
+| `WalletMovement`    | `server/utils/walletStore.ts` (#192)    | Socle #46. Journal append-only ; le solde reste recalculé, jamais stocké. |
+| `EscrowOrder`       | `server/utils/escrowOrderStore.ts` (#194-#197) | Socle #46. Reprend le cycle de vie `awaiting_payment → in_escrow → delivered → released/refunded/disputed`. |
+| `Conversation`/`Message`/`ConversationRead` | `server/utils/conversationStore.ts` (#59, #129, #225) | Socle #46. `ConversationRead` porte le `lastReadAt` par utilisateur (compteur de non-lus). |
+
+> **Socle #46 (pré-audit).** Les modèles `WalletMovement`, `EscrowOrder`,
+> `Conversation`, `Message` et `ConversationRead` sont **modélisés mais pas
+> encore branchés** : l'application lit/écrit toujours les stores en mémoire
+> correspondants. Le branchement effectif (remplacement des `Map` par des
+> requêtes Prisma, dans des transactions pour les mouvements de portefeuille)
+> est le chantier de suivi, à réaliser une fois la cible base/hébergement
+> tranchée. Sans cette bascule, aucune donnée de portefeuille, de séquestre ou
+> de messagerie ne survit à un redémarrage et le multi-instance est impossible.
 
 ## Commandes
 

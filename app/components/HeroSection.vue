@@ -1,13 +1,32 @@
+<script setup lang="ts">
+// Noms de partenaires — PLACEHOLDER inventés, À REMPLACER par les vrais
+// partenaires. Défilent en continu sous l'accroche (bandeau de confiance).
+const partners = [
+  'Kara Bâtiment',
+  'Lomé Digital',
+  'Baobab Services',
+  'Zeni Group',
+  'Palmeraie Immo',
+  'Sokodé Artisans',
+  'Éco Maison',
+  'Atlantic Pro',
+]
+</script>
+
 <template>
   <section class="relative mx-auto max-w-6xl overflow-hidden px-6 pb-4 pt-16 text-center">
     <div class="hero-glow" />
-    <!-- Illustration détourée (fond transparent) : s'intègre à n'importe quel
-         thème. WebP prioritaire, PNG détouré en repli. -->
+    <!--
+      WebP servi en priorité (≈27 Ko contre ≈1,3 Mo pour le PNG source),
+      PNG conservé en repli pour les rares navigateurs sans WebP. Le
+      <picture> est en `display:contents` : il ne crée aucune boîte, donc la
+      mise en page de l'<img> (centrage, largeur) reste strictement identique.
+    -->
     <picture class="contents">
-      <source srcset="/images/hero-illustration-cutout.webp" type="image/webp">
+      <source srcset="/images/hero-illustration.webp" type="image/webp">
       <img
         v-parallax="0.06"
-        src="/images/hero-illustration-cutout.png"
+        src="/images/hero-illustration.png"
         alt=""
         decoding="async"
         class="float-soft mx-auto mb-6 w-full max-w-md"
@@ -22,5 +41,13 @@
     <p v-reveal class="mt-6 text-sm text-muted">
       Plus de <strong class="text-dark"><CountUp :value="500" suffix="+" /></strong> prestataires vérifiés déjà inscrits
     </p>
+
+    <!-- Bandeau de partenaires défilant en continu (boucle sans couture). -->
+    <div v-reveal class="partners-marquee mt-6" role="group" aria-label="Ils nous font confiance">
+      <div class="partners-track">
+        <span v-for="(name, i) in partners" :key="`p-${i}`" class="partner-item">{{ name }}</span>
+        <span v-for="(name, i) in partners" :key="`p2-${i}`" class="partner-item" aria-hidden="true">{{ name }}</span>
+      </div>
+    </div>
   </section>
 </template>
