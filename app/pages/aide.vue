@@ -34,7 +34,7 @@ const CATEGORIES: HelpCategory[] = [
     title: 'Prestataires',
     links: [
       { to: '/auth?role=prestataire', title: 'Devenir prestataire', description: 'Créez votre profil et choisissez votre secteur d\'activité.' },
-      { to: '/abonnement', title: 'Formules et tarifs', description: 'Comparez les formules Mensuel, Trimestriel et Annuel.' },
+      { to: '/formules', title: 'Formules et tarifs', description: 'Comparez les formules Mensuel, Trimestriel et Annuel.' },
       { to: '/prestataire', title: 'Mon espace prestataire', description: 'Demandes reçues, avis, statut de votre abonnement.' },
       { to: '/faq#prestataires', title: 'Toutes les questions prestataires', description: 'Badge « Vérifié », quotas de demandes, paiement…' },
     ],

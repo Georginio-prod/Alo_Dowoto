@@ -113,7 +113,7 @@ onUnmounted(() => {
         </svg>
       </button>
 
-      <NuxtLink to="/abonnement" class="press rounded-field px-3 py-2.5 text-[13.5px] font-semibold text-dark hover:bg-bg">
+      <NuxtLink to="/formules" class="press rounded-field px-3 py-2.5 text-[13.5px] font-semibold text-dark hover:bg-bg">
         Tarification
       </NuxtLink>
     </nav>
@@ -214,7 +214,7 @@ onUnmounted(() => {
               <NuxtLink to="/auth?role=prestataire" class="press text-primary hover:underline" @click="closeMenu">
                 Devenir prestataire →
               </NuxtLink>
-              <NuxtLink to="/abonnement" class="press text-primary hover:underline" @click="closeMenu">
+              <NuxtLink to="/formules" class="press text-primary hover:underline" @click="closeMenu">
                 Voir les formules →
               </NuxtLink>
             </div>
