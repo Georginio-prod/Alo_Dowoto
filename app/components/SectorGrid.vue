@@ -73,6 +73,7 @@ onUnmounted(clearCloseTimer)
         v-reveal
         :style="{ '--reveal-delay': `${i * 50}ms` }"
         class="relative"
+        :class="{ 'z-30': hoveredSlug === sector.slug }"
         @mouseenter="onCardEnter(sector, $event)"
         @mouseleave="scheduleClose"
         @focusin="onCardEnter(sector, $event)"
@@ -80,7 +81,7 @@ onUnmounted(clearCloseTimer)
       >
         <button
           type="button"
-          class="press group flex w-full flex-col items-start gap-3 rounded-2xl border border-hairline bg-surface p-4 text-left transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:border-primary/40 hover:shadow-card-md"
+          class="press group flex h-full w-full flex-col items-start gap-3 rounded-2xl border border-hairline bg-surface p-4 text-left transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:border-primary/40 hover:shadow-card-md"
           @click="emit('select', sector)"
         >
           <div
@@ -91,7 +92,7 @@ onUnmounted(clearCloseTimer)
           </div>
           <div class="flex w-full items-start justify-between gap-2">
             <div>
-              <div class="text-[14.5px] font-semibold leading-tight text-dark">{{ sector.name }}</div>
+              <div class="flex min-h-[2.4em] items-start text-[14.5px] font-semibold leading-tight text-dark">{{ sector.name }}</div>
               <span class="mt-1 inline-block rounded-pill bg-bg px-2 py-0.5 text-[11px] font-medium text-muted">
                 {{ sector.subSectors.length }} sous-secteurs
               </span>
