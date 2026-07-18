@@ -67,13 +67,21 @@ onUnmounted(clearCloseTimer)
       </NuxtLink>
     </div>
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))]">
+      <!--
+        Élévation de la carte survolée au-dessus de ses voisines (le pop-up
+        est sinon « piégé » sous la rangée suivante, chaque carte formant un
+        contexte d'empilement via `will-change` de v-reveal). Le z-index passe
+        par `:style` et NON par `:class` : la directive `v-reveal` ajoute la
+        classe `is-visible` directement au DOM, or un `:class` réactif ferait
+        re-patcher `className` par Vue à chaque survol, écrasant `is-visible`
+        et faisant disparaître les cartes. `:style` ne touche pas `className`.
+      -->
       <div
         v-for="(sector, i) in SECTORS"
         :key="sector.slug"
         v-reveal
-        :style="{ '--reveal-delay': `${i * 50}ms` }"
+        :style="{ '--reveal-delay': `${i * 50}ms`, zIndex: hoveredSlug === sector.slug ? 30 : undefined }"
         class="relative"
-        :class="{ 'z-30': hoveredSlug === sector.slug }"
         @mouseenter="onCardEnter(sector, $event)"
         @mouseleave="scheduleClose"
         @focusin="onCardEnter(sector, $event)"
