@@ -1,0 +1,42 @@
+/* ------------------------------------------------------------------ */
+/* Thèmes de couleur (bouton ThemeSwitcher).                          */
+/*                                                                    */
+/* Le thème « Clair » est le défaut de WorkTogo (aucun attribut, tokens */
+/* dans main.css). Le thème sombre ci-dessous est appliqué via          */
+/* <html data-theme="…">. Il remappe les tokens sémantiques ; un bloc   */
+/* de compatibilité commun rétablit les rares utilitaires codés en dur  */
+/* (text-dark, bg-white) pour un rendu cohérent sans toucher chaque     */
+/* composant.                                                          */
+/* ------------------------------------------------------------------ */
+
+/* --- Compatibilité commune à TOUS les thèmes sombres --------------- */
+/* (tout `data-theme` défini ; le thème clair n'a pas d'attribut).     */
+:root[data-theme] {
+  /* Les CTA « sombres » (bg-dark) deviennent des CTA primaires sur fond
+     sombre, sinon ils seraient invisibles. */
+  --color-dark: var(--color-primary);
+  --color-dark-hover: var(--color-primary-hover);
+}
+/* Texte d'emphase (headings, logo…) : lisible sur fond sombre. */
+:root[data-theme] .text-dark {
+  color: var(--color-ink);
+}
+/* Puces/cartes en blanc dur → surface du thème. */
+:root[data-theme] .bg-white {
+  background-color: var(--color-surface);
+}
+
+/* --- Northern Lights (vert + bleu, navy, radius 0.5rem) ------------ */
+:root[data-theme='northern'] {
+  --color-primary: #38C15E;
+  --color-primary-hover: #2FAD52;
+  --color-bg: #1A2430;
+  --color-surface: #212D3B;
+  --color-ink: #E6EDF3;
+  --color-muted: #8A97A6;
+  --color-hairline: rgba(230, 237, 243, 0.10);
+  --color-error: #EA4B41;
+  --color-star: #E6A700;
+  --radius-card: 0.5rem;
+  --radius-field: 0.4rem;
+}
