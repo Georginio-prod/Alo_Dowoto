@@ -103,8 +103,17 @@ onUnmounted(clearCloseTimer)
           </div>
         </button>
 
+        <!--
+          Conteneur ancré directement sous la carte (`top-full`, sans trou) :
+          le retrait visuel de 8px est fourni par un « pont » transparent
+          (`pt-2`) plutôt que par un décalage de position. Sans ce pont, le
+          trajet de la souris entre la carte et le menu traversait une zone
+          morte (le fond de la grille), ce qui déclenchait `mouseleave` et
+          fermait le menu avant qu'on l'atteigne. Ici, carte → pont → menu
+          restent tous descendants du même wrapper : aucun `mouseleave`.
+        -->
         <div
-          class="absolute top-[calc(100%+8px)] z-20 w-64 origin-top rounded-card border border-hairline bg-surface p-1.5 shadow-card-md transition-all duration-250 ease-out"
+          class="absolute top-full z-20 w-64 pt-2 transition-all duration-250 ease-out"
           :class="[
             flipLeft ? 'right-0' : 'left-0',
             hoveredSlug === sector.slug ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-1 opacity-0',
@@ -115,16 +124,18 @@ onUnmounted(clearCloseTimer)
           @mouseenter="onDropdownEnter"
           @mouseleave="scheduleClose"
         >
-          <button
-            v-for="sub in sector.subSectors"
-            :key="sub.name"
-            type="button"
-            role="menuitem"
-            class="press block w-full rounded-field px-3 py-2 text-left text-[13px] text-dark hover:bg-bg"
-            @click="onSelectSub(sector, sub.name)"
-          >
-            {{ sub.name }}
-          </button>
+          <div class="origin-top rounded-card border border-hairline bg-surface p-1.5 shadow-card-md">
+            <button
+              v-for="sub in sector.subSectors"
+              :key="sub.name"
+              type="button"
+              role="menuitem"
+              class="press block w-full rounded-field px-3 py-2 text-left text-[13px] text-dark hover:bg-bg"
+              @click="onSelectSub(sector, sub.name)"
+            >
+              {{ sub.name }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
