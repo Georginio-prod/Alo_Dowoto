@@ -33,6 +33,8 @@ export interface CertificationEntry {
 
 export interface ProviderProfile {
   userId: string
+  /** Recalculé à chaque enregistrement depuis l'identité de l'utilisateur (voir providers/me.patch.ts) — jamais fourni par le client. */
+  displayName: string
   sector: string
   city?: string
   payoutMethod?: PayoutMethod
@@ -53,6 +55,7 @@ export interface ProviderProfile {
 }
 
 export interface ProviderProfilePatch {
+  displayName: string
   sector: string
   city?: string
   payoutMethod?: PayoutMethod
@@ -84,6 +87,7 @@ export function upsertProviderProfile(userId: string, patch: ProviderProfilePatc
   const existing = profilesByUserId.get(userId)
   const profile: ProviderProfile = {
     userId,
+    displayName: patch.displayName,
     sector: patch.sector,
     city: patch.city ?? existing?.city,
     payoutMethod: patch.payoutMethod ?? existing?.payoutMethod,
@@ -108,6 +112,15 @@ export function upsertProviderProfile(userId: string, patch: ProviderProfilePatc
 
 export function getProviderProfile(userId: string): ProviderProfile | null {
   return profilesByUserId.get(userId) ?? null
+}
+
+/**
+ * Tous les profils prestataires enregistrés (comptes réels), pour les
+ * fusionner avec l'annuaire de démonstration côté recherche publique — voir
+ * server/utils/providerDirectory.ts.
+ */
+export function listProviderProfiles(): ProviderProfile[] {
+  return [...profilesByUserId.values()]
 }
 
 export const PAYOUT_METHODS: PayoutMethod[] = ['flooz', 'tmoney', 'virement']

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { countBySector, getProviderDetail, resolveProviderRate, searchProviders } from '~~/server/utils/providerDirectory'
+import { countBySector, getProviderById, getProviderDetail, resolveProviderRate, searchProviders } from '~~/server/utils/providerDirectory'
 import { upsertProviderProfile } from '~~/server/utils/providerStore'
 
 describe('searchProviders (#40 filtres de résultats)', () => {
@@ -81,13 +81,46 @@ describe('getProviderDetail — fenêtre « Voir le profil » (#127)', () => {
   })
 })
 
+describe('searchProviders — un vrai compte prestataire apparaît dès son inscription (#43 → vrais comptes)', () => {
+  it('un compte fraîchement créé (secteur + ville, sans profil professionnel complet) apparaît en recherche', () => {
+    const before = searchProviders({ sector: 'digital' }).length
+
+    upsertProviderProfile('real-provider-digital-1', {
+      displayName: 'Nouveau Prestataire',
+      sector: 'digital',
+      city: 'Lomé',
+      payoutMethod: 'flooz',
+    })
+
+    const results = searchProviders({ sector: 'digital' })
+    expect(results.length).toBe(before + 1)
+
+    const entry = results.find((p) => p.id === 'real-provider-digital-1')
+    expect(entry).toMatchObject({
+      displayName: 'Nouveau Prestataire',
+      sector: 'digital',
+      city: 'Lomé',
+      verified: false,
+      rating: 0,
+      reviewCount: 0,
+      priceFrom: 0,
+      photoUrl: null,
+    })
+  })
+
+  it('getProviderById retrouve aussi un vrai compte, pas seulement l’annuaire de démo', () => {
+    upsertProviderProfile('real-provider-digital-2', { displayName: 'Autre Prestataire', sector: 'digital', city: 'Kara' })
+    expect(getProviderById('real-provider-digital-2')?.displayName).toBe('Autre Prestataire')
+  })
+})
+
 describe('resolveProviderRate — tarif fixe pour le paiement en séquestre (#194)', () => {
   it('renvoie le tarif de l’annuaire de démonstration en priorité', () => {
     expect(resolveProviderRate('p01')).toBe(3000)
   })
 
   it('retombe sur le tarif d’un vrai compte prestataire hors annuaire de démo', () => {
-    upsertProviderProfile('real-provider-1', { sector: 'menage', rateFrom: 4200 })
+    upsertProviderProfile('real-provider-1', { displayName: 'Prestataire Test', sector: 'menage', rateFrom: 4200 })
     expect(resolveProviderRate('real-provider-1')).toBe(4200)
   })
 
