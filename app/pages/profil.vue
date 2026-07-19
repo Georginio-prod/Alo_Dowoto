@@ -14,8 +14,16 @@ import type { Subscription } from '~~/server/utils/subscriptionStore'
  * « Abonnement » reste une page à part entière (choix de formule + paiement
  * mobile money, un flux plus lourd qu'une fenêtre). Contenu volontairement
  * limité aux fonctionnalités réelles de WorkTogo (pas de section fictive).
+ *
+ * Layout dynamique (#profil-sidebar-prestataire) : un prestataire retrouve
+ * la même barre latérale que le reste de son dashboard (Accueil, Profil,
+ * Demandes reçues, Solde, Messages) pour passer d'une section à l'autre
+ * sans revenir en arrière — impossible à fixer via `definePageMeta` seul,
+ * le rôle n'étant connu qu'après la résolution de la session. Le chercheur,
+ * qui n'a pas cette barre latérale ailleurs dans l'app, garde le layout
+ * `blank` d'origine.
  */
-definePageMeta({ layout: 'blank', middleware: 'auth' })
+definePageMeta({ layout: false, middleware: 'auth' })
 
 const { user, ensure } = useSession()
 await ensure()
@@ -93,17 +101,24 @@ type ModalKey =
   | 'preferences'
   | 'coordonnees'
 
-const MODAL_TITLES: Record<ModalKey, string> = {
-  identite: 'Identité',
-  verification: "Vérification d'identité",
-  password: 'Changer le mot de passe',
-  'profil-professionnel': 'Profil professionnel',
-  cv: 'CV',
-  langues: 'Langues',
-  formation: 'Formation',
-  certifications: 'Certifications',
-  preferences: 'Préférences',
-  coordonnees: 'Coordonnées',
+/**
+ * `refreshOnSave` : les formulaires d'identité/vérification/mot de passe
+ * mettent à jour l'état de session partagé eux-mêmes (`setSession`,
+ * `refreshSession`) — seuls les formulaires qui modifient le profil
+ * prestataire (`/api/providers/me`) ont besoin d'un rafraîchissement
+ * explicite ici pour que les badges du hub restent à jour.
+ */
+const MODAL_CONFIG: Record<ModalKey, { title: string; component: string; refreshOnSave: boolean }> = {
+  identite: { title: 'Identité', component: 'IdentiteForm', refreshOnSave: false },
+  verification: { title: "Vérification d'identité", component: 'IdentityVerificationForm', refreshOnSave: false },
+  password: { title: 'Changer le mot de passe', component: 'PasswordForm', refreshOnSave: false },
+  'profil-professionnel': { title: 'Profil professionnel', component: 'ProfessionalProfileForm', refreshOnSave: true },
+  cv: { title: 'CV', component: 'CvForm', refreshOnSave: true },
+  langues: { title: 'Langues', component: 'LanguagesForm', refreshOnSave: true },
+  formation: { title: 'Formation', component: 'FormationForm', refreshOnSave: true },
+  certifications: { title: 'Certifications', component: 'CertificationsForm', refreshOnSave: true },
+  preferences: { title: 'Préférences', component: 'PreferencesForm', refreshOnSave: true },
+  coordonnees: { title: 'Coordonnées', component: 'ContactForm', refreshOnSave: true },
 }
 
 const activeModal = ref<ModalKey | null>(null)
@@ -112,6 +127,9 @@ function openModal(key: ModalKey) {
 }
 function closeModal() {
   activeModal.value = null
+}
+function onModalFormSaved() {
+  if (activeModal.value && MODAL_CONFIG[activeModal.value].refreshOnSave) refreshProvider()
 }
 
 const firstIncomplete = computed<ModalKey | 'abonnement'>(() => {
@@ -137,200 +155,175 @@ function completeProfile() {
 </script>
 
 <template>
-  <div class="mx-auto max-w-[880px] px-5 py-8">
-    <h1 class="text-[26px] font-extrabold text-dark">Votre profil.</h1>
-    <p class="mt-1 text-[13.5px] text-muted">
-      Toutes vos informations WorkTogo, en un seul endroit.
-    </p>
+  <NuxtLayout :name="isProvider ? 'dashboard-prestataire' : 'blank'">
+    <div class="mx-auto max-w-[880px] px-5 py-8">
+      <h1 class="text-[26px] font-extrabold text-dark">Votre profil.</h1>
+      <p class="mt-1 text-[13.5px] text-muted">
+        Toutes vos informations WorkTogo, en un seul endroit.
+      </p>
 
-    <div class="mt-5 flex flex-wrap items-center justify-between gap-5 rounded-card border border-hairline bg-surface p-6 shadow-card-sm">
-      <div class="flex items-center gap-4">
-        <span class="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary/12 text-lg font-bold text-primary">
-          {{ initials }}
-        </span>
-        <div>
-          <p class="text-[16.5px] font-bold text-dark">{{ fullName }}</p>
-          <div class="mt-1.5 flex flex-wrap gap-1.5">
-            <span v-if="isProvider" class="rounded-pill px-2.5 py-1 text-[11px] font-bold" :class="subscriptionActive ? 'bg-primary/12 text-primary' : 'bg-bg text-muted'">
-              {{ subscriptionActive ? 'Premium' : 'Non premium' }}
-            </span>
-            <span class="rounded-pill px-2.5 py-1 text-[11px] font-bold" :class="user?.verified ? 'bg-primary/12 text-primary' : 'bg-bg text-muted'">
-              {{ user?.verified ? 'Identité vérifiée' : 'Identité non vérifiée' }}
-            </span>
+      <div class="mt-5 flex flex-wrap items-center justify-between gap-5 rounded-card border border-hairline bg-surface p-6 shadow-card-sm">
+        <div class="flex items-center gap-4">
+          <span class="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary/12 text-lg font-bold text-primary">
+            {{ initials }}
+          </span>
+          <div>
+            <p class="text-[16.5px] font-bold text-dark">{{ fullName }}</p>
+            <div class="mt-1.5 flex flex-wrap gap-1.5">
+              <span v-if="isProvider" class="rounded-pill px-2.5 py-1 text-[11px] font-bold" :class="subscriptionActive ? 'bg-primary/12 text-primary' : 'bg-bg text-muted'">
+                {{ subscriptionActive ? 'Premium' : 'Non premium' }}
+              </span>
+              <span class="rounded-pill px-2.5 py-1 text-[11px] font-bold" :class="user?.verified ? 'bg-primary/12 text-primary' : 'bg-bg text-muted'">
+                {{ user?.verified ? 'Identité vérifiée' : 'Identité non vérifiée' }}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="flex items-center gap-4">
-        <div class="text-right">
-          <p class="text-[11px] font-bold uppercase tracking-wide text-muted">Profil complet</p>
-          <p v-if="remainingCount > 0" class="text-[12.5px] text-muted">
-            Encore {{ remainingCount }} section{{ remainingCount > 1 ? 's' : '' }} à compléter
-          </p>
-          <p v-else class="text-[12.5px] font-semibold text-primary">Profil complet, bravo !</p>
-          <button
-            v-if="remainingCount > 0"
-            type="button"
-            class="press mt-2 inline-block rounded-field bg-primary px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-primary-hover"
-            @click="completeProfile"
-          >
-            Compléter mon profil
-          </button>
+        <div class="flex items-center gap-4">
+          <div class="text-right">
+            <p class="text-[11px] font-bold uppercase tracking-wide text-muted">Profil complet</p>
+            <p v-if="remainingCount > 0" class="text-[12.5px] text-muted">
+              Encore {{ remainingCount }} section{{ remainingCount > 1 ? 's' : '' }} à compléter
+            </p>
+            <p v-else class="text-[12.5px] font-semibold text-primary">Profil complet, bravo !</p>
+            <button
+              v-if="remainingCount > 0"
+              type="button"
+              class="press mt-2 inline-block rounded-field bg-primary px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-primary-hover"
+              @click="completeProfile"
+            >
+              Compléter mon profil
+            </button>
+          </div>
+
+          <svg width="80" height="80" viewBox="0 0 80 80" class="shrink-0 -rotate-90">
+            <circle cx="40" cy="40" r="34" fill="none" stroke="var(--color-hairline)" stroke-width="6" />
+            <circle
+              cx="40" cy="40" r="34" fill="none" stroke="var(--color-primary)" stroke-width="6"
+              stroke-linecap="round"
+              :stroke-dasharray="RING_CIRCUMFERENCE"
+              :stroke-dashoffset="ringOffset"
+            />
+          </svg>
+          <span class="sr-only">{{ completionPercent }}% du profil complété</span>
         </div>
-
-        <svg width="80" height="80" viewBox="0 0 80 80" class="shrink-0 -rotate-90">
-          <circle cx="40" cy="40" r="34" fill="none" stroke="var(--color-hairline)" stroke-width="6" />
-          <circle
-            cx="40" cy="40" r="34" fill="none" stroke="var(--color-primary)" stroke-width="6"
-            stroke-linecap="round"
-            :stroke-dasharray="RING_CIRCUMFERENCE"
-            :stroke-dashoffset="ringOffset"
-          />
-        </svg>
-        <span class="sr-only">{{ completionPercent }}% du profil complété</span>
       </div>
+
+      <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ProfileSectionCard
+          icon="🪪"
+          title="Identité"
+          subtitle="Nom, pseudo, localisation"
+          interactive
+          :complete="!!user?.username && !!user?.location"
+          @click="openModal('identite')"
+        />
+        <ProfileSectionCard
+          icon="🛡️"
+          title="Vérification"
+          subtitle="Carte d'identité et photo passeport"
+          interactive
+          :complete="!!user?.verified"
+          @click="openModal('verification')"
+        />
+        <ProfileSectionCard
+          icon="🔒"
+          title="Mot de passe"
+          subtitle="Sécurité de votre compte"
+          interactive
+          :complete="!!user?.passwordSet"
+          @click="openModal('password')"
+        />
+
+        <template v-if="isProvider">
+          <ProfileSectionCard
+            icon="💼"
+            title="Profil professionnel"
+            subtitle="Secteur, description, photo"
+            interactive
+            :complete="professionalProfileComplete"
+            @click="openModal('profil-professionnel')"
+          />
+          <ProfileSectionCard
+            icon="📄"
+            title="CV"
+            subtitle="Votre CV principal"
+            interactive
+            :complete="cvComplete"
+            @click="openModal('cv')"
+          />
+          <ProfileSectionCard
+            icon="🧩"
+            title="Compétences"
+            subtitle="Bientôt disponible"
+          />
+          <ProfileSectionCard
+            icon="🗣️"
+            title="Langues"
+            subtitle="Langues que vous maîtrisez"
+            interactive
+            :complete="languagesComplete"
+            @click="openModal('langues')"
+          />
+          <ProfileSectionCard
+            icon="🎓"
+            title="Formation"
+            subtitle="Diplômes et formations suivies"
+            interactive
+            :complete="formationComplete"
+            @click="openModal('formation')"
+          />
+          <ProfileSectionCard
+            icon="📜"
+            title="Certifications"
+            subtitle="Faites certifier vos aptitudes"
+            interactive
+            :complete="certificationsComplete"
+            @click="openModal('certifications')"
+          />
+          <ProfileSectionCard
+            icon="⚙️"
+            title="Préférences"
+            subtitle="Tarifs, mobilité, disponibilité"
+            interactive
+            :complete="preferencesComplete"
+            @click="openModal('preferences')"
+          />
+          <ProfileSectionCard
+            icon="☎️"
+            title="Coordonnées"
+            subtitle="WhatsApp, site web, réseaux"
+            interactive
+            :complete="coordonneesComplete"
+            @click="openModal('coordonnees')"
+          />
+          <ProfileSectionCard
+            icon="💳"
+            title="Abonnement"
+            subtitle="Formule et mode de paiement"
+            to="/abonnement"
+            :complete="subscriptionActive"
+          />
+          <ProfileSectionCard
+            icon="⭐"
+            title="Avis reçus"
+            subtitle="Retours de vos clients"
+          />
+        </template>
+
+        <ProfileSectionCard
+          v-else
+          icon="👛"
+          title="Mon solde"
+          subtitle="Recharge et historique des paiements"
+          to="/solde"
+        />
+      </div>
+
+      <ProfileFormModal v-if="activeModal" :title="MODAL_CONFIG[activeModal].title" @close="closeModal">
+        <component :is="MODAL_CONFIG[activeModal].component" @saved="onModalFormSaved" />
+      </ProfileFormModal>
     </div>
-
-    <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <ProfileSectionCard
-        icon="🪪"
-        title="Identité"
-        subtitle="Nom, pseudo, localisation"
-        interactive
-        :complete="!!user?.username && !!user?.location"
-        @click="openModal('identite')"
-      />
-      <ProfileSectionCard
-        icon="🛡️"
-        title="Vérification"
-        subtitle="Carte d'identité et photo passeport"
-        interactive
-        :complete="!!user?.verified"
-        @click="openModal('verification')"
-      />
-      <ProfileSectionCard
-        icon="🔒"
-        title="Mot de passe"
-        subtitle="Sécurité de votre compte"
-        interactive
-        :complete="!!user?.passwordSet"
-        @click="openModal('password')"
-      />
-
-      <template v-if="isProvider">
-        <ProfileSectionCard
-          icon="💼"
-          title="Profil professionnel"
-          subtitle="Secteur, description, photo"
-          interactive
-          :complete="professionalProfileComplete"
-          @click="openModal('profil-professionnel')"
-        />
-        <ProfileSectionCard
-          icon="📄"
-          title="CV"
-          subtitle="Votre CV principal"
-          interactive
-          :complete="cvComplete"
-          @click="openModal('cv')"
-        />
-        <ProfileSectionCard
-          icon="🧩"
-          title="Compétences"
-          subtitle="Bientôt disponible"
-        />
-        <ProfileSectionCard
-          icon="🗣️"
-          title="Langues"
-          subtitle="Langues que vous maîtrisez"
-          interactive
-          :complete="languagesComplete"
-          @click="openModal('langues')"
-        />
-        <ProfileSectionCard
-          icon="🎓"
-          title="Formation"
-          subtitle="Diplômes et formations suivies"
-          interactive
-          :complete="formationComplete"
-          @click="openModal('formation')"
-        />
-        <ProfileSectionCard
-          icon="📜"
-          title="Certifications"
-          subtitle="Faites certifier vos aptitudes"
-          interactive
-          :complete="certificationsComplete"
-          @click="openModal('certifications')"
-        />
-        <ProfileSectionCard
-          icon="⚙️"
-          title="Préférences"
-          subtitle="Tarifs, mobilité, disponibilité"
-          interactive
-          :complete="preferencesComplete"
-          @click="openModal('preferences')"
-        />
-        <ProfileSectionCard
-          icon="☎️"
-          title="Coordonnées"
-          subtitle="WhatsApp, site web, réseaux"
-          interactive
-          :complete="coordonneesComplete"
-          @click="openModal('coordonnees')"
-        />
-        <ProfileSectionCard
-          icon="💳"
-          title="Abonnement"
-          subtitle="Formule et mode de paiement"
-          to="/abonnement"
-          :complete="subscriptionActive"
-        />
-        <ProfileSectionCard
-          icon="⭐"
-          title="Avis reçus"
-          subtitle="Retours de vos clients"
-        />
-      </template>
-
-      <ProfileSectionCard
-        v-else
-        icon="👛"
-        title="Mon solde"
-        subtitle="Recharge et historique des paiements"
-        to="/solde"
-      />
-    </div>
-
-    <ProfileFormModal v-if="activeModal === 'identite'" :title="MODAL_TITLES.identite" @close="closeModal">
-      <IdentiteForm />
-    </ProfileFormModal>
-    <ProfileFormModal v-else-if="activeModal === 'verification'" :title="MODAL_TITLES.verification" @close="closeModal">
-      <IdentityVerificationForm />
-    </ProfileFormModal>
-    <ProfileFormModal v-else-if="activeModal === 'password'" :title="MODAL_TITLES.password" @close="closeModal">
-      <PasswordForm />
-    </ProfileFormModal>
-    <ProfileFormModal v-else-if="activeModal === 'profil-professionnel'" :title="MODAL_TITLES['profil-professionnel']" @close="closeModal">
-      <ProfessionalProfileForm @saved="refreshProvider" />
-    </ProfileFormModal>
-    <ProfileFormModal v-else-if="activeModal === 'cv'" :title="MODAL_TITLES.cv" @close="closeModal">
-      <CvForm @saved="refreshProvider" />
-    </ProfileFormModal>
-    <ProfileFormModal v-else-if="activeModal === 'langues'" :title="MODAL_TITLES.langues" @close="closeModal">
-      <LanguagesForm @saved="refreshProvider" />
-    </ProfileFormModal>
-    <ProfileFormModal v-else-if="activeModal === 'formation'" :title="MODAL_TITLES.formation" @close="closeModal">
-      <FormationForm @saved="refreshProvider" />
-    </ProfileFormModal>
-    <ProfileFormModal v-else-if="activeModal === 'certifications'" :title="MODAL_TITLES.certifications" @close="closeModal">
-      <CertificationsForm @saved="refreshProvider" />
-    </ProfileFormModal>
-    <ProfileFormModal v-else-if="activeModal === 'preferences'" :title="MODAL_TITLES.preferences" @close="closeModal">
-      <PreferencesForm @saved="refreshProvider" />
-    </ProfileFormModal>
-    <ProfileFormModal v-else-if="activeModal === 'coordonnees'" :title="MODAL_TITLES.coordonnees" @close="closeModal">
-      <ContactForm @saved="refreshProvider" />
-    </ProfileFormModal>
-  </div>
+  </NuxtLayout>
 </template>
