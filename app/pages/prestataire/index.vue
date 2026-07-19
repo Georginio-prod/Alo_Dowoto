@@ -102,10 +102,13 @@ function restartDemo() {
     </NuxtLink>
 
     <div class="mb-6 grid grid-cols-3 gap-3">
-      <div class="rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm">
+      <NuxtLink
+        to="/prestataire/demandes"
+        class="press rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm hover:border-primary/40"
+      >
         <div class="text-[22px] font-extrabold text-dark">{{ requestsUsageLabel }}</div>
         <div class="text-[11.5px] text-muted">Demandes reçues ce mois</div>
-      </div>
+      </NuxtLink>
       <div class="rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm">
         <div class="text-[22px] font-extrabold text-dark">{{ rating.count > 0 ? rating.average.toFixed(1) : '—' }}</div>
         <div class="text-[11.5px] text-muted">{{ rating.count }} avis</div>
