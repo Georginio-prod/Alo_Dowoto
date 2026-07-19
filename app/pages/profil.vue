@@ -6,10 +6,14 @@ import type { Subscription } from '~~/server/utils/subscriptionStore'
  * Hub profil (chercheur et prestataire) : vue d'ensemble inspirée d'une
  * maquette de référence fournie par l'utilisateur — carte d'en-tête
  * (identité, statut, anneau de complétion) puis grille de cartes de
- * section, chacune renvoyant vers une page dédiée existante (mot de passe,
- * vérification…) ou une nouvelle page ciblée (identité, profil
- * professionnel prestataire). Contenu volontairement limité aux
- * fonctionnalités réelles de WorkTogo (pas de section fictive).
+ * section. Chaque section s'ouvre désormais dans une fenêtre par-dessus le
+ * hub (#hub-profil-modales) plutôt que de naviguer vers une page dédiée —
+ * ces pages restent joignables directement (marque-page, lien direct) et
+ * portent le même formulaire, extrait en composant partagé (ex.
+ * IdentiteForm.vue) pour éviter toute divergence entre les deux. Seul
+ * « Abonnement » reste une page à part entière (choix de formule + paiement
+ * mobile money, un flux plus lourd qu'une fenêtre). Contenu volontairement
+ * limité aux fonctionnalités réelles de WorkTogo (pas de section fictive).
  */
 definePageMeta({ layout: 'blank', middleware: 'auth' })
 
@@ -17,7 +21,7 @@ const { user, ensure } = useSession()
 await ensure()
 const isProvider = computed(() => user.value?.role === 'prestataire')
 
-const { data: providerData } = await useFetch<{ profile: ProviderProfile | null }>('/api/providers/me', {
+const { data: providerData, refresh: refreshProvider } = await useFetch<{ profile: ProviderProfile | null }>('/api/providers/me', {
   immediate: user.value?.role === 'prestataire',
 })
 const { data: subscriptionData } = await useFetch<{ subscription: Subscription | null }>('/api/subscriptions/me', {
@@ -77,20 +81,59 @@ const remainingCount = computed(() => checks.value.filter((check) => !check.comp
 const RING_CIRCUMFERENCE = 2 * Math.PI * 34
 const ringOffset = computed(() => RING_CIRCUMFERENCE * (1 - completionPercent.value / 100))
 
-const firstIncompletePath = computed(() => {
-  if (!user.value?.username || !user.value?.location) return '/profil/identite'
-  if (!user.value?.verified) return '/profil/verification'
-  if (!user.value?.passwordSet) return '/mot-de-passe'
-  if (isProvider.value && !professionalProfileComplete.value) return '/prestataire/profil-professionnel'
-  if (isProvider.value && !cvComplete.value) return '/prestataire/cv'
-  if (isProvider.value && !languagesComplete.value) return '/prestataire/langues'
-  if (isProvider.value && !formationComplete.value) return '/prestataire/formation'
-  if (isProvider.value && !certificationsComplete.value) return '/prestataire/certifications'
-  if (isProvider.value && !preferencesComplete.value) return '/prestataire/preferences'
-  if (isProvider.value && !coordonneesComplete.value) return '/prestataire/coordonnees'
-  if (isProvider.value && !subscriptionActive.value) return '/abonnement'
-  return '/profil/identite'
+type ModalKey =
+  | 'identite'
+  | 'verification'
+  | 'password'
+  | 'profil-professionnel'
+  | 'cv'
+  | 'langues'
+  | 'formation'
+  | 'certifications'
+  | 'preferences'
+  | 'coordonnees'
+
+const MODAL_TITLES: Record<ModalKey, string> = {
+  identite: 'Identité',
+  verification: "Vérification d'identité",
+  password: 'Changer le mot de passe',
+  'profil-professionnel': 'Profil professionnel',
+  cv: 'CV',
+  langues: 'Langues',
+  formation: 'Formation',
+  certifications: 'Certifications',
+  preferences: 'Préférences',
+  coordonnees: 'Coordonnées',
+}
+
+const activeModal = ref<ModalKey | null>(null)
+function openModal(key: ModalKey) {
+  activeModal.value = key
+}
+function closeModal() {
+  activeModal.value = null
+}
+
+const firstIncomplete = computed<ModalKey | 'abonnement'>(() => {
+  if (!user.value?.username || !user.value?.location) return 'identite'
+  if (!user.value?.verified) return 'verification'
+  if (!user.value?.passwordSet) return 'password'
+  if (isProvider.value && !professionalProfileComplete.value) return 'profil-professionnel'
+  if (isProvider.value && !cvComplete.value) return 'cv'
+  if (isProvider.value && !languagesComplete.value) return 'langues'
+  if (isProvider.value && !formationComplete.value) return 'formation'
+  if (isProvider.value && !certificationsComplete.value) return 'certifications'
+  if (isProvider.value && !preferencesComplete.value) return 'preferences'
+  if (isProvider.value && !coordonneesComplete.value) return 'coordonnees'
+  if (isProvider.value && !subscriptionActive.value) return 'abonnement'
+  return 'identite'
 })
+
+function completeProfile() {
+  const next = firstIncomplete.value
+  if (next === 'abonnement') navigateTo('/abonnement')
+  else openModal(next)
+}
 </script>
 
 <template>
@@ -125,13 +168,14 @@ const firstIncompletePath = computed(() => {
             Encore {{ remainingCount }} section{{ remainingCount > 1 ? 's' : '' }} à compléter
           </p>
           <p v-else class="text-[12.5px] font-semibold text-primary">Profil complet, bravo !</p>
-          <NuxtLink
+          <button
             v-if="remainingCount > 0"
-            :to="firstIncompletePath"
+            type="button"
             class="press mt-2 inline-block rounded-field bg-primary px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-primary-hover"
+            @click="completeProfile"
           >
             Compléter mon profil
-          </NuxtLink>
+          </button>
         </div>
 
         <svg width="80" height="80" viewBox="0 0 80 80" class="shrink-0 -rotate-90">
@@ -152,22 +196,25 @@ const firstIncompletePath = computed(() => {
         icon="🪪"
         title="Identité"
         subtitle="Nom, pseudo, localisation"
-        to="/profil/identite"
+        interactive
         :complete="!!user?.username && !!user?.location"
+        @click="openModal('identite')"
       />
       <ProfileSectionCard
         icon="🛡️"
         title="Vérification"
         subtitle="Carte d'identité et photo passeport"
-        to="/profil/verification"
+        interactive
         :complete="!!user?.verified"
+        @click="openModal('verification')"
       />
       <ProfileSectionCard
         icon="🔒"
         title="Mot de passe"
         subtitle="Sécurité de votre compte"
-        to="/mot-de-passe"
+        interactive
         :complete="!!user?.passwordSet"
+        @click="openModal('password')"
       />
 
       <template v-if="isProvider">
@@ -175,15 +222,17 @@ const firstIncompletePath = computed(() => {
           icon="💼"
           title="Profil professionnel"
           subtitle="Secteur, description, photo"
-          to="/prestataire/profil-professionnel"
+          interactive
           :complete="professionalProfileComplete"
+          @click="openModal('profil-professionnel')"
         />
         <ProfileSectionCard
           icon="📄"
           title="CV"
           subtitle="Votre CV principal"
-          to="/prestataire/cv"
+          interactive
           :complete="cvComplete"
+          @click="openModal('cv')"
         />
         <ProfileSectionCard
           icon="🧩"
@@ -194,36 +243,41 @@ const firstIncompletePath = computed(() => {
           icon="🗣️"
           title="Langues"
           subtitle="Langues que vous maîtrisez"
-          to="/prestataire/langues"
+          interactive
           :complete="languagesComplete"
+          @click="openModal('langues')"
         />
         <ProfileSectionCard
           icon="🎓"
           title="Formation"
           subtitle="Diplômes et formations suivies"
-          to="/prestataire/formation"
+          interactive
           :complete="formationComplete"
+          @click="openModal('formation')"
         />
         <ProfileSectionCard
           icon="📜"
           title="Certifications"
           subtitle="Faites certifier vos aptitudes"
-          to="/prestataire/certifications"
+          interactive
           :complete="certificationsComplete"
+          @click="openModal('certifications')"
         />
         <ProfileSectionCard
           icon="⚙️"
           title="Préférences"
           subtitle="Tarifs, mobilité, disponibilité"
-          to="/prestataire/preferences"
+          interactive
           :complete="preferencesComplete"
+          @click="openModal('preferences')"
         />
         <ProfileSectionCard
           icon="☎️"
           title="Coordonnées"
           subtitle="WhatsApp, site web, réseaux"
-          to="/prestataire/coordonnees"
+          interactive
           :complete="coordonneesComplete"
+          @click="openModal('coordonnees')"
         />
         <ProfileSectionCard
           icon="💳"
@@ -247,5 +301,36 @@ const firstIncompletePath = computed(() => {
         to="/solde"
       />
     </div>
+
+    <ProfileFormModal v-if="activeModal === 'identite'" :title="MODAL_TITLES.identite" @close="closeModal">
+      <IdentiteForm />
+    </ProfileFormModal>
+    <ProfileFormModal v-else-if="activeModal === 'verification'" :title="MODAL_TITLES.verification" @close="closeModal">
+      <IdentityVerificationForm />
+    </ProfileFormModal>
+    <ProfileFormModal v-else-if="activeModal === 'password'" :title="MODAL_TITLES.password" @close="closeModal">
+      <PasswordForm />
+    </ProfileFormModal>
+    <ProfileFormModal v-else-if="activeModal === 'profil-professionnel'" :title="MODAL_TITLES['profil-professionnel']" @close="closeModal">
+      <ProfessionalProfileForm @saved="refreshProvider" />
+    </ProfileFormModal>
+    <ProfileFormModal v-else-if="activeModal === 'cv'" :title="MODAL_TITLES.cv" @close="closeModal">
+      <CvForm @saved="refreshProvider" />
+    </ProfileFormModal>
+    <ProfileFormModal v-else-if="activeModal === 'langues'" :title="MODAL_TITLES.langues" @close="closeModal">
+      <LanguagesForm @saved="refreshProvider" />
+    </ProfileFormModal>
+    <ProfileFormModal v-else-if="activeModal === 'formation'" :title="MODAL_TITLES.formation" @close="closeModal">
+      <FormationForm @saved="refreshProvider" />
+    </ProfileFormModal>
+    <ProfileFormModal v-else-if="activeModal === 'certifications'" :title="MODAL_TITLES.certifications" @close="closeModal">
+      <CertificationsForm @saved="refreshProvider" />
+    </ProfileFormModal>
+    <ProfileFormModal v-else-if="activeModal === 'preferences'" :title="MODAL_TITLES.preferences" @close="closeModal">
+      <PreferencesForm @saved="refreshProvider" />
+    </ProfileFormModal>
+    <ProfileFormModal v-else-if="activeModal === 'coordonnees'" :title="MODAL_TITLES.coordonnees" @close="closeModal">
+      <ContactForm @saved="refreshProvider" />
+    </ProfileFormModal>
   </div>
 </template>
