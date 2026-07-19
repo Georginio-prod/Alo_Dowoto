@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createServiceRequest, listRequestsByUser } from '~~/server/utils/requestStore'
+import { createServiceRequest, getStoredMatches, listRequestsByUser, listRequestsForProvider } from '~~/server/utils/requestStore'
 
 /** Attend le prochain tick d'horloge pour garantir des `createdAt` distincts et déterministes. */
 function tick() {
@@ -62,5 +62,28 @@ describe('listRequestsByUser — « Mon espace » chercheur (#64)', () => {
 
   it('renvoie une liste vide pour un utilisateur sans demande (cas limite)', () => {
     expect(listRequestsByUser('client-sans-demande')).toEqual([])
+  })
+})
+
+describe('listRequestsForProvider — « Demandes reçues » prestataire (#hub-profil-prestataire)', () => {
+  it('renvoie les demandes où le prestataire figure dans le top de correspondances', () => {
+    const request = createServiceRequest('client-received-1', {
+      title: 'Nettoyage de bureau',
+      skills: ['Ménage à domicile'],
+      description: '',
+      budgetMax: 6000,
+      urgency: 'flexible',
+      location: 'Lomé',
+      sector: 'menage',
+    })
+    const matchedProviderId = getStoredMatches(request.id)?.[0]?.providerId
+    if (!matchedProviderId) throw new Error('Aucun prestataire matché — précondition du test invalide.')
+
+    const received = listRequestsForProvider(matchedProviderId)
+    expect(received.some((item) => item.request.id === request.id)).toBe(true)
+  })
+
+  it('renvoie une liste vide pour un prestataire jamais matché (cas limite)', () => {
+    expect(listRequestsForProvider('provider-jamais-matche')).toEqual([])
   })
 })

@@ -178,3 +178,24 @@ export function listRequestsByUser(userId: string): ServiceRequest[] {
 export function getStoredMatches(requestId: string): MatchedProvider[] | null {
   return matchesByRequestId.get(requestId) ?? null
 }
+
+export interface ProviderMatchedRequest {
+  request: ServiceRequest
+  score: MatchedProvider['score']
+}
+
+/**
+ * Demandes où ce prestataire figure dans le top de correspondances calculé
+ * à la création (« Demandes reçues », #hub-profil-prestataire) — pas de
+ * flux d'acceptation/refus dans ce lot, uniquement la liste des demandes
+ * dont ce prestataire a été notifié (compteur de quota déjà incrémenté par
+ * createServiceRequest ci-dessus).
+ */
+export function listRequestsForProvider(providerId: string): ProviderMatchedRequest[] {
+  const matched: ProviderMatchedRequest[] = []
+  for (const request of requests.values()) {
+    const match = matchesByRequestId.get(request.id)?.find((candidate) => candidate.providerId === providerId)
+    if (match) matched.push({ request, score: match.score })
+  }
+  return matched.sort((a, b) => b.request.createdAt - a.request.createdAt)
+}

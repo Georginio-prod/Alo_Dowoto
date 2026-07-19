@@ -2,9 +2,8 @@
 /**
  * Socle de navigation du dashboard prestataire (#37).
  *
- * Point d'extension pour les futures sections (Demandes reçues, Avis) :
- * ajouter une route réelle à l'entrée ici suffit, sans toucher aux pages
- * existantes.
+ * Point d'extension pour les futures sections (Profil, Avis) : ajouter une
+ * route réelle à l'entrée ici suffit, sans toucher aux pages existantes.
  */
 interface NavItem {
   label: string
@@ -19,8 +18,8 @@ const NAV_ITEM_CLASSES = {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Accueil', to: '/prestataire' },
-  { label: 'Profil', to: '/profil' },
-  { label: 'Demandes reçues', to: null },
+  { label: 'Profil', to: null },
+  { label: 'Demandes reçues', to: '/prestataire/demandes' },
   { label: 'Messages', to: '/messages' },
   { label: 'Avis', to: null },
 ]
