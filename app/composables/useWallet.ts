@@ -3,6 +3,7 @@ import type { WalletMovement } from '~~/server/utils/walletStore'
 interface WalletResponse {
   balance: number
   movements: WalletMovement[]
+  minWithdrawal: number
 }
 
 /**
@@ -14,6 +15,7 @@ interface WalletResponse {
 export function useWallet() {
   const balance = useState<number | null>('wallet-balance', () => null)
   const movements = useState<WalletMovement[]>('wallet-movements', () => [])
+  const minWithdrawal = useState<number | null>('wallet-min-withdrawal', () => null)
   const loaded = useState('wallet-loaded', () => false)
   const requestFetch = useRequestFetch()
 
@@ -22,9 +24,11 @@ export function useWallet() {
       const response = await requestFetch<WalletResponse>('/api/wallet/me')
       balance.value = response.balance
       movements.value = response.movements
+      minWithdrawal.value = response.minWithdrawal
     } catch {
       balance.value = null
       movements.value = []
+      minWithdrawal.value = null
     } finally {
       loaded.value = true
     }
@@ -34,5 +38,5 @@ export function useWallet() {
     if (!loaded.value) await refresh()
   }
 
-  return { balance, movements, loaded, refresh, ensure }
+  return { balance, movements, minWithdrawal, loaded, refresh, ensure }
 }

@@ -23,8 +23,10 @@ import { randomUUID } from 'node:crypto'
  *   intégral au chercheur (#196).
  * - `commission` : part prélevée par WorkTogo à la libération, créditée au
  *   portefeuille plateforme (voir PLATFORM_WALLET_USER_ID).
+ * - `retrait` : le prestataire retire son solde vers son moyen de paiement
+ *   configuré (#hub-profil-prestataire, voir requestWithdrawal ci-dessous).
  */
-export type WalletMovementType = 'recharge' | 'escrow_debit' | 'escrow_release' | 'escrow_refund' | 'commission'
+export type WalletMovementType = 'recharge' | 'escrow_debit' | 'escrow_release' | 'escrow_refund' | 'commission' | 'retrait'
 
 /** Identifiant conventionnel du portefeuille interne WorkTogo (commissions). */
 export const PLATFORM_WALLET_USER_ID = 'worktogo-platform'
@@ -44,9 +46,9 @@ export interface WalletMovement {
 
 /**
  * Signe appliqué au solde du titulaire du mouvement (`walletUserId`).
- * Seul `escrow_debit` retire des fonds ; tous les autres mouvements en
- * ajoutent (recharge, réception d'un séquestre libéré, remboursement,
- * commission plateforme).
+ * `escrow_debit` et `retrait` retirent des fonds ; tous les autres
+ * mouvements en ajoutent (recharge, réception d'un séquestre libéré,
+ * remboursement, commission plateforme).
  */
 const MOVEMENT_SIGN: Record<WalletMovementType, 1 | -1> = {
   recharge: 1,
@@ -54,6 +56,7 @@ const MOVEMENT_SIGN: Record<WalletMovementType, 1 | -1> = {
   escrow_release: 1,
   escrow_refund: 1,
   commission: 1,
+  retrait: -1,
 }
 
 const movementsByUserId = new Map<string, WalletMovement[]>()
@@ -121,4 +124,32 @@ export function debitWallet(input: Omit<RecordMovementInput, 'type'>): WalletMov
     return null
   }
   return appendMovement({ ...input, type: 'escrow_debit' })
+}
+
+/**
+ * Retrait minimum autorisé par demande (F CFA) — cohérent avec les montants
+ * de retrait mobile money usuels au Togo. Valeur métier pragmatique en
+ * attendant un arbitrage produit dédié.
+ */
+export const MIN_WITHDRAWAL_AMOUNT = 5000
+
+export type RequestWithdrawalResult =
+  | { ok: true; movement: WalletMovement }
+  | { ok: false; error: 'below_minimum' | 'insufficient_funds' }
+
+/**
+ * Demande de retrait prestataire (« Solde », dashboard prestataire) vers le
+ * moyen de paiement configuré sur son profil
+ * (server/utils/providerStore.ts, `payoutMethod`). Débite immédiatement le
+ * portefeuille, sur le même principe que `debitWallet` pour un paiement en
+ * séquestre — pas de flux d'approbation manuelle dans ce lot, un futur lot
+ * pourra ajouter un statut « en cours de traitement » avant crédit effectif
+ * sur mobile money.
+ */
+export function requestWithdrawal(userId: string, amount: number): RequestWithdrawalResult {
+  if (amount < MIN_WITHDRAWAL_AMOUNT) return { ok: false, error: 'below_minimum' }
+  if (getBalance(userId) < amount) return { ok: false, error: 'insufficient_funds' }
+
+  const movement = appendMovement({ walletUserId: userId, type: 'retrait', amount, reference: randomUUID() })
+  return { ok: true, movement }
 }
