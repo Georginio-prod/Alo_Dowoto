@@ -75,7 +75,13 @@ export default defineEventHandler(async (event) => {
     badRequest(requiredFields.error)
   }
 
+  // Recalculé à chaque enregistrement plutôt que figé à l'inscription : un
+  // changement de nom/pseudo (/profil/identite) se répercute immédiatement
+  // sur la fiche visible en recherche publique (#hub-profil-prestataire).
+  const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.username || 'Prestataire WorkTogo'
+
   const profile = upsertProviderProfile(user.id, {
+    displayName,
     sector,
     city: requiredFields.city,
     payoutMethod: requiredFields.payoutMethod,

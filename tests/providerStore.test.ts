@@ -3,14 +3,14 @@ import { getProviderProfile, resolveRequiredOnboardingFields, upsertProviderProf
 
 describe('providerStore — localisation & mode de rémunération (#123)', () => {
   it('sauvegarde le mode de rémunération sélectionné (correction du bug #123)', () => {
-    const profile = upsertProviderProfile('provider-1', { sector: 'menage', payoutMethod: 'flooz' })
+    const profile = upsertProviderProfile('provider-1', { displayName: 'Prestataire 1', sector: 'menage', payoutMethod: 'flooz' })
     expect(profile.payoutMethod).toBe('flooz')
     expect(getProviderProfile('provider-1')?.payoutMethod).toBe('flooz')
   })
 
   it('conserve la ville et le mode de rémunération déjà enregistrés lors d\'une mise à jour partielle', () => {
-    upsertProviderProfile('provider-2', { sector: 'menage', city: 'Lomé', payoutMethod: 'tmoney' })
-    const updated = upsertProviderProfile('provider-2', { sector: 'menage', description: 'Ménage à domicile' })
+    upsertProviderProfile('provider-2', { displayName: 'Prestataire 2', sector: 'menage', city: 'Lomé', payoutMethod: 'tmoney' })
+    const updated = upsertProviderProfile('provider-2', { displayName: 'Prestataire 2', sector: 'menage', description: 'Ménage à domicile' })
 
     expect(updated.city).toBe('Lomé')
     expect(updated.payoutMethod).toBe('tmoney')
@@ -49,7 +49,7 @@ describe('resolveRequiredOnboardingFields — obligatoire côté serveur (#124)'
   })
 
   it('retombe sur le profil déjà enregistré pour une mise à jour partielle', () => {
-    const existing = upsertProviderProfile('provider-3', { sector: 'menage', city: 'Kara', payoutMethod: 'virement' })
+    const existing = upsertProviderProfile('provider-3', { displayName: 'Prestataire 3', sector: 'menage', city: 'Kara', payoutMethod: 'virement' })
     expect(resolveRequiredOnboardingFields({}, existing)).toEqual({
       ok: true,
       city: 'Kara',
