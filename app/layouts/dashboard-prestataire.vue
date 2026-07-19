@@ -32,7 +32,7 @@ const route = useRoute()
   <div class="min-h-screen bg-bg text-ink">
     <div class="mx-auto flex max-w-[1100px] flex-col gap-6 px-5 py-6 lg:flex-row lg:items-start">
       <aside class="w-full shrink-0 lg:w-[220px]">
-        <NuxtLink to="/" class="mb-5 block text-[19px] font-extrabold text-dark">
+        <NuxtLink to="/prestataire" class="mb-5 block text-[19px] font-extrabold text-dark">
           Work<span class="text-primary">Togo</span>
         </NuxtLink>
 
