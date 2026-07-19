@@ -5,9 +5,31 @@
  * `sector`, `city` et `payoutMethod` sont renseignés à l'inscription
  * prestataire (#26, #123). Les champs photo/description/tarifs sont
  * anticipés pour une itération future et restent facultatifs.
+ *
+ * CV, langues, formations, certifications, préférences et coordonnées
+ * complémentaires (#hub-profil-prestataire) suivent le même principe : tous
+ * facultatifs, remplis progressivement depuis le hub `/profil`.
  */
 
 export type PayoutMethod = 'flooz' | 'tmoney' | 'virement'
+
+/** Où le prestataire réalise ses prestations — affiché sur la carte « Préférences ». */
+export type Mobility = 'client' | 'atelier' | 'les_deux'
+
+export interface FormationEntry {
+  title: string
+  institution: string
+  year: string
+}
+
+export interface CertificationEntry {
+  id: string
+  title: string
+  fileUrl: string
+  fileName: string
+  /** Toujours `en_attente` à l'ajout : pas de flux de vérification admin dans ce lot. */
+  status: 'en_attente' | 'verifiee'
+}
 
 export interface ProviderProfile {
   userId: string
@@ -17,6 +39,16 @@ export interface ProviderProfile {
   photoUrl?: string
   description?: string
   rateFrom?: number
+  rateTo?: number
+  mobility?: Mobility
+  availability?: string
+  cvUrl?: string
+  cvFileName?: string
+  languages?: string[]
+  formations?: FormationEntry[]
+  certifications?: CertificationEntry[]
+  whatsapp?: string
+  website?: string
   updatedAt: number
 }
 
@@ -27,6 +59,23 @@ export interface ProviderProfilePatch {
   photoUrl?: string
   description?: string
   rateFrom?: number
+  rateTo?: number
+  mobility?: Mobility
+  availability?: string
+  /** `null` efface explicitement le CV déjà enregistré (bouton « Retirer », cv.vue) ; `undefined` laisse la valeur existante inchangée. */
+  cvUrl?: string | null
+  cvFileName?: string | null
+  languages?: string[]
+  formations?: FormationEntry[]
+  certifications?: CertificationEntry[]
+  whatsapp?: string
+  website?: string
+}
+
+/** `undefined` dans le patch conserve la valeur existante ; `null` l'efface explicitement (voir `cvUrl` ci-dessus). */
+function withNullableOverride<T>(patchValue: T | null | undefined, existingValue: T | undefined): T | undefined {
+  if (patchValue === undefined) return existingValue
+  return patchValue ?? undefined
 }
 
 const profilesByUserId = new Map<string, ProviderProfile>()
@@ -41,6 +90,16 @@ export function upsertProviderProfile(userId: string, patch: ProviderProfilePatc
     photoUrl: patch.photoUrl ?? existing?.photoUrl,
     description: patch.description ?? existing?.description,
     rateFrom: patch.rateFrom ?? existing?.rateFrom,
+    rateTo: patch.rateTo ?? existing?.rateTo,
+    mobility: patch.mobility ?? existing?.mobility,
+    availability: patch.availability ?? existing?.availability,
+    cvUrl: withNullableOverride(patch.cvUrl, existing?.cvUrl),
+    cvFileName: withNullableOverride(patch.cvFileName, existing?.cvFileName),
+    languages: patch.languages ?? existing?.languages,
+    formations: patch.formations ?? existing?.formations,
+    certifications: patch.certifications ?? existing?.certifications,
+    whatsapp: patch.whatsapp ?? existing?.whatsapp,
+    website: patch.website ?? existing?.website,
     updatedAt: Date.now(),
   }
   profilesByUserId.set(userId, profile)
@@ -52,6 +111,8 @@ export function getProviderProfile(userId: string): ProviderProfile | null {
 }
 
 export const PAYOUT_METHODS: PayoutMethod[] = ['flooz', 'tmoney', 'virement']
+
+export const MOBILITY_OPTIONS: Mobility[] = ['client', 'atelier', 'les_deux']
 
 export type RequiredOnboardingFields =
   | { ok: true; city: string; payoutMethod: PayoutMethod }
