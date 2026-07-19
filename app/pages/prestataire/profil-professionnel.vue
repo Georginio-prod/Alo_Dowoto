@@ -4,10 +4,12 @@ import type { PayoutMethod, ProviderProfile } from '~~/server/utils/providerStor
 
 /**
  * Édition du profil professionnel prestataire (secteur, localisation, mode
- * de rémunération, tarif, description, photo) — jusqu'ici, le bouton
+ * de rémunération, description, photo) — jusqu'ici, le bouton
  * « Compléter mon profil » de app/pages/prestataire/index.vue ne menait
  * nulle part (voir son historique) : cette page comble ce manque, sur le
- * même schéma que les autres pages profil dédiées (#165).
+ * même schéma que les autres pages profil dédiées (#165). Le tarif vit
+ * désormais sur sa propre page (/prestataire/preferences), avec la
+ * disponibilité et la mobilité.
  */
 definePageMeta({ layout: 'blank', middleware: 'auth', authRole: 'prestataire' })
 
@@ -26,7 +28,6 @@ const existing = data.value?.profile ?? null
 const sector = ref(existing?.sector ?? '')
 const city = ref(existing?.city ?? '')
 const payoutMethod = ref<PayoutMethod | null>(existing?.payoutMethod ?? null)
-const rateFrom = ref<number | null>(existing?.rateFrom ?? null)
 const description = ref(existing?.description ?? '')
 const photoUrl = ref<string | null>(existing?.photoUrl ?? null)
 const photoFileName = ref('')
@@ -82,7 +83,6 @@ async function submit() {
         sector: sector.value,
         city: city.value.trim(),
         payoutMethod: payoutMethod.value,
-        rateFrom: rateFrom.value ?? undefined,
         description: description.value.trim() || undefined,
         photoUrl: photoUrl.value ?? undefined,
       },
@@ -135,16 +135,6 @@ async function submit() {
           v-model="city"
           type="text"
           placeholder="Ex. Lomé, Kara, Kpalimé…"
-          class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
-        >
-
-        <label for="pp-rate" class="mb-1.5 block text-[13px] font-semibold text-dark">Tarif de base (F CFA)</label>
-        <input
-          id="pp-rate"
-          v-model.number="rateFrom"
-          type="number"
-          min="0"
-          placeholder="Ex. 3000"
           class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
         >
 

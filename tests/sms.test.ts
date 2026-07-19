@@ -76,4 +76,39 @@ describe('sms (#23 envoi OTP par SMS)', () => {
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error).toContain('réseau indisponible')
   })
+
+  it('est configuré via Brevo (BREVO_API_KEY + BREVO_SMS_SENDER)', () => {
+    vi.stubEnv('BREVO_API_KEY', 'xkeysib-test')
+    vi.stubEnv('BREVO_SMS_SENDER', 'WorkTogo')
+    expect(isSmsConfigured()).toBe(true)
+  })
+
+  it('envoie via l’API Brevo avec le destinataire sans "+" et le bon sender', async () => {
+    vi.stubEnv('BREVO_API_KEY', 'xkeysib-test')
+    vi.stubEnv('BREVO_SMS_SENDER', 'WorkTogo')
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 201 }))
+
+    const result = await sendSms('+22890000000', 'WorkTogo : votre code est 123456.')
+
+    expect(result).toEqual({ ok: true })
+    const [url, init] = fetchMock.mock.calls[0] ?? []
+    expect(String(url)).toBe('https://api.brevo.com/v3/transactionalSMS/sms')
+    expect((init?.headers as Record<string, string>)['api-key']).toBe('xkeysib-test')
+    const payload = JSON.parse(String(init?.body))
+    expect(payload.recipient).toBe('22890000000')
+    expect(payload.sender).toBe('WorkTogo')
+    expect(payload.type).toBe('transactional')
+    expect(payload.content).toContain('123456')
+  })
+
+  it('préfère Brevo à Twilio quand les deux sont configurés', async () => {
+    configureTwilio()
+    vi.stubEnv('BREVO_API_KEY', 'xkeysib-test')
+    vi.stubEnv('BREVO_SMS_SENDER', 'WorkTogo')
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 201 }))
+
+    await sendSms('+22890000000', 'code')
+
+    expect(String((fetchMock.mock.calls[0] ?? [])[0])).toContain('api.brevo.com')
+  })
 })

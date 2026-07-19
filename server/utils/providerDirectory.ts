@@ -1,5 +1,8 @@
+import { SECTORS } from '~~/app/data/sectors'
 import { getAverageRating } from '~~/server/utils/reviewStore'
-import { getProviderProfile } from '~~/server/utils/providerStore'
+import { getProviderProfile, listProviderProfiles } from '~~/server/utils/providerStore'
+import type { ProviderProfile } from '~~/server/utils/providerStore'
+import { isVerified } from '~~/server/utils/verificationStore'
 import type { FeaturedCandidate } from '~~/server/utils/matchingEngine'
 
 /**
@@ -56,15 +59,50 @@ function normalize(value: string): string {
   return value.trim().toLowerCase()
 }
 
-/** Retrouve une fiche de l'annuaire par id (ex. utilisé par la messagerie, #59). */
+/**
+ * Convertit un vrai profil prestataire (compte inscrit, server/utils/providerStore.ts)
+ * au même format que l'annuaire de démonstration, pour qu'il apparaisse
+ * dans la recherche publique au même titre qu'une fiche de démo (#43 → vrais
+ * comptes). Pas de sous-secteur dédié côté profil réel pour l'instant (seul
+ * le secteur est collecté à l'inscription, voir profil-professionnel.vue) :
+ * on retombe sur le nom du secteur, cohérent avec l'affichage
+ * `{{ subSector }} · {{ city }}` de ProviderCard.vue.
+ */
+function toSearchResult(profile: ProviderProfile): ProviderSearchResult {
+  const sectorName = SECTORS.find((sector) => sector.slug === profile.sector)?.name ?? profile.sector
+  return {
+    id: profile.userId,
+    displayName: profile.displayName,
+    sector: profile.sector,
+    subSector: sectorName,
+    city: profile.city ?? '',
+    verified: isVerified(profile.userId),
+    rating: 0,
+    reviewCount: 0,
+    priceFrom: profile.rateFrom ?? 0,
+    photoUrl: profile.photoUrl ?? null,
+  }
+}
+
+/**
+ * Annuaire de démonstration + vrais comptes prestataires, fusionnés en un
+ * seul jeu de résultats. Un vrai compte apparaît dès l'inscription (secteur
+ * et localisation sont obligatoires, voir resolveRequiredOnboardingFields),
+ * pas seulement une fois son profil professionnel complété.
+ */
+function allProviders(): ProviderSearchResult[] {
+  return [...DIRECTORY, ...listProviderProfiles().map(toSearchResult)]
+}
+
+/** Retrouve une fiche par id, dans l'annuaire de démo ou parmi les vrais comptes (ex. utilisé par la messagerie, #59). */
 export function getProviderById(id: string): ProviderSearchResult | null {
-  return DIRECTORY.find((provider) => provider.id === id) ?? null
+  return allProviders().find((provider) => provider.id === id) ?? null
 }
 
 export function searchProviders(filters: ProviderSearchFilters): ProviderSearchResult[] {
   const query = filters.query ? normalize(filters.query) : ''
 
-  return DIRECTORY.filter((provider) => {
+  return allProviders().filter((provider) => {
     if (filters.sector && provider.sector !== filters.sector) return false
     if (filters.subSectors?.length && !filters.subSectors.includes(provider.subSector)) return false
     if (filters.city && provider.city !== filters.city) return false
@@ -111,10 +149,12 @@ export function getEffectiveRating(providerId: string): { rating: number, review
  * de démonstration (ids `p01`..`p14`, voir en-tête de fichier) puis, à
  * défaut, au tarif renseigné par un vrai compte prestataire. `null` si
  * aucun tarif n'est disponible (le prestataire n'a pas encore configuré son
- * tarif de base).
+ * tarif de base) — vérifie directement `providerStore` plutôt que
+ * `getProviderById`, dont la fiche fusionnée (#43 → vrais comptes) retombe
+ * sur `0` par défaut et masquerait ce cas.
  */
 export function resolveProviderRate(providerId: string): number | null {
-  const directoryEntry = getProviderById(providerId)
+  const directoryEntry = DIRECTORY.find((provider) => provider.id === providerId)
   if (directoryEntry) return directoryEntry.priceFrom
   return getProviderProfile(providerId)?.rateFrom ?? null
 }
@@ -201,14 +241,26 @@ export function getProviderDetail(id: string, contactRevealed: boolean): Provide
   const experienceYears = estimateExperienceYears(reviewCount)
   const { phone, email } = derivedContact(provider)
 
+  // Un id absent de l'annuaire de démo correspond à un vrai compte
+  // prestataire (#43 → vrais comptes) : sa fiche reprend sa propre
+  // description/disponibilité/CV (hub /profil) plutôt que le texte
+  // générique de démo.
+  const realProfile = DIRECTORY.some((entry) => entry.id === id) ? null : getProviderProfile(id)
+
+  const bio = realProfile?.description
+    || `Prestataire ${provider.subSector.toLowerCase()} basé·e à ${provider.city}, ${experienceYears} an${experienceYears > 1 ? 's' : ''} d'expérience sur WorkTogo.`
+  const availability = realProfile?.availability
+    || (provider.verified ? 'Disponible sous 48h' : 'Disponibilité à confirmer avec le prestataire')
+  const cvUrl = realProfile ? realProfile.cvUrl ?? null : provider.verified ? `/cv/${provider.id}.pdf` : null
+
   return {
     ...provider,
     rating,
     reviewCount,
     experienceYears,
-    bio: `Prestataire ${provider.subSector.toLowerCase()} basé·e à ${provider.city}, ${experienceYears} an${experienceYears > 1 ? 's' : ''} d'expérience sur WorkTogo.`,
-    availability: provider.verified ? 'Disponible sous 48h' : 'Disponibilité à confirmer avec le prestataire',
-    cvUrl: provider.verified ? `/cv/${provider.id}.pdf` : null,
+    bio,
+    availability,
+    cvUrl,
     badges: { identity: provider.verified, skills: reviewCount >= 10 },
     phone: contactRevealed ? phone : maskPhone(phone),
     email: contactRevealed ? email : maskEmail(email),

@@ -28,8 +28,14 @@ const providerProfile = computed(() => providerData.value?.profile ?? null)
 const subscriptionActive = computed(() => subscriptionData.value?.subscription?.status === 'actif')
 const professionalProfileComplete = computed(() => {
   const profile = providerProfile.value
-  return !!(profile?.photoUrl && profile?.description && profile?.rateFrom)
+  return !!(profile?.photoUrl && profile?.description)
 })
+const cvComplete = computed(() => !!providerProfile.value?.cvUrl)
+const languagesComplete = computed(() => !!providerProfile.value?.languages?.length)
+const formationComplete = computed(() => !!providerProfile.value?.formations?.length)
+const certificationsComplete = computed(() => !!providerProfile.value?.certifications?.length)
+const preferencesComplete = computed(() => !!(providerProfile.value?.rateFrom && providerProfile.value?.mobility))
+const coordonneesComplete = computed(() => !!(providerProfile.value?.whatsapp || providerProfile.value?.website))
 
 const initials = computed(() => {
   const first = user.value?.firstName?.charAt(0) ?? ''
@@ -47,7 +53,17 @@ const checks = computed<Check[]>(() => {
     { complete: !!user.value?.passwordSet },
   ]
   if (!isProvider.value) return base
-  return [...base, { complete: professionalProfileComplete.value }, { complete: subscriptionActive.value }]
+  return [
+    ...base,
+    { complete: professionalProfileComplete.value },
+    { complete: cvComplete.value },
+    { complete: languagesComplete.value },
+    { complete: formationComplete.value },
+    { complete: certificationsComplete.value },
+    { complete: preferencesComplete.value },
+    { complete: coordonneesComplete.value },
+    { complete: subscriptionActive.value },
+  ]
 })
 
 const completionPercent = computed(() => {
@@ -66,6 +82,12 @@ const firstIncompletePath = computed(() => {
   if (!user.value?.verified) return '/profil/verification'
   if (!user.value?.passwordSet) return '/mot-de-passe'
   if (isProvider.value && !professionalProfileComplete.value) return '/prestataire/profil-professionnel'
+  if (isProvider.value && !cvComplete.value) return '/prestataire/cv'
+  if (isProvider.value && !languagesComplete.value) return '/prestataire/langues'
+  if (isProvider.value && !formationComplete.value) return '/prestataire/formation'
+  if (isProvider.value && !certificationsComplete.value) return '/prestataire/certifications'
+  if (isProvider.value && !preferencesComplete.value) return '/prestataire/preferences'
+  if (isProvider.value && !coordonneesComplete.value) return '/prestataire/coordonnees'
   if (isProvider.value && !subscriptionActive.value) return '/abonnement'
   return '/profil/identite'
 })
@@ -152,9 +174,56 @@ const firstIncompletePath = computed(() => {
         <ProfileSectionCard
           icon="💼"
           title="Profil professionnel"
-          subtitle="Secteur, tarif, description, photo"
+          subtitle="Secteur, description, photo"
           to="/prestataire/profil-professionnel"
           :complete="professionalProfileComplete"
+        />
+        <ProfileSectionCard
+          icon="📄"
+          title="CV"
+          subtitle="Votre CV principal"
+          to="/prestataire/cv"
+          :complete="cvComplete"
+        />
+        <ProfileSectionCard
+          icon="🧩"
+          title="Compétences"
+          subtitle="Bientôt disponible"
+        />
+        <ProfileSectionCard
+          icon="🗣️"
+          title="Langues"
+          subtitle="Langues que vous maîtrisez"
+          to="/prestataire/langues"
+          :complete="languagesComplete"
+        />
+        <ProfileSectionCard
+          icon="🎓"
+          title="Formation"
+          subtitle="Diplômes et formations suivies"
+          to="/prestataire/formation"
+          :complete="formationComplete"
+        />
+        <ProfileSectionCard
+          icon="📜"
+          title="Certifications"
+          subtitle="Faites certifier vos aptitudes"
+          to="/prestataire/certifications"
+          :complete="certificationsComplete"
+        />
+        <ProfileSectionCard
+          icon="⚙️"
+          title="Préférences"
+          subtitle="Tarifs, mobilité, disponibilité"
+          to="/prestataire/preferences"
+          :complete="preferencesComplete"
+        />
+        <ProfileSectionCard
+          icon="☎️"
+          title="Coordonnées"
+          subtitle="WhatsApp, site web, réseaux"
+          to="/prestataire/coordonnees"
+          :complete="coordonneesComplete"
         />
         <ProfileSectionCard
           icon="💳"

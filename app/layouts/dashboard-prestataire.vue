@@ -2,9 +2,8 @@
 /**
  * Socle de navigation du dashboard prestataire (#37).
  *
- * Point d'extension pour les futures sections (#36 est la seule
- * disponible pour l'instant) : ajouter une entrée ici avec `disabled:
- * false` et une route réelle suffit, sans toucher aux pages existantes.
+ * Point d'extension pour les futures sections (Avis) : ajouter une route
+ * réelle à l'entrée ici suffit, sans toucher aux pages existantes.
  */
 interface NavItem {
   label: string
@@ -19,8 +18,9 @@ const NAV_ITEM_CLASSES = {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Accueil', to: '/prestataire' },
-  { label: 'Profil', to: null },
-  { label: 'Demandes reçues', to: null },
+  { label: 'Profil', to: '/profil' },
+  { label: 'Demandes reçues', to: '/prestataire/demandes' },
+  { label: 'Solde', to: '/prestataire/solde' },
   { label: 'Messages', to: '/messages' },
   { label: 'Avis', to: null },
 ]
@@ -32,7 +32,7 @@ const route = useRoute()
   <div class="min-h-screen bg-bg text-ink">
     <div class="mx-auto flex max-w-[1100px] flex-col gap-6 px-5 py-6 lg:flex-row lg:items-start">
       <aside class="w-full shrink-0 lg:w-[220px]">
-        <NuxtLink to="/" class="mb-5 block text-[19px] font-extrabold text-dark">
+        <NuxtLink to="/prestataire" class="mb-5 block text-[19px] font-extrabold text-dark">
           Work<span class="text-primary">Togo</span>
         </NuxtLink>
 

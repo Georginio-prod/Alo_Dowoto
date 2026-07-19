@@ -9,5 +9,6 @@ export default defineEventHandler(async (event) => {
   return {
     balance: getBalance(user.id),
     movements: listMovements(user.id),
+    minWithdrawal: MIN_WITHDRAWAL_AMOUNT,
   }
 })

@@ -26,6 +26,9 @@ logs
 # Scheduler lock file
 .claude/scheduled_tasks.lock
 
+# Worktrees d'agents (copies complètes du dépôt, jamais versionnées)
+.claude/worktrees/
+
 # Artefacts de compilation TypeScript émis à côté des sources — le projet est
 # 100% .ts/.vue, tout .js sous app/ ou server/ est une sortie de build
 # accidentelle (tsc sans --noEmit) et ne doit jamais être committé.

@@ -67,11 +67,20 @@ onUnmounted(clearCloseTimer)
       </NuxtLink>
     </div>
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))]">
+      <!--
+        Élévation de la carte survolée au-dessus de ses voisines (le pop-up
+        est sinon « piégé » sous la rangée suivante, chaque carte formant un
+        contexte d'empilement via `will-change` de v-reveal). Le z-index passe
+        par `:style` et NON par `:class` : la directive `v-reveal` ajoute la
+        classe `is-visible` directement au DOM, or un `:class` réactif ferait
+        re-patcher `className` par Vue à chaque survol, écrasant `is-visible`
+        et faisant disparaître les cartes. `:style` ne touche pas `className`.
+      -->
       <div
         v-for="(sector, i) in SECTORS"
         :key="sector.slug"
         v-reveal
-        :style="{ '--reveal-delay': `${i * 50}ms` }"
+        :style="{ '--reveal-delay': `${i * 50}ms`, zIndex: hoveredSlug === sector.slug ? 30 : undefined }"
         class="relative"
         @mouseenter="onCardEnter(sector, $event)"
         @mouseleave="scheduleClose"
@@ -80,7 +89,7 @@ onUnmounted(clearCloseTimer)
       >
         <button
           type="button"
-          class="press group flex w-full flex-col items-start gap-3 rounded-2xl border border-hairline bg-surface p-4 text-left transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:border-primary/40 hover:shadow-card-md"
+          class="press group flex h-full w-full flex-col items-start gap-3 rounded-2xl border border-hairline bg-surface p-4 text-left transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-1 hover:scale-[1.02] hover:border-primary/40 hover:shadow-card-md"
           @click="emit('select', sector)"
         >
           <div
@@ -91,7 +100,7 @@ onUnmounted(clearCloseTimer)
           </div>
           <div class="flex w-full items-start justify-between gap-2">
             <div>
-              <div class="text-[14.5px] font-semibold leading-tight text-dark">{{ sector.name }}</div>
+              <div class="flex min-h-[2.4em] items-start text-[14.5px] font-semibold leading-tight text-dark">{{ sector.name }}</div>
               <span class="mt-1 inline-block rounded-pill bg-bg px-2 py-0.5 text-[11px] font-medium text-muted">
                 {{ sector.subSectors.length }} sous-secteurs
               </span>
@@ -102,8 +111,17 @@ onUnmounted(clearCloseTimer)
           </div>
         </button>
 
+        <!--
+          Conteneur ancré directement sous la carte (`top-full`, sans trou) :
+          le retrait visuel de 8px est fourni par un « pont » transparent
+          (`pt-2`) plutôt que par un décalage de position. Sans ce pont, le
+          trajet de la souris entre la carte et le menu traversait une zone
+          morte (le fond de la grille), ce qui déclenchait `mouseleave` et
+          fermait le menu avant qu'on l'atteigne. Ici, carte → pont → menu
+          restent tous descendants du même wrapper : aucun `mouseleave`.
+        -->
         <div
-          class="absolute top-[calc(100%+8px)] z-20 w-64 origin-top rounded-card border border-hairline bg-surface p-1.5 shadow-card-md transition-all duration-250 ease-out"
+          class="absolute top-full z-20 w-64 pt-2 transition-all duration-250 ease-out"
           :class="[
             flipLeft ? 'right-0' : 'left-0',
             hoveredSlug === sector.slug ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-1 opacity-0',
@@ -114,16 +132,18 @@ onUnmounted(clearCloseTimer)
           @mouseenter="onDropdownEnter"
           @mouseleave="scheduleClose"
         >
-          <button
-            v-for="sub in sector.subSectors"
-            :key="sub.name"
-            type="button"
-            role="menuitem"
-            class="press block w-full rounded-field px-3 py-2 text-left text-[13px] text-dark hover:bg-bg"
-            @click="onSelectSub(sector, sub.name)"
-          >
-            {{ sub.name }}
-          </button>
+          <div class="origin-top rounded-card border border-hairline bg-surface p-1.5 shadow-card-md">
+            <button
+              v-for="sub in sector.subSectors"
+              :key="sub.name"
+              type="button"
+              role="menuitem"
+              class="press block w-full rounded-field px-3 py-2 text-left text-[13px] text-dark hover:bg-bg"
+              @click="onSelectSub(sector, sub.name)"
+            >
+              {{ sub.name }}
+            </button>
+          </div>
         </div>
       </div>
     </div>

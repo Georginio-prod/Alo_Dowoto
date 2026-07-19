@@ -41,6 +41,26 @@ enum PaymentStatus {
   failed
 }
 
+/// Type de mouvement du portefeuille interne — voir server/utils/walletStore.ts (#192).
+enum WalletMovementType {
+  recharge
+  escrow_debit
+  escrow_release
+  escrow_refund
+  commission
+  retrait
+}
+
+/// Cycle de vie d'une commande en séquestre — voir server/utils/escrowOrderStore.ts (#194-#197).
+enum EscrowOrderStatus {
+  awaiting_payment
+  in_escrow
+  delivered
+  released
+  refunded
+  disputed
+}
+
 /// Compte utilisateur (client ou prestataire) — voir server/utils/userStore.ts.
 model User {
   id        String   @id @default(uuid())
@@ -193,4 +213,92 @@ model Payment {
   resolvedAt     DateTime?
 
   @@index([subscriptionId])
+}
+
+// ---------------------------------------------------------------------------
+// Cœur métier encore en mémoire (#46) : portefeuille, séquestre et messagerie.
+//
+// Ces modèles préparent la bascule des stores en mémoire correspondants
+// (walletStore, escrowOrderStore, conversationStore) vers la base — ils ne
+// sont pas encore lus/écrits par l'application (le wiring est un chantier de
+// suivi, à réaliser une fois la cible d'hébergement/base tranchée). Ils sont
+// modélisés fidèlement à la forme actuelle des stores pour servir de socle.
+// ---------------------------------------------------------------------------
+
+/// Mouvement (append-only) du portefeuille interne — voir server/utils/walletStore.ts (#192).
+/// Le solde n'est jamais stocké : il se recalcule à partir de ces mouvements.
+model WalletMovement {
+  id                 String             @id @default(uuid())
+  /// Titulaire du portefeuille (id utilisateur, ou PLATFORM_WALLET_USER_ID pour la plateforme).
+  walletUserId       String
+  type               WalletMovementType
+  /// Toujours positif ; le sens (crédit/débit) dépend uniquement de `type`.
+  amount             Int
+  /// Référence externe (id paiement mobile money) ou interne (id commande séquestre).
+  reference          String
+  /// Autre utilisateur concerné quand pertinent (ex. le prestataire payé).
+  counterpartyUserId String?
+  createdAt          DateTime           @default(now())
+
+  @@index([walletUserId])
+}
+
+/// Commande en séquestre liée à une conversation — voir server/utils/escrowOrderStore.ts (#194-#197).
+model EscrowOrder {
+  id            String            @id @default(uuid())
+  conversationId String           @unique
+  clientId      String
+  providerId    String
+  amount        Int
+  status        EscrowOrderStatus @default(awaiting_payment)
+  createdAt     DateTime          @default(now())
+  paidAt        DateTime?
+  deliveredAt   DateTime?
+  releasedAt    DateTime?
+  cancelledAt   DateTime?
+  /// Motif obligatoire de l'annulation prestataire (#196).
+  cancelReason  String?
+  disputedAt    DateTime?
+  /// Motif du litige ouvert par le chercheur (#197).
+  disputeReason String?
+
+  @@index([status])
+}
+
+/// Fil de messagerie entre un client et un prestataire — voir server/utils/conversationStore.ts (#59, #129).
+model Conversation {
+  id               String    @id @default(uuid())
+  clientId         String
+  providerId       String
+  /// Formulaire obligatoire de première prise de contact déjà soumis (#129) ?
+  firstContactDone Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+
+  messages Message[]
+  reads    ConversationRead[]
+
+  @@unique([clientId, providerId])
+}
+
+/// Message d'un fil de conversation — voir server/utils/conversationStore.ts (#59).
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  senderRole     Role
+  body           String
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+}
+
+/// Dernière lecture d'un fil par un utilisateur (compteur de non-lus, #225).
+model ConversationRead {
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  lastReadAt     DateTime
+
+  @@id([conversationId, userId])
 }
