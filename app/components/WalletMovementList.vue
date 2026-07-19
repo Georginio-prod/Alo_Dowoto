@@ -13,6 +13,7 @@ const TYPE_LABELS: Record<WalletMovementType, string> = {
   escrow_release: 'Paiement reçu (séquestre libéré)',
   escrow_refund: 'Remboursement',
   commission: 'Commission WorkTogo',
+  retrait: 'Retrait',
 }
 
 const typeFilter = ref<'all' | WalletMovementType>('all')
@@ -32,7 +33,7 @@ const filteredMovements = computed(() => {
 })
 
 function isCredit(type: WalletMovementType): boolean {
-  return type !== 'escrow_debit'
+  return type !== 'escrow_debit' && type !== 'retrait'
 }
 
 function formatDate(timestamp: number): string {

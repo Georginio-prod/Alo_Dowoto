@@ -48,6 +48,7 @@ enum WalletMovementType {
   escrow_release
   escrow_refund
   commission
+  retrait
 }
 
 /// Cycle de vie d'une commande en séquestre — voir server/utils/escrowOrderStore.ts (#194-#197).

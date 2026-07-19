@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { describe, expect, it, vi } from 'vitest'
-import { creditWallet, debitWallet, getBalance, listMovements } from '~~/server/utils/walletStore'
+import { MIN_WITHDRAWAL_AMOUNT, creditWallet, debitWallet, getBalance, listMovements, requestWithdrawal } from '~~/server/utils/walletStore'
 
 function userId(): string {
   return randomUUID()
@@ -94,5 +94,38 @@ describe('walletStore (#192 modèle de données du solde & traçabilité)', () =
     spy.mockRestore()
 
     expect(listMovements(user).map((m) => m.reference)).toEqual(['C', 'B', 'A'])
+  })
+})
+
+describe('requestWithdrawal — retrait prestataire (« Solde », dashboard prestataire)', () => {
+  it('débite le portefeuille et journalise un mouvement "retrait" quand les fonds sont suffisants', () => {
+    const provider = userId()
+    creditWallet({ walletUserId: provider, type: 'escrow_release', amount: 20000, reference: 'ORDER-1' })
+
+    const result = requestWithdrawal(provider, MIN_WITHDRAWAL_AMOUNT)
+
+    expect(result.ok).toBe(true)
+    expect(getBalance(provider)).toBe(20000 - MIN_WITHDRAWAL_AMOUNT)
+    if (result.ok) expect(result.movement.type).toBe('retrait')
+  })
+
+  it('refuse un montant sous le retrait minimum, sans journaliser de mouvement', () => {
+    const provider = userId()
+    creditWallet({ walletUserId: provider, type: 'escrow_release', amount: 20000, reference: 'ORDER-1' })
+
+    const result = requestWithdrawal(provider, MIN_WITHDRAWAL_AMOUNT - 1)
+
+    expect(result).toEqual({ ok: false, error: 'below_minimum' })
+    expect(getBalance(provider)).toBe(20000)
+  })
+
+  it('refuse un retrait si le solde est insuffisant', () => {
+    const provider = userId()
+    creditWallet({ walletUserId: provider, type: 'escrow_release', amount: MIN_WITHDRAWAL_AMOUNT, reference: 'ORDER-1' })
+
+    const result = requestWithdrawal(provider, MIN_WITHDRAWAL_AMOUNT + 1000)
+
+    expect(result).toEqual({ ok: false, error: 'insufficient_funds' })
+    expect(getBalance(provider)).toBe(MIN_WITHDRAWAL_AMOUNT)
   })
 })
