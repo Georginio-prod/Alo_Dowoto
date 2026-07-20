@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createServiceRequestSchema } from '~~/server/utils/apiValidation'
+import { createServiceRequestSchema, isValidCoordinatePair } from '~~/server/utils/apiValidation'
 
 /** Corps valide de référence, cloné et altéré dans chaque cas. */
 function validBody() {
@@ -66,5 +66,23 @@ describe('createServiceRequestSchema (#43, validation POST /api/requests)', () =
       expect(result.data.description).toBe('')
       expect(result.data.sector).toBeUndefined()
     }
+  })
+})
+
+describe('isValidCoordinatePair (géolocalisation optionnelle à l\'inscription, POST /api/auth/session)', () => {
+  it('accepte une paire de nombres dans les plages GPS valides', () => {
+    expect(isValidCoordinatePair(6.1319, 1.2228)).toBe(true)
+    expect(isValidCoordinatePair(-90, -180)).toBe(true)
+    expect(isValidCoordinatePair(90, 180)).toBe(true)
+    expect(isValidCoordinatePair(0, 0)).toBe(true)
+  })
+
+  it('rejette les valeurs hors plage, non numériques, absentes ou NaN', () => {
+    expect(isValidCoordinatePair(91, 1.2228)).toBe(false)
+    expect(isValidCoordinatePair(6.1319, 181)).toBe(false)
+    expect(isValidCoordinatePair('6.13', 1.2228)).toBe(false)
+    expect(isValidCoordinatePair(undefined, undefined)).toBe(false)
+    expect(isValidCoordinatePair(6.1319, undefined)).toBe(false)
+    expect(isValidCoordinatePair(Number.NaN, 1.2228)).toBe(false)
   })
 })

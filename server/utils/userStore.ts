@@ -23,6 +23,9 @@ export interface User {
   firstName: string
   lastName: string
   location: string
+  /** Coordonnées GPS réelles, capturées en option via la géolocalisation du navigateur à l'inscription. */
+  latitude?: number
+  longitude?: number
 }
 
 export interface NewUserProfile {
@@ -30,6 +33,8 @@ export interface NewUserProfile {
   firstName: string
   lastName: string
   location: string
+  latitude?: number
+  longitude?: number
 }
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000
@@ -47,6 +52,8 @@ function toUser(row: PrismaUser): User {
     firstName: row.firstName,
     lastName: row.lastName,
     location: row.location,
+    ...(row.latitude !== null ? { latitude: row.latitude } : {}),
+    ...(row.longitude !== null ? { longitude: row.longitude } : {}),
   }
 }
 
@@ -83,6 +90,8 @@ export async function findOrCreateUser(
       firstName: profile.firstName.trim(),
       lastName: profile.lastName.trim(),
       location: profile.location.trim(),
+      latitude: profile.latitude ?? null,
+      longitude: profile.longitude ?? null,
     },
   })
   return { user: toUser(row), created: true }
@@ -177,6 +186,8 @@ export interface PublicUser {
   firstName: string
   lastName: string
   location: string
+  latitude?: number
+  longitude?: number
   /** Identité vérifiée (carte d'identité + photo passeport, voir server/utils/verificationStore.ts). */
   verified: boolean
 }
@@ -193,6 +204,8 @@ export function toPublicUser(user: User): PublicUser {
     firstName: user.firstName,
     lastName: user.lastName,
     location: user.location,
+    ...(user.latitude !== undefined ? { latitude: user.latitude } : {}),
+    ...(user.longitude !== undefined ? { longitude: user.longitude } : {}),
     verified: isVerified(user.id),
   }
 }

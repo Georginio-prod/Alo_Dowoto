@@ -112,3 +112,17 @@ export const disputeEscrowSchema = z.object({
 export const cancelEscrowSchema = z.object({
   reason: requiredTrimmed("Le motif d'annulation est obligatoire."),
 })
+
+/**
+ * Valide une paire de coordonnées GPS (même plage que
+ * `server/api/conversations/[id]/share-location.post.ts`). Utilisée pour les
+ * coordonnées optionnelles de `POST /api/auth/session` (géolocalisation à
+ * l'inscription) : une paire invalide/partielle n'est pas une erreur 400 —
+ * elle est simplement ignorée par l'appelant, donc une fonction plutôt qu'un
+ * schéma zod branché sur `readSchemaBody`.
+ */
+export function isValidCoordinatePair(lat: unknown, lng: unknown): boolean {
+  return typeof lat === 'number' && typeof lng === 'number'
+    && !Number.isNaN(lat) && !Number.isNaN(lng)
+    && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180
+}

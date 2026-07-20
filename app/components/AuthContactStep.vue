@@ -16,6 +16,9 @@ export interface SignupProfile {
   firstName: string
   lastName: string
   location: string
+  /** Coordonnées GPS réelles, capturées en option via « Utiliser ma position actuelle ». */
+  latitude?: number
+  longitude?: number
 }
 
 export interface PendingGoogleSignup {
@@ -47,6 +50,61 @@ const username = ref('')
 const firstName = ref(props.google?.firstName ?? '')
 const lastName = ref(props.google?.lastName ?? '')
 const location = ref('')
+const locationCoords = ref<{ latitude: number; longitude: number } | null>(null)
+const isLocating = ref(false)
+const locationHint = ref('')
+
+/**
+ * Détection automatique de la localisation, en option (bouton à côté du
+ * champ ville) : capture les coordonnées GPS réelles via la géolocalisation
+ * du navigateur (même pattern que MessageBubble.vue#shareLocation), puis
+ * tente un géocodage inverse (Nominatim/OpenStreetMap, pas de clé requise)
+ * pour préremplir le nom de ville — modifiable ensuite par l'utilisateur.
+ * Le champ ville reste la donnée obligatoire ; si le géocodage échoue, les
+ * coordonnées sont quand même conservées et envoyées à l'inscription.
+ */
+async function useMyLocation() {
+  if (isLocating.value) return
+  if (!('geolocation' in navigator)) {
+    locationHint.value = "La géolocalisation n'est pas disponible sur cet appareil."
+    return
+  }
+  isLocating.value = true
+  locationHint.value = ''
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const latitude = position.coords.latitude
+      const longitude = position.coords.longitude
+      locationCoords.value = { latitude, longitude }
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&accept-language=fr`,
+        )
+        const data = await response.json()
+        const city: string | undefined
+          = data?.address?.city ?? data?.address?.town ?? data?.address?.village
+            ?? data?.address?.municipality ?? data?.address?.county
+        if (city) {
+          location.value = city
+          locationHint.value = 'Position détectée.'
+        } else {
+          locationHint.value = 'Position détectée — précisez votre ville ci-dessus.'
+        }
+      } catch {
+        // Géocodage inverse indisponible (réseau, service tiers) : les
+        // coordonnées restent capturées et seront envoyées quand même,
+        // seul le préremplissage automatique du nom de ville échoue.
+        locationHint.value = 'Position détectée — précisez votre ville ci-dessus.'
+      } finally {
+        isLocating.value = false
+      }
+    },
+    () => {
+      locationHint.value = "Localisation refusée ou indisponible. Renseignez votre ville manuellement."
+      isLocating.value = false
+    },
+  )
+}
 
 const contactValue = computed(() => (method.value === 'phone' ? phone.value : email.value))
 const isSignup = computed(() => props.mode === 'signup')
@@ -81,6 +139,9 @@ async function submit() {
         firstName: firstName.value.trim(),
         lastName: lastName.value.trim(),
         location: location.value.trim(),
+        ...(locationCoords.value
+          ? { latitude: locationCoords.value.latitude, longitude: locationCoords.value.longitude }
+          : {}),
       }
     : undefined
 
@@ -189,14 +250,26 @@ async function submit() {
       </div>
 
       <label for="auth-location" class="mb-1.5 block text-[13px] font-semibold text-dark">Localisation</label>
-      <input
-        id="auth-location"
-        v-model="location"
-        type="text"
-        placeholder="Ex. Lomé, Kara…"
-        aria-label="Localisation"
-        class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
-      >
+      <div class="mb-1.5 flex gap-2">
+        <input
+          id="auth-location"
+          v-model="location"
+          type="text"
+          placeholder="Ex. Lomé, Kara…"
+          aria-label="Localisation"
+          class="h-[46px] min-w-0 flex-1 rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
+        >
+        <button
+          type="button"
+          class="press h-[46px] shrink-0 rounded-field border-[1.5px] border-hairline bg-white px-3 text-[13px] font-semibold text-dark hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-45"
+          :disabled="isLocating"
+          @click="useMyLocation"
+        >
+          {{ isLocating ? '…' : '📍 Ma position' }}
+        </button>
+      </div>
+      <p v-if="locationHint" class="mb-3.5 text-[12px] text-muted">{{ locationHint }}</p>
+      <p v-else class="mb-3.5 text-[11.5px] text-muted">Optionnel : détecte automatiquement votre position exacte.</p>
     </template>
 
     <template v-if="!isGoogleSignup">

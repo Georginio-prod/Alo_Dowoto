@@ -14,6 +14,9 @@ interface CreateSessionBody {
   firstName?: string
   lastName?: string
   location?: string
+  /** Coordonnées GPS réelles, capturées en option via la géolocalisation du navigateur. */
+  latitude?: number
+  longitude?: number
 }
 
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
@@ -34,12 +37,18 @@ export default defineEventHandler(async (event) => {
     unauthorized("Ce contact n'a pas été vérifié par code OTP (voir /api/auth/otp/verify).")
   }
 
+  // Coordonnées optionnelles : une paire invalide/partielle est simplement
+  // ignorée plutôt que de faire échouer l'inscription — ce n'est qu'un bonus
+  // par rapport à la ville en texte libre (obligatoire, voir `location`).
+  const hasValidCoords = isValidCoordinatePair(body.latitude, body.longitude)
+
   const role = body.role === 'client' || body.role === 'prestataire' ? body.role : undefined
   const { user, created } = await findOrCreateUser(contact, role, {
     username: body.username ?? '',
     firstName: body.firstName ?? '',
     lastName: body.lastName ?? '',
     location: body.location ?? '',
+    ...(hasValidCoords ? { latitude: body.latitude, longitude: body.longitude } : {}),
   })
 
   // Compte existant déjà finalisé : le mot de passe créé à l'inscription

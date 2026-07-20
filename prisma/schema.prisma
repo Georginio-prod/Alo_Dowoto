@@ -83,6 +83,14 @@ model User {
   lastName  String @default("")
   location  String @default("")
 
+  /// Coordonnées GPS réelles, capturées en option à l'inscription via la
+  /// géolocalisation du navigateur (bouton « Utiliser ma position actuelle »)
+  /// — contrairement à `location` (ville en texte libre, saisie ou déduite
+  /// par géocodage inverse), ce sont des coordonnées exactes. `null` si
+  /// l'utilisateur n'a pas utilisé/autorisé l'option.
+  latitude  Float?
+  longitude Float?
+
   sessions        Session[]
   providerProfile ProviderProfile?
   subscriptions   Subscription[]

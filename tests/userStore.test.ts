@@ -73,3 +73,25 @@ describe('userStore — profil obligatoire à la création (nom d\'utilisateur, 
     expect(user.username).toBe('marie90')
   })
 })
+
+describe('userStore — coordonnées GPS optionnelles (géolocalisation à l\'inscription)', () => {
+  it('persiste latitude/longitude quand fournies et les restitue via toPublicUser', async () => {
+    const { user } = await findOrCreateUser('+22891112240', 'client', {
+      ...TEST_PROFILE,
+      latitude: 6.1319,
+      longitude: 1.2228,
+    })
+    expect(user.latitude).toBe(6.1319)
+    expect(user.longitude).toBe(1.2228)
+    expect(toPublicUser(user).latitude).toBe(6.1319)
+    expect(toPublicUser(user).longitude).toBe(1.2228)
+  })
+
+  it('reste absent (undefined) quand la géolocalisation n\'a pas été utilisée', async () => {
+    const { user } = await findOrCreateUser('+22891112241', 'client', TEST_PROFILE)
+    expect(user.latitude).toBeUndefined()
+    expect(user.longitude).toBeUndefined()
+    expect(toPublicUser(user)).not.toHaveProperty('latitude')
+    expect(toPublicUser(user)).not.toHaveProperty('longitude')
+  })
+})

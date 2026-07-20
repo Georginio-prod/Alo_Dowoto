@@ -80,6 +80,8 @@ async function submitSignupPassword() {
         firstName: props.profile?.firstName,
         lastName: props.profile?.lastName,
         location: props.profile?.location,
+        latitude: props.profile?.latitude,
+        longitude: props.profile?.longitude,
       },
     })
     await $fetch('/api/auth/password', {
