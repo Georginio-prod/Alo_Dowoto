@@ -1,6 +1,17 @@
 <script setup lang="ts">
+import type { Component } from 'vue'
 import type { ProviderProfile } from '~~/server/utils/providerStore'
 import type { Subscription } from '~~/server/utils/subscriptionStore'
+import CertificationsForm from '~/components/CertificationsForm.vue'
+import ContactForm from '~/components/ContactForm.vue'
+import CvForm from '~/components/CvForm.vue'
+import FormationForm from '~/components/FormationForm.vue'
+import IdentiteForm from '~/components/IdentiteForm.vue'
+import IdentityVerificationForm from '~/components/IdentityVerificationForm.vue'
+import LanguagesForm from '~/components/LanguagesForm.vue'
+import PasswordForm from '~/components/PasswordForm.vue'
+import PreferencesForm from '~/components/PreferencesForm.vue'
+import ProfessionalProfileForm from '~/components/ProfessionalProfileForm.vue'
 
 /**
  * Hub profil (chercheur et prestataire) : vue d'ensemble inspirée d'une
@@ -108,17 +119,17 @@ type ModalKey =
  * prestataire (`/api/providers/me`) ont besoin d'un rafraîchissement
  * explicite ici pour que les badges du hub restent à jour.
  */
-const MODAL_CONFIG: Record<ModalKey, { title: string; component: string; refreshOnSave: boolean }> = {
-  identite: { title: 'Identité', component: 'IdentiteForm', refreshOnSave: false },
-  verification: { title: "Vérification d'identité", component: 'IdentityVerificationForm', refreshOnSave: false },
-  password: { title: 'Changer le mot de passe', component: 'PasswordForm', refreshOnSave: false },
-  'profil-professionnel': { title: 'Profil professionnel', component: 'ProfessionalProfileForm', refreshOnSave: true },
-  cv: { title: 'CV', component: 'CvForm', refreshOnSave: true },
-  langues: { title: 'Langues', component: 'LanguagesForm', refreshOnSave: true },
-  formation: { title: 'Formation', component: 'FormationForm', refreshOnSave: true },
-  certifications: { title: 'Certifications', component: 'CertificationsForm', refreshOnSave: true },
-  preferences: { title: 'Préférences', component: 'PreferencesForm', refreshOnSave: true },
-  coordonnees: { title: 'Coordonnées', component: 'ContactForm', refreshOnSave: true },
+const MODAL_CONFIG: Record<ModalKey, { title: string; component: Component; refreshOnSave: boolean }> = {
+  identite: { title: 'Identité', component: IdentiteForm, refreshOnSave: false },
+  verification: { title: "Vérification d'identité", component: IdentityVerificationForm, refreshOnSave: false },
+  password: { title: 'Changer le mot de passe', component: PasswordForm, refreshOnSave: false },
+  'profil-professionnel': { title: 'Profil professionnel', component: ProfessionalProfileForm, refreshOnSave: true },
+  cv: { title: 'CV', component: CvForm, refreshOnSave: true },
+  langues: { title: 'Langues', component: LanguagesForm, refreshOnSave: true },
+  formation: { title: 'Formation', component: FormationForm, refreshOnSave: true },
+  certifications: { title: 'Certifications', component: CertificationsForm, refreshOnSave: true },
+  preferences: { title: 'Préférences', component: PreferencesForm, refreshOnSave: true },
+  coordonnees: { title: 'Coordonnées', component: ContactForm, refreshOnSave: true },
 }
 
 const activeModal = ref<ModalKey | null>(null)
