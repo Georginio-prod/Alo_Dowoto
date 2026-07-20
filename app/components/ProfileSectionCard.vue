@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { NuxtLink } from '#components'
+import type { Component } from 'vue'
+
 /**
  * Carte de section du hub profil (chercheur `/profil` et prestataire
  * `/profil`), inspirée d'une maquette de référence fournie par
@@ -12,6 +15,16 @@
  *   fenêtre de la section depuis le hub, sans navigation.
  * - Ni l'un ni l'autre : carte informative non cliquable, sans statut (ex.
  *   « Avis reçus », « Compétences »).
+ *
+ * `tag` doit être la RÉFÉRENCE du composant NuxtLink (importée de
+ * `#components`), pas la chaîne `'NuxtLink'` : NuxtLink n'est pas
+ * enregistré dans le registre global de Vue (seul un usage statique
+ * `<NuxtLink>` dans un template est résolu par l'auto-import de Nuxt), donc
+ * `<component :is="'NuxtLink'">` échoue silencieusement et rend un élément
+ * `<nuxtlink>` inerte — carte cliquable en apparence, mais qui ne navigue
+ * jamais (bug constaté sur la carte « Abonnement »). `'button'`/`'div'`
+ * restent des chaînes : ce sont des balises HTML natives, toujours
+ * résolubles.
  */
 const props = withDefaults(
   defineProps<{
@@ -25,7 +38,7 @@ const props = withDefaults(
   { complete: false, to: undefined, interactive: false },
 )
 
-const tag = computed(() => (props.to ? 'NuxtLink' : props.interactive ? 'button' : 'div'))
+const tag = computed<Component | string>(() => (props.to ? NuxtLink : props.interactive ? 'button' : 'div'))
 const showBadge = computed(() => !!props.to || props.interactive)
 </script>
 
