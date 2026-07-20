@@ -28,6 +28,28 @@ const messages = computed(() => data.value?.messages ?? [])
 const currentUserId = computed(() => sessionUser.value?.id ?? '')
 const currentUserContact = computed(() => sessionUser.value?.contact ?? '')
 
+// Défilement automatique vers le dernier message (chargement initial, envoi,
+// ou nouveau message automatique WorkTogo) : le fil vit dans un conteneur
+// `overflow-y-auto` propre, sans quoi un message ajouté après coup (ex. la
+// confirmation du prestataire, la demande de localisation) reste invisible
+// sous le pli tant que le lecteur ne scrolle pas manuellement. `onMounted`
+// gère la position initiale (les données sont déjà résolues via SSR à ce
+// stade, donc le `watch` seul — dont le premier déclenchement `immediate`
+// tombe pendant `setup()`, avant que la ref du template ne soit attachée —
+// ne suffit pas à positionner le scroll au premier rendu).
+const messageListEl = ref<HTMLElement | null>(null)
+function scrollMessagesToBottom() {
+  if (messageListEl.value) messageListEl.value.scrollTop = messageListEl.value.scrollHeight
+}
+onMounted(async () => {
+  await nextTick()
+  scrollMessagesToBottom()
+})
+watch(() => messages.value.length, async () => {
+  await nextTick()
+  scrollMessagesToBottom()
+})
+
 // Formulaire obligatoire de première prise de contact (#129) : uniquement
 // pour le client, une seule fois par conversation (le serveur fait foi via
 // `conversation.firstContactDone`, recalculé à chaque chargement).
@@ -81,6 +103,15 @@ function onEscrowStatusChanged() {
   refresh()
 }
 
+// Confirmation de prise en charge et partage de localisation
+// (#hub-messages-automatiques) : logique de mutation possédée par
+// MessageBubble.vue (comme EscrowStatusPanel.vue pour le séquestre), cette
+// page ne fait que rafraîchir le fil quand le composant émet `changed`.
+function onMessageActionChanged() {
+  refresh()
+  refreshConversationList()
+}
+
 const draft = ref('')
 const isSending = ref(false)
 const sendError = ref('')
@@ -97,15 +128,6 @@ const reviewError = ref('')
 const reviewJustSubmitted = ref(false)
 
 const alreadyReviewed = computed(() => conversation.value?.alreadyReviewed === true || reviewJustSubmitted.value)
-
-function formatTime(timestamp: number): string {
-  return new Date(timestamp).toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
 
 async function sendMessage() {
   const text = draft.value.trim()
@@ -228,29 +250,21 @@ async function submitReview() {
           @changed="onEscrowStatusChanged"
         />
 
-        <div class="flex-1 space-y-3 overflow-y-auto pb-4">
+        <div ref="messageListEl" class="flex-1 space-y-3 overflow-y-auto pb-4">
           <p v-if="messages.length === 0" class="text-center text-[13px] text-muted">
             Aucun message. Écrivez le premier pour démarrer la conversation.
           </p>
 
-          <div
+          <MessageBubble
             v-for="message in messages"
             :key="message.id"
-            class="flex"
-            :class="message.senderId === currentUserId ? 'justify-end' : 'justify-start'"
-          >
-            <div
-              class="max-w-[75%] rounded-card px-3.5 py-2.5 text-[13.5px]"
-              :class="
-                message.senderId === currentUserId
-                  ? 'bg-dark text-white'
-                  : 'border border-hairline bg-surface text-dark'
-              "
-            >
-              <p>{{ message.body }}</p>
-              <p class="mt-1 text-[10.5px] opacity-70">{{ formatTime(message.createdAt) }}</p>
-            </div>
-          </div>
+            :message="message"
+            :conversation-id="conversationId"
+            :current-user-id="currentUserId"
+            :is-viewer-provider="isViewerProvider"
+            :is-viewer-client="isViewerClient"
+            @changed="onMessageActionChanged"
+          />
         </div>
 
         <form class="flex shrink-0 gap-2 border-t border-hairline pt-4" @submit.prevent="sendMessage">

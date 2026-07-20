@@ -33,14 +33,41 @@ export interface Conversation {
   firstContactDone: boolean
 }
 
+/**
+ * `text` : message classique, écrit par le client ou le prestataire.
+ * `order_confirmation` : message automatique WorkTogo demandant au
+ * prestataire de confirmer la prise en charge de la commande (envoyé dès le
+ * paiement, voir conversations/[id]/pay.post.ts) — actionnable tant que
+ * `resolvedAt` est `null`.
+ * `location_request` : message automatique WorkTogo demandant au chercheur
+ * de valider le partage de sa localisation (envoyé dès que le prestataire
+ * confirme, voir conversations/[id]/confirm-order.post.ts) — actionnable
+ * tant que `resolvedAt` est `null`.
+ * `location_shared` : localisation effectivement partagée par le chercheur
+ * (voir conversations/[id]/share-location.post.ts), coordonnées dans
+ * `location`.
+ */
+export type MessageKind = 'text' | 'order_confirmation' | 'location_request' | 'location_shared'
+
+/** `system` : message automatique WorkTogo, pas d'utilisateur réel derrière (voir `WORKTOGO_SYSTEM_SENDER_ID`). */
+export type MessageSenderRole = Role | 'system'
+
 export interface Message {
   id: string
   conversationId: string
   senderId: string
-  senderRole: Role
+  senderRole: MessageSenderRole
   body: string
+  kind: MessageKind
+  /** Coordonnées transmises pour un message `location_shared`, sinon `null`. */
+  location: { lat: number; lng: number } | null
+  /** Horodatage de la réponse à un message actionnable (`order_confirmation`/`location_request`), sinon `null`. */
+  resolvedAt: number | null
   createdAt: number
 }
+
+/** Émetteur conventionnel des messages automatiques WorkTogo (pas un vrai compte, voir `addSystemMessage`). */
+export const WORKTOGO_SYSTEM_SENDER_ID = 'worktogo-system'
 
 export interface ConversationSummary extends Conversation {
   /** Nom affiché de l'autre partie du point de vue de l'utilisateur qui consulte. */
@@ -141,14 +168,54 @@ function unreadCountFor(conversationId: string, viewerId: string): number {
   return messages.filter((message) => message.senderId !== viewerId && message.createdAt > lastReadAt).length
 }
 
-export function addMessage(conversationId: string, senderId: string, senderRole: Role, body: string): Message {
-  const message: Message = { id: randomUUID(), conversationId, senderId, senderRole, body, createdAt: Date.now() }
+export function addMessage(
+  conversationId: string,
+  senderId: string,
+  senderRole: MessageSenderRole,
+  body: string,
+  options?: { kind?: MessageKind; location?: { lat: number; lng: number } },
+): Message {
+  const message: Message = {
+    id: randomUUID(),
+    conversationId,
+    senderId,
+    senderRole,
+    body,
+    kind: options?.kind ?? 'text',
+    location: options?.location ?? null,
+    resolvedAt: null,
+    createdAt: Date.now(),
+  }
   const list = messagesByConversationId.get(conversationId)
   if (!list) {
     messagesByConversationId.set(conversationId, [message])
   } else {
     list.push(message)
   }
+  return message
+}
+
+/**
+ * Poste un message automatique WorkTogo (#hub-messages-automatiques) —
+ * confirmation de prise en charge, demande de partage de localisation…
+ * Jamais envoyé par un vrai utilisateur, voir `WORKTOGO_SYSTEM_SENDER_ID`.
+ */
+export function addSystemMessage(conversationId: string, body: string, kind: MessageKind = 'text'): Message {
+  return addMessage(conversationId, WORKTOGO_SYSTEM_SENDER_ID, 'system', body, { kind })
+}
+
+/** Dernier message actionnable non résolu d'un type donné, pour valider une action côté client (confirmer/partager) sans état supplémentaire. */
+export function findLatestUnresolvedMessage(conversationId: string, kind: MessageKind): Message | null {
+  const messages = messagesByConversationId.get(conversationId) ?? []
+  const match = messages.findLast((message) => message.kind === kind && message.resolvedAt === null)
+  return match ?? null
+}
+
+/** Marque un message actionnable comme résolu (une réponse ne peut être apportée qu'une seule fois). */
+export function resolveMessage(conversationId: string, messageId: string): Message | null {
+  const message = (messagesByConversationId.get(conversationId) ?? []).find((m) => m.id === messageId)
+  if (!message) return null
+  message.resolvedAt = Date.now()
   return message
 }
 
