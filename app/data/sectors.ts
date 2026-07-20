@@ -1,6 +1,5 @@
 export interface SubSector {
   name: string
-  icon?: string
 }
 
 export interface Sector {
@@ -20,11 +19,11 @@ export const SECTORS: Sector[] = [
     color: '#D97706',
     ink: '#1A1A1A',
     subSectors: [
-      { name: 'Menuiserie', icon: '/images/sectors/menuiserie.png' },
-      { name: 'Maçonnerie', icon: '/images/sectors/maconnerie.png' },
-      { name: 'Plomberie', icon: '/images/sectors/plomberie.png' },
-      { name: 'Électricité', icon: '/images/sectors/electricite.png' },
-      { name: 'Peinture & décoration', icon: '/images/sectors/peinture.png' },
+      { name: 'Menuiserie' },
+      { name: 'Maçonnerie' },
+      { name: 'Plomberie' },
+      { name: 'Électricité' },
+      { name: 'Peinture & décoration' },
       { name: 'Soudure & métallerie' },
     ],
   },
@@ -49,9 +48,9 @@ export const SECTORS: Sector[] = [
     color: '#14A800',
     ink: '#FFFFFF',
     subSectors: [
-      { name: 'Ménage à domicile', icon: '/images/sectors/menage.png' },
+      { name: 'Ménage à domicile' },
       { name: 'Repassage' },
-      { name: 'Jardinage', icon: '/images/sectors/jardinage.png' },
+      { name: 'Jardinage' },
       { name: "Garde d'enfants" },
       { name: 'Cuisine à domicile' },
     ],
