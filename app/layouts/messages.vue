@@ -15,6 +15,12 @@ const isConversationOpen = computed(() => route.path !== '/messages')
 
 <template>
   <div class="flex h-screen flex-col bg-bg text-ink">
+    <div class="mx-auto flex w-full max-w-[1200px] shrink-0 items-center border-x border-b border-hairline bg-surface px-4 py-2.5">
+      <NuxtLink to="/" class="press flex items-center gap-1.5 text-[13.5px] font-semibold text-muted hover:text-dark" aria-label="Retour à l'accueil">
+        ← Retour
+      </NuxtLink>
+    </div>
+
     <div class="mx-auto flex w-full max-w-[1200px] flex-1 overflow-hidden border-x border-hairline bg-surface">
       <aside
         class="w-full shrink-0 overflow-hidden border-r border-hairline sm:w-[340px]"
