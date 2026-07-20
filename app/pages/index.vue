@@ -5,6 +5,12 @@ const { open: openChoiceModal } = useChoiceModal()
 const { user: sessionUser, ensure } = useSession()
 await ensure()
 
+// Un prestataire connecté n'a pas d'usage pour la vitrine publique (recherche
+// de prestataires) : son "accueil" est son espace de gestion des demandes.
+if (sessionUser.value?.role === 'prestataire') {
+  await navigateTo('/prestataire')
+}
+
 const activeSector = ref<Sector | null>(null)
 
 function openSectorDrawer(sector: Sector) {
