@@ -63,3 +63,52 @@ export const createServiceRequestSchema = z.object({
   location: requiredTrimmed('La localisation est requise.'),
   sector: z.string().optional(),
 })
+
+/**
+ * Corps de `POST /api/payments/initiate` (#34, paiement d'abonnement mobile
+ * money). Ne valide que la forme (opérateur, téléphone non vide) — la
+ * normalisation du numéro (`normalizeContact`) et la résolution de
+ * l'abonnement restent dans le handler, ce ne sont pas des règles de forme.
+ */
+export const initiatePaymentSchema = z.object({
+  subscriptionId: z.string().optional(),
+  provider: z.enum(['flooz', 'tmoney'], { error: 'Opérateur invalide.' }),
+  phone: requiredTrimmed('Entrez un numéro valide (8 chiffres).'),
+})
+
+/** Montant minimum d'une recharge de portefeuille (#193). */
+export const MIN_RECHARGE_AMOUNT = 500
+
+/** Corps de `POST /api/wallet/recharge` (#193, recharge de portefeuille mobile money). */
+export const walletRechargeSchema = z.object({
+  provider: z.enum(['flooz', 'tmoney'], { error: 'Opérateur invalide.' }),
+  phone: requiredTrimmed('Entrez un numéro valide (8 chiffres).'),
+  amount: z
+    .number({ error: `Le montant minimum de recharge est de ${MIN_RECHARGE_AMOUNT} F CFA.` })
+    .refine(
+      (value) => Number.isInteger(value) && value >= MIN_RECHARGE_AMOUNT,
+      `Le montant minimum de recharge est de ${MIN_RECHARGE_AMOUNT} F CFA.`,
+    ),
+})
+
+/**
+ * Corps de `POST /api/wallet/withdraw` (retrait prestataire). Ne valide que
+ * la forme (nombre fini positif) — le minimum de retrait réel est une règle
+ * métier appliquée par `requestWithdrawal` (server/utils/walletStore.ts),
+ * pas dupliquée ici.
+ */
+export const walletWithdrawSchema = z.object({
+  amount: z
+    .number({ error: 'Montant invalide.' })
+    .refine((value) => Number.isFinite(value) && value > 0, 'Montant invalide.'),
+})
+
+/** Corps de `POST /api/conversations/[id]/dispute` (#197, ouverture d'un litige escrow). */
+export const disputeEscrowSchema = z.object({
+  reason: requiredTrimmed('Le motif du litige est obligatoire.'),
+})
+
+/** Corps de `POST /api/conversations/[id]/cancel` (#196, annulation escrow côté prestataire). */
+export const cancelEscrowSchema = z.object({
+  reason: requiredTrimmed("Le motif d'annulation est obligatoire."),
+})

@@ -1,7 +1,3 @@
-interface DisputeBody {
-  reason?: string
-}
-
 /**
  * Le chercheur ouvre un litige au lieu de confirmer la réception (#197,
  * epic #191) : gèle les fonds en séquestre en attendant l'arbitrage d'une
@@ -16,13 +12,9 @@ export default defineEventHandler(async (event) => {
     notFound('Conversation introuvable.')
   }
 
-  const body = await readBody<DisputeBody>(event)
-  const reason = body?.reason?.trim() ?? ''
-  if (!reason) {
-    badRequest('Le motif du litige est obligatoire.')
-  }
+  const body = await readSchemaBody(event, disputeEscrowSchema)
 
-  const result = openEscrowDispute(conversation.id, reason)
+  const result = openEscrowDispute(conversation.id, body.reason)
 
   if (!result.ok) {
     if (result.error === 'not_found') notFound('Aucune commande à contester pour cette conversation.')

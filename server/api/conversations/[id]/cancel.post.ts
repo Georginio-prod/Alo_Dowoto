@@ -1,7 +1,3 @@
-interface CancelEscrowBody {
-  reason?: string
-}
-
 /**
  * Le prestataire annule la commande après le débit du chercheur (#196,
  * epic #191) : remboursement intégral et automatique, motif obligatoire.
@@ -15,13 +11,9 @@ export default defineEventHandler(async (event) => {
     notFound('Conversation introuvable.')
   }
 
-  const body = await readBody<CancelEscrowBody>(event)
-  const reason = body?.reason?.trim() ?? ''
-  if (!reason) {
-    badRequest("Le motif d'annulation est obligatoire.")
-  }
+  const body = await readSchemaBody(event, cancelEscrowSchema)
 
-  const result = cancelEscrowOrder(conversation.id, reason)
+  const result = cancelEscrowOrder(conversation.id, body.reason)
 
   if (!result.ok) {
     if (result.error === 'not_found') notFound('Aucune commande à annuler pour cette conversation.')

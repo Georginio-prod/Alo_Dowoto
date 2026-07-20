@@ -1,23 +1,13 @@
 import { findPlan } from '~~/app/data/plans'
 
-interface InitiatePaymentBody {
-  subscriptionId?: string
-  provider?: string
-  phone?: string
-}
-
 const SIMULATED_CONFIRMATION_DELAY_MS = 3000
 
 export default defineEventHandler(async (event) => {
   const user = await requireProviderRole(event)
 
-  const body = await readBody<InitiatePaymentBody>(event)
+  const body = await readSchemaBody(event, initiatePaymentSchema)
 
-  if (body?.provider !== 'flooz' && body?.provider !== 'tmoney') {
-    badRequest('Opérateur invalide.')
-  }
-
-  const phone = normalizeContact('phone', body.phone ?? '')
+  const phone = normalizeContact('phone', body.phone)
   if (!phone) {
     badRequest('Entrez un numéro valide (8 chiffres).')
   }
