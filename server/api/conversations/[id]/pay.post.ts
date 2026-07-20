@@ -3,6 +3,11 @@
  * du chercheur du tarif fixe du prestataire et met la commande en
  * séquestre. Tant que cette route n'a pas été appelée avec succès, le
  * prestataire ne voit pas le détail de la demande (voir messages.get.ts).
+ *
+ * Un message automatique WorkTogo est posté juste après (#hub-messages-automatiques) :
+ * c'est le tout premier instant où le prestataire voit réellement la
+ * conversation, donc le bon moment pour lui demander de confirmer la prise
+ * en charge — voir conversations/[id]/confirm-order.post.ts pour la suite.
  */
 export default defineEventHandler(async (event) => {
   const user = await requireClientRole(event)
@@ -20,6 +25,12 @@ export default defineEventHandler(async (event) => {
     if (result.error === 'already_paid') conflict('Cette commande a déjà été payée.')
     paymentRequired('Solde insuffisant : rechargez votre portefeuille WorkTogo avant de payer cette commande.')
   }
+
+  addSystemMessage(
+    conversation.id,
+    'Nouvelle demande transmise et payée par le chercheur. Confirmez-vous la prise en charge de cette commande ?',
+    'order_confirmation',
+  )
 
   return { order: result.order }
 })

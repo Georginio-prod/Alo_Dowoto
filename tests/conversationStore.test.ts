@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import {
   addMessage,
+  addSystemMessage,
+  findLatestUnresolvedMessage,
   findOrCreateConversation,
   getMessages,
   listConversationsForUser,
   markConversationRead,
   markFirstContactDone,
+  resolveMessage,
   toConversationSummary,
+  WORKTOGO_SYSTEM_SENDER_ID,
 } from '~~/server/utils/conversationStore'
 
 /** Attend le prochain tick d'horloge pour garantir des `createdAt` distincts et déterministes. */
@@ -138,5 +142,68 @@ describe('conversationStore — compteur de non-lus (#225, barre de raccourci me
 
     const providerSummary = await toConversationSummary(conversation, 'p13')
     expect(providerSummary.unreadCount).toBe(1)
+  })
+})
+
+describe('conversationStore — messages automatiques WorkTogo (#hub-messages-automatiques)', () => {
+  it('addSystemMessage crée un message attribué à WorkTogo, pas à un utilisateur réel', () => {
+    const conversation = findOrCreateConversation('client-20', 'p20')
+    const message = addSystemMessage(conversation.id, 'Confirmez-vous la prise en charge ?', 'order_confirmation')
+
+    expect(message.senderId).toBe(WORKTOGO_SYSTEM_SENDER_ID)
+    expect(message.senderRole).toBe('system')
+    expect(message.kind).toBe('order_confirmation')
+    expect(message.resolvedAt).toBeNull()
+  })
+
+  it('un message texte classique a le type "text" et n’est jamais actionnable', () => {
+    const conversation = findOrCreateConversation('client-21', 'p21')
+    const message = addMessage(conversation.id, 'client-21', 'client', 'Bonjour')
+
+    expect(message.kind).toBe('text')
+    expect(message.location).toBeNull()
+  })
+
+  it('findLatestUnresolvedMessage retrouve le dernier message actionnable non résolu de ce type', () => {
+    const conversation = findOrCreateConversation('client-22', 'p22')
+    addSystemMessage(conversation.id, 'Première demande de confirmation', 'order_confirmation')
+    tick()
+    const latest = addSystemMessage(conversation.id, 'Seconde demande de confirmation', 'order_confirmation')
+
+    const found = findLatestUnresolvedMessage(conversation.id, 'order_confirmation')
+    expect(found?.id).toBe(latest.id)
+  })
+
+  it('findLatestUnresolvedMessage ignore les messages déjà résolus', () => {
+    const conversation = findOrCreateConversation('client-23', 'p23')
+    const message = addSystemMessage(conversation.id, 'Confirmez-vous la prise en charge ?', 'order_confirmation')
+    resolveMessage(conversation.id, message.id)
+
+    expect(findLatestUnresolvedMessage(conversation.id, 'order_confirmation')).toBeNull()
+  })
+
+  it('findLatestUnresolvedMessage renvoie null quand aucun message de ce type n’existe (cas limite)', () => {
+    const conversation = findOrCreateConversation('client-24', 'p24')
+    expect(findLatestUnresolvedMessage(conversation.id, 'location_request')).toBeNull()
+  })
+
+  it('resolveMessage marque le message comme résolu et renvoie null pour un id inconnu', () => {
+    const conversation = findOrCreateConversation('client-25', 'p25')
+    const message = addSystemMessage(conversation.id, 'Confirmez-vous la prise en charge ?', 'order_confirmation')
+
+    const resolved = resolveMessage(conversation.id, message.id)
+    expect(resolved?.resolvedAt).not.toBeNull()
+    expect(resolveMessage(conversation.id, 'id-inexistant')).toBeNull()
+  })
+
+  it('addMessage stocke les coordonnées d’un message de localisation partagée', () => {
+    const conversation = findOrCreateConversation('client-26', 'p26')
+    const message = addMessage(conversation.id, 'client-26', 'client', '📍 Localisation partagée avec le prestataire.', {
+      kind: 'location_shared',
+      location: { lat: 6.1319, lng: 1.2228 },
+    })
+
+    expect(message.kind).toBe('location_shared')
+    expect(message.location).toEqual({ lat: 6.1319, lng: 1.2228 })
   })
 })
