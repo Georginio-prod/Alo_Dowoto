@@ -74,11 +74,14 @@ describe('releaseOrderFunds — révélation des coordonnées du chercheur à la
     const conversationId = id()
     const client = id()
     const provider = id()
-    const before = getMessages(conversationId).length
     payAndDeliver(conversationId, client, provider, 3000)
+    // Capturé après la livraison (qui poste déjà le message de notification
+    // d'échéance, #273) pour isoler spécifiquement le comportement de
+    // révélation du contact à la libération des fonds.
+    const beforeRelease = getMessages(conversationId).length
 
     confirmEscrowOrderReceipt(conversationId)
 
-    expect(getMessages(conversationId).length).toBe(before)
+    expect(getMessages(conversationId).length).toBe(beforeRelease)
   })
 })
