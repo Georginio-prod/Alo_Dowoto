@@ -79,6 +79,38 @@ async function handleCancelOrder() {
   }
 }
 
+// Reprogrammation d'intervention (#270) : le prestataire propose un
+// nouveau créneau directement dans l'app, le chercheur confirme depuis la
+// bulle de message correspondante (MessageBubble.vue).
+const showRescheduleForm = ref(false)
+const rescheduleDateTime = ref('')
+const rescheduleNote = ref('')
+const isProposingReschedule = ref(false)
+const rescheduleError = ref('')
+
+async function handleProposeReschedule() {
+  if (isProposingReschedule.value || !rescheduleDateTime.value) return
+  const proposedAt = new Date(rescheduleDateTime.value).getTime()
+  if (!Number.isFinite(proposedAt)) return
+
+  isProposingReschedule.value = true
+  rescheduleError.value = ''
+  try {
+    await $fetch(`/api/conversations/${props.conversationId}/propose-reschedule`, {
+      method: 'POST',
+      body: { proposedAt, note: rescheduleNote.value.trim() || undefined },
+    })
+    rescheduleDateTime.value = ''
+    rescheduleNote.value = ''
+    showRescheduleForm.value = false
+    emit('changed')
+  } catch {
+    rescheduleError.value = "La proposition n'a pas pu être envoyée. Réessayez."
+  } finally {
+    isProposingReschedule.value = false
+  }
+}
+
 // Litige (#197, epic #191) : le chercheur conteste la qualité de la
 // prestation au lieu de confirmer la réception, gèle les fonds en attendant
 // une équipe de médiation WorkTogo.
@@ -124,6 +156,47 @@ async function handleOpenDispute() {
     >
       {{ isDelivering ? 'Envoi…' : 'Marquer comme terminé' }}
     </button>
+
+    <div v-if="escrowOrder.status === 'in_escrow' && isViewerProvider" class="mt-3 border-t border-hairline pt-3">
+      <button
+        v-if="!showRescheduleForm"
+        type="button"
+        class="press text-[12.5px] font-semibold text-primary underline"
+        @click="showRescheduleForm = true"
+      >
+        Proposer un nouveau créneau
+      </button>
+
+      <div v-else class="space-y-2">
+        <input
+          v-model="rescheduleDateTime"
+          type="datetime-local"
+          aria-label="Nouveau créneau proposé"
+          class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
+        >
+        <textarea
+          v-model="rescheduleNote"
+          rows="2"
+          placeholder="Précision (optionnel)"
+          aria-label="Précision sur le nouveau créneau"
+          class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
+        />
+        <div class="flex gap-2">
+          <button
+            type="button"
+            class="press rounded-field bg-primary px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
+            :disabled="!rescheduleDateTime || isProposingReschedule"
+            @click="handleProposeReschedule"
+          >
+            {{ isProposingReschedule ? 'Envoi…' : 'Envoyer la proposition' }}
+          </button>
+          <button type="button" class="press text-[12.5px] text-muted" @click="showRescheduleForm = false">
+            Annuler
+          </button>
+        </div>
+        <p v-if="rescheduleError" class="text-[12.5px] text-error">{{ rescheduleError }}</p>
+      </div>
+    </div>
 
     <p v-else-if="escrowOrder.status === 'in_escrow' && isViewerClient" class="text-[13px] text-muted">
       Paiement en séquestre ({{ escrowOrder.amount.toLocaleString('fr-FR') }} F CFA). Les fonds seront libérés une
