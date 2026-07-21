@@ -61,10 +61,10 @@ export const CGU: LegalPage = {
       ],
     },
     {
-      heading: '8. Garantie de paiement, assurance et mise en avant',
+      heading: '8. Paiement intégral des prestations via la plateforme',
       body: [
-        'La garantie de paiement (fonds du chercheur sécurisés en séquestre jusqu\'à validation de la prestation), toute couverture d\'assurance responsabilité civile associée à une intervention, ainsi que la mise en avant en tête des résultats de recherche liée à la formule d\'abonnement souscrite, ne bénéficient qu\'aux prestations intégralement enregistrées et payées via le système de paiement de la plateforme.',
-        'Aucun de ces avantages n\'est activable ni opposable à WorkTogo pour une prestation convenue, réalisée ou réglée en tout ou partie en dehors de la plateforme, y compris lorsque la mise en relation initiale a eu lieu via WorkTogo.',
+        'Le prix de toute prestation mise en relation via WorkTogo doit être réglé intégralement — sans acompte ni solde résiduel réglé séparément — au moyen du système de paiement en séquestre de la plateforme, avant le début de l\'intervention. Aucune partie du montant convenu ne peut être réglée en espèces ou par tout autre moyen hors plateforme entre le chercheur et le prestataire.',
+        'Cette règle protège le chercheur, dont les fonds restent bloqués en séquestre jusqu\'à validation de la prestation, et le prestataire, dont le paiement est garanti dès la mise en séquestre. Elle s\'applique à l\'intégralité du montant convenu, y compris en cas de modification du périmètre de la prestation en cours d\'intervention.',
       ],
     },
     {
@@ -75,12 +75,13 @@ export const CGU: LegalPage = {
       ],
     },
     {
-      heading: '9. Comportements interdits',
+      heading: '10. Comportements interdits',
       body: ['Il est interdit à tout utilisateur de :'],
       list: [
         'Fournir de fausses informations d\'identité, de compétence ou de tarification ;',
         'Utiliser la plateforme à des fins illicites, frauduleuses ou de démarchage non sollicité ;',
         'Contourner la messagerie ou les quotas par la création de comptes multiples ;',
+        'Régler ou accepter de régler tout ou partie du prix d\'une prestation en espèces ou par tout autre moyen hors plateforme, en contournement de l\'article 8 ;',
         'Publier un contenu injurieux, discriminatoire, diffamatoire ou portant atteinte aux droits d\'un tiers ;',
         'Tenter d\'accéder sans autorisation aux systèmes, comptes ou données d\'autrui.',
       ],
@@ -107,7 +108,7 @@ export const CGU: LegalPage = {
     {
       heading: '14. Suspension, résiliation et suppression de compte',
       body: [
-        'Tout utilisateur peut demander la clôture de son compte à tout moment en contactant le support. WorkTogo peut suspendre ou résilier un compte, avec ou sans préavis selon la gravité des faits, en cas de manquement aux présentes CGU, notamment aux comportements interdits listés à l\'article 9.',
+        'Tout utilisateur peut demander la clôture de son compte à tout moment en contactant le support. WorkTogo peut suspendre ou résilier un compte, avec ou sans préavis selon la gravité des faits, en cas de manquement aux présentes CGU, notamment aux comportements interdits listés à l\'article 10.',
       ],
     },
     {

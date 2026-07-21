@@ -31,6 +31,13 @@ export interface Conversation {
   createdAt: number
   /** Formulaire obligatoire de première prise de contact déjà soumis (#129) ? */
   firstContactDone: boolean
+  /**
+   * Coordonnées brutes du chercheur transmises au premier contact (#129).
+   * Jamais exposées telles quelles dans un message tant que la prestation
+   * n'est pas validée (`released`, voir `escrowOrderStore.ts`) — seule une
+   * version masquée (`contactMask.ts`) apparaît dans le fil (#264, anti-fuite).
+   */
+  clientContact: string | null
 }
 
 /**
@@ -104,6 +111,7 @@ export function findOrCreateConversation(clientId: string, providerId: string): 
     providerId,
     createdAt: Date.now(),
     firstContactDone: false,
+    clientContact: null,
   }
   conversations.set(conversation.id, conversation)
   messagesByConversationId.set(conversation.id, [])
@@ -114,15 +122,21 @@ export function getConversationById(id: string): Conversation | null {
   return conversations.get(id) ?? null
 }
 
-/** Le contact a-t-il déjà été engagé entre ce client et ce prestataire (#127, démasquage des coordonnées) ? */
-export function hasConversation(clientId: string, providerId: string): boolean {
-  return !!findConversation(clientId, providerId)
-}
-
 /** Marque le formulaire de première prise de contact comme soumis (#129), une seule fois par conversation. */
 export function markFirstContactDone(conversationId: string): void {
   const conversation = conversations.get(conversationId)
   if (conversation) conversation.firstContactDone = true
+}
+
+/** Enregistre les coordonnées brutes transmises par le chercheur au premier contact (#129), non exposées avant validation finale (#264). */
+export function setClientContact(conversationId: string, contact: string): void {
+  const conversation = conversations.get(conversationId)
+  if (conversation) conversation.clientContact = contact
+}
+
+/** Coordonnées brutes du chercheur pour cette conversation, ou `null` si non encore transmises (#264). */
+export function getClientContact(conversationId: string): string | null {
+  return conversations.get(conversationId)?.clientContact ?? null
 }
 
 /** Vérifie que l'utilisateur fait partie de la conversation (client ou prestataire). */
