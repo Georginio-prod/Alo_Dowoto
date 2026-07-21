@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { describe, expect, it, vi } from 'vitest'
+import { recordEscrowOrderCheckIn, recordEscrowOrderCheckOut } from '~~/server/utils/escrowInterventionProof'
 import {
   cancelEscrowOrderByClient,
   CLIENT_CANCELLATION_GRACE_PERIOD_MS,
@@ -78,6 +79,8 @@ describe('cancelEscrowOrderByClient — grille d’annulation symétrique (#275)
     const conversationId = id()
     const client = id()
     payOnly(conversationId, client, id(), 3000)
+    recordEscrowOrderCheckIn(conversationId, null)
+    recordEscrowOrderCheckOut(conversationId, null)
     markEscrowOrderDelivered(conversationId)
 
     expect(cancelEscrowOrderByClient(conversationId, 'motif')).toEqual({ ok: false, error: 'invalid_status' })
