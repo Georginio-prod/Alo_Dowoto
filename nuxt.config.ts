@@ -17,6 +17,14 @@ export default defineNuxtConfig({
     strict: true,
     typeCheck: true
   },
+  // Instrumentation d'erreurs (#262) : DSN public exposé au client, lu depuis
+  // NUXT_PUBLIC_SENTRY_DSN. Vide par défaut (voir app/plugins/errorReporting.client.ts,
+  // qui reste inerte tant qu'aucune valeur n'est fournie).
+  runtimeConfig: {
+    public: {
+      sentryDsn: ''
+    }
+  },
   app: {
     // Transition globale entre les pages (voir .page-* dans main.css).
     pageTransition: { name: 'page', mode: 'out-in' },
