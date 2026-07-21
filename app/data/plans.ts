@@ -106,7 +106,10 @@ export const PLAN_COMPARISON: PlanComparisonCategory[] = [
     rows: [
       { label: 'Profil visible dans les résultats de recherche', values: { mensuel: true, trimestriel: true, annuel: true } },
       { label: 'Badge « Vérifié » (vérification d\'identité, même pour toutes les formules)', values: { mensuel: true, trimestriel: true, annuel: true } },
-      { label: 'Mise en avant en tête des résultats', values: { mensuel: false, trimestriel: false, annuel: true } },
+      // Réservée aux prestations réglées via la plateforme (#267, CGU art. 8)
+      // — un même prestataire ne conserve pas cet avantage pour une mission
+      // convenue ou payée en dehors de WorkTogo.
+      { label: 'Mise en avant en tête des résultats (prestations réalisées via WorkTogo)', values: { mensuel: false, trimestriel: false, annuel: true } },
     ],
   },
   {
@@ -128,6 +131,10 @@ export const PLAN_COMPARISON: PlanComparisonCategory[] = [
     title: 'Paiement & assistance',
     rows: [
       { label: 'Paiement par Mobile Money (Flooz, T-Money)', values: { mensuel: true, trimestriel: true, annuel: true } },
+      // Identique quelle que soit la formule (pas un argument de vente entre
+      // formules) : la garantie tient à l'usage de la plateforme, pas à
+      // l'abonnement souscrit — voir CGU art. 8 (#267).
+      { label: 'Garantie de paiement (fonds sécurisés en séquestre, prestations réglées via WorkTogo)', values: { mensuel: true, trimestriel: true, annuel: true } },
       { label: 'Support par chat', values: { mensuel: 'Standard', trimestriel: 'Prioritaire', annuel: 'Prioritaire' } },
       { label: 'Essai gratuit à la première souscription', values: { mensuel: '14 jours', trimestriel: '14 jours', annuel: '14 jours' } },
     ],
