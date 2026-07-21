@@ -23,6 +23,15 @@ export default defineEventHandler(async (event) => {
     badRequest('Le message ne peut pas être vide.')
   }
 
+  // Anti-contournement (#265) : un numéro, un e-mail ou une mention de
+  // paiement hors plateforme dans un message libre est bloqué avant
+  // écriture, et journalisé pour l'équipe support.
+  const contournementReason = detectContournementAttempt(text)
+  if (contournementReason) {
+    logContournementAttempt({ conversationId: conversation.id, userId: user.id, reason: contournementReason, text })
+    badRequest('Ce message semble contenir un numéro, un e-mail ou une proposition hors plateforme, ce qui est interdit par les CGU. Utilisez la messagerie WorkTogo pour tous vos échanges.')
+  }
+
   const message = addMessage(conversation.id, user.id, user.role, text)
   setResponseStatus(event, 201)
   return { message }
