@@ -14,6 +14,7 @@ const TYPE_LABELS: Record<WalletMovementType, string> = {
   escrow_refund: 'Remboursement',
   commission: 'Commission WorkTogo',
   retrait: 'Retrait',
+  cancellation_compensation: 'Indemnisation (annulation tardive du chercheur)',
 }
 
 const typeFilter = ref<'all' | WalletMovementType>('all')

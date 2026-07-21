@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import type { EscrowOrder } from '~~/server/utils/escrowOrderStore'
 
+// Valeur d'affichage seulement, dupliquée depuis CLIENT_LATE_CANCELLATION_PENALTY_RATE
+// (server/utils/escrowOrderStore.ts, #275) : les imports app/ → server/utils
+// se limitent aux types (voir tous les autres composants de ce dossier), pas
+// aux valeurs, pour ne pas embarquer de code serveur (node:crypto, etc.)
+// dans le bundle client.
+const CLIENT_LATE_CANCELLATION_PENALTY_DISPLAY_PERCENT = 20
+
 /**
  * Bandeau de statut du séquestre affiché au-dessus du fil de discussion une
  * fois le paiement confirmé (#195, epic #191) : bouton « Marquer comme
@@ -79,6 +86,34 @@ async function handleCancelOrder() {
   }
 }
 
+// Annulation chercheur et indemnisation possible du prestataire (#275,
+// grille d'annulation symétrique — pendant du bloc ci-dessus côté
+// prestataire). Autorisée uniquement en séquestre (in_escrow) : une fois
+// `delivered`, le désaccord relève du litige, pas de l'annulation — déjà
+// garanti par le `v-else-if` du template qui englobe ce bouton.
+const showClientCancelForm = ref(false)
+const clientCancelReason = ref('')
+const isClientCancelling = ref(false)
+const clientCancelError = ref('')
+
+async function handleClientCancelOrder() {
+  if (isClientCancelling.value || !clientCancelReason.value.trim()) return
+  isClientCancelling.value = true
+  clientCancelError.value = ''
+  try {
+    await $fetch(`/api/conversations/${props.conversationId}/client-cancel`, {
+      method: 'POST',
+      body: { reason: clientCancelReason.value.trim() },
+    })
+    showClientCancelForm.value = false
+    emit('changed')
+  } catch {
+    clientCancelError.value = "L'annulation n'a pas pu être effectuée. Réessayez."
+  } finally {
+    isClientCancelling.value = false
+  }
+}
+
 // Litige (#197, epic #191) : le chercheur conteste la qualité de la
 // prestation au lieu de confirmer la réception, gèle les fonds en attendant
 // une équipe de médiation WorkTogo.
@@ -125,10 +160,52 @@ async function handleOpenDispute() {
       {{ isDelivering ? 'Envoi…' : 'Marquer comme terminé' }}
     </button>
 
-    <p v-else-if="escrowOrder.status === 'in_escrow' && isViewerClient" class="text-[13px] text-muted">
-      Paiement en séquestre ({{ escrowOrder.amount.toLocaleString('fr-FR') }} F CFA). Les fonds seront libérés une
-      fois la prestation terminée et votre confirmation de réception.
-    </p>
+    <template v-else-if="escrowOrder.status === 'in_escrow' && isViewerClient">
+      <p class="text-[13px] text-muted">
+        Paiement en séquestre ({{ escrowOrder.amount.toLocaleString('fr-FR') }} F CFA). Les fonds seront libérés une
+        fois la prestation terminée et votre confirmation de réception.
+      </p>
+
+      <div class="mt-3 border-t border-hairline pt-3">
+        <button
+          v-if="!showClientCancelForm"
+          type="button"
+          class="press text-[12.5px] font-semibold text-error underline"
+          @click="showClientCancelForm = true"
+        >
+          Annuler la commande
+        </button>
+
+        <div v-else class="space-y-2">
+          <p class="text-[12px] text-muted">
+            Annulation gratuite dans les 2h suivant le paiement. Passé ce délai, une indemnisation du prestataire
+            ({{ CLIENT_LATE_CANCELLATION_PENALTY_DISPLAY_PERCENT }}% du montant) est retenue sur votre
+            remboursement.
+          </p>
+          <textarea
+            v-model="clientCancelReason"
+            rows="2"
+            placeholder="Motif de l'annulation (obligatoire)"
+            aria-label="Motif de l'annulation"
+            class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
+          />
+          <div class="flex gap-2">
+            <button
+              type="button"
+              class="press rounded-field border border-error px-4 py-2 text-[12.5px] font-semibold text-error disabled:cursor-not-allowed disabled:opacity-45"
+              :disabled="!clientCancelReason.trim() || isClientCancelling"
+              @click="handleClientCancelOrder"
+            >
+              {{ isClientCancelling ? 'Annulation…' : "Confirmer l'annulation" }}
+            </button>
+            <button type="button" class="press text-[12.5px] text-muted" @click="showClientCancelForm = false">
+              Retour
+            </button>
+          </div>
+          <p v-if="clientCancelError" class="text-[12.5px] text-error">{{ clientCancelError }}</p>
+        </div>
+      </div>
+    </template>
 
     <template v-else-if="escrowOrder.status === 'delivered' && isViewerClient">
       <p class="text-[13px] text-dark">
