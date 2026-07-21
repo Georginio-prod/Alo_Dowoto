@@ -177,6 +177,18 @@ export function payEscrowOrder(conversationId: string): PayEscrowOrderResult {
 
 export type MarkDeliveredResult = { ok: true; order: EscrowOrder } | { ok: false; error: 'not_found' | 'invalid_status' }
 
+/** Formate l'échéance de validation tacite pour le message envoyé au chercheur (#273). */
+function formatTacitValidationDeadline(deliveredAt: number): string {
+  const deadline = new Date(deliveredAt + TACIT_VALIDATION_DELAY_MS)
+  return deadline.toLocaleString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 /** Le prestataire marque la prestation comme terminée (#195, « Marquer comme terminé »). */
 export function markEscrowOrderDelivered(conversationId: string): MarkDeliveredResult {
   const order = ordersByConversationId.get(conversationId)
@@ -185,6 +197,17 @@ export function markEscrowOrderDelivered(conversationId: string): MarkDeliveredR
 
   order.status = 'delivered'
   order.deliveredAt = Date.now()
+
+  // Notifie le chercheur du délai de validation tacite (#273) : sans
+  // confirmation ni litige avant l'échéance, le paiement est libéré
+  // automatiquement (voir applyTacitValidationIfExpired). Le message posté
+  // dans le fil est vu comme non lu (#225) même si le chercheur ne consulte
+  // pas la conversation dans l'immédiat.
+  addSystemMessage(
+    conversationId,
+    `Le prestataire a marqué la prestation comme terminée. Vous avez jusqu'au ${formatTacitValidationDeadline(order.deliveredAt)} pour confirmer la réception ou signaler un problème ; passé ce délai, le paiement sera automatiquement libéré au prestataire.`,
+  )
+
   return { ok: true, order }
 }
 
