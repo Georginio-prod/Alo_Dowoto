@@ -44,6 +44,16 @@ export default defineEventHandler((event) => {
     badRequest('Prix maximum invalide.')
   }
 
+  // Distance réelle (#263) : optionnelle, coordonnées du chercheur envoyées
+  // par le front quand disponibles (session utilisateur ou géolocalisation
+  // navigateur) — repli sur le filtrage par ville si absentes ou invalides.
+  const latitude = toNumber(query.lat, 'Latitude invalide.')
+  const longitude = toNumber(query.lng, 'Longitude invalide.')
+  const radiusKm = toNumber(query.rayon_km, 'Rayon de recherche invalide.')
+  if (radiusKm !== undefined && radiusKm <= 0) {
+    badRequest('Rayon de recherche invalide.')
+  }
+
   const page = Math.max(1, Math.trunc(toNumber(query.page, 'Page invalide.') ?? 1))
   const pageSize = Math.min(
     MAX_PAGE_SIZE,
@@ -57,6 +67,9 @@ export default defineEventHandler((event) => {
     ratingMin,
     priceMax,
     query: firstValue(query.q),
+    latitude,
+    longitude,
+    radiusKm,
   })
 
   const total = matches.length
