@@ -85,10 +85,17 @@ function useCurrentPosition() {
       longitude.value = position.coords.longitude
       isLocating.value = false
     },
-    () => {
-      locationError.value = "Localisation refusée ou indisponible. Autorisez l'accès à votre position puis réessayez."
+    (geoError) => {
+      // Sans `timeout` explicite, la valeur par défaut est Infinity : sur un
+      // appareil où le service de localisation est lent ou désactivé (courant
+      // sous Windows), l'appel ne déclenchait ni succès ni erreur et restait
+      // bloqué indéfiniment sur « Localisation… » sans le moindre retour.
+      locationError.value = geoError.code === geoError.TIMEOUT
+        ? 'La localisation a pris trop de temps. Vérifiez que le service de localisation est activé, puis réessayez.'
+        : "Localisation refusée ou indisponible. Autorisez l'accès à votre position puis réessayez."
       isLocating.value = false
     },
+    { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 },
   )
 }
 
@@ -157,10 +164,11 @@ async function submit() {
     >
     <button
       type="button"
-      class="press mb-1.5 text-[12.5px] font-semibold text-primary underline disabled:cursor-not-allowed disabled:opacity-45"
+      class="press mb-1.5 inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-primary underline disabled:cursor-not-allowed disabled:opacity-60"
       :disabled="isLocating"
       @click="useCurrentPosition"
     >
+      <span v-if="isLocating" class="size-3 shrink-0 animate-spin rounded-full border-[1.5px] border-primary/30 border-t-primary" aria-hidden="true" />
       {{ isLocating ? 'Localisation…' : latitude !== undefined ? '📍 Position enregistrée — mettre à jour' : '📍 Utiliser ma position actuelle' }}
     </button>
     <p class="mb-3.5 text-[11.5px] text-muted">
