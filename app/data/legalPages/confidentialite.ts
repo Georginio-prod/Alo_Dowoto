@@ -53,31 +53,36 @@ export const CONFIDENTIALITE: LegalPage = {
     },
     {
       heading: 'Durée de conservation',
-      body: [
-        'Vos données sont conservées pendant toute la durée de vie de votre compte, puis archivées ou supprimées dans un délai raisonnable après sa clôture, sauf obligation légale de conservation plus longue (notamment en matière comptable et fiscale).',
+      body: ['Les durées de conservation varient selon la nature de la donnée :'],
+      list: [
+        'Données de compte (identité, profil, messages, avis) : pendant toute la durée de vie de votre compte, puis effacées ou anonymisées dans un délai raisonnable après sa clôture ;',
+        'Pièces d\'identité de vérification (carte d\'identité, photo passeport) : les images elles-mêmes sont automatiquement effacées 90 jours après leur soumission — seul le statut « Vérifié » de votre compte est conservé, sans que les documents ne soient conservés indéfiniment ;',
+        'Données de paiement et d\'abonnement : conservées au-delà de la clôture du compte lorsque la loi togolaise l\'exige à des fins comptables et fiscales, même si votre compte est supprimé ou anonymisé entre-temps ;',
+        'Cookies et données techniques : voir les durées indiquées dans notre page Gestion des cookies.',
       ],
     },
     {
       heading: 'Sécurité des données',
       body: [
-        'WorkTogo met en œuvre des mesures techniques et organisationnelles raisonnables (chiffrement des mots de passe, contrôle d\'accès) pour protéger vos données contre la perte, l\'accès non autorisé ou la divulgation.',
+        'WorkTogo met en œuvre des mesures techniques et organisationnelles raisonnables pour protéger vos données contre la perte, l\'accès non autorisé ou la divulgation : mots de passe chiffrés (jamais stockés en clair), sessions authentifiées par cookie sécurisé, accès aux pièces de vérification d\'identité strictement limité à leur titulaire, et effacement automatique de ces pièces une fois le délai de conservation ci-dessus dépassé.',
+        'Un audit de sécurité du stockage des données les plus sensibles (pièces d\'identité, localisation, historique de paiement) a été réalisé et donne lieu à des améliorations continues à mesure que la plateforme évolue.',
       ],
     },
     {
       heading: 'Vos droits',
       body: ['Conformément à la réglementation applicable en matière de protection des données personnelles, vous disposez des droits suivants sur vos données :'],
       list: [
-        'Droit d\'accès : obtenir la confirmation que vos données sont traitées et en obtenir une copie ;',
-        'Droit de rectification : corriger des données inexactes ou incomplètes ;',
-        'Droit d\'effacement : demander la suppression de vos données, sous réserve des obligations légales de conservation ;',
+        'Droit d\'accès et à la portabilité : téléchargez à tout moment une copie structurée de vos données depuis votre profil (section « Mes données ») ;',
+        'Droit de rectification : corriger des données inexactes ou incomplètes depuis votre profil ;',
+        'Droit d\'effacement : supprimer votre compte directement depuis votre profil (section « Mes données ») — vos données identifiantes sont alors effacées, sous réserve des obligations légales de conservation mentionnées ci-dessus ;',
         'Droit d\'opposition : vous opposer, pour un motif légitime, à un traitement de vos données ;',
-        'Droit à la portabilité : recevoir les données que vous avez fournies dans un format structuré et couramment utilisé.',
       ],
     },
     {
       heading: 'Exercer vos droits',
       body: [
-        `Pour exercer l'un de ces droits, contactez-nous à ${SUPPORT_EMAIL} ou au ${SUPPORT_PHONE} en précisant votre demande. Une réponse vous sera apportée dans les meilleurs délais.`,
+        'Le téléchargement de vos données et la suppression de votre compte sont accessibles en libre-service depuis votre profil WorkTogo (section « Mes données »), sans attendre de réponse manuelle.',
+        `Pour toute autre demande relative à vos données (droit de rectification approfondi, droit d'opposition, question sur cette politique), contactez-nous à ${SUPPORT_EMAIL} ou au ${SUPPORT_PHONE}. Une réponse vous sera apportée dans les meilleurs délais.`,
       ],
     },
     {

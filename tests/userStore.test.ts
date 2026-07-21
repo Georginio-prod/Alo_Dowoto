@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
+  anonymizeUser,
   createSession,
   destroySession,
   findOrCreateUser,
   getSessionUser,
+  getUserById,
   hasPassword,
   setPasswordHash,
   toPublicUser,
@@ -93,5 +95,46 @@ describe('userStore — coordonnées GPS optionnelles (géolocalisation à l\'in
     expect(user.longitude).toBeUndefined()
     expect(toPublicUser(user)).not.toHaveProperty('latitude')
     expect(toPublicUser(user)).not.toHaveProperty('longitude')
+  })
+})
+
+describe('userStore — droit à l’effacement, anonymisation du compte (#286)', () => {
+  it('anonymizeUser efface les données personnelles identifiantes tout en conservant la ligne (historique financier)', async () => {
+    const { user } = await findOrCreateUser('+22891112250', 'client', {
+      ...TEST_PROFILE,
+      latitude: 6.1319,
+      longitude: 1.2228,
+    })
+    await setPasswordHash(user.id, 'salt:hash')
+
+    await anonymizeUser(user.id)
+
+    const anonymized = await getUserById(user.id)
+    expect(anonymized?.id).toBe(user.id)
+    expect(anonymized?.username).toBe('')
+    expect(anonymized?.firstName).toBe('')
+    expect(anonymized?.lastName).toBe('Compte supprimé')
+    expect(anonymized?.location).toBe('')
+    expect(anonymized?.latitude).toBeUndefined()
+    expect(anonymized?.longitude).toBeUndefined()
+    expect(anonymized ? hasPassword(anonymized) : true).toBe(false)
+    expect(anonymized?.contact).toContain(user.id)
+  })
+
+  it('invalide toute session active du compte anonymisé', async () => {
+    const { user } = await findOrCreateUser('+22891112251', 'client', TEST_PROFILE)
+    const token = await createSession(user.id)
+
+    await anonymizeUser(user.id)
+
+    expect(await getSessionUser(token)).toBeNull()
+  })
+
+  it('deux comptes anonymisés n’entrent jamais en collision sur `contact` (unique)', async () => {
+    const { user: first } = await findOrCreateUser('+22891112252', 'client', TEST_PROFILE)
+    const { user: second } = await findOrCreateUser('+22891112253', 'client', TEST_PROFILE)
+
+    await anonymizeUser(first.id)
+    await expect(anonymizeUser(second.id)).resolves.not.toThrow()
   })
 })
