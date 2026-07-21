@@ -61,56 +61,64 @@ export const CGU: LegalPage = {
       ],
     },
     {
-      heading: '8. Avis et notation',
+      heading: '8. Paiement intégral des prestations via la plateforme',
+      body: [
+        'Le prix de toute prestation mise en relation via WorkTogo doit être réglé intégralement — sans acompte ni solde résiduel réglé séparément — au moyen du système de paiement en séquestre de la plateforme, avant le début de l\'intervention. Aucune partie du montant convenu ne peut être réglée en espèces ou par tout autre moyen hors plateforme entre le chercheur et le prestataire.',
+        'Cette règle protège le chercheur, dont les fonds restent bloqués en séquestre jusqu\'à validation de la prestation, et le prestataire, dont le paiement est garanti dès la mise en séquestre. Elle s\'applique à l\'intégralité du montant convenu, y compris en cas de modification du périmètre de la prestation en cours d\'intervention.',
+      ],
+    },
+    {
+      heading: '9. Avis et notation',
       body: [
         'À l\'issue d\'une collaboration, chercheur et prestataire peuvent se noter mutuellement et laisser un commentaire. Les avis doivent refléter une expérience réelle et vécue ; tout avis mensonger, diffamatoire ou publié en échange d\'un avantage est interdit et peut être supprimé.',
         'WorkTogo se réserve le droit de modérer ou retirer un avis manifestement contraire aux présentes CGU, sans obligation de justification préalable.',
       ],
     },
     {
-      heading: '9. Comportements interdits',
+      heading: '10. Comportements interdits',
       body: ['Il est interdit à tout utilisateur de :'],
       list: [
         'Fournir de fausses informations d\'identité, de compétence ou de tarification ;',
         'Utiliser la plateforme à des fins illicites, frauduleuses ou de démarchage non sollicité ;',
         'Contourner la messagerie ou les quotas par la création de comptes multiples ;',
+        'Régler ou accepter de régler tout ou partie du prix d\'une prestation en espèces ou par tout autre moyen hors plateforme, en contournement de l\'article 8 ;',
         'Publier un contenu injurieux, discriminatoire, diffamatoire ou portant atteinte aux droits d\'un tiers ;',
         'Tenter d\'accéder sans autorisation aux systèmes, comptes ou données d\'autrui.',
       ],
     },
     {
-      heading: '10. Propriété intellectuelle',
+      heading: '11. Propriété intellectuelle',
       body: [
         'Les éléments de la plateforme (marque, logo, interface, code) sont protégés par le droit de la propriété intellectuelle et ne peuvent être reproduits sans autorisation. Chaque utilisateur reste propriétaire des contenus qu\'il publie et garantit disposer des droits nécessaires à leur publication.',
       ],
     },
     {
-      heading: '11. Données personnelles',
+      heading: '12. Données personnelles',
       body: [
         'Le traitement des données personnelles des utilisateurs est décrit dans la Politique de confidentialité, qui fait partie intégrante des présentes CGU.',
       ],
     },
     {
-      heading: '12. Responsabilité et garanties',
+      heading: '13. Responsabilité et garanties',
       body: [
         'WorkTogo s\'efforce d\'assurer l\'exactitude des informations affichées et la disponibilité du service, sans garantie de résultat. WorkTogo ne saurait être tenue responsable de la qualité, de la conformité ou de la bonne exécution des prestations convenues entre un chercheur et un prestataire, ni des dommages résultant de leur relation.',
         'WorkTogo ne peut garantir un fonctionnement du service exempt de toute interruption, erreur ou anomalie technique, et met en œuvre des moyens raisonnables pour y remédier dans des délais adaptés.',
       ],
     },
     {
-      heading: '13. Suspension, résiliation et suppression de compte',
+      heading: '14. Suspension, résiliation et suppression de compte',
       body: [
-        'Tout utilisateur peut demander la clôture de son compte à tout moment en contactant le support. WorkTogo peut suspendre ou résilier un compte, avec ou sans préavis selon la gravité des faits, en cas de manquement aux présentes CGU, notamment aux comportements interdits listés à l\'article 9.',
+        'Tout utilisateur peut demander la clôture de son compte à tout moment en contactant le support. WorkTogo peut suspendre ou résilier un compte, avec ou sans préavis selon la gravité des faits, en cas de manquement aux présentes CGU, notamment aux comportements interdits listés à l\'article 10.',
       ],
     },
     {
-      heading: '14. Modification des CGU',
+      heading: '15. Modification des CGU',
       body: [
         'WorkTogo peut modifier les présentes CGU pour tenir compte d\'évolutions du service ou de la réglementation. Les utilisateurs sont informés de toute modification substantielle ; la poursuite de l\'utilisation du service après entrée en vigueur des modifications vaut acceptation.',
       ],
     },
     {
-      heading: '15. Droit applicable et règlement des litiges',
+      heading: '16. Droit applicable et règlement des litiges',
       body: [
         'Les présentes CGU sont soumises au droit togolais. En cas de litige, les parties s\'efforcent de trouver une solution amiable avant toute action contentieuse ; à défaut, les juridictions togolaises compétentes seront seules saisies.',
       ],
