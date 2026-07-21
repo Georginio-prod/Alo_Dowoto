@@ -13,6 +13,8 @@ import { createAuthedUser } from '../setup/httpAuth'
 import { startTestServer, type TestServer } from '../setup/httpTestApp'
 
 import cancelHandler from '~~/server/api/conversations/[id]/cancel.post'
+import checkInHandler from '~~/server/api/conversations/[id]/check-in.post'
+import checkOutHandler from '~~/server/api/conversations/[id]/check-out.post'
 import deliverHandler from '~~/server/api/conversations/[id]/deliver.post'
 import disputeHandler from '~~/server/api/conversations/[id]/dispute.post'
 import payHandler from '~~/server/api/conversations/[id]/pay.post'
@@ -31,6 +33,8 @@ let server: TestServer
 beforeAll(async () => {
   server = await startTestServer([
     { method: 'post', path: '/conversations/:id/pay', handler: payHandler },
+    { method: 'post', path: '/conversations/:id/check-in', handler: checkInHandler },
+    { method: 'post', path: '/conversations/:id/check-out', handler: checkOutHandler },
     { method: 'post', path: '/conversations/:id/deliver', handler: deliverHandler },
     { method: 'post', path: '/conversations/:id/receive', handler: receiveHandler },
     { method: 'post', path: '/conversations/:id/dispute', handler: disputeHandler },
@@ -50,6 +54,17 @@ async function postJson(path: string, cookieHeader: string, body?: unknown) {
   })
   const json = await response.json().catch(() => null)
   return { status: response.status, json }
+}
+
+/**
+ * Preuve d'intervention (#268) : `deliver` refuse désormais toute commande
+ * sans check-in ET check-out enregistrés (voir escrowOrderStore.ts,
+ * markEscrowOrderDelivered) — obligatoire entre `pay` et `deliver` pour tout
+ * chemin nominal qui va jusqu'à la livraison.
+ */
+async function checkInOut(conversationId: string, providerCookieHeader: string) {
+  await postJson(`/conversations/${conversationId}/check-in`, providerCookieHeader)
+  await postJson(`/conversations/${conversationId}/check-out`, providerCookieHeader)
 }
 
 describe('POST /conversations/:id/pay (#194)', () => {
@@ -87,6 +102,7 @@ describe('POST /conversations/:id/deliver (#195)', () => {
     creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
     createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
+    await checkInOut(conversation.id, provider.cookieHeader)
 
     const { status, json } = await postJson(`/conversations/${conversation.id}/deliver`, provider.cookieHeader)
 
@@ -116,6 +132,7 @@ describe('POST /conversations/:id/receive (#195)', () => {
     creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
     createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
+    await checkInOut(conversation.id, provider.cookieHeader)
     await postJson(`/conversations/${conversation.id}/deliver`, provider.cookieHeader)
 
     const { status, json } = await postJson(`/conversations/${conversation.id}/receive`, client.cookieHeader)
@@ -151,6 +168,7 @@ describe('POST /conversations/:id/dispute (#197)', () => {
     creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
     createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
+    await checkInOut(conversation.id, provider.cookieHeader)
     await postJson(`/conversations/${conversation.id}/deliver`, provider.cookieHeader)
 
     const { status, json } = await postJson(`/conversations/${conversation.id}/dispute`, client.cookieHeader, {
@@ -231,6 +249,8 @@ describe('Orchestration escrow de bout en bout via HTTP (#261)', () => {
 
     const paid = await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
     expect(paid.status).toBe(200)
+
+    await checkInOut(conversation.id, provider.cookieHeader)
 
     const delivered = await postJson(`/conversations/${conversation.id}/deliver`, provider.cookieHeader)
     expect(delivered.status).toBe(200)
