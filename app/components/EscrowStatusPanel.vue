@@ -160,6 +160,12 @@ async function handleOpenDispute() {
       {{ isDelivering ? 'Envoi…' : 'Marquer comme terminé' }}
     </button>
 
+    <ReschedulePrompt
+      v-if="escrowOrder.status === 'in_escrow' && isViewerProvider"
+      :conversation-id="conversationId"
+      @changed="emit('changed')"
+    />
+
     <template v-else-if="escrowOrder.status === 'in_escrow' && isViewerClient">
       <p class="text-[13px] text-muted">
         Paiement en séquestre ({{ escrowOrder.amount.toLocaleString('fr-FR') }} F CFA). Les fonds seront libérés une

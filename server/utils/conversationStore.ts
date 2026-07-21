@@ -53,8 +53,12 @@ export interface Conversation {
  * `location_shared` : localisation effectivement partagée par le chercheur
  * (voir conversations/[id]/share-location.post.ts), coordonnées dans
  * `location`.
+ * `reschedule_request` : le prestataire propose un nouveau créneau (#270,
+ * voir conversations/[id]/propose-reschedule.post.ts) — envoyé par le
+ * prestataire lui-même (pas WorkTogo), horodatage proposé dans `proposedAt`,
+ * actionnable côté chercheur tant que `resolvedAt` est `null`.
  */
-export type MessageKind = 'text' | 'order_confirmation' | 'location_request' | 'location_shared'
+export type MessageKind = 'text' | 'order_confirmation' | 'location_request' | 'location_shared' | 'reschedule_request'
 
 /** `system` : message automatique WorkTogo, pas d'utilisateur réel derrière (voir `WORKTOGO_SYSTEM_SENDER_ID`). */
 export type MessageSenderRole = Role | 'system'
@@ -68,7 +72,9 @@ export interface Message {
   kind: MessageKind
   /** Coordonnées transmises pour un message `location_shared`, sinon `null`. */
   location: { lat: number; lng: number } | null
-  /** Horodatage de la réponse à un message actionnable (`order_confirmation`/`location_request`), sinon `null`. */
+  /** Horodatage du créneau proposé pour un message `reschedule_request` (#270), sinon `null`. */
+  proposedAt: number | null
+  /** Horodatage de la réponse à un message actionnable (`order_confirmation`/`location_request`/`reschedule_request`), sinon `null`. */
   resolvedAt: number | null
   createdAt: number
 }
@@ -187,7 +193,7 @@ export function addMessage(
   senderId: string,
   senderRole: MessageSenderRole,
   body: string,
-  options?: { kind?: MessageKind; location?: { lat: number; lng: number } },
+  options?: { kind?: MessageKind; location?: { lat: number; lng: number }; proposedAt?: number },
 ): Message {
   const message: Message = {
     id: randomUUID(),
@@ -197,6 +203,7 @@ export function addMessage(
     body,
     kind: options?.kind ?? 'text',
     location: options?.location ?? null,
+    proposedAt: options?.proposedAt ?? null,
     resolvedAt: null,
     createdAt: Date.now(),
   }
