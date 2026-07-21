@@ -35,6 +35,21 @@ export default defineEventHandler(async (event) => {
     badRequest('Vos coordonnées sont requises pour envoyer votre demande.')
   }
 
+  // Anti-contournement (#265) : la description et le motif d'urgence sont du
+  // texte libre, contrairement à `contact` qui a son propre traitement
+  // (masquage, #264) — un numéro/e-mail/proposition hors plateforme glissé
+  // ici est bloqué et journalisé de la même façon que dans la messagerie.
+  const descriptionReason = detectContournementAttempt(description)
+  if (descriptionReason) {
+    logContournementAttempt({ conversationId: conversation.id, userId: user.id, reason: descriptionReason, text: description })
+    badRequest('Votre description semble contenir un numéro, un e-mail ou une proposition hors plateforme, ce qui est interdit par les CGU.')
+  }
+  const urgencyReason = urgency ? detectContournementAttempt(urgency) : null
+  if (urgencyReason) {
+    logContournementAttempt({ conversationId: conversation.id, userId: user.id, reason: urgencyReason, text: urgency as string })
+    badRequest('Le champ « urgence / délai souhaité » semble contenir un numéro, un e-mail ou une proposition hors plateforme, ce qui est interdit par les CGU.')
+  }
+
   // Paiement en séquestre obligatoire avant transmission au prestataire
   // (#194, epic #191) : cette itération ne gère que le tarif fixe affiché
   // (pas de devis à valider, choix produit encore à trancher). Sans tarif
