@@ -59,6 +59,19 @@ export default defineEventHandler(async (event) => {
     conflict('Ce prestataire n\'a pas encore configuré de tarif fixe : demande impossible pour le moment.')
   }
 
+  // Règles anti-fraude de base (#277) : plafond dur sur le montant, seuil de
+  // revue manuelle, détection d'un rythme de création de commandes anormal —
+  // voir server/utils/fraudDetection.ts.
+  const risk = evaluateOrderRisk({
+    clientId: user.id,
+    providerId: conversation.providerId,
+    amount,
+    recentOrderTimestamps: getRecentOrderTimestampsForClient(user.id),
+  })
+  if (risk.blocked) {
+    conflict(risk.reason)
+  }
+
   // Le contact réel n'est jamais inséré en clair dans le message (#264,
   // anti-fuite) : seule une version masquée apparaît dans le fil tant que la
   // prestation n'est pas validée ; la valeur brute est conservée à part et

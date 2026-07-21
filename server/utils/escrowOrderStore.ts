@@ -103,6 +103,15 @@ const ordersByConversationId = new Map<string, EscrowOrder>()
 /** La commande existante bloque-t-elle toute nouvelle demande sur cette conversation ? Seules `released`/`refunded` sont terminales et permettent une reprise (#266). */
 const TERMINAL_STATUSES_ALLOWING_REBOOK: readonly EscrowOrderStatus[] = ['released', 'refunded']
 
+/** Horodatages de création des commandes de ce chercheur, tous statuts confondus — sert à détecter un rythme de création anormal (#277, `evaluateOrderRisk`). */
+export function getRecentOrderTimestampsForClient(clientId: string): number[] {
+  const timestamps: number[] = []
+  for (const order of ordersByConversationId.values()) {
+    if (order.clientId === clientId) timestamps.push(order.createdAt)
+  }
+  return timestamps
+}
+
 /**
  * Idempotent tant que la commande existante est active (`awaiting_payment` à
  * `disputed`) : une conversation n'a jamais plus d'une commande active à la
