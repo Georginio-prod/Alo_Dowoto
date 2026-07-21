@@ -8,6 +8,7 @@
 interface NavItem {
   label: string
   to: string | null
+  activePaths?: string[]
 }
 
 const NAV_ITEM_CLASSES = {
@@ -16,9 +17,23 @@ const NAV_ITEM_CLASSES = {
   disabled: 'cursor-not-allowed text-muted/60',
 }
 
+// Sous-pages du profil accessibles en lien direct (marque-page) plutôt que
+// depuis une fenêtre du hub /profil (#hub-profil-modales) — elles doivent
+// quand même faire ressortir l'entrée « Profil » de la nav, sinon rien ne
+// s'allume alors qu'on est bien dans cette section.
+const PROFILE_SUBPAGES = [
+  '/prestataire/profil-professionnel',
+  '/prestataire/cv',
+  '/prestataire/langues',
+  '/prestataire/formation',
+  '/prestataire/certifications',
+  '/prestataire/preferences',
+  '/prestataire/coordonnees',
+]
+
 const NAV_ITEMS: NavItem[] = [
   { label: 'Accueil', to: '/prestataire' },
-  { label: 'Profil', to: '/profil' },
+  { label: 'Profil', to: '/profil', activePaths: PROFILE_SUBPAGES },
   { label: 'Demandes reçues', to: '/prestataire/demandes' },
   { label: 'Solde', to: '/prestataire/solde' },
   { label: 'Messages', to: '/messages' },
@@ -26,6 +41,10 @@ const NAV_ITEMS: NavItem[] = [
 ]
 
 const route = useRoute()
+
+function isActive(item: NavItem): boolean {
+  return item.to === route.path || !!item.activePaths?.includes(route.path)
+}
 </script>
 
 <template>
@@ -42,7 +61,7 @@ const route = useRoute()
               v-if="item.to"
               :to="item.to"
               class="whitespace-nowrap rounded-field px-3.5 py-2.5 text-[13.5px] font-semibold"
-              :class="item.to === route.path ? NAV_ITEM_CLASSES.active : NAV_ITEM_CLASSES.inactive"
+              :class="isActive(item) ? NAV_ITEM_CLASSES.active : NAV_ITEM_CLASSES.inactive"
             >
               {{ item.label }}
             </NuxtLink>
