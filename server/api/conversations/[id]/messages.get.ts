@@ -15,12 +15,17 @@ export default defineEventHandler(async (event) => {
   // prestataire ne voit ni le contenu des messages ni le détail de la
   // demande. Le chercheur, lui, voit toujours ses propres messages.
   const order = getEscrowOrderByConversationId(conversation.id)
+  // Déclenche le prélèvement dû pour un service récurrent (#271), le cas
+  // échéant — même principe de vérification paresseuse à la lecture que la
+  // validation tacite ou la réattribution automatique (escrowOrderStore.ts).
+  const recurringService = getRecurringServiceByConversationId(conversation.id)
   const isViewerProvider = user.id === conversation.providerId
   if (isViewerProvider && order && order.status === 'awaiting_payment') {
     return {
       conversation: await toConversationSummary(conversation, user.id),
       messages: [],
       escrowOrder: order,
+      recurringService,
       awaitingPayment: true,
     }
   }
@@ -35,6 +40,7 @@ export default defineEventHandler(async (event) => {
     conversation: await toConversationSummary(conversation, user.id),
     messages: getMessages(conversation.id),
     escrowOrder: order,
+    recurringService,
     awaitingPayment: false,
   }
 })

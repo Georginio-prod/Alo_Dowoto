@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import type { ConversationSummary, Message } from '~~/server/utils/conversationStore'
 import type { EscrowOrder } from '~~/server/utils/escrowOrderStore'
+import type { RecurringService } from '~~/server/utils/recurringServiceStore'
 
 interface MessagesResponse {
   conversation: ConversationSummary
   messages: Message[]
   escrowOrder: EscrowOrder | null
+  recurringService: RecurringService | null
   awaitingPayment: boolean
 }
 
@@ -68,6 +70,7 @@ function onFirstContactSubmitted() {
 // (le serveur ne renvoie d'ailleurs aucun contenu de message dans ce cas,
 // voir messages.get.ts — cette page ne fait que refléter cet état).
 const escrowOrder = computed(() => data.value?.escrowOrder ?? null)
+const recurringService = computed(() => data.value?.recurringService ?? null)
 const isViewerClient = computed(() => conversation.value?.clientId === currentUserId.value)
 const isViewerProvider = computed(() => conversation.value?.providerId === currentUserId.value)
 const showPaymentPrompt = computed(
@@ -100,6 +103,13 @@ async function handlePayEscrowOrder() {
 // logique de mutation vit dans EscrowStatusPanel.vue, cette page ne fait que
 // rafraîchir ses données quand le composant émet `changed`.
 function onEscrowStatusChanged() {
+  refresh()
+}
+
+// Service récurrent (#271) : logique de mutation possédée par
+// RecurringServicePanel.vue, cette page ne fait que rafraîchir ses données
+// quand le composant émet `changed`.
+function onRecurringServiceChanged() {
   refresh()
 }
 
@@ -271,6 +281,13 @@ async function submitReview() {
           :conversation-id="conversationId"
           :provider-name="conversation?.otherPartyName ?? ''"
           @changed="onRebookChanged"
+        />
+
+        <RecurringServicePanel
+          v-if="isViewerClient"
+          :recurring-service="recurringService"
+          :conversation-id="conversationId"
+          @changed="onRecurringServiceChanged"
         />
 
         <div ref="messageListEl" class="flex-1 space-y-3 overflow-y-auto pb-4">
