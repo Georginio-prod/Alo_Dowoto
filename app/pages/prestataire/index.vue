@@ -65,14 +65,23 @@ const subscriptionBadge = computed(() => {
   return { label: 'Profil non abonné', tone: 'none' }
 })
 
-// Rappel non intrusif tant que le profil n'est pas complété à 100 % (#186) :
-// un compte qui a cliqué « Compléter mon profil plus tard » à l'étape
-// Abonnement n'a pas encore choisi de formule. Le hub /profil (voir
-// app/pages/profil.vue) couvre la vue d'ensemble complète (identité,
-// vérification, profil professionnel, abonnement) ; ce bandeau reste ciblé
-// sur l'abonnement spécifiquement, seule étape bloquante pour recevoir des
-// demandes.
-const profileIncomplete = computed(() => !subscriptionData.value?.subscription)
+// Rappel non intrusif tant que l'abonnement n'est pas actif (#186) : couvre
+// aussi bien le compte qui a cliqué « Compléter mon profil plus tard » à
+// l'étape Abonnement (aucune formule choisie) que celui dont l'abonnement a
+// expiré — dans les deux cas le badge de statut en haut de page n'est pas
+// cliquable, donc sans ce bandeau il n'y a plus aucun chemin évident vers
+// /abonnement une fois qu'un abonnement a existé au moins une fois. Le hub
+// /profil (voir app/pages/profil.vue) couvre la vue d'ensemble complète
+// (identité, vérification, profil professionnel, abonnement) ; ce bandeau
+// reste ciblé sur l'abonnement spécifiquement, seule étape bloquante pour
+// recevoir des demandes.
+const subscriptionStatus = computed(() => subscriptionData.value?.subscription?.status ?? null)
+const profileIncomplete = computed(() => subscriptionStatus.value === null || subscriptionStatus.value === 'expire')
+const subscriptionBannerText = computed(() =>
+  subscriptionStatus.value === 'expire'
+    ? "Votre abonnement a expiré : renouvelez-le pour continuer à recevoir des demandes."
+    : "Votre profil n'est pas complet : choisissez une formule pour profiter de toutes les fonctionnalités.",
+)
 
 function formatDate(timestamp: number): string {
   return new Date(timestamp).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
@@ -103,7 +112,7 @@ function restartDemo() {
 
     <NuxtLink
       v-if="!user?.verified"
-      to="/profil"
+      to="/profil?open=verification"
       class="press mb-4 flex items-center justify-between gap-3 rounded-card border border-primary/30 bg-primary/8 p-4 hover:border-primary/50"
     >
       <p class="text-[13px] font-semibold text-dark">
@@ -118,7 +127,7 @@ function restartDemo() {
       class="press mb-6 flex items-center justify-between gap-3 rounded-card border border-primary/30 bg-primary/8 p-4 hover:border-primary/50"
     >
       <p class="text-[13px] font-semibold text-dark">
-        Votre profil n'est pas complet : choisissez une formule pour profiter de toutes les fonctionnalités.
+        {{ subscriptionBannerText }}
       </p>
       <span class="shrink-0 font-bold text-primary">→</span>
     </NuxtLink>
