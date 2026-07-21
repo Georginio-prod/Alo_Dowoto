@@ -51,6 +51,7 @@ export const CGU: LegalPage = {
       body: [
         'Les prestataires s\'engagent à décrire sincèrement leur activité, leurs compétences, leur zone d\'intervention et leurs tarifs indicatifs, et à exercer leur activité en conformité avec la réglementation togolaise applicable à leur secteur (autorisations, qualifications ou assurances éventuellement requises).',
         'La réception de demandes de contact au-delà du quota gratuit est soumise à la souscription d\'une formule d\'abonnement, décrite à l\'article suivant.',
+        'Le prestataire reste seul responsable et libre dans l\'exercice de son activité : il fixe lui-même son tarif indicatif, décide de ses disponibilités, et conserve à tout moment la faculté de refuser ou d\'annuler une demande avant le début de son exécution, sans pénalité ni justification autre que le motif requis par la procédure d\'annulation. WorkTogo ne lui impose ni horaires, ni exclusivité, ni méthode d\'exécution de la prestation.',
       ],
     },
     {
