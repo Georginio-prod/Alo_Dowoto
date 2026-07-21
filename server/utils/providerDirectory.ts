@@ -5,6 +5,7 @@ import { getAverageRating } from '~~/server/utils/reviewStore'
 import { getProviderProfile, listProviderProfiles } from '~~/server/utils/providerStore'
 import type { ProviderProfile } from '~~/server/utils/providerStore'
 import { isVerified } from '~~/server/utils/verificationStore'
+import { scoreFeaturedProvider } from '~~/server/utils/matchingEngine'
 import type { FeaturedCandidate } from '~~/server/utils/matchingEngine'
 
 /**
@@ -118,11 +119,16 @@ export function getProviderById(id: string): ProviderSearchResult | null {
  * Recherche filtrée de prestataires (#43). Quand `filters.latitude`/`longitude`
  * sont fournis (coordonnées réelles du chercheur, #263), calcule la distance
  * réelle (Haversine) pour chaque prestataire ayant lui-même des coordonnées,
- * filtre par `radiusKm` si précisé, et trie les résultats par proximité —
- * sinon, comportement inchangé (filtrage par ville, aucun tri par distance).
- * Les prestataires sans coordonnées ne sont jamais exclus par le rayon : ils
- * gardent juste `distanceKm: null` (repli sur le filtrage par ville actuel,
- * aucune régression pour les comptes n'ayant pas activé la géolocalisation).
+ * filtre par `radiusKm` si précisé, et trie les résultats par proximité.
+ * Sinon, trie par score multi-critères (#288) plutôt que par ordre
+ * d'insertion/inscription brut : note moyenne (ajustée bayésiennement,
+ * `scoreFeaturedProvider`), identité vérifiée et ancienneté approximée par
+ * le nombre d'avis — évite qu'un tri implicite (simple ordre d'apparition)
+ * concentre les demandes sur une poignée de prestataires au détriment de
+ * profils compétents mais moins visibles. Les prestataires sans
+ * coordonnées ne sont jamais exclus par le rayon : ils gardent juste
+ * `distanceKm: null` (aucune régression pour les comptes n'ayant pas
+ * activé la géolocalisation).
  */
 export function searchProviders(filters: ProviderSearchFilters): ProviderSearchResult[] {
   const query = filters.query ? normalize(filters.query) : ''
@@ -149,19 +155,42 @@ export function searchProviders(filters: ProviderSearchFilters): ProviderSearchR
       return { ...provider, distanceKm }
     })
 
-  if (!searcherCoords) return filtered
+  // Coordonnées du chercheur fournies : tri par proximité (#263), comme
+  // avant la fusion avec le tri multi-critères (#288) ci-dessous.
+  if (searcherCoords) {
+    const radiusKm = filters.radiusKm
+    const withinRadius = radiusKm !== undefined
+      ? filtered.filter((provider) => provider.distanceKm === null || provider.distanceKm <= radiusKm)
+      : filtered
 
-  const radiusKm = filters.radiusKm
-  const withinRadius = radiusKm !== undefined
-    ? filtered.filter((provider) => provider.distanceKm === null || provider.distanceKm <= radiusKm)
-    : filtered
+    return withinRadius.sort((a, b) => {
+      if (a.distanceKm === null && b.distanceKm === null) return 0
+      if (a.distanceKm === null) return 1
+      if (b.distanceKm === null) return -1
+      return a.distanceKm - b.distanceKm
+    })
+  }
 
-  return withinRadius.sort((a, b) => {
-    if (a.distanceKm === null && b.distanceKm === null) return 0
-    if (a.distanceKm === null) return 1
-    if (b.distanceKm === null) return -1
-    return a.distanceKm - b.distanceKm
-  })
+  // Pas de coordonnées : tri par score multi-critères (#288). Score calculé
+  // une seule fois par résultat (pas à chaque comparaison du tri) —
+  // getEffectiveRating peut retomber sur getProviderById, qui reconstruit
+  // l'annuaire fusionné, coûteux à répéter en O(n log n).
+  return filtered
+    .map((provider) => ({ provider, score: scoreSearchResult(provider) }))
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.provider)
+}
+
+/** Score multi-critères (0-100) d'un résultat de recherche, voir `searchProviders`. */
+function scoreSearchResult(provider: ProviderSearchResult): number {
+  const { rating, reviewCount } = getEffectiveRating(provider.id)
+  return scoreFeaturedProvider({
+    providerId: provider.id,
+    rating,
+    reviewCount,
+    verified: provider.verified,
+    experienceYears: estimateExperienceYears(reviewCount),
+  }).total
 }
 
 /**
