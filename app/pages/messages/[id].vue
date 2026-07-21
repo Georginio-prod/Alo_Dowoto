@@ -150,6 +150,21 @@ async function sendMessage() {
   }
 }
 
+// Reprendre ce prestataire (#266, rebooking rapide) : disponible côté
+// chercheur une fois la précédente commande terminée (released) ou annulée
+// (refunded) — voir la logique correspondante dans createEscrowOrder,
+// server/utils/escrowOrderStore.ts. Formulaire possédé par RebookPrompt.vue
+// (comme EscrowStatusPanel.vue pour le séquestre), cette page ne fait que
+// rafraîchir ses données quand le composant émet `changed`.
+const canRebook = computed(
+  () => isViewerClient.value && (escrowOrder.value?.status === 'released' || escrowOrder.value?.status === 'refunded'),
+)
+
+function onRebookChanged() {
+  refresh()
+  refreshConversationList()
+}
+
 function setReviewRating(rating: number) {
   reviewRating.value = rating
 }
@@ -248,6 +263,13 @@ async function submitReview() {
           :is-viewer-client="isViewerClient"
           :is-viewer-provider="isViewerProvider"
           @changed="onEscrowStatusChanged"
+        />
+
+        <RebookPrompt
+          v-if="canRebook"
+          :conversation-id="conversationId"
+          :provider-name="conversation?.otherPartyName ?? ''"
+          @changed="onRebookChanged"
         />
 
         <div ref="messageListEl" class="flex-1 space-y-3 overflow-y-auto pb-4">
