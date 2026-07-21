@@ -68,14 +68,21 @@ export const CGU: LegalPage = {
       ],
     },
     {
-      heading: '9. Avis et notation',
+      heading: '9. Garantie de paiement, assurance et mise en avant',
+      body: [
+        'La garantie de paiement (fonds du chercheur sécurisés en séquestre jusqu\'à validation de la prestation), toute couverture d\'assurance responsabilité civile associée à une intervention, ainsi que la mise en avant en tête des résultats de recherche liée à la formule d\'abonnement souscrite, ne bénéficient qu\'aux prestations intégralement enregistrées et payées via le système de paiement de la plateforme.',
+        'Aucun de ces avantages n\'est activable ni opposable à WorkTogo pour une prestation convenue, réalisée ou réglée en tout ou partie en dehors de la plateforme, y compris lorsque la mise en relation initiale a eu lieu via WorkTogo.',
+      ],
+    },
+    {
+      heading: '10. Avis et notation',
       body: [
         'À l\'issue d\'une collaboration, chercheur et prestataire peuvent se noter mutuellement et laisser un commentaire. Les avis doivent refléter une expérience réelle et vécue ; tout avis mensonger, diffamatoire ou publié en échange d\'un avantage est interdit et peut être supprimé.',
         'WorkTogo se réserve le droit de modérer ou retirer un avis manifestement contraire aux présentes CGU, sans obligation de justification préalable.',
       ],
     },
     {
-      heading: '10. Comportements interdits',
+      heading: '11. Comportements interdits',
       body: ['Il est interdit à tout utilisateur de :'],
       list: [
         'Fournir de fausses informations d\'identité, de compétence ou de tarification ;',
@@ -87,38 +94,38 @@ export const CGU: LegalPage = {
       ],
     },
     {
-      heading: '11. Propriété intellectuelle',
+      heading: '12. Propriété intellectuelle',
       body: [
         'Les éléments de la plateforme (marque, logo, interface, code) sont protégés par le droit de la propriété intellectuelle et ne peuvent être reproduits sans autorisation. Chaque utilisateur reste propriétaire des contenus qu\'il publie et garantit disposer des droits nécessaires à leur publication.',
       ],
     },
     {
-      heading: '12. Données personnelles',
+      heading: '13. Données personnelles',
       body: [
         'Le traitement des données personnelles des utilisateurs est décrit dans la Politique de confidentialité, qui fait partie intégrante des présentes CGU.',
       ],
     },
     {
-      heading: '13. Responsabilité et garanties',
+      heading: '14. Responsabilité et garanties',
       body: [
         'WorkTogo s\'efforce d\'assurer l\'exactitude des informations affichées et la disponibilité du service, sans garantie de résultat. WorkTogo ne saurait être tenue responsable de la qualité, de la conformité ou de la bonne exécution des prestations convenues entre un chercheur et un prestataire, ni des dommages résultant de leur relation.',
         'WorkTogo ne peut garantir un fonctionnement du service exempt de toute interruption, erreur ou anomalie technique, et met en œuvre des moyens raisonnables pour y remédier dans des délais adaptés.',
       ],
     },
     {
-      heading: '14. Suspension, résiliation et suppression de compte',
+      heading: '15. Suspension, résiliation et suppression de compte',
       body: [
-        'Tout utilisateur peut demander la clôture de son compte à tout moment en contactant le support. WorkTogo peut suspendre ou résilier un compte, avec ou sans préavis selon la gravité des faits, en cas de manquement aux présentes CGU, notamment aux comportements interdits listés à l\'article 10.',
+        'Tout utilisateur peut demander la clôture de son compte à tout moment en contactant le support. WorkTogo peut suspendre ou résilier un compte, avec ou sans préavis selon la gravité des faits, en cas de manquement aux présentes CGU, notamment aux comportements interdits listés à l\'article 11.',
       ],
     },
     {
-      heading: '15. Modification des CGU',
+      heading: '16. Modification des CGU',
       body: [
         'WorkTogo peut modifier les présentes CGU pour tenir compte d\'évolutions du service ou de la réglementation. Les utilisateurs sont informés de toute modification substantielle ; la poursuite de l\'utilisation du service après entrée en vigueur des modifications vaut acceptation.',
       ],
     },
     {
-      heading: '16. Droit applicable et règlement des litiges',
+      heading: '17. Droit applicable et règlement des litiges',
       body: [
         'Les présentes CGU sont soumises au droit togolais. En cas de litige, les parties s\'efforcent de trouver une solution amiable avant toute action contentieuse ; à défaut, les juridictions togolaises compétentes seront seules saisies.',
       ],
