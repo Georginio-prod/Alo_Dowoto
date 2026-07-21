@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
+import { recordEscrowOrderCheckIn, recordEscrowOrderCheckOut } from '~~/server/utils/escrowInterventionProof'
 import {
   cancelEscrowOrder,
   confirmEscrowOrderReceipt,
@@ -48,6 +49,8 @@ describe('createEscrowOrder — reprise après une commande terminale (#266)', (
     creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
     const first = createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount: 3000 })
     payEscrowOrder(conversationId)
+    recordEscrowOrderCheckIn(conversationId, null)
+    recordEscrowOrderCheckOut(conversationId, null)
     markEscrowOrderDelivered(conversationId)
     confirmEscrowOrderReceipt(conversationId)
 
@@ -80,6 +83,8 @@ describe('createEscrowOrder — reprise après une commande terminale (#266)', (
     creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
     const first = createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount: 3000 })
     payEscrowOrder(conversationId)
+    recordEscrowOrderCheckIn(conversationId, null)
+    recordEscrowOrderCheckOut(conversationId, null)
     markEscrowOrderDelivered(conversationId)
     openEscrowDispute(conversationId, 'Prestation non conforme')
 

@@ -67,6 +67,18 @@ export interface EscrowOrder {
   /** Réponse du prestataire au litige (#274, « en médiation ») — bloque toujours la libération automatique tant que le litige n'est pas explicitement résolu, que le prestataire ait répondu ou non. */
   disputeResponse: string | null
   disputeRespondedAt: number | null
+  /**
+   * Preuve d'intervention in-app (#268, anti-fuite) : le prestataire
+   * enregistre son arrivée puis son départ du lieu d'intervention. La
+   * géolocalisation est enregistrée quand le navigateur l'autorise, mais
+   * n'est pas exigée — c'est l'existence même des deux horodatages qui
+   * constitue la preuve requise avant de pouvoir marquer la prestation comme
+   * terminée (voir `markEscrowOrderDelivered`).
+   */
+  checkInAt: number | null
+  checkInLocation: { lat: number; lng: number } | null
+  checkOutAt: number | null
+  checkOutLocation: { lat: number; lng: number } | null
 }
 
 /**
@@ -138,6 +150,10 @@ export function createEscrowOrder(input: {
     disputeEvidence: null,
     disputeResponse: null,
     disputeRespondedAt: null,
+    checkInAt: null,
+    checkInLocation: null,
+    checkOutAt: null,
+    checkOutLocation: null,
   }
   ordersByConversationId.set(input.conversationId, order)
   return order
@@ -300,7 +316,9 @@ export function payEscrowOrder(conversationId: string): PayEscrowOrderResult {
   return { ok: true, order }
 }
 
-export type MarkDeliveredResult = { ok: true; order: EscrowOrder } | { ok: false; error: 'not_found' | 'invalid_status' }
+export type MarkDeliveredResult =
+  | { ok: true; order: EscrowOrder }
+  | { ok: false; error: 'not_found' | 'invalid_status' | 'check_in_out_required' }
 
 /** Formate l'échéance de validation tacite pour le message envoyé au chercheur (#273). */
 function formatTacitValidationDeadline(deliveredAt: number): string {
@@ -319,6 +337,7 @@ export function markEscrowOrderDelivered(conversationId: string): MarkDeliveredR
   const order = ordersByConversationId.get(conversationId)
   if (!order) return { ok: false, error: 'not_found' }
   if (order.status !== 'in_escrow') return { ok: false, error: 'invalid_status' }
+  if (order.checkInAt === null || order.checkOutAt === null) return { ok: false, error: 'check_in_out_required' }
 
   order.status = 'delivered'
   order.deliveredAt = Date.now()

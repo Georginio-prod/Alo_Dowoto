@@ -133,11 +133,20 @@ const showDisputeForm = ref(false)
     <p v-if="escrowOrder.status === 'in_escrow' && isViewerProvider" class="mt-1 text-[12px] text-muted">
       Cette garantie de paiement ne s'applique qu'aux prestations réglées via WorkTogo — voir nos CGU.
     </p>
+
+    <InterventionProofPanel
+      v-if="escrowOrder.status === 'in_escrow' && isViewerProvider"
+      :escrow-order="escrowOrder"
+      :conversation-id="conversationId"
+      class="mt-2"
+      @changed="emit('changed')"
+    />
+
     <button
       v-if="escrowOrder.status === 'in_escrow' && isViewerProvider"
       type="button"
       class="press mt-2 rounded-field bg-primary px-4 py-2 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
-      :disabled="isDelivering"
+      :disabled="isDelivering || escrowOrder.checkOutAt === null"
       @click="handleMarkDelivered"
     >
       {{ isDelivering ? 'Envoi…' : 'Marquer comme terminé' }}
