@@ -1,5 +1,9 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'messages', middleware: 'auth' })
+// `alias` : rend cette page également accessible sous /prestataire/messages
+// (lien utilisé par la nav du dashboard prestataire) sans dupliquer le
+// composant — /messages tout court reste la route canonique partagée avec
+// le chercheur.
+definePageMeta({ layout: 'messages', middleware: 'auth', alias: '/prestataire/messages' })
 </script>
 
 <template>

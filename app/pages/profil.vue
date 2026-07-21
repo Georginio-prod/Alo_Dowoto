@@ -36,7 +36,11 @@ import ProfessionalProfileForm from '~/components/ProfessionalProfileForm.vue'
  * qui n'a pas cette barre latérale ailleurs dans l'app, garde le layout
  * `blank` d'origine.
  */
-definePageMeta({ layout: false, middleware: 'auth' })
+// `alias` : rend ce hub également accessible sous /prestataire/profil (lien
+// utilisé par la nav du dashboard prestataire) sans dupliquer le composant —
+// /profil tout court reste la route canonique pour le chercheur, qui n'a pas
+// de section /prestataire.
+definePageMeta({ layout: false, middleware: 'auth', alias: '/prestataire/profil' })
 
 const { user, ensure } = useSession()
 await ensure()
@@ -113,6 +117,15 @@ const activeModal = ref<ModalKey | null>(null)
 function openModal(key: ModalKey) {
   activeModal.value = key
 }
+
+// Deep-link (ex. bandeau « Vérifiez votre identité » du dashboard prestataire,
+// `/profil?open=verification`) : ouvre directement la bonne section au lieu de
+// forcer un clic de plus sur la grille.
+const route = useRoute()
+onMounted(() => {
+  const key = route.query.open
+  if (typeof key === 'string' && key in MODAL_CONFIG) openModal(key as ModalKey)
+})
 function closeModal() {
   activeModal.value = null
 }

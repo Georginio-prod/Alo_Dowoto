@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { SECTORS } from '~/data/sectors'
+import type { ProviderProfile } from '~~/server/utils/providerStore'
 import type { ProviderMatchedRequest } from '~~/server/utils/requestStore'
 
 /**
@@ -7,7 +8,11 @@ import type { ProviderMatchedRequest } from '~~/server/utils/requestStore'
  * demandes clientes où ce prestataire figure dans le top de correspondances
  * (server/utils/requestStore.ts, listRequestsForProvider) — pas de flux
  * d'acceptation/refus dans ce lot, uniquement la visibilité sur ce qui a
- * déjà compté dans son quota mensuel (voir la carte quota ci-dessous).
+ * déjà compté dans son quota mensuel (voir la carte quota ci-dessous). Le
+ * bandeau d'explication ci-dessous et le lien vers /messages existent parce
+ * que « reçues » prêtait à confusion : ces demandes sont des correspondances
+ * calculées à la création, pas des messages effectivement envoyés par le
+ * client (celui-ci choisit qui contacter depuis sa propre liste de matches).
  */
 definePageMeta({ layout: 'dashboard-prestataire', middleware: 'auth', authRole: 'prestataire' })
 
@@ -21,8 +26,13 @@ const { data: matchesData } = await useFetch<{ matches: ProviderMatchedRequest[]
 const { data: quotaData } = await useFetch<{ usage: { count: number; limit: number | null; month: string } }>(
   '/api/quotas/requests-received',
 )
+const { data: profileData } = await useFetch<{ profile: ProviderProfile | null }>('/api/providers/me')
 
 const matches = computed(() => matchesData.value?.matches ?? [])
+// Même définition que professionalProfileComplete dans app/pages/profil.vue :
+// distingue « profil pas encore assez rempli pour matcher » de « profil complet,
+// juste aucune demande pour l'instant » dans l'état vide ci-dessous.
+const profileComplete = computed(() => !!(profileData.value?.profile?.photoUrl && profileData.value?.profile?.description))
 const quotaLabel = computed(() => {
   const usage = quotaData.value?.usage
   if (!usage) return '0 / 0'
@@ -57,7 +67,24 @@ function formatBudget(amount: number): string {
       </div>
     </div>
 
-    <div v-if="matches.length === 0" class="rounded-card border border-hairline bg-surface p-6 text-center shadow-card-sm">
+    <div class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-card border border-hairline bg-bg p-4">
+      <p class="text-[12.5px] leading-relaxed text-muted">
+        Ces demandes correspondent à votre profil, mais c'est le client qui choisit qui contacter — être listé ici
+        ne veut pas dire qu'il vous a déjà écrit.
+      </p>
+      <NuxtLink to="/prestataire/messages" class="press shrink-0 text-[12.5px] font-semibold text-primary">
+        Voir mes messages →
+      </NuxtLink>
+    </div>
+
+    <div v-if="matches.length === 0 && profileComplete" class="rounded-card border border-hairline bg-surface p-6 text-center shadow-card-sm">
+      <p class="text-[13.5px] text-muted">
+        Aucune demande pour l'instant. Revenez régulièrement : de nouvelles demandes sont matchées dès qu'un client
+        publie dans votre secteur.
+      </p>
+    </div>
+
+    <div v-else-if="matches.length === 0" class="rounded-card border border-hairline bg-surface p-6 text-center shadow-card-sm">
       <p class="mb-3 text-[13.5px] text-muted">
         Aucune demande pour l'instant. Complétez votre profil professionnel pour apparaître dans le matching.
       </p>

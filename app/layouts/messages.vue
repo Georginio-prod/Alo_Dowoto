@@ -10,7 +10,10 @@
  * propre lien de retour vers la liste).
  */
 const route = useRoute()
-const isConversationOpen = computed(() => route.path !== '/messages')
+// `route.params.id` plutôt qu'une comparaison de chemin en dur : /messages
+// est aussi accessible via l'alias /prestataire/messages (voir
+// app/pages/messages/index.vue), qui ne matcherait jamais '/messages'.
+const isConversationOpen = computed(() => !!route.params.id)
 </script>
 
 <template>
