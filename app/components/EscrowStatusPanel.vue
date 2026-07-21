@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import type { EscrowOrder } from '~~/server/utils/escrowOrderStore'
 
+// Valeur d'affichage seulement, dupliquée depuis CLIENT_LATE_CANCELLATION_PENALTY_RATE
+// (server/utils/escrowOrderStore.ts, #275) : les imports app/ → server/utils
+// se limitent aux types (voir tous les autres composants de ce dossier), pas
+// aux valeurs, pour ne pas embarquer de code serveur (node:crypto, etc.)
+// dans le bundle client.
+const CLIENT_LATE_CANCELLATION_PENALTY_DISPLAY_PERCENT = 20
+
 /**
  * Bandeau de statut du séquestre affiché au-dessus du fil de discussion une
  * fois le paiement confirmé (#195, epic #191) : bouton « Marquer comme
@@ -79,57 +86,42 @@ async function handleCancelOrder() {
   }
 }
 
+// Annulation chercheur et indemnisation possible du prestataire (#275,
+// grille d'annulation symétrique — pendant du bloc ci-dessus côté
+// prestataire). Autorisée uniquement en séquestre (in_escrow) : une fois
+// `delivered`, le désaccord relève du litige, pas de l'annulation — déjà
+// garanti par le `v-else-if` du template qui englobe ce bouton.
+const showClientCancelForm = ref(false)
+const clientCancelReason = ref('')
+const isClientCancelling = ref(false)
+const clientCancelError = ref('')
+
+async function handleClientCancelOrder() {
+  if (isClientCancelling.value || !clientCancelReason.value.trim()) return
+  isClientCancelling.value = true
+  clientCancelError.value = ''
+  try {
+    await $fetch(`/api/conversations/${props.conversationId}/client-cancel`, {
+      method: 'POST',
+      body: { reason: clientCancelReason.value.trim() },
+    })
+    showClientCancelForm.value = false
+    emit('changed')
+  } catch {
+    clientCancelError.value = "L'annulation n'a pas pu être effectuée. Réessayez."
+  } finally {
+    isClientCancelling.value = false
+  }
+}
+
 // Litige (#197/#274, epic #191) : le chercheur conteste la qualité de la
 // prestation au lieu de confirmer la réception, avec des preuves à l'appui
 // (#274), gèle les fonds en attendant une équipe de médiation WorkTogo.
+// Formulaire possédé par DisputeForm.vue (comme EscrowStatusPanel.vue pour
+// le séquestre) ; l'affichage/réponse une fois `disputed` est possédé par
+// DisputeMediationPanel.vue — cette bascule reste ici, à côté du bouton
+// "Confirmer la réception" qu'elle jouxte dans le template.
 const showDisputeForm = ref(false)
-const disputeReason = ref('')
-const disputeEvidence = ref('')
-const isDisputing = ref(false)
-const disputeError = ref('')
-
-async function handleOpenDispute() {
-  if (isDisputing.value || !disputeReason.value.trim()) return
-  isDisputing.value = true
-  disputeError.value = ''
-  try {
-    await $fetch(`/api/conversations/${props.conversationId}/dispute`, {
-      method: 'POST',
-      body: { reason: disputeReason.value.trim(), evidence: disputeEvidence.value.trim() || undefined },
-    })
-    showDisputeForm.value = false
-    emit('changed')
-  } catch {
-    disputeError.value = "Le litige n'a pas pu être ouvert. Réessayez."
-  } finally {
-    isDisputing.value = false
-  }
-}
-
-// Réponse du prestataire au litige (#274, « en médiation ») : la commande
-// reste `disputed`, seule l'équipe de médiation WorkTogo peut la faire
-// évoluer ensuite — cette réponse donne à l'équipe support les deux versions.
-const disputeResponseDraft = ref('')
-const isRespondingToDispute = ref(false)
-const respondToDisputeError = ref('')
-
-async function handleRespondToDispute() {
-  if (isRespondingToDispute.value || !disputeResponseDraft.value.trim()) return
-  isRespondingToDispute.value = true
-  respondToDisputeError.value = ''
-  try {
-    await $fetch(`/api/conversations/${props.conversationId}/respond-dispute`, {
-      method: 'POST',
-      body: { response: disputeResponseDraft.value.trim() },
-    })
-    disputeResponseDraft.value = ''
-    emit('changed')
-  } catch {
-    respondToDisputeError.value = "La réponse n'a pas pu être envoyée. Réessayez."
-  } finally {
-    isRespondingToDispute.value = false
-  }
-}
 </script>
 
 <template>
@@ -151,10 +143,58 @@ async function handleRespondToDispute() {
       {{ isDelivering ? 'Envoi…' : 'Marquer comme terminé' }}
     </button>
 
-    <p v-else-if="escrowOrder.status === 'in_escrow' && isViewerClient" class="text-[13px] text-muted">
-      Paiement en séquestre ({{ escrowOrder.amount.toLocaleString('fr-FR') }} F CFA). Les fonds seront libérés une
-      fois la prestation terminée et votre confirmation de réception.
-    </p>
+    <ReschedulePrompt
+      v-if="escrowOrder.status === 'in_escrow' && isViewerProvider"
+      :conversation-id="conversationId"
+      @changed="emit('changed')"
+    />
+
+    <template v-else-if="escrowOrder.status === 'in_escrow' && isViewerClient">
+      <p class="text-[13px] text-muted">
+        Paiement en séquestre ({{ escrowOrder.amount.toLocaleString('fr-FR') }} F CFA). Les fonds seront libérés une
+        fois la prestation terminée et votre confirmation de réception.
+      </p>
+
+      <div class="mt-3 border-t border-hairline pt-3">
+        <button
+          v-if="!showClientCancelForm"
+          type="button"
+          class="press text-[12.5px] font-semibold text-error underline"
+          @click="showClientCancelForm = true"
+        >
+          Annuler la commande
+        </button>
+
+        <div v-else class="space-y-2">
+          <p class="text-[12px] text-muted">
+            Annulation gratuite dans les 2h suivant le paiement. Passé ce délai, une indemnisation du prestataire
+            ({{ CLIENT_LATE_CANCELLATION_PENALTY_DISPLAY_PERCENT }}% du montant) est retenue sur votre
+            remboursement.
+          </p>
+          <textarea
+            v-model="clientCancelReason"
+            rows="2"
+            placeholder="Motif de l'annulation (obligatoire)"
+            aria-label="Motif de l'annulation"
+            class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
+          />
+          <div class="flex gap-2">
+            <button
+              type="button"
+              class="press rounded-field border border-error px-4 py-2 text-[12.5px] font-semibold text-error disabled:cursor-not-allowed disabled:opacity-45"
+              :disabled="!clientCancelReason.trim() || isClientCancelling"
+              @click="handleClientCancelOrder"
+            >
+              {{ isClientCancelling ? 'Annulation…' : "Confirmer l'annulation" }}
+            </button>
+            <button type="button" class="press text-[12.5px] text-muted" @click="showClientCancelForm = false">
+              Retour
+            </button>
+          </div>
+          <p v-if="clientCancelError" class="text-[12.5px] text-error">{{ clientCancelError }}</p>
+        </div>
+      </div>
+    </template>
 
     <template v-else-if="escrowOrder.status === 'delivered' && isViewerClient">
       <p class="text-[13px] text-dark">
@@ -180,36 +220,12 @@ async function handleRespondToDispute() {
         </button>
       </div>
 
-      <div v-if="showDisputeForm" class="mt-3 space-y-2 border-t border-hairline pt-3">
-        <textarea
-          v-model="disputeReason"
-          rows="2"
-          placeholder="Motif du litige (obligatoire)"
-          aria-label="Motif du litige"
-          class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
-        />
-        <textarea
-          v-model="disputeEvidence"
-          rows="2"
-          placeholder="Preuves à l'appui : description détaillée, liens vers des photos (optionnel)"
-          aria-label="Preuves à l'appui du litige"
-          class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
-        />
-        <div class="flex gap-2">
-          <button
-            type="button"
-            class="press rounded-field border border-error px-4 py-2 text-[12.5px] font-semibold text-error disabled:cursor-not-allowed disabled:opacity-45"
-            :disabled="!disputeReason.trim() || isDisputing"
-            @click="handleOpenDispute"
-          >
-            {{ isDisputing ? 'Envoi…' : 'Confirmer le litige' }}
-          </button>
-          <button type="button" class="press text-[12.5px] text-muted" @click="showDisputeForm = false">
-            Retour
-          </button>
-        </div>
-        <p v-if="disputeError" class="text-[12.5px] text-error">{{ disputeError }}</p>
-      </div>
+      <DisputeForm
+        v-if="showDisputeForm"
+        :conversation-id="conversationId"
+        @submitted="showDisputeForm = false; emit('changed')"
+        @cancel="showDisputeForm = false"
+      />
     </template>
 
     <p v-else-if="escrowOrder.status === 'delivered' && isViewerProvider" class="text-[13px] text-muted">
@@ -224,42 +240,14 @@ async function handleRespondToDispute() {
       Commande annulée par le prestataire, chercheur remboursé intégralement.
     </p>
 
-    <template v-else-if="escrowOrder.status === 'disputed'">
-      <p class="text-[13px] text-dark">
-        Litige ouvert : les fonds restent gelés en séquestre en attendant l'arbitrage de l'équipe de médiation
-        WorkTogo.
-      </p>
-      <p v-if="escrowOrder.disputeEvidence" class="mt-1 text-[12px] text-muted">
-        Preuves fournies : {{ escrowOrder.disputeEvidence }}
-      </p>
-
-      <p v-if="escrowOrder.disputeResponse" class="mt-2 text-[13px] text-dark">
-        Réponse du prestataire : {{ escrowOrder.disputeResponse }}
-      </p>
-      <p v-else-if="isViewerClient" class="mt-1 text-[12px] text-muted">
-        En attente de la réponse du prestataire.
-      </p>
-
-      <div v-if="isViewerProvider && !escrowOrder.disputeResponse" class="mt-3 space-y-2 border-t border-hairline pt-3">
-        <p class="text-[12.5px] font-semibold text-dark">Répondre au litige (en médiation)</p>
-        <textarea
-          v-model="disputeResponseDraft"
-          rows="2"
-          placeholder="Votre version des faits, en réponse au litige (obligatoire)"
-          aria-label="Réponse au litige"
-          class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
-        />
-        <button
-          type="button"
-          class="press rounded-field bg-primary px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
-          :disabled="!disputeResponseDraft.trim() || isRespondingToDispute"
-          @click="handleRespondToDispute"
-        >
-          {{ isRespondingToDispute ? 'Envoi…' : 'Envoyer ma réponse' }}
-        </button>
-        <p v-if="respondToDisputeError" class="text-[12.5px] text-error">{{ respondToDisputeError }}</p>
-      </div>
-    </template>
+    <DisputeMediationPanel
+      v-else-if="escrowOrder.status === 'disputed'"
+      :escrow-order="escrowOrder"
+      :conversation-id="conversationId"
+      :is-viewer-client="isViewerClient"
+      :is-viewer-provider="isViewerProvider"
+      @changed="emit('changed')"
+    />
 
     <p v-if="deliverError" class="mt-2 text-[12.5px] text-error">{{ deliverError }}</p>
     <p v-if="receiptError" class="mt-2 text-[12.5px] text-error">{{ receiptError }}</p>

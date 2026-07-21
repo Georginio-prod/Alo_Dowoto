@@ -77,6 +77,26 @@ async function shareLocation() {
 const locationMapUrl = computed(() =>
   props.message.location ? `https://www.google.com/maps?q=${props.message.location.lat},${props.message.location.lng}` : '#',
 )
+
+// Reprogrammation d'intervention (#270) : le prestataire propose un nouveau
+// créneau (message `reschedule_request`, posté par lui-même — voir
+// propose-reschedule.post.ts), le chercheur confirme depuis cette bulle.
+const isConfirmingReschedule = ref(false)
+const confirmRescheduleError = ref('')
+
+async function confirmReschedule() {
+  if (isConfirmingReschedule.value) return
+  isConfirmingReschedule.value = true
+  confirmRescheduleError.value = ''
+  try {
+    await $fetch(`/api/conversations/${props.conversationId}/confirm-reschedule`, { method: 'POST' })
+    emit('changed')
+  } catch {
+    confirmRescheduleError.value = "La confirmation n'a pas pu être effectuée. Réessayez."
+  } finally {
+    isConfirmingReschedule.value = false
+  }
+}
 </script>
 
 <template>
@@ -129,6 +149,22 @@ const locationMapUrl = computed(() =>
       >
         Voir sur la carte →
       </a>
+
+      <template v-if="message.kind === 'reschedule_request' && !message.resolvedAt && isViewerClient">
+        <button
+          type="button"
+          class="press mt-2 rounded-field bg-primary px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
+          :disabled="isConfirmingReschedule"
+          @click="confirmReschedule"
+        >
+          {{ isConfirmingReschedule ? 'Confirmation…' : 'Confirmer le nouveau créneau' }}
+        </button>
+        <p v-if="confirmRescheduleError" class="mt-1.5 text-[11.5px] text-error">{{ confirmRescheduleError }}</p>
+      </template>
+      <p v-else-if="message.kind === 'reschedule_request' && message.resolvedAt" class="mt-1 text-[11.5px] opacity-70">
+        ✓ Créneau confirmé
+      </p>
+
       <p class="mt-1 text-[10.5px] opacity-70">{{ formatTime(message.createdAt) }}</p>
     </div>
   </div>

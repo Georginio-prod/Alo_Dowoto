@@ -25,8 +25,19 @@ import { randomUUID } from 'node:crypto'
  *   portefeuille plateforme (voir PLATFORM_WALLET_USER_ID).
  * - `retrait` : le prestataire retire son solde vers son moyen de paiement
  *   configuré (#hub-profil-prestataire, voir requestWithdrawal ci-dessous).
+ * - `cancellation_compensation` : le chercheur annule après le délai de
+ *   grâce (#275, grille d'annulation) — indemnise le prestataire pour le
+ *   temps bloqué, distinct de `escrow_release` (prestation effectivement
+ *   réalisée et validée).
  */
-export type WalletMovementType = 'recharge' | 'escrow_debit' | 'escrow_release' | 'escrow_refund' | 'commission' | 'retrait'
+export type WalletMovementType =
+  | 'recharge'
+  | 'escrow_debit'
+  | 'escrow_release'
+  | 'escrow_refund'
+  | 'commission'
+  | 'retrait'
+  | 'cancellation_compensation'
 
 /** Identifiant conventionnel du portefeuille interne WorkTogo (commissions). */
 export const PLATFORM_WALLET_USER_ID = 'worktogo-platform'
@@ -57,6 +68,7 @@ const MOVEMENT_SIGN: Record<WalletMovementType, 1 | -1> = {
   escrow_refund: 1,
   commission: 1,
   retrait: -1,
+  cancellation_compensation: 1,
 }
 
 const movementsByUserId = new Map<string, WalletMovement[]>()
