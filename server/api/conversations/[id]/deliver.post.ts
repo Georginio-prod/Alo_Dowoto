@@ -16,6 +16,9 @@ export default defineEventHandler(async (event) => {
 
   if (!result.ok) {
     if (result.error === 'not_found') notFound('Aucune commande à livrer pour cette conversation.')
+    if (result.error === 'check_in_out_required') {
+      conflict('Un check-in et un check-out sont requis avant de marquer la prestation comme terminée.')
+    }
     conflict('Cette commande ne peut pas être marquée comme terminée dans son état actuel.')
   }
 

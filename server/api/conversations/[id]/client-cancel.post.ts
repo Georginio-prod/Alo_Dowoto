@@ -3,7 +3,7 @@
  * soit marquée terminée (#275, grille d'annulation symétrique). Pendant du
  * `cancel.post.ts` côté prestataire, avec une différence volontaire :
  * indemnisation du prestataire si l'annulation intervient après le délai de
- * grâce (voir `cancelEscrowOrderByClient`, `server/utils/escrowOrderStore.ts`).
+ * grâce (voir `cancelEscrowOrderByClient`, `server/utils/escrowClientCancellation.ts`).
  */
 export default defineEventHandler(async (event) => {
   const user = await requireClientRole(event)

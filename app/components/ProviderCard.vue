@@ -88,7 +88,10 @@ async function toggleFavorite() {
         </span>
       </div>
 
-      <p class="text-[13px] text-muted">{{ provider.subSector }} · {{ provider.city }}</p>
+      <p class="text-[13px] text-muted">
+        {{ provider.subSector }} · {{ provider.city }}
+        <span v-if="provider.distanceKm !== null"> · à {{ provider.distanceKm }} km</span>
+      </p>
 
       <p class="text-[13.5px] text-dark">
         <span aria-hidden="true">

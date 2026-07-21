@@ -117,6 +117,8 @@ export const CGU: LegalPage = {
       heading: '15. Suspension, résiliation et suppression de compte',
       body: [
         'Tout utilisateur peut demander la clôture de son compte à tout moment en contactant le support. WorkTogo peut suspendre ou résilier un compte, avec ou sans préavis selon la gravité des faits, en cas de manquement aux présentes CGU, notamment aux comportements interdits listés à l\'article 11.',
+        'Sauf urgence ou récidive, la sanction est graduée : avertissement, puis suspension temporaire, puis résiliation définitive. Un contournement avéré de la plateforme (article 11) — notamment le fait d\'organiser ou d\'accepter un règlement hors plateforme après une mise en relation initiée sur WorkTogo — peut donner lieu à une suspension ou résiliation immédiate, sans préavis ni remboursement des sommes déjà engagées (abonnement en cours, frais de service), et sans préjudice d\'une éventuelle action en réparation du préjudice subi par WorkTogo.',
+        'Tout utilisateur peut signaler un contournement suspecté depuis l\'application ou auprès du support. Chaque signalement, ainsi que les tentatives détectées automatiquement par la plateforme, fait l\'objet d\'une vérification par l\'équipe support avant toute sanction — aucune sanction n\'est appliquée sur la seule base d\'une détection automatique non vérifiée par une personne.',
       ],
     },
     {

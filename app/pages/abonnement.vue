@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PLANS, findPlan, type PlanSlug } from '~/data/plans'
+import type { Subscription } from '~~/server/utils/subscriptionStore'
 
 const { trialDays = 14 } = defineProps<{ trialDays?: number }>()
 
@@ -11,6 +12,34 @@ const isSubmitting = ref(false)
 
 function selectPlan(slug: PlanSlug) {
   selectedSlug.value = slug
+}
+
+// Essai gratuit (#281) : la page promet "sans engagement" depuis toujours
+// (voir le texte ci-dessous) — jusqu'ici sans contrepartie réelle, un
+// prestataire était renvoyé vers le paiement immédiat quoi qu'il arrive.
+// Éligible uniquement s'il n'a jamais eu le moindre abonnement (même
+// abandonné en attente), vérifié une seule fois au chargement de la page.
+const { data: existingSubscription } = await useFetch<{ subscription: Subscription | null }>('/api/subscriptions/me')
+const isTrialEligible = computed(() => existingSubscription.value?.subscription === null)
+
+async function startFreeTrial() {
+  if (isSubmitting.value) return
+  isSubmitting.value = true
+  try {
+    await $fetch('/api/subscriptions/trial', {
+      method: 'POST',
+      body: { plan: selectedSlug.value },
+    })
+    navigateTo(user.value?.role === 'prestataire' ? '/prestataire' : '/dashboard/client')
+  } catch (error) {
+    if ((error as { statusCode?: number }).statusCode === 401) {
+      navigateTo({ path: '/auth', query: { role: 'prestataire' } })
+      return
+    }
+    throw error
+  } finally {
+    isSubmitting.value = false
+  }
 }
 
 async function continueToPayment() {
@@ -91,8 +120,18 @@ function completeProfileLater() {
             Compléter mon profil plus tard
           </button>
           <button
+            v-if="isTrialEligible"
             type="button"
             class="press rounded-field bg-primary px-6 py-3 text-[14.5px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="isSubmitting"
+            @click="startFreeTrial"
+          >
+            {{ isSubmitting ? 'Activation…' : `Commencer avec ${trialDays} jours gratuits` }}
+          </button>
+          <button
+            type="button"
+            class="press rounded-field px-6 py-3 text-[14.5px] font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            :class="isTrialEligible ? 'border border-hairline text-dark hover:border-primary' : 'bg-primary text-white hover:bg-primary-hover'"
             :disabled="isSubmitting"
             @click="continueToPayment"
           >

@@ -1,7 +1,13 @@
 import { randomUUID } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 import { findOrCreateConversation, getMessages } from '~~/server/utils/conversationStore'
-import { createEscrowOrder, markEscrowOrderDelivered, payEscrowOrder, TACIT_VALIDATION_DELAY_MS } from '~~/server/utils/escrowOrderStore'
+import { recordEscrowOrderCheckIn, recordEscrowOrderCheckOut } from '~~/server/utils/escrowInterventionProof'
+import {
+  createEscrowOrder,
+  markEscrowOrderDelivered,
+  payEscrowOrder,
+  TACIT_VALIDATION_DELAY_MS,
+} from '~~/server/utils/escrowOrderStore'
 import { creditWallet } from '~~/server/utils/walletStore'
 
 function id(): string {
@@ -22,6 +28,8 @@ describe('markEscrowOrderDelivered — notification de l’échéance de validat
     creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
     createEscrowOrder({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000 })
     payEscrowOrder(conversation.id)
+    recordEscrowOrderCheckIn(conversation.id, null)
+    recordEscrowOrderCheckOut(conversation.id, null)
 
     const before = getMessages(conversation.id).length
     markEscrowOrderDelivered(conversation.id)
@@ -41,6 +49,8 @@ describe('markEscrowOrderDelivered — notification de l’échéance de validat
     creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
     createEscrowOrder({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000 })
     payEscrowOrder(conversation.id)
+    recordEscrowOrderCheckIn(conversation.id, null)
+    recordEscrowOrderCheckOut(conversation.id, null)
 
     markEscrowOrderDelivered(conversation.id)
 

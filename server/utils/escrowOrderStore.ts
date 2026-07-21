@@ -67,6 +67,18 @@ export interface EscrowOrder {
   /** Réponse du prestataire au litige (#274, « en médiation ») — bloque toujours la libération automatique tant que le litige n'est pas explicitement résolu, que le prestataire ait répondu ou non. */
   disputeResponse: string | null
   disputeRespondedAt: number | null
+  /**
+   * Preuve d'intervention in-app (#268, anti-fuite) : le prestataire
+   * enregistre son arrivée puis son départ du lieu d'intervention. La
+   * géolocalisation est enregistrée quand le navigateur l'autorise, mais
+   * n'est pas exigée — c'est l'existence même des deux horodatages qui
+   * constitue la preuve requise avant de pouvoir marquer la prestation comme
+   * terminée (voir `markEscrowOrderDelivered`).
+   */
+  checkInAt: number | null
+  checkInLocation: { lat: number; lng: number } | null
+  checkOutAt: number | null
+  checkOutLocation: { lat: number; lng: number } | null
 }
 
 /**
@@ -85,23 +97,43 @@ export const TACIT_VALIDATION_DELAY_MS = 72 * 60 * 60 * 1000
  */
 export const PROVIDER_RESPONSE_TIMEOUT_MS = 30 * 60 * 1000
 
-/**
- * Grille d'annulation symétrique (#275). Le prestataire annule toujours sans
- * pénalité pour le chercheur (voir `cancelEscrowOrder`) — c'était déjà le
- * cas. Ce qui manquait : quand c'est le *chercheur* qui annule après avoir
- * payé, rien n'indemnisait le prestataire qui s'était rendu disponible.
- * Délai de grâce : annulation sans pénalité si elle intervient dans les 2h
- * suivant le paiement (le prestataire n'a pas encore eu le temps de
- * s'organiser). Passé ce délai, une part du montant reste acquise au
- * prestataire à titre d'indemnisation, le solde est remboursé au chercheur.
- */
-export const CLIENT_CANCELLATION_GRACE_PERIOD_MS = 2 * 60 * 60 * 1000
-export const CLIENT_LATE_CANCELLATION_PENALTY_RATE = 0.2
-
 const ordersByConversationId = new Map<string, EscrowOrder>()
+
+/** Accès direct (sans les vérifications paresseuses de `getEscrowOrderByConversationId`) pour les modules extraits de ce fichier, ex. `escrowClientCancellation.ts`. */
+export function getRawEscrowOrder(conversationId: string): EscrowOrder | null {
+  return ordersByConversationId.get(conversationId) ?? null
+}
 
 /** La commande existante bloque-t-elle toute nouvelle demande sur cette conversation ? Seules `released`/`refunded` sont terminales et permettent une reprise (#266). */
 const TERMINAL_STATUSES_ALLOWING_REBOOK: readonly EscrowOrderStatus[] = ['released', 'refunded']
+
+/** Horodatages de création des commandes de ce chercheur, tous statuts confondus — sert à détecter un rythme de création anormal (#277, `evaluateOrderRisk`). */
+export function getRecentOrderTimestampsForClient(clientId: string): number[] {
+  const timestamps: number[] = []
+  for (const order of ordersByConversationId.values()) {
+    if (order.clientId === clientId) timestamps.push(order.createdAt)
+  }
+  return timestamps
+}
+
+/**
+ * Nombre maximal de demandes non payées qu'un chercheur peut avoir ouvertes
+ * simultanément (#280) : le quota mensuel de contacts (`CLIENT_CONTACTS_MONTHLY_LIMIT`,
+ * server/utils/quotaStore.ts) limite le nombre total de demandes par mois,
+ * mais rien n'empêchait d'ouvrir plusieurs demandes à la fois sans jamais en
+ * payer aucune — frein supplémentaire contre les demandes « pour voir »,
+ * sans intention réelle de payer.
+ */
+export const MAX_SIMULTANEOUS_UNPAID_ORDERS = 2
+
+/** Nombre de commandes en attente de paiement (`awaiting_payment`) pour ce chercheur, tous prestataires confondus (#280). */
+export function countUnpaidOrdersForClient(clientId: string): number {
+  let count = 0
+  for (const order of ordersByConversationId.values()) {
+    if (order.clientId === clientId && order.status === 'awaiting_payment') count += 1
+  }
+  return count
+}
 
 /**
  * Idempotent tant que la commande existante est active (`awaiting_payment` à
@@ -138,6 +170,10 @@ export function createEscrowOrder(input: {
     disputeEvidence: null,
     disputeResponse: null,
     disputeRespondedAt: null,
+    checkInAt: null,
+    checkInLocation: null,
+    checkOutAt: null,
+    checkOutLocation: null,
   }
   ordersByConversationId.set(input.conversationId, order)
   return order
@@ -300,7 +336,9 @@ export function payEscrowOrder(conversationId: string): PayEscrowOrderResult {
   return { ok: true, order }
 }
 
-export type MarkDeliveredResult = { ok: true; order: EscrowOrder } | { ok: false; error: 'not_found' | 'invalid_status' }
+export type MarkDeliveredResult =
+  | { ok: true; order: EscrowOrder }
+  | { ok: false; error: 'not_found' | 'invalid_status' | 'check_in_out_required' }
 
 /** Formate l'échéance de validation tacite pour le message envoyé au chercheur (#273). */
 function formatTacitValidationDeadline(deliveredAt: number): string {
@@ -319,6 +357,7 @@ export function markEscrowOrderDelivered(conversationId: string): MarkDeliveredR
   const order = ordersByConversationId.get(conversationId)
   if (!order) return { ok: false, error: 'not_found' }
   if (order.status !== 'in_escrow') return { ok: false, error: 'invalid_status' }
+  if (order.checkInAt === null || order.checkOutAt === null) return { ok: false, error: 'check_in_out_required' }
 
   order.status = 'delivered'
   order.deliveredAt = Date.now()
@@ -372,46 +411,6 @@ export function cancelEscrowOrder(conversationId: string, reason: string): Cance
   order.cancelledAt = Date.now()
   order.cancelReason = reason.trim()
   return { ok: true, order }
-}
-
-export type CancelByClientResult =
-  | { ok: true; order: EscrowOrder; providerCompensation: number }
-  | { ok: false; error: 'not_found' | 'invalid_status' | 'reason_required' }
-
-/**
- * Le chercheur annule après avoir payé, avant que la prestation soit
- * marquée terminée (#275, grille d'annulation symétrique — pendant de
- * `cancelEscrowOrder` côté prestataire). Autorisé uniquement tant que la
- * commande est en séquestre (`in_escrow`) : une fois `delivered`, le
- * désaccord relève du litige (`openEscrowDispute`), pas de l'annulation.
- */
-export function cancelEscrowOrderByClient(conversationId: string, reason: string): CancelByClientResult {
-  const order = ordersByConversationId.get(conversationId)
-  if (!order) return { ok: false, error: 'not_found' }
-  if (order.status !== 'in_escrow') return { ok: false, error: 'invalid_status' }
-  if (!reason.trim()) return { ok: false, error: 'reason_required' }
-
-  const isWithinGracePeriod = order.paidAt !== null && Date.now() - order.paidAt < CLIENT_CANCELLATION_GRACE_PERIOD_MS
-  const providerCompensation = isWithinGracePeriod ? 0 : Math.round(order.amount * CLIENT_LATE_CANCELLATION_PENALTY_RATE)
-  const clientRefund = order.amount - providerCompensation
-
-  if (providerCompensation > 0) {
-    creditWallet({
-      walletUserId: order.providerId,
-      type: 'cancellation_compensation',
-      amount: providerCompensation,
-      reference: order.id,
-      counterpartyUserId: order.clientId,
-    })
-  }
-  if (clientRefund > 0) {
-    creditWallet({ walletUserId: order.clientId, type: 'escrow_refund', amount: clientRefund, reference: order.id, counterpartyUserId: order.providerId })
-  }
-
-  order.status = 'refunded'
-  order.cancelledAt = Date.now()
-  order.cancelReason = reason.trim()
-  return { ok: true, order, providerCompensation }
 }
 
 export type OpenDisputeResult =

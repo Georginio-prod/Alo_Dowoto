@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
+import { recordEscrowOrderCheckIn, recordEscrowOrderCheckOut } from '~~/server/utils/escrowInterventionProof'
 import {
   createEscrowOrder,
   markEscrowOrderDelivered,
@@ -17,6 +18,8 @@ function payAndDeliver(conversationId: string, client: string, provider: string,
   creditWallet({ walletUserId: client, type: 'recharge', amount, reference: 'REF' })
   createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount })
   payEscrowOrder(conversationId)
+  recordEscrowOrderCheckIn(conversationId, null)
+  recordEscrowOrderCheckOut(conversationId, null)
   return markEscrowOrderDelivered(conversationId)
 }
 
