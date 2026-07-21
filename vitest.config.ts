@@ -8,6 +8,27 @@ export default defineConfig({
     // Réplique les auto-imports de Vue fournis par Nuxt (ref, computed…) pour
     // que les composants testés ici n'aient pas besoin d'imports explicites.
     autoImport({ imports: ['vue'], dts: false }),
+    // Réplique l'auto-import Nitro pour les fichiers server/api/** (#261) :
+    // ces handlers n'ont eux-mêmes aucun import (Nitro les injecte au
+    // build) — sans ce plugin, les charger tels quels sous Vitest échouerait
+    // avec des ReferenceError sur `requireSessionUser`, `getRouterParam`,
+    // `notFound`, etc. `dirs` couvre les helpers de server/utils/** (mêmes
+    // noms qu'en production) ; `imports` couvre les primitives h3 que Nitro
+    // réexpose globalement. Basé sur `unimport`, la même librairie que Nuxt
+    // utilise en interne pour son propre auto-import.
+    autoImport({
+      dirs: ['server/utils'],
+      imports: [
+        {
+          h3: [
+            'defineEventHandler', 'getRouterParam', 'getRouterParams', 'readBody', 'readRawBody',
+            'getQuery', 'getCookie', 'setCookie', 'deleteCookie', 'setResponseStatus', 'createError',
+            'getHeader', 'getRequestURL', 'sendRedirect', 'setResponseHeader',
+          ],
+        },
+      ],
+      dts: false,
+    }),
     vue(),
   ],
   resolve: {
