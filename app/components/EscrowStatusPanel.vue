@@ -79,11 +79,12 @@ async function handleCancelOrder() {
   }
 }
 
-// Litige (#197, epic #191) : le chercheur conteste la qualité de la
-// prestation au lieu de confirmer la réception, gèle les fonds en attendant
-// une équipe de médiation WorkTogo.
+// Litige (#197/#274, epic #191) : le chercheur conteste la qualité de la
+// prestation au lieu de confirmer la réception, avec des preuves à l'appui
+// (#274), gèle les fonds en attendant une équipe de médiation WorkTogo.
 const showDisputeForm = ref(false)
 const disputeReason = ref('')
+const disputeEvidence = ref('')
 const isDisputing = ref(false)
 const disputeError = ref('')
 
@@ -94,7 +95,7 @@ async function handleOpenDispute() {
   try {
     await $fetch(`/api/conversations/${props.conversationId}/dispute`, {
       method: 'POST',
-      body: { reason: disputeReason.value.trim() },
+      body: { reason: disputeReason.value.trim(), evidence: disputeEvidence.value.trim() || undefined },
     })
     showDisputeForm.value = false
     emit('changed')
@@ -102,6 +103,31 @@ async function handleOpenDispute() {
     disputeError.value = "Le litige n'a pas pu être ouvert. Réessayez."
   } finally {
     isDisputing.value = false
+  }
+}
+
+// Réponse du prestataire au litige (#274, « en médiation ») : la commande
+// reste `disputed`, seule l'équipe de médiation WorkTogo peut la faire
+// évoluer ensuite — cette réponse donne à l'équipe support les deux versions.
+const disputeResponseDraft = ref('')
+const isRespondingToDispute = ref(false)
+const respondToDisputeError = ref('')
+
+async function handleRespondToDispute() {
+  if (isRespondingToDispute.value || !disputeResponseDraft.value.trim()) return
+  isRespondingToDispute.value = true
+  respondToDisputeError.value = ''
+  try {
+    await $fetch(`/api/conversations/${props.conversationId}/respond-dispute`, {
+      method: 'POST',
+      body: { response: disputeResponseDraft.value.trim() },
+    })
+    disputeResponseDraft.value = ''
+    emit('changed')
+  } catch {
+    respondToDisputeError.value = "La réponse n'a pas pu être envoyée. Réessayez."
+  } finally {
+    isRespondingToDispute.value = false
   }
 }
 </script>
@@ -162,6 +188,13 @@ async function handleOpenDispute() {
           aria-label="Motif du litige"
           class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
         />
+        <textarea
+          v-model="disputeEvidence"
+          rows="2"
+          placeholder="Preuves à l'appui : description détaillée, liens vers des photos (optionnel)"
+          aria-label="Preuves à l'appui du litige"
+          class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
+        />
         <div class="flex gap-2">
           <button
             type="button"
@@ -191,10 +224,42 @@ async function handleOpenDispute() {
       Commande annulée par le prestataire, chercheur remboursé intégralement.
     </p>
 
-    <p v-else-if="escrowOrder.status === 'disputed'" class="text-[13px] text-dark">
-      Litige ouvert : les fonds restent gelés en séquestre en attendant l'arbitrage de l'équipe de médiation
-      WorkTogo.
-    </p>
+    <template v-else-if="escrowOrder.status === 'disputed'">
+      <p class="text-[13px] text-dark">
+        Litige ouvert : les fonds restent gelés en séquestre en attendant l'arbitrage de l'équipe de médiation
+        WorkTogo.
+      </p>
+      <p v-if="escrowOrder.disputeEvidence" class="mt-1 text-[12px] text-muted">
+        Preuves fournies : {{ escrowOrder.disputeEvidence }}
+      </p>
+
+      <p v-if="escrowOrder.disputeResponse" class="mt-2 text-[13px] text-dark">
+        Réponse du prestataire : {{ escrowOrder.disputeResponse }}
+      </p>
+      <p v-else-if="isViewerClient" class="mt-1 text-[12px] text-muted">
+        En attente de la réponse du prestataire.
+      </p>
+
+      <div v-if="isViewerProvider && !escrowOrder.disputeResponse" class="mt-3 space-y-2 border-t border-hairline pt-3">
+        <p class="text-[12.5px] font-semibold text-dark">Répondre au litige (en médiation)</p>
+        <textarea
+          v-model="disputeResponseDraft"
+          rows="2"
+          placeholder="Votre version des faits, en réponse au litige (obligatoire)"
+          aria-label="Réponse au litige"
+          class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
+        />
+        <button
+          type="button"
+          class="press rounded-field bg-primary px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
+          :disabled="!disputeResponseDraft.trim() || isRespondingToDispute"
+          @click="handleRespondToDispute"
+        >
+          {{ isRespondingToDispute ? 'Envoi…' : 'Envoyer ma réponse' }}
+        </button>
+        <p v-if="respondToDisputeError" class="text-[12.5px] text-error">{{ respondToDisputeError }}</p>
+      </div>
+    </template>
 
     <p v-if="deliverError" class="mt-2 text-[12.5px] text-error">{{ deliverError }}</p>
     <p v-if="receiptError" class="mt-2 text-[12.5px] text-error">{{ receiptError }}</p>

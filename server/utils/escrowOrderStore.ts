@@ -47,6 +47,11 @@ export interface EscrowOrder {
   disputedAt: number | null
   /** Motif du litige ouvert par le chercheur (#197), transmis à l'équipe de médiation. */
   disputeReason: string | null
+  /** Preuves fournies par le chercheur à l'ouverture du litige (#274), sinon `null`. */
+  disputeEvidence: string | null
+  /** Réponse du prestataire au litige (#274, « en médiation ») — bloque toujours la libération automatique tant que le litige n'est pas explicitement résolu, que le prestataire ait répondu ou non. */
+  disputeResponse: string | null
+  disputeRespondedAt: number | null
 }
 
 /**
@@ -85,6 +90,9 @@ export function createEscrowOrder(input: {
     cancelReason: null,
     disputedAt: null,
     disputeReason: null,
+    disputeEvidence: null,
+    disputeResponse: null,
+    disputeRespondedAt: null,
   }
   ordersByConversationId.set(input.conversationId, order)
   return order
@@ -232,13 +240,14 @@ export type OpenDisputeResult =
 
 /**
  * Le chercheur conteste la qualité de la prestation au lieu de confirmer la
- * réception (#197) : gèle les fonds (aucune libération ni remboursement
+ * réception (#197/#274) : gèle les fonds (aucune libération ni remboursement
  * automatique) et notifie une équipe de médiation WorkTogo. Seule une
  * commande `delivered` (prestation marquée terminée par le prestataire, en
  * attente de validation) peut être contestée — passé ce point, le litige
- * relève de la médiation, pas de cette route.
+ * relève de la médiation, pas de cette route. `evidence` (#274) accompagne
+ * le motif de preuves à l'appui (description, liens vers des photos).
  */
-export function openEscrowDispute(conversationId: string, reason: string): OpenDisputeResult {
+export function openEscrowDispute(conversationId: string, reason: string, evidence?: string): OpenDisputeResult {
   const order = ordersByConversationId.get(conversationId)
   if (!order) return { ok: false, error: 'not_found' }
   if (order.status !== 'delivered') return { ok: false, error: 'invalid_status' }
@@ -247,10 +256,35 @@ export function openEscrowDispute(conversationId: string, reason: string): OpenD
   order.status = 'disputed'
   order.disputedAt = Date.now()
   order.disputeReason = reason.trim()
+  order.disputeEvidence = evidence?.trim() || null
   return { ok: true, order }
 }
 
-/** Commandes en litige en attente d'arbitrage, pour une future interface de médiation WorkTogo (#197). */
+export type RespondToDisputeResult =
+  | { ok: true; order: EscrowOrder }
+  | { ok: false; error: 'not_found' | 'invalid_status' | 'response_required' }
+
+/**
+ * Le prestataire répond à un litige ouvert par le chercheur (#274) : la
+ * commande reste `disputed` (les fonds restent gelés, aucun changement de
+ * statut n'est déclenché par une simple réponse — seule l'équipe de
+ * médiation WorkTogo peut la faire évoluer, hors périmètre technique de ce
+ * lot). `disputeResponse` renseigné marque concrètement le passage en
+ * « médiation » : chercheur et prestataire se sont tous deux exprimés,
+ * l'équipe support dispose de tout le nécessaire pour arbitrer.
+ */
+export function respondToDispute(conversationId: string, response: string): RespondToDisputeResult {
+  const order = ordersByConversationId.get(conversationId)
+  if (!order) return { ok: false, error: 'not_found' }
+  if (order.status !== 'disputed') return { ok: false, error: 'invalid_status' }
+  if (!response.trim()) return { ok: false, error: 'response_required' }
+
+  order.disputeResponse = response.trim()
+  order.disputeRespondedAt = Date.now()
+  return { ok: true, order }
+}
+
+/** Commandes en litige en attente d'arbitrage, pour une future interface de médiation WorkTogo (#197/#274). */
 export function listDisputedOrders(): EscrowOrder[] {
   return [...ordersByConversationId.values()].filter((order) => order.status === 'disputed')
 }
