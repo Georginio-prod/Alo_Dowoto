@@ -3,9 +3,12 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { conflict } from '~~/server/utils/apiError'
 import {
   activateSubscription,
+  activateTrialSubscription,
   createPendingSubscription,
   getSubscriptionById,
   getSubscriptionByUserId,
+  isEligibleForTrial,
+  TRIAL_DURATION_DAYS,
 } from '~~/server/utils/subscriptionStore'
 
 /**
@@ -72,5 +75,52 @@ describe('subscriptionStore (#29/#30 abonnements prestataire)', () => {
 
   it('activateSubscription renvoie null pour un identifiant inconnu', () => {
     expect(activateSubscription('inexistant', 30)).toBeNull()
+  })
+})
+
+describe('essai gratuit à la première souscription (#281)', () => {
+  it('un prestataire n’ayant jamais eu d’abonnement est éligible', () => {
+    expect(isEligibleForTrial(userId())).toBe(true)
+  })
+
+  it('active immédiatement un abonnement, sans paiement préalable', () => {
+    const now = 1_000_000_000
+    const spy = vi.spyOn(Date, 'now').mockImplementation(() => now)
+
+    const result = activateTrialSubscription(userId(), 'mensuel')
+
+    spy.mockRestore()
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.subscription.status).toBe('actif')
+      expect(result.subscription.isTrial).toBe(true)
+      expect(result.subscription.dateDebut).toBe(now)
+      expect(result.subscription.dateFin).toBe(now + TRIAL_DURATION_DAYS * 24 * 60 * 60 * 1000)
+    }
+  })
+
+  it('n’est plus éligible une fois l’essai consommé', () => {
+    const user = userId()
+    activateTrialSubscription(user, 'mensuel')
+    expect(isEligibleForTrial(user)).toBe(false)
+  })
+
+  it('refuse un second essai pour le même prestataire', () => {
+    const user = userId()
+    activateTrialSubscription(user, 'mensuel')
+    expect(activateTrialSubscription(user, 'trimestriel')).toEqual({ ok: false, error: 'already_used' })
+  })
+
+  it('refuse l’essai si un abonnement (même en attente, jamais activé) existe déjà', () => {
+    const user = userId()
+    createPendingSubscription(user, 'mensuel')
+    expect(isEligibleForTrial(user)).toBe(false)
+    expect(activateTrialSubscription(user, 'mensuel')).toEqual({ ok: false, error: 'already_used' })
+  })
+
+  it('un abonnement payé classique n’est pas marqué comme essai', () => {
+    const subscription = createPendingSubscription(userId(), 'mensuel')
+    const activated = activateSubscription(subscription.id, 30)
+    expect(activated?.isTrial).toBe(false)
   })
 })
