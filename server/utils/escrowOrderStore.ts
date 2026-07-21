@@ -1,5 +1,20 @@
 import { randomUUID } from 'node:crypto'
-import { addSystemMessage, getClientContact } from '~~/server/utils/conversationStore'
+import {
+  addSystemMessage,
+  findLatestUnresolvedMessage,
+  findOrCreateConversation,
+  getClientContact,
+  markFirstContactDone,
+  resolveMessage,
+  setClientContact,
+} from '~~/server/utils/conversationStore'
+import {
+  getEffectiveRating,
+  getProviderById,
+  type ProviderSearchResult,
+  resolveProviderRate,
+  searchProviders,
+} from '~~/server/utils/providerDirectory'
 import { creditWallet, debitWallet, PLATFORM_WALLET_USER_ID } from '~~/server/utils/walletStore'
 
 /**
@@ -57,6 +72,13 @@ export const ESCROW_COMMISSION_RATE = 0.1
 
 /** Délai de validation tacite (#195) : 72h sans réponse du chercheur après livraison. */
 export const TACIT_VALIDATION_DELAY_MS = 72 * 60 * 60 * 1000
+
+/**
+ * Délai maximal laissé au prestataire pour confirmer la prise en charge
+ * après paiement (#289) : passé ce délai sans réponse, la demande est
+ * automatiquement réattribuée au prestataire suivant du même secteur/ville.
+ */
+export const PROVIDER_RESPONSE_TIMEOUT_MS = 30 * 60 * 1000
 
 const ordersByConversationId = new Map<string, EscrowOrder>()
 
@@ -131,9 +153,81 @@ function applyTacitValidationIfExpired(order: EscrowOrder): void {
   }
 }
 
+/**
+ * Prochain prestataire disponible du même secteur/ville qu'un prestataire
+ * donné (#289), classé par note effective décroissante (`getEffectiveRating`,
+ * cohérent avec la note affichée ailleurs dans l'app plutôt qu'une note brute
+ * d'annuaire). `null` si aucune alternative n'existe.
+ */
+function findNextAvailableProvider(currentProviderId: string): ProviderSearchResult | null {
+  const current = getProviderById(currentProviderId)
+  if (!current) return null
+
+  const alternatives = searchProviders({ sector: current.sector, city: current.city }).filter(
+    (provider) => provider.id !== currentProviderId,
+  )
+  if (alternatives.length === 0) return null
+
+  const ranked = alternatives
+    .map((provider) => ({ provider, ...getEffectiveRating(provider.id) }))
+    .sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount)
+  return ranked[0]?.provider ?? null
+}
+
+/**
+ * Réattribution automatique (#289) : si le prestataire n'a pas confirmé la
+ * prise en charge (`order_confirmation` toujours non résolu) dans le délai
+ * imparti après paiement, la commande en cours est remboursée et une
+ * nouvelle demande est proposée au prestataire suivant du classement, sur
+ * une nouvelle conversation. Le chercheur garde la main : la nouvelle
+ * commande reste `awaiting_payment`, à confirmer par un nouveau paiement
+ * (pas de débit automatique une seconde fois).
+ */
+function applyAutoReassignmentIfExpired(order: EscrowOrder): void {
+  if (order.status !== 'in_escrow' || order.paidAt === null) return
+  if (Date.now() - order.paidAt < PROVIDER_RESPONSE_TIMEOUT_MS) return
+
+  const pendingConfirmation = findLatestUnresolvedMessage(order.conversationId, 'order_confirmation')
+  if (!pendingConfirmation) return
+
+  const nextProvider = findNextAvailableProvider(order.providerId)
+  if (!nextProvider) {
+    addSystemMessage(
+      order.conversationId,
+      "Le prestataire n'a pas répondu à temps et aucune alternative n'est disponible pour le moment. Vous pouvez annuler cette commande ou réessayer plus tard.",
+    )
+    return
+  }
+
+  creditWallet({ walletUserId: order.clientId, type: 'escrow_refund', amount: order.amount, reference: order.id, counterpartyUserId: order.providerId })
+  order.status = 'refunded'
+  order.cancelledAt = Date.now()
+  order.cancelReason = "Réattribution automatique : le prestataire n'a pas confirmé la prise en charge à temps."
+  resolveMessage(order.conversationId, pendingConfirmation.id)
+  addSystemMessage(
+    order.conversationId,
+    `Le prestataire n'a pas répondu à temps. Remboursement intégral effectué, et votre demande a été transmise automatiquement à ${nextProvider.displayName}.`,
+  )
+
+  const newConversation = findOrCreateConversation(order.clientId, nextProvider.id)
+  const clientContact = getClientContact(order.conversationId)
+  if (clientContact) setClientContact(newConversation.id, clientContact)
+  markFirstContactDone(newConversation.id)
+
+  const newAmount = resolveProviderRate(nextProvider.id) ?? order.amount
+  createEscrowOrder({ conversationId: newConversation.id, clientId: order.clientId, providerId: nextProvider.id, amount: newAmount })
+  addSystemMessage(
+    newConversation.id,
+    "Cette demande vous a été transmise automatiquement suite à l'absence de réponse d'un autre prestataire. Réglez le paiement pour la confirmer.",
+  )
+}
+
 export function getEscrowOrderByConversationId(conversationId: string): EscrowOrder | null {
   const order = ordersByConversationId.get(conversationId) ?? null
-  if (order) applyTacitValidationIfExpired(order)
+  if (order) {
+    applyTacitValidationIfExpired(order)
+    applyAutoReassignmentIfExpired(order)
+  }
   return order
 }
 

@@ -188,7 +188,8 @@ async function handleOpenDispute() {
     </p>
 
     <p v-else-if="escrowOrder.status === 'refunded'" class="text-[13px] text-dark">
-      Commande annulée par le prestataire, chercheur remboursé intégralement.
+      Commande annulée{{ escrowOrder.cancelReason ? ` (${escrowOrder.cancelReason})` : '' }}, chercheur remboursé
+      intégralement.
     </p>
 
     <p v-else-if="escrowOrder.status === 'disputed'" class="text-[13px] text-dark">
