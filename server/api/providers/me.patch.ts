@@ -5,6 +5,8 @@ import type { CertificationEntry, FormationEntry, Mobility, PayoutMethod } from 
 interface PatchProviderBody {
   sector?: string
   city?: string
+  latitude?: number
+  longitude?: number
   payoutMethod?: PayoutMethod
   photoUrl?: string
   description?: string
@@ -48,6 +50,12 @@ export default defineEventHandler(async (event) => {
   if (body?.mobility !== undefined && !MOBILITY_OPTIONS.includes(body.mobility)) {
     badRequest('Préférence de déplacement invalide.')
   }
+  // Coordonnées facultatives (#263) : ne bloquent pas l'enregistrement si
+  // absentes, mais doivent être une paire valide si fournies (géolocalisation
+  // navigateur, jamais saisies manuellement par le prestataire).
+  if ((body?.latitude !== undefined || body?.longitude !== undefined) && !isValidCoordinatePair(body?.latitude, body?.longitude)) {
+    badRequest('Coordonnées GPS invalides.')
+  }
   if (body?.languages !== undefined) {
     if (!Array.isArray(body.languages) || body.languages.length > MAX_LANGUAGES || body.languages.some((lang) => typeof lang !== 'string' || !lang.trim())) {
       badRequest('Liste de langues invalide.')
@@ -84,6 +92,8 @@ export default defineEventHandler(async (event) => {
     displayName,
     sector,
     city: requiredFields.city,
+    latitude: body?.latitude,
+    longitude: body?.longitude,
     payoutMethod: requiredFields.payoutMethod,
     photoUrl: body?.photoUrl,
     description: body?.description,
