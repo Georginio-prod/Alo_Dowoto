@@ -34,7 +34,11 @@ import ProfessionalProfileForm from '~/components/ProfessionalProfileForm.vue'
  * qui n'a pas cette barre latérale ailleurs dans l'app, garde le layout
  * `blank` d'origine.
  */
-definePageMeta({ layout: false, middleware: 'auth' })
+// `alias` : rend ce hub également accessible sous /prestataire/profil (lien
+// utilisé par la nav du dashboard prestataire) sans dupliquer le composant —
+// /profil tout court reste la route canonique pour le chercheur, qui n'a pas
+// de section /prestataire.
+definePageMeta({ layout: false, middleware: 'auth', alias: '/prestataire/profil' })
 
 const { user, ensure } = useSession()
 await ensure()

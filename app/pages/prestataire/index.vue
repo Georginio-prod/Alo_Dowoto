@@ -14,7 +14,11 @@ import type { Subscription } from '~~/server/utils/subscriptionStore'
  * minimal.
  */
 
-definePageMeta({ layout: 'dashboard-prestataire', middleware: 'auth', authRole: 'prestataire' })
+// `alias` : rend cette page également accessible sous /prestataire/accueil
+// (lien utilisé par la nav du dashboard, voir dashboard-prestataire.vue) sans
+// dupliquer le composant — /prestataire tout court reste valide pour les
+// redirections externes existantes (connexion, callback Google…).
+definePageMeta({ layout: 'dashboard-prestataire', middleware: 'auth', authRole: 'prestataire', alias: '/prestataire/accueil' })
 
 const BADGE_STYLES: Record<string, string> = {
   none: 'bg-white/10 text-white/80',
@@ -112,7 +116,7 @@ function restartDemo() {
 
     <NuxtLink
       v-if="!user?.verified"
-      to="/profil?open=verification"
+      to="/prestataire/profil?open=verification"
       class="press mb-4 flex items-center justify-between gap-3 rounded-card border border-primary/30 bg-primary/8 p-4 hover:border-primary/50"
     >
       <p class="text-[13px] font-semibold text-dark">
@@ -187,7 +191,7 @@ function restartDemo() {
 
     <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
       <NuxtLink
-        to="/profil"
+        to="/prestataire/profil"
         class="press rounded-card border border-hairline bg-dark p-4 shadow-card-sm hover:bg-dark-hover"
       >
         <p class="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-white/70">Profil</p>
@@ -201,7 +205,7 @@ function restartDemo() {
         <p class="text-[13.5px] font-semibold text-dark">Voir mon solde</p>
       </NuxtLink>
       <NuxtLink
-        to="/messages"
+        to="/prestataire/messages"
         class="press rounded-card border border-hairline bg-surface p-4 shadow-card-sm hover:border-primary/40"
       >
         <p class="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-primary">Messages</p>

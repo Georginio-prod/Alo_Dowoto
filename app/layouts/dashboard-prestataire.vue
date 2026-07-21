@@ -31,12 +31,18 @@ const PROFILE_SUBPAGES = [
   '/prestataire/coordonnees',
 ]
 
+// La nav pointe vers les alias sous /prestataire/… (voir `alias` dans
+// definePageMeta de prestataire/index.vue, profil.vue et messages/index.vue)
+// pour que l'URL reflète toujours « section prestataire » — /prestataire,
+// /profil et /messages restent aussi valides (liens externes, redirections
+// de connexion) et sont donc gardés dans `activePaths` pour ne pas casser
+// la surbrillance si on y arrive par un autre chemin.
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Accueil', to: '/prestataire' },
-  { label: 'Profil', to: '/profil', activePaths: PROFILE_SUBPAGES },
+  { label: 'Accueil', to: '/prestataire/accueil', activePaths: ['/prestataire'] },
+  { label: 'Profil', to: '/prestataire/profil', activePaths: ['/profil', ...PROFILE_SUBPAGES] },
   { label: 'Demandes reçues', to: '/prestataire/demandes' },
   { label: 'Solde', to: '/prestataire/solde' },
-  { label: 'Messages', to: '/messages' },
+  { label: 'Messages', to: '/prestataire/messages', activePaths: ['/messages'] },
   { label: 'Avis', to: null },
 ]
 
@@ -51,7 +57,7 @@ function isActive(item: NavItem): boolean {
   <div class="min-h-screen bg-bg text-ink">
     <div class="mx-auto flex max-w-[1100px] flex-col gap-6 px-5 py-6 lg:flex-row lg:items-start">
       <aside class="w-full shrink-0 lg:w-[220px]">
-        <NuxtLink to="/prestataire" class="mb-5 block text-[19px] font-extrabold text-dark">
+        <NuxtLink to="/prestataire/accueil" class="mb-5 block text-[19px] font-extrabold text-dark">
           Work<span class="text-primary">Togo</span>
         </NuxtLink>
 

@@ -72,7 +72,7 @@ function formatBudget(amount: number): string {
         Ces demandes correspondent à votre profil, mais c'est le client qui choisit qui contacter — être listé ici
         ne veut pas dire qu'il vous a déjà écrit.
       </p>
-      <NuxtLink to="/messages" class="press shrink-0 text-[12.5px] font-semibold text-primary">
+      <NuxtLink to="/prestataire/messages" class="press shrink-0 text-[12.5px] font-semibold text-primary">
         Voir mes messages →
       </NuxtLink>
     </div>

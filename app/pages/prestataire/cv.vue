@@ -9,7 +9,7 @@ definePageMeta({ layout: 'dashboard-prestataire', middleware: 'auth', authRole: 
 
 <template>
   <div>
-    <NuxtLink to="/profil" class="press mb-4 inline-block text-[13px] font-semibold text-muted hover:text-dark">← Retour au profil</NuxtLink>
+    <NuxtLink to="/prestataire/profil" class="press mb-4 inline-block text-[13px] font-semibold text-muted hover:text-dark">← Retour au profil</NuxtLink>
 
     <div class="mb-6">
       <p class="mb-1 text-[11px] font-bold uppercase tracking-wide text-primary">Espace prestataire</p>
