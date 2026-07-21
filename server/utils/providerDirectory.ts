@@ -3,6 +3,7 @@ import { getAverageRating } from '~~/server/utils/reviewStore'
 import { getProviderProfile, listProviderProfiles } from '~~/server/utils/providerStore'
 import type { ProviderProfile } from '~~/server/utils/providerStore'
 import { isVerified } from '~~/server/utils/verificationStore'
+import { scoreFeaturedProvider } from '~~/server/utils/matchingEngine'
 import type { FeaturedCandidate } from '~~/server/utils/matchingEngine'
 
 /**
@@ -99,10 +100,19 @@ export function getProviderById(id: string): ProviderSearchResult | null {
   return allProviders().find((provider) => provider.id === id) ?? null
 }
 
+/**
+ * Recherche filtrée de prestataires (#43), triée par score multi-critères
+ * (#288) plutôt que par ordre d'insertion/inscription brut : note moyenne
+ * (ajustée bayésiennement, `scoreFeaturedProvider`), identité vérifiée et
+ * ancienneté approximée par le nombre d'avis. Évite qu'un tri implicite
+ * (proximité seule, ou simple ordre d'apparition) concentre les demandes
+ * sur une poignée de prestataires au détriment de profils compétents mais
+ * moins visibles.
+ */
 export function searchProviders(filters: ProviderSearchFilters): ProviderSearchResult[] {
   const query = filters.query ? normalize(filters.query) : ''
 
-  return allProviders().filter((provider) => {
+  const filtered = allProviders().filter((provider) => {
     if (filters.sector && provider.sector !== filters.sector) return false
     if (filters.subSectors?.length && !filters.subSectors.includes(provider.subSector)) return false
     if (filters.city && provider.city !== filters.city) return false
@@ -114,6 +124,26 @@ export function searchProviders(filters: ProviderSearchFilters): ProviderSearchR
     }
     return true
   })
+
+  // Score calculé une seule fois par résultat (pas à chaque comparaison du
+  // tri) : getEffectiveRating peut retomber sur getProviderById, qui
+  // reconstruit l'annuaire fusionné — coûteux à répéter en O(n log n).
+  return filtered
+    .map((provider) => ({ provider, score: scoreSearchResult(provider) }))
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.provider)
+}
+
+/** Score multi-critères (0-100) d'un résultat de recherche, voir `searchProviders`. */
+function scoreSearchResult(provider: ProviderSearchResult): number {
+  const { rating, reviewCount } = getEffectiveRating(provider.id)
+  return scoreFeaturedProvider({
+    providerId: provider.id,
+    rating,
+    reviewCount,
+    verified: provider.verified,
+    experienceYears: estimateExperienceYears(reviewCount),
+  }).total
 }
 
 /**

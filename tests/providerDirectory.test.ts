@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { countBySector, getProviderById, getProviderDetail, resolveProviderRate, searchProviders } from '~~/server/utils/providerDirectory'
 import { upsertProviderProfile } from '~~/server/utils/providerStore'
+import { submitReview } from '~~/server/utils/reviewStore'
 
 describe('searchProviders (#40 filtres de résultats)', () => {
   it('retourne tous les prestataires du secteur quand aucun autre filtre n’est actif', () => {
@@ -34,6 +35,37 @@ describe('searchProviders (#40 filtres de résultats)', () => {
     const results = searchProviders({ query: 'Kpalimé' })
     expect(results.length).toBeGreaterThan(0)
     expect(results.every((p) => p.city === 'Kpalimé')).toBe(true)
+  })
+})
+
+describe('searchProviders — tri multi-critères plutôt que par ordre d’insertion (#288)', () => {
+  it('classe un prestataire mieux noté, plus avisé et vérifié avant un profil moins bien noté', () => {
+    // p03 (Essolakina T., vérifiée, note 4.9, 54 avis) doit devancer p06
+    // (Adjoa K., non vérifiée, note 4.5, 12 avis) — l'inverse de leur ordre
+    // d'apparition dans l'annuaire de démo (p03 avant p06 dans DIRECTORY,
+    // ce test vérifie donc un vrai tri, pas juste la préservation de l'ordre).
+    const results = searchProviders({ sector: 'menage', city: 'Lomé' })
+    const best = results.findIndex((p) => p.id === 'p03')
+    const worst = results.findIndex((p) => p.id === 'p06')
+    expect(best).toBeGreaterThanOrEqual(0)
+    expect(worst).toBeGreaterThanOrEqual(0)
+    expect(best).toBeLessThan(worst)
+  })
+
+  it('classe un compte réel bien noté avant un compte réel sans aucun avis', () => {
+    upsertProviderProfile('real-provider-score-high', { displayName: 'Bien noté', sector: 'beaute', city: 'Lomé' })
+    upsertProviderProfile('real-provider-score-low', { displayName: 'Sans avis', sector: 'beaute', city: 'Lomé' })
+
+    for (let i = 0; i < 10; i++) {
+      submitReview(`conv-score-${i}`, `author-${i}`, 'real-provider-score-high', 5)
+    }
+
+    const results = searchProviders({ sector: 'beaute', city: 'Lomé' })
+    const high = results.findIndex((p) => p.id === 'real-provider-score-high')
+    const low = results.findIndex((p) => p.id === 'real-provider-score-low')
+    expect(high).toBeGreaterThanOrEqual(0)
+    expect(low).toBeGreaterThanOrEqual(0)
+    expect(high).toBeLessThan(low)
   })
 })
 
