@@ -44,11 +44,17 @@ export default defineEventHandler(async (event) => {
     conflict('Ce prestataire n\'a pas encore configuré de tarif fixe : demande impossible pour le moment.')
   }
 
-  const messageLines = [description, `Contact : ${contact}`]
+  // Le contact réel n'est jamais inséré en clair dans le message (#264,
+  // anti-fuite) : seule une version masquée apparaît dans le fil tant que la
+  // prestation n'est pas validée ; la valeur brute est conservée à part et
+  // révélée automatiquement au prestataire à la libération des fonds (voir
+  // `escrowOrderStore.ts`, `releaseOrderFunds`).
+  const messageLines = [description, `Contact : ${maskContact(contact)}`]
   if (urgency) messageLines.push(`Urgence / délai souhaité : ${urgency}`)
 
   const message = addMessage(conversation.id, user.id, user.role, messageLines.join('\n\n'))
   markFirstContactDone(conversation.id)
+  setClientContact(conversation.id, contact)
   const order = createEscrowOrder({ conversationId: conversation.id, clientId: user.id, providerId: conversation.providerId, amount })
 
   setResponseStatus(event, 201)

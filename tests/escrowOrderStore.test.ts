@@ -319,3 +319,4 @@ describe('openEscrowDispute — litige sur une commande en séquestre (#197)', (
     expect(listDisputedOrders().some((order) => order.conversationId === conversationId)).toBe(true)
   })
 })
+

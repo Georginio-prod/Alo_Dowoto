@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { addSystemMessage, getClientContact } from '~~/server/utils/conversationStore'
 import { creditWallet, debitWallet, PLATFORM_WALLET_USER_ID } from '~~/server/utils/walletStore'
 
 /**
@@ -109,6 +110,17 @@ function releaseOrderFunds(order: EscrowOrder): void {
 
   order.status = 'released'
   order.releasedAt = Date.now()
+
+  // Validation finale (#264, anti-fuite) : les coordonnées réelles du
+  // chercheur, masquées jusqu'ici dans le fil, ne sont révélées au
+  // prestataire qu'une fois la prestation intégralement validée et payée.
+  const contact = getClientContact(order.conversationId)
+  if (contact) {
+    addSystemMessage(
+      order.conversationId,
+      `Prestation validée : voici les coordonnées du chercheur pour la suite — ${contact}`,
+    )
+  }
 }
 
 /** Libère automatiquement une commande livrée depuis plus de 72h sans réponse du chercheur (#195). */
@@ -123,6 +135,22 @@ export function getEscrowOrderByConversationId(conversationId: string): EscrowOr
   const order = ordersByConversationId.get(conversationId) ?? null
   if (order) applyTacitValidationIfExpired(order)
   return order
+}
+
+/**
+ * Une prestation a-t-elle déjà été intégralement validée (`released`) entre
+ * ce client et ce prestataire ? Sert de condition au démasquage des
+ * coordonnées sur la fiche prestataire (#264, anti-fuite) — remplace l'ancien
+ * critère « conversation existante », trop précoce (démasquait dès le
+ * premier contact, avant tout paiement).
+ */
+export function hasReleasedOrderBetween(clientId: string, providerId: string): boolean {
+  for (const order of ordersByConversationId.values()) {
+    if (order.clientId !== clientId || order.providerId !== providerId) continue
+    applyTacitValidationIfExpired(order)
+    if (order.status === 'released') return true
+  }
+  return false
 }
 
 export type PayEscrowOrderResult =
