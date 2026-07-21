@@ -165,6 +165,26 @@ describe('conversationStore — compteur de non-lus (#225, barre de raccourci me
   })
 })
 
+describe('conversationStore — secteur du prestataire (#295, fiche différenciée par métier)', () => {
+  it('expose le slug de secteur du prestataire (annuaire de démo) côté client', async () => {
+    const conversation = findOrCreateConversation('client-40', 'p09') // p09 : sector 'btp'
+    const summary = await toConversationSummary(conversation, 'client-40')
+    expect(summary.sectorSlug).toBe('btp')
+  })
+
+  it('renvoie null côté prestataire (pas de secteur pour un chercheur)', async () => {
+    const conversation = findOrCreateConversation('client-41', 'p10')
+    const summary = await toConversationSummary(conversation, 'p10')
+    expect(summary.sectorSlug).toBeNull()
+  })
+
+  it("renvoie null quand le prestataire n'est pas dans l'annuaire de démo (cas limite)", async () => {
+    const conversation = findOrCreateConversation('client-42', 'provider-inconnu')
+    const summary = await toConversationSummary(conversation, 'client-42')
+    expect(summary.sectorSlug).toBeNull()
+  })
+})
+
 describe('conversationStore — messages automatiques WorkTogo (#hub-messages-automatiques)', () => {
   it('addSystemMessage crée un message attribué à WorkTogo, pas à un utilisateur réel', () => {
     const conversation = findOrCreateConversation('client-20', 'p20')
