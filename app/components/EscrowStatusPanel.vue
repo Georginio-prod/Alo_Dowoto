@@ -112,6 +112,9 @@ async function handleOpenDispute() {
       Paiement reçu en séquestre ({{ escrowOrder.amount.toLocaleString('fr-FR') }} F CFA). Une fois la prestation
       terminée, marquez-la comme telle pour déclencher la validation du chercheur.
     </p>
+    <p v-if="escrowOrder.status === 'in_escrow' && isViewerProvider" class="mt-1 text-[12px] text-muted">
+      Cette garantie de paiement ne s'applique qu'aux prestations réglées via WorkTogo — voir nos CGU.
+    </p>
     <button
       v-if="escrowOrder.status === 'in_escrow' && isViewerProvider"
       type="button"
