@@ -114,31 +114,14 @@ async function handleClientCancelOrder() {
   }
 }
 
-// Litige (#197, epic #191) : le chercheur conteste la qualité de la
-// prestation au lieu de confirmer la réception, gèle les fonds en attendant
-// une équipe de médiation WorkTogo.
+// Litige (#197/#274, epic #191) : le chercheur conteste la qualité de la
+// prestation au lieu de confirmer la réception, avec des preuves à l'appui
+// (#274), gèle les fonds en attendant une équipe de médiation WorkTogo.
+// Formulaire possédé par DisputeForm.vue (comme EscrowStatusPanel.vue pour
+// le séquestre) ; l'affichage/réponse une fois `disputed` est possédé par
+// DisputeMediationPanel.vue — cette bascule reste ici, à côté du bouton
+// "Confirmer la réception" qu'elle jouxte dans le template.
 const showDisputeForm = ref(false)
-const disputeReason = ref('')
-const isDisputing = ref(false)
-const disputeError = ref('')
-
-async function handleOpenDispute() {
-  if (isDisputing.value || !disputeReason.value.trim()) return
-  isDisputing.value = true
-  disputeError.value = ''
-  try {
-    await $fetch(`/api/conversations/${props.conversationId}/dispute`, {
-      method: 'POST',
-      body: { reason: disputeReason.value.trim() },
-    })
-    showDisputeForm.value = false
-    emit('changed')
-  } catch {
-    disputeError.value = "Le litige n'a pas pu être ouvert. Réessayez."
-  } finally {
-    isDisputing.value = false
-  }
-}
 </script>
 
 <template>
@@ -237,29 +220,12 @@ async function handleOpenDispute() {
         </button>
       </div>
 
-      <div v-if="showDisputeForm" class="mt-3 space-y-2 border-t border-hairline pt-3">
-        <textarea
-          v-model="disputeReason"
-          rows="2"
-          placeholder="Motif du litige (obligatoire)"
-          aria-label="Motif du litige"
-          class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
-        />
-        <div class="flex gap-2">
-          <button
-            type="button"
-            class="press rounded-field border border-error px-4 py-2 text-[12.5px] font-semibold text-error disabled:cursor-not-allowed disabled:opacity-45"
-            :disabled="!disputeReason.trim() || isDisputing"
-            @click="handleOpenDispute"
-          >
-            {{ isDisputing ? 'Envoi…' : 'Confirmer le litige' }}
-          </button>
-          <button type="button" class="press text-[12.5px] text-muted" @click="showDisputeForm = false">
-            Retour
-          </button>
-        </div>
-        <p v-if="disputeError" class="text-[12.5px] text-error">{{ disputeError }}</p>
-      </div>
+      <DisputeForm
+        v-if="showDisputeForm"
+        :conversation-id="conversationId"
+        @submitted="showDisputeForm = false; emit('changed')"
+        @cancel="showDisputeForm = false"
+      />
     </template>
 
     <p v-else-if="escrowOrder.status === 'delivered' && isViewerProvider" class="text-[13px] text-muted">
@@ -274,10 +240,14 @@ async function handleOpenDispute() {
       Commande annulée par le prestataire, chercheur remboursé intégralement.
     </p>
 
-    <p v-else-if="escrowOrder.status === 'disputed'" class="text-[13px] text-dark">
-      Litige ouvert : les fonds restent gelés en séquestre en attendant l'arbitrage de l'équipe de médiation
-      WorkTogo.
-    </p>
+    <DisputeMediationPanel
+      v-else-if="escrowOrder.status === 'disputed'"
+      :escrow-order="escrowOrder"
+      :conversation-id="conversationId"
+      :is-viewer-client="isViewerClient"
+      :is-viewer-provider="isViewerProvider"
+      @changed="emit('changed')"
+    />
 
     <p v-if="deliverError" class="mt-2 text-[12.5px] text-error">{{ deliverError }}</p>
     <p v-if="receiptError" class="mt-2 text-[12.5px] text-error">{{ receiptError }}</p>

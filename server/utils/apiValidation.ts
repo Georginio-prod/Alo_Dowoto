@@ -106,6 +106,13 @@ export const walletWithdrawSchema = z.object({
 /** Corps de `POST /api/conversations/[id]/dispute` (#197, ouverture d'un litige escrow). */
 export const disputeEscrowSchema = z.object({
   reason: requiredTrimmed('Le motif du litige est obligatoire.'),
+  /** Preuves à l'appui (#274, médiation) : description et/ou liens vers des photos — texte libre, pas d'upload de fichier dans ce lot. */
+  evidence: z.string().trim().optional(),
+})
+
+/** Corps de `POST /api/conversations/[id]/respond-dispute` (#274, réponse du prestataire à un litige). */
+export const respondDisputeSchema = z.object({
+  response: requiredTrimmed('Votre réponse au litige est obligatoire.'),
 })
 
 /** Corps de `POST /api/conversations/[id]/cancel` (#196, annulation escrow côté prestataire). */
