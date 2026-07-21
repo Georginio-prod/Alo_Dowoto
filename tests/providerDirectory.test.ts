@@ -1,5 +1,7 @@
+import { randomUUID } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 import { countBySector, getProviderById, getProviderDetail, resolveProviderRate, searchProviders } from '~~/server/utils/providerDirectory'
+import { addUnavailabilityPeriod } from '~~/server/utils/providerAvailabilityStore'
 import { upsertProviderProfile } from '~~/server/utils/providerStore'
 import { submitReview } from '~~/server/utils/reviewStore'
 
@@ -212,6 +214,34 @@ describe('searchProviders — un vrai compte prestataire apparaît dès son insc
   it('getProviderById retrouve aussi un vrai compte, pas seulement l’annuaire de démo', () => {
     upsertProviderProfile('real-provider-digital-2', { displayName: 'Autre Prestataire', sector: 'digital', city: 'Kara' })
     expect(getProviderById('real-provider-digital-2')?.displayName).toBe('Autre Prestataire')
+  })
+})
+
+describe('searchProviders — exclusion des prestataires indisponibles (#290)', () => {
+  it('exclut un prestataire ayant déclaré une indisponibilité couvrant la date demandée', () => {
+    const providerId = randomUUID()
+    upsertProviderProfile(providerId, { displayName: 'Prestataire Dispo', sector: 'digital', city: 'Lomé' })
+    addUnavailabilityPeriod(providerId, '2026-08-01', '2026-08-10')
+
+    const results = searchProviders({ sector: 'digital', date: '2026-08-05' })
+    expect(results.some((p) => p.id === providerId)).toBe(false)
+  })
+
+  it('n’exclut pas ce même prestataire pour une date hors de la période déclarée', () => {
+    const providerId = randomUUID()
+    upsertProviderProfile(providerId, { displayName: 'Prestataire Dispo 2', sector: 'digital', city: 'Lomé' })
+    addUnavailabilityPeriod(providerId, '2026-08-01', '2026-08-10')
+
+    const results = searchProviders({ sector: 'digital', date: '2026-08-20' })
+    expect(results.some((p) => p.id === providerId)).toBe(true)
+  })
+
+  it('n’exclut jamais un prestataire n’ayant déclaré aucune période (comportement par défaut)', () => {
+    const providerId = randomUUID()
+    upsertProviderProfile(providerId, { displayName: 'Prestataire Toujours Dispo', sector: 'digital', city: 'Lomé' })
+
+    const results = searchProviders({ sector: 'digital', date: '2026-12-25' })
+    expect(results.some((p) => p.id === providerId)).toBe(true)
   })
 })
 

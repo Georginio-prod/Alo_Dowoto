@@ -1,10 +1,12 @@
 import { randomUUID } from 'node:crypto'
 import { describe, expect, it, vi } from 'vitest'
-import { recordEscrowOrderCheckIn, recordEscrowOrderCheckOut } from '~~/server/utils/escrowInterventionProof'
 import {
   cancelEscrowOrderByClient,
   CLIENT_CANCELLATION_GRACE_PERIOD_MS,
   CLIENT_LATE_CANCELLATION_PENALTY_RATE,
+} from '~~/server/utils/escrowClientCancellation'
+import { recordEscrowOrderCheckIn, recordEscrowOrderCheckOut } from '~~/server/utils/escrowInterventionProof'
+import {
   createEscrowOrder,
   markEscrowOrderDelivered,
   payEscrowOrder,

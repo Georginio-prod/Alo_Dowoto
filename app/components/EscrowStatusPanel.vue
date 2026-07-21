@@ -2,7 +2,7 @@
 import type { EscrowOrder } from '~~/server/utils/escrowOrderStore'
 
 // Valeur d'affichage seulement, dupliquée depuis CLIENT_LATE_CANCELLATION_PENALTY_RATE
-// (server/utils/escrowOrderStore.ts, #275) : les imports app/ → server/utils
+// (server/utils/escrowClientCancellation.ts, #275) : les imports app/ → server/utils
 // se limitent aux types (voir tous les autres composants de ce dossier), pas
 // aux valeurs, pour ne pas embarquer de code serveur (node:crypto, etc.)
 // dans le bundle client.

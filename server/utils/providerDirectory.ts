@@ -1,6 +1,7 @@
 import { SECTORS } from '~~/app/data/sectors'
 import { isValidCoordinatePair } from '~~/server/utils/apiValidation'
 import { haversineDistanceKm } from '~~/server/utils/geo'
+import { isProviderAvailableOn, todayIsoDate } from '~~/server/utils/providerAvailabilityStore'
 import { getAverageRating } from '~~/server/utils/reviewStore'
 import { getProviderProfile, listProviderProfiles } from '~~/server/utils/providerStore'
 import type { ProviderProfile } from '~~/server/utils/providerStore'
@@ -44,6 +45,13 @@ export interface ProviderSearchFilters {
   ratingMin?: number
   priceMax?: number
   query?: string
+  /**
+   * Date ISO (`AAAA-MM-JJ`) pour laquelle la disponibilité est vérifiée
+   * (#290) — par défaut la date du jour (recherche « temps réel »). Un
+   * prestataire ayant déclaré une période d'indisponibilité couvrant cette
+   * date n'apparaît pas dans les résultats.
+   */
+  date?: string
   /** Coordonnées du chercheur (#263) : activent le calcul de distance et, si fournies, le tri par proximité et le filtrage par rayon. */
   latitude?: number
   longitude?: number
@@ -132,6 +140,7 @@ export function getProviderById(id: string): ProviderSearchResult | null {
  */
 export function searchProviders(filters: ProviderSearchFilters): ProviderSearchResult[] {
   const query = filters.query ? normalize(filters.query) : ''
+  const availabilityDate = filters.date ?? todayIsoDate()
   const searcherCoords = isValidCoordinatePair(filters.latitude, filters.longitude)
     ? { latitude: filters.latitude as number, longitude: filters.longitude as number }
     : null
@@ -143,6 +152,7 @@ export function searchProviders(filters: ProviderSearchFilters): ProviderSearchR
       if (filters.city && provider.city !== filters.city) return false
       if (filters.ratingMin !== undefined && provider.rating < filters.ratingMin) return false
       if (filters.priceMax !== undefined && provider.priceFrom > filters.priceMax) return false
+      if (!isProviderAvailableOn(provider.id, availabilityDate)) return false
       if (query) {
         const haystack = normalize(`${provider.displayName} ${provider.subSector} ${provider.city}`)
         if (!haystack.includes(query)) return false
