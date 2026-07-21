@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
 
   const body = await readSchemaBody(event, disputeEscrowSchema)
 
-  const result = openEscrowDispute(conversation.id, body.reason)
+  const result = openEscrowDispute(conversation.id, body.reason, body.evidence)
 
   if (!result.ok) {
     if (result.error === 'not_found') notFound('Aucune commande à contester pour cette conversation.')

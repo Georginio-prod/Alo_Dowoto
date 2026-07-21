@@ -4,6 +4,7 @@ import {
   disputeEscrowSchema,
   initiatePaymentSchema,
   MIN_RECHARGE_AMOUNT,
+  respondDisputeSchema,
   walletRechargeSchema,
   walletWithdrawSchema,
 } from '~~/server/utils/apiValidation'
@@ -77,6 +78,29 @@ describe('disputeEscrowSchema (#197, validation POST /api/conversations/[id]/dis
   it('rejette un motif absent ou vide après trim', () => {
     expect(firstError(disputeEscrowSchema, { reason: '   ' })).toBe('Le motif du litige est obligatoire.')
     expect(firstError(disputeEscrowSchema, {})).toBe('Le motif du litige est obligatoire.')
+  })
+
+  it('accepte des preuves optionnelles (#274) et les trim', () => {
+    const result = disputeEscrowSchema.safeParse({ reason: 'colis endommagé', evidence: '  photo1.jpg, photo2.jpg  ' })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.evidence).toBe('photo1.jpg, photo2.jpg')
+  })
+
+  it('accepte l’absence de preuves (#274)', () => {
+    expect(disputeEscrowSchema.safeParse({ reason: 'colis endommagé' }).success).toBe(true)
+  })
+})
+
+describe('respondDisputeSchema (#274, validation POST /api/conversations/[id]/respond-dispute)', () => {
+  it('accepte une réponse non vide et la trim', () => {
+    const result = respondDisputeSchema.safeParse({ response: '  la prestation a bien été réalisée  ' })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.response).toBe('la prestation a bien été réalisée')
+  })
+
+  it('rejette une réponse absente ou vide après trim', () => {
+    expect(firstError(respondDisputeSchema, { response: '   ' })).toBe('Votre réponse au litige est obligatoire.')
+    expect(firstError(respondDisputeSchema, {})).toBe('Votre réponse au litige est obligatoire.')
   })
 })
 

@@ -62,6 +62,11 @@ export interface EscrowOrder {
   disputedAt: number | null
   /** Motif du litige ouvert par le chercheur (#197), transmis à l'équipe de médiation. */
   disputeReason: string | null
+  /** Preuves fournies par le chercheur à l'ouverture du litige (#274), sinon `null`. */
+  disputeEvidence: string | null
+  /** Réponse du prestataire au litige (#274, « en médiation ») — bloque toujours la libération automatique tant que le litige n'est pas explicitement résolu, que le prestataire ait répondu ou non. */
+  disputeResponse: string | null
+  disputeRespondedAt: number | null
 }
 
 /**
@@ -80,9 +85,32 @@ export const TACIT_VALIDATION_DELAY_MS = 72 * 60 * 60 * 1000
  */
 export const PROVIDER_RESPONSE_TIMEOUT_MS = 30 * 60 * 1000
 
+/**
+ * Grille d'annulation symétrique (#275). Le prestataire annule toujours sans
+ * pénalité pour le chercheur (voir `cancelEscrowOrder`) — c'était déjà le
+ * cas. Ce qui manquait : quand c'est le *chercheur* qui annule après avoir
+ * payé, rien n'indemnisait le prestataire qui s'était rendu disponible.
+ * Délai de grâce : annulation sans pénalité si elle intervient dans les 2h
+ * suivant le paiement (le prestataire n'a pas encore eu le temps de
+ * s'organiser). Passé ce délai, une part du montant reste acquise au
+ * prestataire à titre d'indemnisation, le solde est remboursé au chercheur.
+ */
+export const CLIENT_CANCELLATION_GRACE_PERIOD_MS = 2 * 60 * 60 * 1000
+export const CLIENT_LATE_CANCELLATION_PENALTY_RATE = 0.2
+
 const ordersByConversationId = new Map<string, EscrowOrder>()
 
-/** Idempotent : une conversation n'a jamais plus d'une commande active à la fois. */
+/** La commande existante bloque-t-elle toute nouvelle demande sur cette conversation ? Seules `released`/`refunded` sont terminales et permettent une reprise (#266). */
+const TERMINAL_STATUSES_ALLOWING_REBOOK: readonly EscrowOrderStatus[] = ['released', 'refunded']
+
+/**
+ * Idempotent tant que la commande existante est active (`awaiting_payment` à
+ * `disputed`) : une conversation n'a jamais plus d'une commande active à la
+ * fois. Une fois la commande précédente terminale (`released`/`refunded`),
+ * un nouvel appel remplace l'entrée par une toute nouvelle commande — c'est
+ * ce qui permet à un chercheur de reprendre un prestataire déjà utilisé
+ * (#266, voir `server/api/conversations/[id]/rebook.post.ts`).
+ */
 export function createEscrowOrder(input: {
   conversationId: string
   clientId: string
@@ -90,7 +118,7 @@ export function createEscrowOrder(input: {
   amount: number
 }): EscrowOrder {
   const existing = ordersByConversationId.get(input.conversationId)
-  if (existing) return existing
+  if (existing && !TERMINAL_STATUSES_ALLOWING_REBOOK.includes(existing.status)) return existing
 
   const order: EscrowOrder = {
     id: randomUUID(),
@@ -107,6 +135,9 @@ export function createEscrowOrder(input: {
     cancelReason: null,
     disputedAt: null,
     disputeReason: null,
+    disputeEvidence: null,
+    disputeResponse: null,
+    disputeRespondedAt: null,
   }
   ordersByConversationId.set(input.conversationId, order)
   return order
@@ -271,6 +302,18 @@ export function payEscrowOrder(conversationId: string): PayEscrowOrderResult {
 
 export type MarkDeliveredResult = { ok: true; order: EscrowOrder } | { ok: false; error: 'not_found' | 'invalid_status' }
 
+/** Formate l'échéance de validation tacite pour le message envoyé au chercheur (#273). */
+function formatTacitValidationDeadline(deliveredAt: number): string {
+  const deadline = new Date(deliveredAt + TACIT_VALIDATION_DELAY_MS)
+  return deadline.toLocaleString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 /** Le prestataire marque la prestation comme terminée (#195, « Marquer comme terminé »). */
 export function markEscrowOrderDelivered(conversationId: string): MarkDeliveredResult {
   const order = ordersByConversationId.get(conversationId)
@@ -279,6 +322,17 @@ export function markEscrowOrderDelivered(conversationId: string): MarkDeliveredR
 
   order.status = 'delivered'
   order.deliveredAt = Date.now()
+
+  // Notifie le chercheur du délai de validation tacite (#273) : sans
+  // confirmation ni litige avant l'échéance, le paiement est libéré
+  // automatiquement (voir applyTacitValidationIfExpired). Le message posté
+  // dans le fil est vu comme non lu (#225) même si le chercheur ne consulte
+  // pas la conversation dans l'immédiat.
+  addSystemMessage(
+    conversationId,
+    `Le prestataire a marqué la prestation comme terminée. Vous avez jusqu'au ${formatTacitValidationDeadline(order.deliveredAt)} pour confirmer la réception ou signaler un problème ; passé ce délai, le paiement sera automatiquement libéré au prestataire.`,
+  )
+
   return { ok: true, order }
 }
 
@@ -320,19 +374,60 @@ export function cancelEscrowOrder(conversationId: string, reason: string): Cance
   return { ok: true, order }
 }
 
+export type CancelByClientResult =
+  | { ok: true; order: EscrowOrder; providerCompensation: number }
+  | { ok: false; error: 'not_found' | 'invalid_status' | 'reason_required' }
+
+/**
+ * Le chercheur annule après avoir payé, avant que la prestation soit
+ * marquée terminée (#275, grille d'annulation symétrique — pendant de
+ * `cancelEscrowOrder` côté prestataire). Autorisé uniquement tant que la
+ * commande est en séquestre (`in_escrow`) : une fois `delivered`, le
+ * désaccord relève du litige (`openEscrowDispute`), pas de l'annulation.
+ */
+export function cancelEscrowOrderByClient(conversationId: string, reason: string): CancelByClientResult {
+  const order = ordersByConversationId.get(conversationId)
+  if (!order) return { ok: false, error: 'not_found' }
+  if (order.status !== 'in_escrow') return { ok: false, error: 'invalid_status' }
+  if (!reason.trim()) return { ok: false, error: 'reason_required' }
+
+  const isWithinGracePeriod = order.paidAt !== null && Date.now() - order.paidAt < CLIENT_CANCELLATION_GRACE_PERIOD_MS
+  const providerCompensation = isWithinGracePeriod ? 0 : Math.round(order.amount * CLIENT_LATE_CANCELLATION_PENALTY_RATE)
+  const clientRefund = order.amount - providerCompensation
+
+  if (providerCompensation > 0) {
+    creditWallet({
+      walletUserId: order.providerId,
+      type: 'cancellation_compensation',
+      amount: providerCompensation,
+      reference: order.id,
+      counterpartyUserId: order.clientId,
+    })
+  }
+  if (clientRefund > 0) {
+    creditWallet({ walletUserId: order.clientId, type: 'escrow_refund', amount: clientRefund, reference: order.id, counterpartyUserId: order.providerId })
+  }
+
+  order.status = 'refunded'
+  order.cancelledAt = Date.now()
+  order.cancelReason = reason.trim()
+  return { ok: true, order, providerCompensation }
+}
+
 export type OpenDisputeResult =
   | { ok: true; order: EscrowOrder }
   | { ok: false; error: 'not_found' | 'invalid_status' | 'reason_required' }
 
 /**
  * Le chercheur conteste la qualité de la prestation au lieu de confirmer la
- * réception (#197) : gèle les fonds (aucune libération ni remboursement
+ * réception (#197/#274) : gèle les fonds (aucune libération ni remboursement
  * automatique) et notifie une équipe de médiation WorkTogo. Seule une
  * commande `delivered` (prestation marquée terminée par le prestataire, en
  * attente de validation) peut être contestée — passé ce point, le litige
- * relève de la médiation, pas de cette route.
+ * relève de la médiation, pas de cette route. `evidence` (#274) accompagne
+ * le motif de preuves à l'appui (description, liens vers des photos).
  */
-export function openEscrowDispute(conversationId: string, reason: string): OpenDisputeResult {
+export function openEscrowDispute(conversationId: string, reason: string, evidence?: string): OpenDisputeResult {
   const order = ordersByConversationId.get(conversationId)
   if (!order) return { ok: false, error: 'not_found' }
   if (order.status !== 'delivered') return { ok: false, error: 'invalid_status' }
@@ -341,10 +436,35 @@ export function openEscrowDispute(conversationId: string, reason: string): OpenD
   order.status = 'disputed'
   order.disputedAt = Date.now()
   order.disputeReason = reason.trim()
+  order.disputeEvidence = evidence?.trim() || null
   return { ok: true, order }
 }
 
-/** Commandes en litige en attente d'arbitrage, pour une future interface de médiation WorkTogo (#197). */
+export type RespondToDisputeResult =
+  | { ok: true; order: EscrowOrder }
+  | { ok: false; error: 'not_found' | 'invalid_status' | 'response_required' }
+
+/**
+ * Le prestataire répond à un litige ouvert par le chercheur (#274) : la
+ * commande reste `disputed` (les fonds restent gelés, aucun changement de
+ * statut n'est déclenché par une simple réponse — seule l'équipe de
+ * médiation WorkTogo peut la faire évoluer, hors périmètre technique de ce
+ * lot). `disputeResponse` renseigné marque concrètement le passage en
+ * « médiation » : chercheur et prestataire se sont tous deux exprimés,
+ * l'équipe support dispose de tout le nécessaire pour arbitrer.
+ */
+export function respondToDispute(conversationId: string, response: string): RespondToDisputeResult {
+  const order = ordersByConversationId.get(conversationId)
+  if (!order) return { ok: false, error: 'not_found' }
+  if (order.status !== 'disputed') return { ok: false, error: 'invalid_status' }
+  if (!response.trim()) return { ok: false, error: 'response_required' }
+
+  order.disputeResponse = response.trim()
+  order.disputeRespondedAt = Date.now()
+  return { ok: true, order }
+}
+
+/** Commandes en litige en attente d'arbitrage, pour une future interface de médiation WorkTogo (#197/#274). */
 export function listDisputedOrders(): EscrowOrder[] {
   return [...ordersByConversationId.values()].filter((order) => order.status === 'disputed')
 }
