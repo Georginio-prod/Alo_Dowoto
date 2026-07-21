@@ -1,7 +1,11 @@
+import { getSectorFields } from '~~/app/data/firstContactSectorFields'
+
 interface FirstContactBody {
   description?: string
   contact?: string
   urgency?: string
+  /** Réponses aux champs additionnels différenciés par secteur (#295, voir app/data/firstContactSectorFields.ts). */
+  sectorAnswers?: Record<string, string>
 }
 
 /**
@@ -50,6 +54,41 @@ export default defineEventHandler(async (event) => {
     badRequest('Le champ « urgence / délai souhaité » semble contenir un numéro, un e-mail ou une proposition hors plateforme, ce qui est interdit par les CGU.')
   }
 
+  // Fiche différenciée par secteur (#295) : les champs additionnels affichés
+  // côté client (ex. adresse de départ/arrivée pour un transporteur,
+  // fréquence pour du ménage) dépendent du secteur du prestataire — voir
+  // app/data/firstContactSectorFields.ts. Revalidés ici car le client ne
+  // fait pas foi (requis, anti-contournement sur les champs texte).
+  const providerSector = getProviderById(conversation.providerId)?.sector ?? null
+  const sectorFields = getSectorFields(providerSector)
+  const sectorAnswers = body?.sectorAnswers ?? {}
+  const sectorAnswerLines: string[] = []
+  for (const field of sectorFields) {
+    const value = sectorAnswers[field.key]?.trim()
+    if (!value) {
+      if (field.required) badRequest(`Le champ « ${field.label} » est requis pour ce type de prestation.`)
+      continue
+    }
+    if (field.type === 'text') {
+      const reason = detectContournementAttempt(value)
+      if (reason) {
+        logContournementAttempt({ conversationId: conversation.id, userId: user.id, reason, text: value })
+        badRequest(`Le champ « ${field.label} » semble contenir un numéro, un e-mail ou une proposition hors plateforme, ce qui est interdit par les CGU.`)
+      }
+    }
+    const label = field.type === 'select' ? (field.options?.find((option) => option.value === value)?.label ?? value) : value
+    sectorAnswerLines.push(`${field.label} : ${label}`)
+  }
+
+  // Limite de demandes non payées simultanées (#280) : en plus du quota
+  // mensuel de contacts (server/utils/quotaStore.ts), empêche un chercheur
+  // d'ouvrir plusieurs demandes « pour voir » à la fois sans jamais en payer
+  // aucune — chaque demande non payée occupe inutilement l'attention d'un
+  // prestataire tant qu'elle reste ouverte.
+  if (countUnpaidOrdersForClient(user.id) >= MAX_SIMULTANEOUS_UNPAID_ORDERS) {
+    conflict(`Vous avez déjà ${MAX_SIMULTANEOUS_UNPAID_ORDERS} demande(s) en attente de paiement. Réglez-les ou annulez-les avant d'en envoyer une nouvelle.`)
+  }
+
   // Paiement en séquestre obligatoire avant transmission au prestataire
   // (#194, epic #191) : cette itération ne gère que le tarif fixe affiché
   // (pas de devis à valider, choix produit encore à trancher). Sans tarif
@@ -59,12 +98,25 @@ export default defineEventHandler(async (event) => {
     conflict('Ce prestataire n\'a pas encore configuré de tarif fixe : demande impossible pour le moment.')
   }
 
+  // Règles anti-fraude de base (#277) : plafond dur sur le montant, seuil de
+  // revue manuelle, détection d'un rythme de création de commandes anormal —
+  // voir server/utils/fraudDetection.ts.
+  const risk = evaluateOrderRisk({
+    clientId: user.id,
+    providerId: conversation.providerId,
+    amount,
+    recentOrderTimestamps: getRecentOrderTimestampsForClient(user.id),
+  })
+  if (risk.blocked) {
+    conflict(risk.reason)
+  }
+
   // Le contact réel n'est jamais inséré en clair dans le message (#264,
   // anti-fuite) : seule une version masquée apparaît dans le fil tant que la
   // prestation n'est pas validée ; la valeur brute est conservée à part et
   // révélée automatiquement au prestataire à la libération des fonds (voir
   // `escrowOrderStore.ts`, `releaseOrderFunds`).
-  const messageLines = [description, `Contact : ${maskContact(contact)}`]
+  const messageLines = [description, ...sectorAnswerLines, `Contact : ${maskContact(contact)}`]
   if (urgency) messageLines.push(`Urgence / délai souhaité : ${urgency}`)
 
   const message = addMessage(conversation.id, user.id, user.role, messageLines.join('\n\n'))

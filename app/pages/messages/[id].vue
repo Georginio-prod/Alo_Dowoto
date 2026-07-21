@@ -227,6 +227,7 @@ async function submitReview() {
         :conversation-id="conversation.id"
         :prefill-contact="currentUserContact"
         :provider-name="conversation.otherPartyName"
+        :sector-slug="conversation.sectorSlug"
         @submitted="onFirstContactSubmitted"
       />
 
@@ -307,7 +308,10 @@ async function submitReview() {
         </form>
         <p v-if="sendError" class="mt-2 shrink-0 text-[12.5px] text-error">{{ sendError }}</p>
 
-        <div v-if="conversation" class="mt-5 shrink-0 overflow-y-auto rounded-card border border-hairline bg-surface p-4">
+        <div
+          v-if="conversation && escrowOrder?.status === 'released'"
+          class="mt-5 shrink-0 overflow-y-auto rounded-card border border-hairline bg-surface p-4"
+        >
           <p v-if="alreadyReviewed" class="text-[13px] font-semibold text-dark">
             Merci, votre avis sur cette collaboration a déjà été publié.
           </p>

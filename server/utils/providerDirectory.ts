@@ -1,8 +1,12 @@
 import { SECTORS } from '~~/app/data/sectors'
+import { isValidCoordinatePair } from '~~/server/utils/apiValidation'
+import { haversineDistanceKm } from '~~/server/utils/geo'
+import { isProviderAvailableOn, todayIsoDate } from '~~/server/utils/providerAvailabilityStore'
 import { getAverageRating } from '~~/server/utils/reviewStore'
 import { getProviderProfile, listProviderProfiles } from '~~/server/utils/providerStore'
 import type { ProviderProfile } from '~~/server/utils/providerStore'
 import { isVerified } from '~~/server/utils/verificationStore'
+import { scoreFeaturedProvider } from '~~/server/utils/matchingEngine'
 import type { FeaturedCandidate } from '~~/server/utils/matchingEngine'
 
 /**
@@ -27,6 +31,11 @@ export interface ProviderSearchResult {
   reviewCount: number
   priceFrom: number
   photoUrl: string | null
+  /** Coordonnées réelles de la zone d'intervention (#263), `null` si non renseignées (fiches de démo, ou prestataire n'ayant jamais activé la géolocalisation). */
+  latitude: number | null
+  longitude: number | null
+  /** Distance en km depuis les coordonnées du chercheur, calculée par `searchProviders` quand `filters.latitude`/`longitude` et les coordonnées du prestataire sont toutes deux disponibles — sinon `null` (repli sur le filtrage par ville). */
+  distanceKm: number | null
 }
 
 export interface ProviderSearchFilters {
@@ -36,23 +45,35 @@ export interface ProviderSearchFilters {
   ratingMin?: number
   priceMax?: number
   query?: string
+  /**
+   * Date ISO (`AAAA-MM-JJ`) pour laquelle la disponibilité est vérifiée
+   * (#290) — par défaut la date du jour (recherche « temps réel »). Un
+   * prestataire ayant déclaré une période d'indisponibilité couvrant cette
+   * date n'apparaît pas dans les résultats.
+   */
+  date?: string
+  /** Coordonnées du chercheur (#263) : activent le calcul de distance et, si fournies, le tri par proximité et le filtrage par rayon. */
+  latitude?: number
+  longitude?: number
+  /** Rayon de recherche en km, ignoré si `latitude`/`longitude` absents. */
+  radiusKm?: number
 }
 
 const DIRECTORY: ProviderSearchResult[] = [
-  { id: 'p01', displayName: 'Akofa M.', sector: 'menage', subSector: 'Ménage à domicile', city: 'Lomé', verified: true, rating: 4.8, reviewCount: 32, priceFrom: 3000, photoUrl: null },
-  { id: 'p02', displayName: 'Kossi A.', sector: 'menage', subSector: 'Ménage à domicile', city: 'Lomé', verified: true, rating: 4.6, reviewCount: 18, priceFrom: 2500, photoUrl: null },
-  { id: 'p03', displayName: 'Essolakina T.', sector: 'menage', subSector: 'Repassage', city: 'Lomé', verified: true, rating: 4.9, reviewCount: 54, priceFrom: 1500, photoUrl: null },
-  { id: 'p04', displayName: 'Yawa D.', sector: 'menage', subSector: 'Jardinage', city: 'Kara', verified: false, rating: 4.3, reviewCount: 9, priceFrom: 4000, photoUrl: null },
-  { id: 'p05', displayName: 'Komi S.', sector: 'menage', subSector: "Garde d'enfants", city: 'Lomé', verified: true, rating: 4.7, reviewCount: 27, priceFrom: 3500, photoUrl: null },
-  { id: 'p06', displayName: 'Adjoa K.', sector: 'menage', subSector: 'Cuisine à domicile', city: 'Lomé', verified: false, rating: 4.5, reviewCount: 12, priceFrom: 5000, photoUrl: null },
-  { id: 'p07', displayName: 'Mawuli N.', sector: 'menage', subSector: 'Ménage à domicile', city: 'Sokodé', verified: false, rating: 4.2, reviewCount: 6, priceFrom: 2000, photoUrl: null },
-  { id: 'p08', displayName: 'Ablavi F.', sector: 'menage', subSector: 'Repassage', city: 'Kpalimé', verified: true, rating: 4.8, reviewCount: 21, priceFrom: 1800, photoUrl: null },
-  { id: 'p09', displayName: 'Kokou B.', sector: 'btp', subSector: 'Plomberie', city: 'Lomé', verified: true, rating: 4.4, reviewCount: 15, priceFrom: 4500, photoUrl: null },
-  { id: 'p10', displayName: 'Sena A.', sector: 'digital', subSector: 'Développement web & mobile', city: 'Lomé', verified: true, rating: 4.9, reviewCount: 40, priceFrom: 6000, photoUrl: null },
-  { id: 'p11', displayName: 'Afi D.', sector: 'beaute', subSector: 'Coiffure', city: 'Kara', verified: false, rating: 4.1, reviewCount: 5, priceFrom: 1500, photoUrl: null },
-  { id: 'p12', displayName: 'Yao T.', sector: 'evenement', subSector: 'Traiteur', city: 'Atakpamé', verified: true, rating: 4.6, reviewCount: 22, priceFrom: 5500, photoUrl: null },
-  { id: 'p13', displayName: 'Edem K.', sector: 'transport', subSector: 'Déménagement', city: 'Dapaong', verified: false, rating: 3.9, reviewCount: 3, priceFrom: 3500, photoUrl: null },
-  { id: 'p14', displayName: 'Nadia P.', sector: 'menage', subSector: "Garde d'enfants", city: 'Kpalimé', verified: false, rating: 3.6, reviewCount: 4, priceFrom: 2500, photoUrl: null },
+  { id: 'p01', displayName: 'Akofa M.', sector: 'menage', subSector: 'Ménage à domicile', city: 'Lomé', verified: true, rating: 4.8, reviewCount: 32, priceFrom: 3000, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
+  { id: 'p02', displayName: 'Kossi A.', sector: 'menage', subSector: 'Ménage à domicile', city: 'Lomé', verified: true, rating: 4.6, reviewCount: 18, priceFrom: 2500, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
+  { id: 'p03', displayName: 'Essolakina T.', sector: 'menage', subSector: 'Repassage', city: 'Lomé', verified: true, rating: 4.9, reviewCount: 54, priceFrom: 1500, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
+  { id: 'p04', displayName: 'Yawa D.', sector: 'menage', subSector: 'Jardinage', city: 'Kara', verified: false, rating: 4.3, reviewCount: 9, priceFrom: 4000, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
+  { id: 'p05', displayName: 'Komi S.', sector: 'menage', subSector: "Garde d'enfants", city: 'Lomé', verified: true, rating: 4.7, reviewCount: 27, priceFrom: 3500, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
+  { id: 'p06', displayName: 'Adjoa K.', sector: 'menage', subSector: 'Cuisine à domicile', city: 'Lomé', verified: false, rating: 4.5, reviewCount: 12, priceFrom: 5000, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
+  { id: 'p07', displayName: 'Mawuli N.', sector: 'menage', subSector: 'Ménage à domicile', city: 'Sokodé', verified: false, rating: 4.2, reviewCount: 6, priceFrom: 2000, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
+  { id: 'p08', displayName: 'Ablavi F.', sector: 'menage', subSector: 'Repassage', city: 'Kpalimé', verified: true, rating: 4.8, reviewCount: 21, priceFrom: 1800, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
+  { id: 'p09', displayName: 'Kokou B.', sector: 'btp', subSector: 'Plomberie', city: 'Lomé', verified: true, rating: 4.4, reviewCount: 15, priceFrom: 4500, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
+  { id: 'p10', displayName: 'Sena A.', sector: 'digital', subSector: 'Développement web & mobile', city: 'Lomé', verified: true, rating: 4.9, reviewCount: 40, priceFrom: 6000, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
+  { id: 'p11', displayName: 'Afi D.', sector: 'beaute', subSector: 'Coiffure', city: 'Kara', verified: false, rating: 4.1, reviewCount: 5, priceFrom: 1500, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
+  { id: 'p12', displayName: 'Yao T.', sector: 'evenement', subSector: 'Traiteur', city: 'Atakpamé', verified: true, rating: 4.6, reviewCount: 22, priceFrom: 5500, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
+  { id: 'p13', displayName: 'Edem K.', sector: 'transport', subSector: 'Déménagement', city: 'Dapaong', verified: false, rating: 3.9, reviewCount: 3, priceFrom: 3500, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
+  { id: 'p14', displayName: 'Nadia P.', sector: 'menage', subSector: "Garde d'enfants", city: 'Kpalimé', verified: false, rating: 3.6, reviewCount: 4, priceFrom: 2500, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
 ]
 
 function normalize(value: string): string {
@@ -81,6 +102,9 @@ function toSearchResult(profile: ProviderProfile): ProviderSearchResult {
     reviewCount: 0,
     priceFrom: profile.rateFrom ?? 0,
     photoUrl: profile.photoUrl ?? null,
+    latitude: profile.latitude ?? null,
+    longitude: profile.longitude ?? null,
+    distanceKm: null,
   }
 }
 
@@ -99,21 +123,84 @@ export function getProviderById(id: string): ProviderSearchResult | null {
   return allProviders().find((provider) => provider.id === id) ?? null
 }
 
+/**
+ * Recherche filtrée de prestataires (#43). Quand `filters.latitude`/`longitude`
+ * sont fournis (coordonnées réelles du chercheur, #263), calcule la distance
+ * réelle (Haversine) pour chaque prestataire ayant lui-même des coordonnées,
+ * filtre par `radiusKm` si précisé, et trie les résultats par proximité.
+ * Sinon, trie par score multi-critères (#288) plutôt que par ordre
+ * d'insertion/inscription brut : note moyenne (ajustée bayésiennement,
+ * `scoreFeaturedProvider`), identité vérifiée et ancienneté approximée par
+ * le nombre d'avis — évite qu'un tri implicite (simple ordre d'apparition)
+ * concentre les demandes sur une poignée de prestataires au détriment de
+ * profils compétents mais moins visibles. Les prestataires sans
+ * coordonnées ne sont jamais exclus par le rayon : ils gardent juste
+ * `distanceKm: null` (aucune régression pour les comptes n'ayant pas
+ * activé la géolocalisation).
+ */
 export function searchProviders(filters: ProviderSearchFilters): ProviderSearchResult[] {
   const query = filters.query ? normalize(filters.query) : ''
+  const availabilityDate = filters.date ?? todayIsoDate()
+  const searcherCoords = isValidCoordinatePair(filters.latitude, filters.longitude)
+    ? { latitude: filters.latitude as number, longitude: filters.longitude as number }
+    : null
 
-  return allProviders().filter((provider) => {
-    if (filters.sector && provider.sector !== filters.sector) return false
-    if (filters.subSectors?.length && !filters.subSectors.includes(provider.subSector)) return false
-    if (filters.city && provider.city !== filters.city) return false
-    if (filters.ratingMin !== undefined && provider.rating < filters.ratingMin) return false
-    if (filters.priceMax !== undefined && provider.priceFrom > filters.priceMax) return false
-    if (query) {
-      const haystack = normalize(`${provider.displayName} ${provider.subSector} ${provider.city}`)
-      if (!haystack.includes(query)) return false
-    }
-    return true
-  })
+  const filtered = allProviders()
+    .filter((provider) => {
+      if (filters.sector && provider.sector !== filters.sector) return false
+      if (filters.subSectors?.length && !filters.subSectors.includes(provider.subSector)) return false
+      if (filters.city && provider.city !== filters.city) return false
+      if (filters.ratingMin !== undefined && provider.rating < filters.ratingMin) return false
+      if (filters.priceMax !== undefined && provider.priceFrom > filters.priceMax) return false
+      if (!isProviderAvailableOn(provider.id, availabilityDate)) return false
+      if (query) {
+        const haystack = normalize(`${provider.displayName} ${provider.subSector} ${provider.city}`)
+        if (!haystack.includes(query)) return false
+      }
+      return true
+    })
+    .map((provider): ProviderSearchResult => {
+      if (!searcherCoords || provider.latitude === null || provider.longitude === null) return provider
+      const distanceKm = haversineDistanceKm(searcherCoords, { latitude: provider.latitude, longitude: provider.longitude })
+      return { ...provider, distanceKm }
+    })
+
+  // Coordonnées du chercheur fournies : tri par proximité (#263), comme
+  // avant la fusion avec le tri multi-critères (#288) ci-dessous.
+  if (searcherCoords) {
+    const radiusKm = filters.radiusKm
+    const withinRadius = radiusKm !== undefined
+      ? filtered.filter((provider) => provider.distanceKm === null || provider.distanceKm <= radiusKm)
+      : filtered
+
+    return withinRadius.sort((a, b) => {
+      if (a.distanceKm === null && b.distanceKm === null) return 0
+      if (a.distanceKm === null) return 1
+      if (b.distanceKm === null) return -1
+      return a.distanceKm - b.distanceKm
+    })
+  }
+
+  // Pas de coordonnées : tri par score multi-critères (#288). Score calculé
+  // une seule fois par résultat (pas à chaque comparaison du tri) —
+  // getEffectiveRating peut retomber sur getProviderById, qui reconstruit
+  // l'annuaire fusionné, coûteux à répéter en O(n log n).
+  return filtered
+    .map((provider) => ({ provider, score: scoreSearchResult(provider) }))
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.provider)
+}
+
+/** Score multi-critères (0-100) d'un résultat de recherche, voir `searchProviders`. */
+function scoreSearchResult(provider: ProviderSearchResult): number {
+  const { rating, reviewCount } = getEffectiveRating(provider.id)
+  return scoreFeaturedProvider({
+    providerId: provider.id,
+    rating,
+    reviewCount,
+    verified: provider.verified,
+    experienceYears: estimateExperienceYears(reviewCount),
+  }).total
 }
 
 /**

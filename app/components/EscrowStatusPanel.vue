@@ -2,7 +2,7 @@
 import type { EscrowOrder } from '~~/server/utils/escrowOrderStore'
 
 // Valeur d'affichage seulement, dupliquée depuis CLIENT_LATE_CANCELLATION_PENALTY_RATE
-// (server/utils/escrowOrderStore.ts, #275) : les imports app/ → server/utils
+// (server/utils/escrowClientCancellation.ts, #275) : les imports app/ → server/utils
 // se limitent aux types (voir tous les autres composants de ce dossier), pas
 // aux valeurs, pour ne pas embarquer de code serveur (node:crypto, etc.)
 // dans le bundle client.
@@ -133,11 +133,20 @@ const showDisputeForm = ref(false)
     <p v-if="escrowOrder.status === 'in_escrow' && isViewerProvider" class="mt-1 text-[12px] text-muted">
       Cette garantie de paiement ne s'applique qu'aux prestations réglées via WorkTogo — voir nos CGU.
     </p>
+
+    <InterventionProofPanel
+      v-if="escrowOrder.status === 'in_escrow' && isViewerProvider"
+      :escrow-order="escrowOrder"
+      :conversation-id="conversationId"
+      class="mt-2"
+      @changed="emit('changed')"
+    />
+
     <button
       v-if="escrowOrder.status === 'in_escrow' && isViewerProvider"
       type="button"
       class="press mt-2 rounded-field bg-primary px-4 py-2 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
-      :disabled="isDelivering"
+      :disabled="isDelivering || escrowOrder.checkOutAt === null"
       @click="handleMarkDelivered"
     >
       {{ isDelivering ? 'Envoi…' : 'Marquer comme terminé' }}

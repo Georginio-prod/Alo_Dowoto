@@ -1,6 +1,7 @@
 import { SECTORS } from '~~/app/data/sectors'
 
 const VALID_SECTOR_SLUGS = new Set(SECTORS.map((sector) => sector.slug))
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
 const DEFAULT_PAGE_SIZE = 12
 const MAX_PAGE_SIZE = 50
@@ -44,11 +45,28 @@ export default defineEventHandler((event) => {
     badRequest('Prix maximum invalide.')
   }
 
+  // Distance réelle (#263) : optionnelle, coordonnées du chercheur envoyées
+  // par le front quand disponibles (session utilisateur ou géolocalisation
+  // navigateur) — repli sur le filtrage par ville si absentes ou invalides.
+  const latitude = toNumber(query.lat, 'Latitude invalide.')
+  const longitude = toNumber(query.lng, 'Longitude invalide.')
+  const radiusKm = toNumber(query.rayon_km, 'Rayon de recherche invalide.')
+  if (radiusKm !== undefined && radiusKm <= 0) {
+    badRequest('Rayon de recherche invalide.')
+  }
+
   const page = Math.max(1, Math.trunc(toNumber(query.page, 'Page invalide.') ?? 1))
   const pageSize = Math.min(
     MAX_PAGE_SIZE,
     Math.max(1, Math.trunc(toNumber(query.pageSize, 'Taille de page invalide.') ?? DEFAULT_PAGE_SIZE)),
   )
+
+  // Disponibilité en temps réel (#290) : par défaut la date du jour côté
+  // store (searchProviders), mais un chercheur peut cibler une date précise.
+  const date = firstValue(query.date)
+  if (date !== undefined && !ISO_DATE_PATTERN.test(date)) {
+    badRequest('Date invalide (format attendu : AAAA-MM-JJ).')
+  }
 
   const matches = searchProviders({
     sector,
@@ -57,6 +75,10 @@ export default defineEventHandler((event) => {
     ratingMin,
     priceMax,
     query: firstValue(query.q),
+    date,
+    latitude,
+    longitude,
+    radiusKm,
   })
 
   const total = matches.length

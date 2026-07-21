@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { describe, expect, it, vi } from 'vitest'
+import { recordEscrowOrderCheckIn, recordEscrowOrderCheckOut } from '~~/server/utils/escrowInterventionProof'
 import {
   cancelEscrowOrder,
   confirmEscrowOrderReceipt,
@@ -88,6 +89,8 @@ function payAndDeliver(conversationId: string, client: string, provider: string,
   creditWallet({ walletUserId: client, type: 'recharge', amount, reference: 'REF' })
   createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount })
   payEscrowOrder(conversationId)
+  recordEscrowOrderCheckIn(conversationId, null)
+  recordEscrowOrderCheckOut(conversationId, null)
   return markEscrowOrderDelivered(conversationId)
 }
 
@@ -196,6 +199,8 @@ describe('cancelEscrowOrder — annulation prestataire et remboursement (#196)',
     creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
     createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount: 3000 })
     payEscrowOrder(conversationId)
+    recordEscrowOrderCheckIn(conversationId, null)
+    recordEscrowOrderCheckOut(conversationId, null)
     markEscrowOrderDelivered(conversationId)
 
     const result = cancelEscrowOrder(conversationId, 'Finalement indisponible')
@@ -228,6 +233,8 @@ describe('cancelEscrowOrder — annulation prestataire et remboursement (#196)',
     creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
     createEscrowOrder({ conversationId, clientId: client, providerId: id(), amount: 3000 })
     payEscrowOrder(conversationId)
+    recordEscrowOrderCheckIn(conversationId, null)
+    recordEscrowOrderCheckOut(conversationId, null)
     markEscrowOrderDelivered(conversationId)
     confirmEscrowOrderReceipt(conversationId)
 
@@ -247,6 +254,8 @@ describe('openEscrowDispute — litige sur une commande en séquestre (#197)', (
     creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
     createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount: 3000 })
     payEscrowOrder(conversationId)
+    recordEscrowOrderCheckIn(conversationId, null)
+    recordEscrowOrderCheckOut(conversationId, null)
     markEscrowOrderDelivered(conversationId)
 
     const result = openEscrowDispute(conversationId, 'Prestation non conforme')
@@ -266,6 +275,8 @@ describe('openEscrowDispute — litige sur une commande en séquestre (#197)', (
     creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
     createEscrowOrder({ conversationId, clientId: client, providerId: id(), amount: 3000 })
     payEscrowOrder(conversationId)
+    recordEscrowOrderCheckIn(conversationId, null)
+    recordEscrowOrderCheckOut(conversationId, null)
     markEscrowOrderDelivered(conversationId)
 
     expect(openEscrowDispute(conversationId, '  ')).toEqual({ ok: false, error: 'reason_required' })
@@ -291,6 +302,8 @@ describe('openEscrowDispute — litige sur une commande en séquestre (#197)', (
     creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
     createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount: 3000 })
     payEscrowOrder(conversationId)
+    recordEscrowOrderCheckIn(conversationId, null)
+    recordEscrowOrderCheckOut(conversationId, null)
     markEscrowOrderDelivered(conversationId)
     openEscrowDispute(conversationId, 'Prestation non conforme')
     now += TACIT_VALIDATION_DELAY_MS + 1
@@ -313,6 +326,8 @@ describe('openEscrowDispute — litige sur une commande en séquestre (#197)', (
     creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
     createEscrowOrder({ conversationId, clientId: client, providerId: id(), amount: 3000 })
     payEscrowOrder(conversationId)
+    recordEscrowOrderCheckIn(conversationId, null)
+    recordEscrowOrderCheckOut(conversationId, null)
     markEscrowOrderDelivered(conversationId)
     openEscrowDispute(conversationId, 'motif')
 

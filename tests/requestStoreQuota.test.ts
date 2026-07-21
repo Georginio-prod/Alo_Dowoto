@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { addUnavailabilityPeriod, todayIsoDate } from '~~/server/utils/providerAvailabilityStore'
 import { incrementProviderRequestsReceived } from '~~/server/utils/quotaStore'
 import { computeMatches, type ServiceRequest } from '~~/server/utils/requestStore'
 import { activateSubscription, createPendingSubscription } from '~~/server/utils/subscriptionStore'
@@ -74,5 +75,15 @@ describe('computeMatches — quota de demandes reçues (#63)', () => {
     const rank = matches.findIndex((m) => m.providerId === 'p04')
 
     expect(rank).toBeGreaterThanOrEqual(matches.length - 3)
+  })
+})
+
+describe('computeMatches — disponibilité en temps réel (#290)', () => {
+  it('exclut un prestataire indisponible aujourd’hui (les candidats viennent de searchProviders)', () => {
+    const today = todayIsoDate()
+    addUnavailabilityPeriod('p06', today, today)
+
+    const matches = computeMatches(baseRequest(), 20)
+    expect(matches.find((m) => m.providerId === 'p06')).toBeUndefined()
   })
 })

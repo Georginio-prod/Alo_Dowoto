@@ -2,6 +2,7 @@
 import type { Component } from 'vue'
 import type { ProviderProfile } from '~~/server/utils/providerStore'
 import type { Subscription } from '~~/server/utils/subscriptionStore'
+import AvailabilityCalendar from '~/components/AvailabilityCalendar.vue'
 import CertificationsForm from '~/components/CertificationsForm.vue'
 import ContactForm from '~/components/ContactForm.vue'
 import CvForm from '~/components/CvForm.vue'
@@ -68,39 +69,6 @@ const initials = computed(() => {
 })
 const fullName = computed(() => [user.value?.firstName, user.value?.lastName].filter(Boolean).join(' ') || user.value?.username)
 
-interface Check { complete: boolean }
-
-const checks = computed<Check[]>(() => {
-  const base: Check[] = [
-    { complete: !!user.value?.username && !!user.value?.location },
-    { complete: !!user.value?.verified },
-    { complete: !!user.value?.passwordSet },
-  ]
-  if (!isProvider.value) return base
-  return [
-    ...base,
-    { complete: professionalProfileComplete.value },
-    { complete: cvComplete.value },
-    { complete: languagesComplete.value },
-    { complete: formationComplete.value },
-    { complete: certificationsComplete.value },
-    { complete: preferencesComplete.value },
-    { complete: coordonneesComplete.value },
-    { complete: subscriptionActive.value },
-  ]
-})
-
-const completionPercent = computed(() => {
-  const total = checks.value.length
-  const done = checks.value.filter((check) => check.complete).length
-  return total === 0 ? 0 : Math.round((done / total) * 100)
-})
-const remainingCount = computed(() => checks.value.filter((check) => !check.complete).length)
-
-// Anneau SVG (stroke-dasharray) : circonférence d'un cercle de rayon 34.
-const RING_CIRCUMFERENCE = 2 * Math.PI * 34
-const ringOffset = computed(() => RING_CIRCUMFERENCE * (1 - completionPercent.value / 100))
-
 type ModalKey =
   | 'identite'
   | 'verification'
@@ -113,6 +81,7 @@ type ModalKey =
   | 'preferences'
   | 'coordonnees'
   | 'donnees'
+  | 'disponibilite'
 
 /**
  * `refreshOnSave` : les formulaires d'identité/vérification/mot de passe
@@ -135,6 +104,9 @@ const MODAL_CONFIG: Record<ModalKey, { title: string; component: Component; refr
   // Export/effacement (#286) : ne modifie pas ProviderProfile, pas besoin de
   // rafraîchir les données du profil affichées ailleurs dans le hub.
   donnees: { title: 'Mes données', component: DataPrivacyPanel, refreshOnSave: false },
+  // Calendrier autonome (#290) : ne modifie pas ProviderProfile, pas besoin
+  // de rafraîchir les données du profil affichées ailleurs dans le hub.
+  disponibilite: { title: 'Disponibilité', component: AvailabilityCalendar, refreshOnSave: false },
 }
 
 const activeModal = ref<ModalKey | null>(null)
@@ -148,25 +120,37 @@ function onModalFormSaved() {
   if (activeModal.value && MODAL_CONFIG[activeModal.value].refreshOnSave) refreshProvider()
 }
 
-const firstIncomplete = computed<ModalKey | 'abonnement'>(() => {
-  if (!user.value?.username || !user.value?.location) return 'identite'
-  if (!user.value?.verified) return 'verification'
-  if (!user.value?.passwordSet) return 'password'
-  if (isProvider.value && !professionalProfileComplete.value) return 'profil-professionnel'
-  if (isProvider.value && !cvComplete.value) return 'cv'
-  if (isProvider.value && !languagesComplete.value) return 'langues'
-  if (isProvider.value && !formationComplete.value) return 'formation'
-  if (isProvider.value && !certificationsComplete.value) return 'certifications'
-  if (isProvider.value && !preferencesComplete.value) return 'preferences'
-  if (isProvider.value && !coordonneesComplete.value) return 'coordonnees'
-  if (isProvider.value && !subscriptionActive.value) return 'abonnement'
-  return 'identite'
+// Anneau de complétion et « prochaine section incomplète » (composable, voir
+// app/composables/useProfileCompletion.ts — extrait pour rester sous la
+// limite ESLint max-lines après l'ajout des sections « Mes données » (#286)
+// et « Disponibilité » (#290)).
+const { completionPercent, remainingCount, RING_CIRCUMFERENCE, ringOffset, firstIncompleteProviderSection } = useProfileCompletion({
+  isProvider,
+  subscriptionActive,
+  baseSections: [
+    { key: 'identite', complete: computed(() => !!user.value?.username && !!user.value?.location) },
+    { key: 'verification', complete: computed(() => !!user.value?.verified) },
+    { key: 'password', complete: computed(() => !!user.value?.passwordSet) },
+  ],
+  providerSections: [
+    { key: 'profil-professionnel', complete: professionalProfileComplete },
+    { key: 'cv', complete: cvComplete },
+    { key: 'langues', complete: languagesComplete },
+    { key: 'formation', complete: formationComplete },
+    { key: 'certifications', complete: certificationsComplete },
+    { key: 'preferences', complete: preferencesComplete },
+    { key: 'coordonnees', complete: coordonneesComplete },
+    { key: 'abonnement', complete: subscriptionActive },
+  ],
 })
 
 function completeProfile() {
-  const next = firstIncomplete.value
+  if (!user.value?.username || !user.value?.location) { openModal('identite'); return }
+  if (!user.value?.verified) { openModal('verification'); return }
+  if (!user.value?.passwordSet) { openModal('password'); return }
+  const next = firstIncompleteProviderSection.value
   if (next === 'abonnement') navigateTo('/abonnement')
-  else openModal(next)
+  else if (next) openModal(next as ModalKey)
 }
 </script>
 
@@ -320,6 +304,13 @@ function completeProfile() {
             interactive
             :complete="coordonneesComplete"
             @click="openModal('coordonnees')"
+          />
+          <ProfileSectionCard
+            icon="📅"
+            title="Disponibilité"
+            subtitle="Périodes où vous n'êtes pas disponible"
+            interactive
+            @click="openModal('disponibilite')"
           />
           <ProfileSectionCard
             icon="💳"
