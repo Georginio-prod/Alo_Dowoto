@@ -60,7 +60,17 @@ export const TACIT_VALIDATION_DELAY_MS = 72 * 60 * 60 * 1000
 
 const ordersByConversationId = new Map<string, EscrowOrder>()
 
-/** Idempotent : une conversation n'a jamais plus d'une commande active à la fois. */
+/** La commande existante bloque-t-elle toute nouvelle demande sur cette conversation ? Seules `released`/`refunded` sont terminales et permettent une reprise (#266). */
+const TERMINAL_STATUSES_ALLOWING_REBOOK: readonly EscrowOrderStatus[] = ['released', 'refunded']
+
+/**
+ * Idempotent tant que la commande existante est active (`awaiting_payment` à
+ * `disputed`) : une conversation n'a jamais plus d'une commande active à la
+ * fois. Une fois la commande précédente terminale (`released`/`refunded`),
+ * un nouvel appel remplace l'entrée par une toute nouvelle commande — c'est
+ * ce qui permet à un chercheur de reprendre un prestataire déjà utilisé
+ * (#266, voir `server/api/conversations/[id]/rebook.post.ts`).
+ */
 export function createEscrowOrder(input: {
   conversationId: string
   clientId: string
@@ -68,7 +78,7 @@ export function createEscrowOrder(input: {
   amount: number
 }): EscrowOrder {
   const existing = ordersByConversationId.get(input.conversationId)
-  if (existing) return existing
+  if (existing && !TERMINAL_STATUSES_ALLOWING_REBOOK.includes(existing.status)) return existing
 
   const order: EscrowOrder = {
     id: randomUUID(),
