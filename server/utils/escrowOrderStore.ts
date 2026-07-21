@@ -103,6 +103,34 @@ const ordersByConversationId = new Map<string, EscrowOrder>()
 /** La commande existante bloque-t-elle toute nouvelle demande sur cette conversation ? Seules `released`/`refunded` sont terminales et permettent une reprise (#266). */
 const TERMINAL_STATUSES_ALLOWING_REBOOK: readonly EscrowOrderStatus[] = ['released', 'refunded']
 
+/** Horodatages de création des commandes de ce chercheur, tous statuts confondus — sert à détecter un rythme de création anormal (#277, `evaluateOrderRisk`). */
+export function getRecentOrderTimestampsForClient(clientId: string): number[] {
+  const timestamps: number[] = []
+  for (const order of ordersByConversationId.values()) {
+    if (order.clientId === clientId) timestamps.push(order.createdAt)
+  }
+  return timestamps
+}
+
+/**
+ * Nombre maximal de demandes non payées qu'un chercheur peut avoir ouvertes
+ * simultanément (#280) : le quota mensuel de contacts (`CLIENT_CONTACTS_MONTHLY_LIMIT`,
+ * server/utils/quotaStore.ts) limite le nombre total de demandes par mois,
+ * mais rien n'empêchait d'ouvrir plusieurs demandes à la fois sans jamais en
+ * payer aucune — frein supplémentaire contre les demandes « pour voir »,
+ * sans intention réelle de payer.
+ */
+export const MAX_SIMULTANEOUS_UNPAID_ORDERS = 2
+
+/** Nombre de commandes en attente de paiement (`awaiting_payment`) pour ce chercheur, tous prestataires confondus (#280). */
+export function countUnpaidOrdersForClient(clientId: string): number {
+  let count = 0
+  for (const order of ordersByConversationId.values()) {
+    if (order.clientId === clientId && order.status === 'awaiting_payment') count += 1
+  }
+  return count
+}
+
 /**
  * Idempotent tant que la commande existante est active (`awaiting_payment` à
  * `disputed`) : une conversation n'a jamais plus d'une commande active à la

@@ -148,6 +148,10 @@ onUnmounted(() => {
 
           <p class="mb-4 text-[13.5px] leading-relaxed text-dark">{{ provider.bio }}</p>
 
+          <p class="mb-4 text-[18px] font-bold text-dark">
+            À partir de {{ provider.priceFrom.toLocaleString('fr-FR') }} FCFA
+          </p>
+
           <div class="mb-4 grid grid-cols-2 gap-3 rounded-field bg-bg p-3.5 text-[13px]">
             <div>
               <div class="mb-0.5 font-semibold text-dark">Localisation</div>

@@ -80,6 +80,15 @@ export default defineEventHandler(async (event) => {
     sectorAnswerLines.push(`${field.label} : ${label}`)
   }
 
+  // Limite de demandes non payées simultanées (#280) : en plus du quota
+  // mensuel de contacts (server/utils/quotaStore.ts), empêche un chercheur
+  // d'ouvrir plusieurs demandes « pour voir » à la fois sans jamais en payer
+  // aucune — chaque demande non payée occupe inutilement l'attention d'un
+  // prestataire tant qu'elle reste ouverte.
+  if (countUnpaidOrdersForClient(user.id) >= MAX_SIMULTANEOUS_UNPAID_ORDERS) {
+    conflict(`Vous avez déjà ${MAX_SIMULTANEOUS_UNPAID_ORDERS} demande(s) en attente de paiement. Réglez-les ou annulez-les avant d'en envoyer une nouvelle.`)
+  }
+
   // Paiement en séquestre obligatoire avant transmission au prestataire
   // (#194, epic #191) : cette itération ne gère que le tarif fixe affiché
   // (pas de devis à valider, choix produit encore à trancher). Sans tarif
@@ -87,6 +96,19 @@ export default defineEventHandler(async (event) => {
   const amount = resolveProviderRate(conversation.providerId)
   if (amount === null) {
     conflict('Ce prestataire n\'a pas encore configuré de tarif fixe : demande impossible pour le moment.')
+  }
+
+  // Règles anti-fraude de base (#277) : plafond dur sur le montant, seuil de
+  // revue manuelle, détection d'un rythme de création de commandes anormal —
+  // voir server/utils/fraudDetection.ts.
+  const risk = evaluateOrderRisk({
+    clientId: user.id,
+    providerId: conversation.providerId,
+    amount,
+    recentOrderTimestamps: getRecentOrderTimestampsForClient(user.id),
+  })
+  if (risk.blocked) {
+    conflict(risk.reason)
   }
 
   // Le contact réel n'est jamais inséré en clair dans le message (#264,

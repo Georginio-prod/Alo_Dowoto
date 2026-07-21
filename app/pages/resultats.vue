@@ -76,15 +76,24 @@ const { data: featuredData } = await useFetch<FeaturedResponse>('/api/providers/
 })
 const featuredProviders = computed(() => featuredData.value?.results ?? [])
 
-// « Prestataires près de vous » (#187) : basé sur la localisation du
-// chercheur connecté (collectée à l'inscription, userStore.location). Pas
-// de géolocalisation réelle dans ce prototype : simple filtrage par ville,
-// cohérent avec le filtre « Ville » déjà utilisé par la liste complète.
+// « Prestataires près de vous » (#187/#263) : distance réelle (Haversine,
+// server/utils/geo.ts) quand le chercheur connecté a des coordonnées GPS
+// (bouton « Ma position » à l'inscription, userStore.latitude/longitude) —
+// repli sur le filtrage par ville (comportement d'origine) sinon, sans
+// régression pour les comptes n'ayant jamais activé la géolocalisation.
 const nearbyCity = computed(() => user.value?.location || '')
+const nearbyHasCoords = computed(() => user.value?.latitude !== undefined && user.value?.longitude !== undefined)
 const { data: nearbyData } = await useFetch<SearchResponse>('/api/providers/search', {
-  query: computed(() => ({ ville: nearbyCity.value || undefined, pageSize: 6 })),
+  query: computed(() => ({
+    ville: nearbyHasCoords.value ? undefined : (nearbyCity.value || undefined),
+    lat: user.value?.latitude,
+    lng: user.value?.longitude,
+    pageSize: 6,
+  })),
 })
-const nearbyProviders = computed(() => (nearbyCity.value ? (nearbyData.value?.results ?? []) : []))
+const nearbyProviders = computed(() =>
+  nearbyHasCoords.value || nearbyCity.value ? (nearbyData.value?.results ?? []) : [],
+)
 
 // Favoris déjà enregistrés par le client (#64) : chargés une seule fois pour
 // tous les prestataires affichés plutôt qu'une requête par carte. Échoue
