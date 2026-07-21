@@ -2,6 +2,7 @@
 import type { Component } from 'vue'
 import type { ProviderProfile } from '~~/server/utils/providerStore'
 import type { Subscription } from '~~/server/utils/subscriptionStore'
+import AvailabilityCalendar from '~/components/AvailabilityCalendar.vue'
 import CertificationsForm from '~/components/CertificationsForm.vue'
 import ContactForm from '~/components/ContactForm.vue'
 import CvForm from '~/components/CvForm.vue'
@@ -111,6 +112,7 @@ type ModalKey =
   | 'certifications'
   | 'preferences'
   | 'coordonnees'
+  | 'disponibilite'
 
 /**
  * `refreshOnSave` : les formulaires d'identité/vérification/mot de passe
@@ -130,6 +132,9 @@ const MODAL_CONFIG: Record<ModalKey, { title: string; component: Component; refr
   certifications: { title: 'Certifications', component: CertificationsForm, refreshOnSave: true },
   preferences: { title: 'Préférences', component: PreferencesForm, refreshOnSave: true },
   coordonnees: { title: 'Coordonnées', component: ContactForm, refreshOnSave: true },
+  // Calendrier autonome (#290) : ne modifie pas ProviderProfile, pas besoin
+  // de rafraîchir les données du profil affichées ailleurs dans le hub.
+  disponibilite: { title: 'Disponibilité', component: AvailabilityCalendar, refreshOnSave: false },
 }
 
 const activeModal = ref<ModalKey | null>(null)
@@ -308,6 +313,13 @@ function completeProfile() {
             interactive
             :complete="coordonneesComplete"
             @click="openModal('coordonnees')"
+          />
+          <ProfileSectionCard
+            icon="📅"
+            title="Disponibilité"
+            subtitle="Périodes où vous n'êtes pas disponible"
+            interactive
+            @click="openModal('disponibilite')"
           />
           <ProfileSectionCard
             icon="💳"
