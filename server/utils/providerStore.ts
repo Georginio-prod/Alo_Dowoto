@@ -37,6 +37,9 @@ export interface ProviderProfile {
   displayName: string
   sector: string
   city?: string
+  /** Coordonnées réelles de la zone d'intervention (#263), facultatives — repli sur `city` si absentes. */
+  latitude?: number
+  longitude?: number
   payoutMethod?: PayoutMethod
   photoUrl?: string
   description?: string
@@ -58,6 +61,8 @@ export interface ProviderProfilePatch {
   displayName: string
   sector: string
   city?: string
+  latitude?: number
+  longitude?: number
   payoutMethod?: PayoutMethod
   photoUrl?: string
   description?: string
@@ -90,6 +95,8 @@ export function upsertProviderProfile(userId: string, patch: ProviderProfilePatc
     displayName: patch.displayName,
     sector: patch.sector,
     city: patch.city ?? existing?.city,
+    latitude: patch.latitude ?? existing?.latitude,
+    longitude: patch.longitude ?? existing?.longitude,
     payoutMethod: patch.payoutMethod ?? existing?.payoutMethod,
     photoUrl: patch.photoUrl ?? existing?.photoUrl,
     description: patch.description ?? existing?.description,

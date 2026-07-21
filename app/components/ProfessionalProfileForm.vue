@@ -25,6 +25,10 @@ const existing = data.value?.profile ?? null
 
 const sector = ref(existing?.sector ?? '')
 const city = ref(existing?.city ?? '')
+const latitude = ref<number | undefined>(existing?.latitude)
+const longitude = ref<number | undefined>(existing?.longitude)
+const isLocating = ref(false)
+const locationError = ref('')
 const payoutMethod = ref<PayoutMethod | null>(existing?.payoutMethod ?? null)
 const description = ref(existing?.description ?? '')
 const photoUrl = ref<string | null>(existing?.photoUrl ?? null)
@@ -63,6 +67,31 @@ async function onPhotoSelected(event: Event) {
   photoFileName.value = file.name
 }
 
+// Coordonnées réelles de la zone d'intervention (#263) : facultatif, permet
+// à ce prestataire d'apparaître trié par distance dans « Prestataires près
+// de vous » plutôt que par simple correspondance de ville. Jamais saisi
+// manuellement — uniquement via la géolocalisation du navigateur.
+function useCurrentPosition() {
+  if (isLocating.value) return
+  if (!('geolocation' in navigator)) {
+    locationError.value = "La géolocalisation n'est pas disponible sur cet appareil."
+    return
+  }
+  isLocating.value = true
+  locationError.value = ''
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      latitude.value = position.coords.latitude
+      longitude.value = position.coords.longitude
+      isLocating.value = false
+    },
+    () => {
+      locationError.value = "Localisation refusée ou indisponible. Autorisez l'accès à votre position puis réessayez."
+      isLocating.value = false
+    },
+  )
+}
+
 async function submit() {
   if (isSubmitting.value) return
   error.value = ''
@@ -80,6 +109,8 @@ async function submit() {
       body: {
         sector: sector.value,
         city: city.value.trim(),
+        latitude: latitude.value,
+        longitude: longitude.value,
         payoutMethod: payoutMethod.value,
         description: description.value.trim() || undefined,
         photoUrl: photoUrl.value ?? undefined,
@@ -122,8 +153,20 @@ async function submit() {
       v-model="city"
       type="text"
       placeholder="Ex. Lomé, Kara, Kpalimé…"
-      class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
+      class="mb-1.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
     >
+    <button
+      type="button"
+      class="press mb-1.5 text-[12.5px] font-semibold text-primary underline disabled:cursor-not-allowed disabled:opacity-45"
+      :disabled="isLocating"
+      @click="useCurrentPosition"
+    >
+      {{ isLocating ? 'Localisation…' : latitude !== undefined ? '📍 Position enregistrée — mettre à jour' : '📍 Utiliser ma position actuelle' }}
+    </button>
+    <p class="mb-3.5 text-[11.5px] text-muted">
+      Facultatif : permet d'apparaître trié par distance réelle dans « Prestataires près de vous ».
+    </p>
+    <p v-if="locationError" class="mb-3.5 text-[12.5px] text-error">{{ locationError }}</p>
 
     <label for="pp-description" class="mb-1.5 block text-[13px] font-semibold text-dark">Description</label>
     <textarea

@@ -69,6 +69,75 @@ describe('searchProviders — tri multi-critères plutôt que par ordre d’inse
   })
 })
 
+describe('searchProviders — distance réelle (#263)', () => {
+  it('renvoie distanceKm à null pour tous les résultats sans coordonnées du chercheur', () => {
+    const results = searchProviders({ sector: 'menage' })
+    expect(results.every((p) => p.distanceKm === null)).toBe(true)
+  })
+
+  it('calcule la distance et trie par proximité quand le chercheur a des coordonnées et le prestataire aussi', () => {
+    upsertProviderProfile('real-provider-geo-near', {
+      displayName: 'Proche',
+      sector: 'digital',
+      city: 'Lomé',
+      latitude: 6.14,
+      longitude: 1.23,
+    })
+    upsertProviderProfile('real-provider-geo-far', {
+      displayName: 'Loin',
+      sector: 'digital',
+      city: 'Kara',
+      latitude: 9.5511,
+      longitude: 1.1861,
+    })
+
+    // Coordonnées du chercheur très proches du prestataire "Proche".
+    const results = searchProviders({ sector: 'digital', latitude: 6.1319, longitude: 1.2228 })
+    const near = results.find((p) => p.id === 'real-provider-geo-near')
+    const far = results.find((p) => p.id === 'real-provider-geo-far')
+
+    expect(near).toBeDefined()
+    expect(far).toBeDefined()
+    expect(near?.distanceKm).not.toBeNull()
+    expect(far?.distanceKm).not.toBeNull()
+    expect(near?.distanceKm ?? Infinity).toBeLessThan(far?.distanceKm ?? Infinity)
+    // Trié par proximité : "Proche" doit apparaître avant "Loin".
+    if (near && far) {
+      expect(results.indexOf(near)).toBeLessThan(results.indexOf(far))
+    }
+  })
+
+  it('garde distanceKm à null pour un prestataire sans coordonnées, même si le chercheur en a', () => {
+    upsertProviderProfile('real-provider-geo-no-coords', { displayName: 'Sans coordonnées', sector: 'digital', city: 'Lomé' })
+
+    const results = searchProviders({ sector: 'digital', latitude: 6.1319, longitude: 1.2228 })
+    const entry = results.find((p) => p.id === 'real-provider-geo-no-coords')
+    expect(entry?.distanceKm).toBeNull()
+  })
+
+  it('filtre par rayon (radiusKm) en excluant les prestataires trop éloignés, sans exclure ceux sans coordonnées', () => {
+    upsertProviderProfile('real-provider-geo-radius-near', {
+      displayName: 'Dans le rayon',
+      sector: 'evenement',
+      city: 'Lomé',
+      latitude: 6.135,
+      longitude: 1.225,
+    })
+    upsertProviderProfile('real-provider-geo-radius-far', {
+      displayName: 'Hors rayon',
+      sector: 'evenement',
+      city: 'Kara',
+      latitude: 9.5511,
+      longitude: 1.1861,
+    })
+
+    const results = searchProviders({ sector: 'evenement', latitude: 6.1319, longitude: 1.2228, radiusKm: 10 })
+
+    expect(results.some((p) => p.id === 'real-provider-geo-radius-near')).toBe(true)
+    expect(results.some((p) => p.id === 'real-provider-geo-radius-far')).toBe(false)
+  })
+})
+
 describe('countBySector (#66 grille /categories)', () => {
   it('compte les prestataires du secteur, cohérent avec searchProviders', () => {
     expect(countBySector('menage')).toBe(searchProviders({ sector: 'menage' }).length)
