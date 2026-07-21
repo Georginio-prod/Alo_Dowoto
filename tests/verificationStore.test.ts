@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest'
-import { getVerification, isValidIdentityImage, isVerified, submitVerification } from '~~/server/utils/verificationStore'
+import { describe, expect, it, vi } from 'vitest'
+import {
+  deleteVerification,
+  getVerification,
+  ID_DOCUMENT_RETENTION_MS,
+  isValidIdentityImage,
+  isVerified,
+  submitVerification,
+} from '~~/server/utils/verificationStore'
 
 const ID_CARD = 'data:image/jpeg;base64,AAAA'
 const PASSPORT_PHOTO = 'data:image/png;base64,BBBB'
@@ -41,5 +48,51 @@ describe('verificationStore — vérification d\'identité (#180+1)', () => {
   it('rejette une image dépassant la taille maximale autorisée', () => {
     const oversized = `data:image/jpeg;base64,${'A'.repeat(7_000_001)}`
     expect(isValidIdentityImage(oversized)).toBe(false)
+  })
+})
+
+describe('verificationStore — minimisation des données, purge automatique (#286)', () => {
+  it('conserve les images tant que le délai de rétention n’est pas dépassé', () => {
+    submitVerification('user-retention-1', ID_CARD, PASSPORT_PHOTO)
+    expect(getVerification('user-retention-1')?.idCardImage).toBe(ID_CARD)
+    expect(getVerification('user-retention-1')?.purgedAt).toBeNull()
+  })
+
+  it('efface automatiquement les images passé le délai de rétention, sans révoquer le statut vérifié', () => {
+    const now = 1_000_000
+    const spy = vi.spyOn(Date, 'now').mockImplementation(() => now)
+    submitVerification('user-retention-2', ID_CARD, PASSPORT_PHOTO)
+
+    spy.mockImplementation(() => now + ID_DOCUMENT_RETENTION_MS + 1)
+    const verification = getVerification('user-retention-2')
+    spy.mockRestore()
+
+    expect(verification?.idCardImage).toBeNull()
+    expect(verification?.passportPhotoImage).toBeNull()
+    expect(verification?.purgedAt).not.toBeNull()
+    expect(isVerified('user-retention-2')).toBe(true)
+  })
+
+  it('ne purge pas juste avant l’échéance (cas limite)', () => {
+    const now = 1_000_000
+    const spy = vi.spyOn(Date, 'now').mockImplementation(() => now)
+    submitVerification('user-retention-3', ID_CARD, PASSPORT_PHOTO)
+
+    spy.mockImplementation(() => now + ID_DOCUMENT_RETENTION_MS - 1)
+    const verification = getVerification('user-retention-3')
+    spy.mockRestore()
+
+    expect(verification?.idCardImage).toBe(ID_CARD)
+  })
+
+  it('deleteVerification efface entièrement l’enregistrement (droit à l’effacement)', () => {
+    submitVerification('user-erasure-1', ID_CARD, PASSPORT_PHOTO)
+    expect(deleteVerification('user-erasure-1')).toBe(true)
+    expect(isVerified('user-erasure-1')).toBe(false)
+    expect(getVerification('user-erasure-1')).toBeNull()
+  })
+
+  it('deleteVerification renvoie false pour un utilisateur sans vérification (cas limite)', () => {
+    expect(deleteVerification('user-jamais-verifie')).toBe(false)
   })
 })

@@ -176,6 +176,35 @@ export async function setPasswordHash(userId: string, passwordHash: string): Pro
   await prisma.user.updateMany({ where: { id: userId }, data: { passwordHash } })
 }
 
+/**
+ * Droit à l'effacement (#286, RGPD/audit sécurité) : anonymise les données
+ * personnelles du compte plutôt que de supprimer la ligne — l'historique
+ * financier (`Payment`, `Subscription`, réservé par leur clé étrangère
+ * `userId`) doit être conservé pour les obligations légales comptables et
+ * fiscales, comme l'indique déjà la politique de confidentialité
+ * (« Durée de conservation »). Toute session active est invalidée pour que
+ * le compte anonymisé ne puisse plus être réutilisé. `contact` est unique
+ * en base : le placeholder intègre l'id pour ne jamais entrer en collision
+ * entre deux comptes supprimés.
+ */
+export async function anonymizeUser(userId: string): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      contact: `compte-supprime-${userId}@worktogo.invalid`,
+      passwordHash: null,
+      googleId: null,
+      username: '',
+      firstName: '',
+      lastName: 'Compte supprimé',
+      location: '',
+      latitude: null,
+      longitude: null,
+    },
+  })
+  await prisma.session.deleteMany({ where: { userId } })
+}
+
 export interface PublicUser {
   id: string
   contact: string

@@ -5,6 +5,7 @@ import type { Subscription } from '~~/server/utils/subscriptionStore'
 import CertificationsForm from '~/components/CertificationsForm.vue'
 import ContactForm from '~/components/ContactForm.vue'
 import CvForm from '~/components/CvForm.vue'
+import DataPrivacyPanel from '~/components/DataPrivacyPanel.vue'
 import FormationForm from '~/components/FormationForm.vue'
 import IdentiteForm from '~/components/IdentiteForm.vue'
 import IdentityVerificationForm from '~/components/IdentityVerificationForm.vue'
@@ -111,6 +112,7 @@ type ModalKey =
   | 'certifications'
   | 'preferences'
   | 'coordonnees'
+  | 'donnees'
 
 /**
  * `refreshOnSave` : les formulaires d'identité/vérification/mot de passe
@@ -130,6 +132,9 @@ const MODAL_CONFIG: Record<ModalKey, { title: string; component: Component; refr
   certifications: { title: 'Certifications', component: CertificationsForm, refreshOnSave: true },
   preferences: { title: 'Préférences', component: PreferencesForm, refreshOnSave: true },
   coordonnees: { title: 'Coordonnées', component: ContactForm, refreshOnSave: true },
+  // Export/effacement (#286) : ne modifie pas ProviderProfile, pas besoin de
+  // rafraîchir les données du profil affichées ailleurs dans le hub.
+  donnees: { title: 'Mes données', component: DataPrivacyPanel, refreshOnSave: false },
 }
 
 const activeModal = ref<ModalKey | null>(null)
@@ -245,6 +250,13 @@ function completeProfile() {
           interactive
           :complete="!!user?.passwordSet"
           @click="openModal('password')"
+        />
+        <ProfileSectionCard
+          icon="🔐"
+          title="Mes données"
+          subtitle="Télécharger ou supprimer mes données"
+          interactive
+          @click="openModal('donnees')"
         />
 
         <template v-if="isProvider">
