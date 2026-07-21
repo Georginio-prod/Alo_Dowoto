@@ -51,6 +51,28 @@ const route = useRoute()
 function isActive(item: NavItem): boolean {
   return item.to === route.path || !!item.activePaths?.includes(route.path)
 }
+
+// Ce layout (contrairement à `default.vue`) n'inclut jamais AppHeader, donc
+// jamais AccountMenu.vue — une fois dans la section prestataire, il n'y
+// avait aucun moyen de se déconnecter sans en sortir d'abord (#333). Même
+// logique que AccountMenu.vue::confirmLogout, dupliquée ici faute d'un point
+// d'extraction commun qui vaille la peine pour un seul appelant de plus.
+const { clear: clearSession } = useSession()
+const confirmingLogout = ref(false)
+const isLoggingOut = ref(false)
+
+async function logout() {
+  if (isLoggingOut.value) return
+  isLoggingOut.value = true
+  try {
+    await $fetch('/api/auth/session', { method: 'DELETE' })
+    clearSession()
+  } finally {
+    isLoggingOut.value = false
+    confirmingLogout.value = false
+    navigateTo('/')
+  }
+}
 </script>
 
 <template>
@@ -81,6 +103,37 @@ function isActive(item: NavItem): boolean {
             </span>
           </template>
         </nav>
+
+        <div class="mt-4 rounded-card border border-hairline bg-surface p-2 shadow-card-sm">
+          <div v-if="confirmingLogout" class="p-1.5">
+            <p class="mb-2 px-1.5 text-[12.5px] text-dark">Confirmer la déconnexion ?</p>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                class="press flex-1 rounded-field bg-error py-1.5 text-[12.5px] font-semibold text-white disabled:opacity-60"
+                :disabled="isLoggingOut"
+                @click="logout"
+              >
+                {{ isLoggingOut ? 'Déconnexion…' : 'Confirmer' }}
+              </button>
+              <button
+                type="button"
+                class="press flex-1 rounded-field border border-hairline bg-white py-1.5 text-[12.5px] font-semibold text-muted"
+                @click="confirmingLogout = false"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+          <button
+            v-else
+            type="button"
+            class="press block w-full rounded-field px-3.5 py-2.5 text-left text-[13.5px] font-semibold text-error hover:bg-error/10"
+            @click="confirmingLogout = true"
+          >
+            Se déconnecter
+          </button>
+        </div>
       </aside>
 
       <main class="min-w-0 flex-1">
