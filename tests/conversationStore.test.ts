@@ -4,11 +4,13 @@ import {
   addSystemMessage,
   findLatestUnresolvedMessage,
   findOrCreateConversation,
+  getClientContact,
   getMessages,
   listConversationsForUser,
   markConversationRead,
   markFirstContactDone,
   resolveMessage,
+  setClientContact,
   toConversationSummary,
   WORKTOGO_SYSTEM_SENDER_ID,
 } from '~~/server/utils/conversationStore'
@@ -94,6 +96,24 @@ describe('conversationStore — première prise de contact (#129)', () => {
 
   it('ignore silencieusement un id de conversation inconnu (cas limite)', () => {
     expect(() => markFirstContactDone('id-inexistant')).not.toThrow()
+  })
+})
+
+describe('conversationStore — coordonnées du chercheur (#264, anti-fuite)', () => {
+  it("une nouvelle conversation n'a pas encore de contact enregistré", () => {
+    const conversation = findOrCreateConversation('client-30', 'p30')
+    expect(getClientContact(conversation.id)).toBeNull()
+  })
+
+  it('setClientContact enregistre le contact brut, récupérable via getClientContact', () => {
+    const conversation = findOrCreateConversation('client-31', 'p31')
+    setClientContact(conversation.id, '+228 90 12 34 56')
+    expect(getClientContact(conversation.id)).toBe('+228 90 12 34 56')
+  })
+
+  it('ignore silencieusement un id de conversation inconnu (cas limite)', () => {
+    expect(() => setClientContact('id-inexistant', '90123456')).not.toThrow()
+    expect(getClientContact('id-inexistant')).toBeNull()
   })
 })
 
