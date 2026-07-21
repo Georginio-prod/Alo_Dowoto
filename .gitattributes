@@ -1,0 +1,6 @@
+# Les migrations Prisma sont identifiées par un checksum calculé sur le
+# contenu exact du fichier. Sous Windows, `core.autocrlf=true` réécrit ces
+# fichiers en CRLF au checkout, ce qui change leur checksum par rapport à la
+# version appliquée en base et force `prisma migrate dev` à réclamer un reset
+# complet de la base locale (#329). On fige donc leur fin de ligne en LF.
+prisma/migrations/**/*.sql text eol=lf
