@@ -19,6 +19,8 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "@sentry/browser": "^10.67.0",
+    "@sentry/node": "^10.67.0",
     "@tailwindcss/vite": "^4.3.2",
     "nuxt": "^4.4.8",
     "tailwindcss": "^4.3.2",
