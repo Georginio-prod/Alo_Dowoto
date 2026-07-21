@@ -50,6 +50,15 @@ export default defineEventHandler(async (event) => {
     badRequest('Le champ « urgence / délai souhaité » semble contenir un numéro, un e-mail ou une proposition hors plateforme, ce qui est interdit par les CGU.')
   }
 
+  // Limite de demandes non payées simultanées (#280) : en plus du quota
+  // mensuel de contacts (server/utils/quotaStore.ts), empêche un chercheur
+  // d'ouvrir plusieurs demandes « pour voir » à la fois sans jamais en payer
+  // aucune — chaque demande non payée occupe inutilement l'attention d'un
+  // prestataire tant qu'elle reste ouverte.
+  if (countUnpaidOrdersForClient(user.id) >= MAX_SIMULTANEOUS_UNPAID_ORDERS) {
+    conflict(`Vous avez déjà ${MAX_SIMULTANEOUS_UNPAID_ORDERS} demande(s) en attente de paiement. Réglez-les ou annulez-les avant d'en envoyer une nouvelle.`)
+  }
+
   // Paiement en séquestre obligatoire avant transmission au prestataire
   // (#194, epic #191) : cette itération ne gère que le tarif fixe affiché
   // (pas de devis à valider, choix produit encore à trancher). Sans tarif
