@@ -20,6 +20,7 @@ function conversation(overrides: Partial<ConversationSummary> = {}): Conversatio
     firstContactDone: true,
     otherPartyName: 'Akofa M.',
     otherPartySector: 'Ménage',
+    sectorSlug: 'menage',
     lastMessage: null,
     alreadyReviewed: false,
     unreadCount: 0,

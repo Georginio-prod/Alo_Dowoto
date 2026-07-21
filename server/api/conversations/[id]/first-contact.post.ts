@@ -1,7 +1,11 @@
+import { getSectorFields } from '~~/app/data/firstContactSectorFields'
+
 interface FirstContactBody {
   description?: string
   contact?: string
   urgency?: string
+  /** Réponses aux champs additionnels différenciés par secteur (#295, voir app/data/firstContactSectorFields.ts). */
+  sectorAnswers?: Record<string, string>
 }
 
 /**
@@ -50,6 +54,32 @@ export default defineEventHandler(async (event) => {
     badRequest('Le champ « urgence / délai souhaité » semble contenir un numéro, un e-mail ou une proposition hors plateforme, ce qui est interdit par les CGU.')
   }
 
+  // Fiche différenciée par secteur (#295) : les champs additionnels affichés
+  // côté client (ex. adresse de départ/arrivée pour un transporteur,
+  // fréquence pour du ménage) dépendent du secteur du prestataire — voir
+  // app/data/firstContactSectorFields.ts. Revalidés ici car le client ne
+  // fait pas foi (requis, anti-contournement sur les champs texte).
+  const providerSector = getProviderById(conversation.providerId)?.sector ?? null
+  const sectorFields = getSectorFields(providerSector)
+  const sectorAnswers = body?.sectorAnswers ?? {}
+  const sectorAnswerLines: string[] = []
+  for (const field of sectorFields) {
+    const value = sectorAnswers[field.key]?.trim()
+    if (!value) {
+      if (field.required) badRequest(`Le champ « ${field.label} » est requis pour ce type de prestation.`)
+      continue
+    }
+    if (field.type === 'text') {
+      const reason = detectContournementAttempt(value)
+      if (reason) {
+        logContournementAttempt({ conversationId: conversation.id, userId: user.id, reason, text: value })
+        badRequest(`Le champ « ${field.label} » semble contenir un numéro, un e-mail ou une proposition hors plateforme, ce qui est interdit par les CGU.`)
+      }
+    }
+    const label = field.type === 'select' ? (field.options?.find((option) => option.value === value)?.label ?? value) : value
+    sectorAnswerLines.push(`${field.label} : ${label}`)
+  }
+
   // Paiement en séquestre obligatoire avant transmission au prestataire
   // (#194, epic #191) : cette itération ne gère que le tarif fixe affiché
   // (pas de devis à valider, choix produit encore à trancher). Sans tarif
@@ -64,7 +94,7 @@ export default defineEventHandler(async (event) => {
   // prestation n'est pas validée ; la valeur brute est conservée à part et
   // révélée automatiquement au prestataire à la libération des fonds (voir
   // `escrowOrderStore.ts`, `releaseOrderFunds`).
-  const messageLines = [description, `Contact : ${maskContact(contact)}`]
+  const messageLines = [description, ...sectorAnswerLines, `Contact : ${maskContact(contact)}`]
   if (urgency) messageLines.push(`Urgence / délai souhaité : ${urgency}`)
 
   const message = addMessage(conversation.id, user.id, user.role, messageLines.join('\n\n'))

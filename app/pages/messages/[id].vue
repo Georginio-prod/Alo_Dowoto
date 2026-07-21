@@ -227,6 +227,7 @@ async function submitReview() {
         :conversation-id="conversation.id"
         :prefill-contact="currentUserContact"
         :provider-name="conversation.otherPartyName"
+        :sector-slug="conversation.sectorSlug"
         @submitted="onFirstContactSubmitted"
       />
 
