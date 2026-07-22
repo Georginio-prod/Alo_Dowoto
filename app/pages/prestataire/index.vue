@@ -161,12 +161,22 @@ function restartDemo() {
       </div>
     </div>
 
-    <section v-if="recentMatches.length" class="mb-6">
+    <!--
+      Zone « Demandes récentes » toujours présente (aperçu de l'activité, comme
+      le tableau de bord freelance d'Upwork) : liste si des correspondances
+      existent, sinon état vide actionnable qui guide vers la complétion du
+      profil professionnel — reprend l'intention de l'ancien paragraphe
+      statique (supprimé car non cliquable), mais rendue actionnable et
+      contextuelle. Les anciennes cartes « Profil / Solde / Messages » ont été
+      retirées : elles doublonnaient exactement la barre latérale (mêmes
+      destinations), sans rien apporter de plus.
+    -->
+    <section class="mb-6">
       <div class="mb-3 flex items-center justify-between">
         <h2 class="text-[12px] font-bold uppercase tracking-wide text-muted">Demandes récentes</h2>
         <NuxtLink to="/prestataire/demandes" class="press text-[12.5px] font-semibold text-primary">Voir tout →</NuxtLink>
       </div>
-      <ul class="flex flex-col gap-2">
+      <ul v-if="recentMatches.length" class="flex flex-col gap-2">
         <li v-for="item in recentMatches" :key="item.request.id">
           <NuxtLink
             to="/prestataire/demandes"
@@ -182,38 +192,21 @@ function restartDemo() {
           </NuxtLink>
         </li>
       </ul>
+      <div v-else class="rounded-card border border-hairline bg-surface p-5 text-center shadow-card-sm">
+        <p class="text-[13px] leading-relaxed text-muted">
+          Aucune demande pour l'instant. Complétez votre profil professionnel (photo, description, tarifs) pour
+          apparaître dans le matching des clients de vos secteurs.
+        </p>
+        <NuxtLink
+          to="/prestataire/profil-professionnel"
+          class="press mt-3 inline-block rounded-field border border-hairline bg-white px-4 py-2 text-[13px] font-semibold text-dark hover:border-primary/50"
+        >
+          Compléter mon profil professionnel
+        </NuxtLink>
+      </div>
     </section>
 
-    <p class="mb-6 max-w-[520px] text-[13.5px] leading-relaxed text-muted">
-      Complétez votre profil (photo, description, tarifs) pour commencer à recevoir des demandes de clients dans
-      les secteurs sélectionnés.
-    </p>
-
-    <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-      <NuxtLink
-        to="/prestataire/profil"
-        class="press rounded-card border border-hairline bg-dark p-4 shadow-card-sm hover:bg-dark-hover"
-      >
-        <p class="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-white/70">Profil</p>
-        <p class="text-[13.5px] font-semibold text-white">Compléter mon profil</p>
-      </NuxtLink>
-      <NuxtLink
-        to="/prestataire/solde"
-        class="press rounded-card border border-hairline bg-surface p-4 shadow-card-sm hover:border-primary/40"
-      >
-        <p class="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-primary">Solde</p>
-        <p class="text-[13.5px] font-semibold text-dark">Voir mon solde</p>
-      </NuxtLink>
-      <NuxtLink
-        to="/prestataire/messages"
-        class="press rounded-card border border-hairline bg-surface p-4 shadow-card-sm hover:border-primary/40"
-      >
-        <p class="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-primary">Messages</p>
-        <p class="text-[13.5px] font-semibold text-dark">Voir mes messages</p>
-      </NuxtLink>
-    </div>
-
-    <button type="button" class="press mt-5 text-[13px] font-semibold text-muted hover:text-dark" @click="restartDemo">
+    <button type="button" class="press mt-1 text-[13px] font-semibold text-muted hover:text-dark" @click="restartDemo">
       ↺ Recommencer la démo
     </button>
   </div>
