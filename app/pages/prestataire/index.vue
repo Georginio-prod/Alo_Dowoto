@@ -130,7 +130,7 @@ function restartDemo() {
 <template>
   <div>
     <div class="relative mb-6 overflow-hidden rounded-card border border-hairline bg-dark p-6 shadow-card-sm sm:p-7">
-      <div class="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-primary/25 blur-3xl" aria-hidden="true" />
+      <div class="float-soft pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-primary/25 blur-3xl" aria-hidden="true" />
       <div class="relative flex flex-wrap items-start justify-between gap-4">
         <div>
           <p class="mb-1 text-[11px] font-bold uppercase tracking-wide text-primary">Espace prestataire</p>
@@ -198,7 +198,7 @@ function restartDemo() {
     <div class="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
       <NuxtLink
         to="/prestataire/demandes"
-        class="press rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm hover:border-primary/40"
+        class="card-hover rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm hover:border-primary/40"
       >
         <div class="text-[22px] font-extrabold text-dark">{{ requestsUsageLabel }}</div>
         <div class="text-[11.5px] text-muted">Demandes reçues ce mois</div>
@@ -209,7 +209,7 @@ function restartDemo() {
       </div>
       <NuxtLink
         to="/prestataire/solde"
-        class="press rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm hover:border-primary/40"
+        class="card-hover rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm hover:border-primary/40"
       >
         <div class="truncate text-[18px] font-extrabold text-dark">{{ formattedBalance }}</div>
         <div class="text-[11.5px] text-muted">Solde disponible</div>
@@ -233,7 +233,7 @@ function restartDemo() {
     <section class="mb-6">
       <div class="mb-3 flex items-center justify-between">
         <h2 class="text-[12px] font-bold uppercase tracking-wide text-muted">Demandes récentes</h2>
-        <NuxtLink to="/prestataire/demandes" class="press text-[12.5px] font-semibold text-primary">Voir tout →</NuxtLink>
+        <NuxtLink to="/prestataire/demandes" class="press link-underline text-[12.5px] font-semibold text-primary">Voir tout →</NuxtLink>
       </div>
       <ul v-if="recentMatches.length" class="flex flex-col gap-2">
         <li v-for="item in recentMatches" :key="item.request.id">

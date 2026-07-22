@@ -62,7 +62,7 @@ onUnmounted(clearCloseTimer)
   <section class="mx-auto max-w-6xl px-6 pb-16 pt-8">
     <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
       <h2 v-reveal class="text-lg font-bold text-dark">Parcourir par secteur</h2>
-      <NuxtLink to="/categories" class="press text-[13.5px] font-semibold text-primary hover:underline">
+      <NuxtLink to="/categories" class="press link-underline text-[13.5px] font-semibold text-primary">
         Toutes les catégories →
       </NuxtLink>
     </div>

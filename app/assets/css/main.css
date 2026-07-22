@@ -33,10 +33,24 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     background: var(--color-bg);
     color: var(--color-ink);
     -webkit-font-smoothing: antialiased;
+  }
+
+  /* Anneau de focus clavier unifié (accessibilité + finition) — visible
+     uniquement au clavier (`:focus-visible`), jamais au clic/tap souris, donc
+     aucune régression visuelle sur les interactions au pointeur. Reprend le
+     vert de marque, applicable à tout élément interactif sans le styler un par
+     un. Rayon hérité de l'élément pour épouser boutons pilules et champs. */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: inherit;
   }
 }
 
@@ -131,6 +145,16 @@
      exactement là où commence la première. Chaque item porte son propre
      espacement symétrique (padding-inline) pour que la jointure soit
      identique aux autres intervalles. Fondu sur les bords, lent et fluide. */
+  /* Libellé au-dessus du bandeau : petites capitales espacées, discret,
+     inspiré des bandeaux "Used by the best..." (HBO, Netflix, etc.). */
+  .partners-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    opacity: 0.75;
+  }
   .partners-marquee {
     position: relative;
     overflow: hidden;
@@ -139,6 +163,7 @@
   }
   .partners-track {
     display: flex;
+    align-items: center;
     width: max-content;
     animation: partners-scroll 42s linear infinite;
   }
@@ -146,26 +171,25 @@
   .partners-marquee:hover .partners-track {
     animation-play-state: paused;
   }
+  /* Traité comme un logo/wordmark plutôt qu'un simple libellé texte :
+     plus grand, en grisé, qui s'éclaircit individuellement au survol —
+     sans puce de séparation, le simple espacement suffit (cf. bandeaux
+     "Used by the best..." type HBO/Netflix/BBC). */
   .partner-item {
-    position: relative;
-    padding-inline: 1.6rem;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.03em;
+    padding-inline: 1.8rem;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
     color: var(--color-muted);
+    opacity: 0.45;
     white-space: nowrap;
+    filter: grayscale(1);
+    transition: opacity 0.2s ease;
   }
-  /* Petite pastille de séparation, centrée dans l'intervalle entre deux noms. */
-  .partner-item::after {
-    content: "";
-    position: absolute;
-    right: -2px;
-    top: 50%;
-    width: 3px;
-    height: 3px;
-    border-radius: 9999px;
-    background: var(--color-hairline);
-    transform: translateY(-50%);
+  @media (hover: hover) {
+    .partner-item:hover {
+      opacity: 0.9;
+    }
   }
   @keyframes partners-scroll {
     from { transform: translateX(0); }
@@ -230,9 +254,76 @@
   .fmb-leave-active {
     position: absolute;
   }
+
+  /* Skeletons de chargement : dégradé qui balaie la surface plutôt qu'un simple
+     clignotement d'opacité (ResultsSkeleton, #187). Perception de fluidité plus
+     proche des chargements « premium » (Land-book/Godly). L'élément porteur
+     garde sa couleur de repli (bg-hairline) : le shimmer se superpose. */
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.45),
+      transparent
+    );
+    animation: skeleton-sweep 1.5s ease-in-out infinite;
+  }
+  @keyframes skeleton-sweep {
+    100% { transform: translateX(100%); }
+  }
+
+  /* Souligné animé pour les liens texte (« Voir tout → », « Toutes les
+     catégories → ») : le trait se déploie depuis la gauche au survol, dans le
+     vert de marque. Micro-interaction sobre inspirée de Cuberto/uiMovement. */
+  .link-underline {
+    position: relative;
+  }
+  .link-underline::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    height: 1.5px;
+    width: 100%;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @media (hover: hover) {
+    .link-underline:hover::after {
+      transform: scaleX(1);
+    }
+  }
+
+  /* Zoom doux d'un média au survol de sa carte parente (`group`). Reste
+     enfermé par `overflow-hidden` sur la carte. Utilisé par ProviderCard. */
+  @media (hover: hover) {
+    .group:hover .media-zoom {
+      transform: scale(1.06);
+    }
+  }
+  .media-zoom {
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .skeleton-shimmer::after { animation: none; }
+  .link-underline::after { transition: none; }
+  .media-zoom { transition: none; }
+  .group:hover .media-zoom { transform: none; }
   [data-reveal] {
     opacity: 1 !important;
     transform: none !important;

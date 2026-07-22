@@ -154,7 +154,7 @@ function restartDemo() {
 
 <template>
   <div>
-    <header class="border-b border-hairline bg-surface">
+    <header class="sticky top-0 z-20 border-b border-hairline bg-surface/90 backdrop-blur-md supports-[backdrop-filter]:bg-surface/80">
       <div class="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3 px-5 py-4">
         <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <NuxtLink to="/" class="text-[19px] font-extrabold text-dark">
@@ -200,11 +200,12 @@ function restartDemo() {
         <h2 class="mb-3 text-[15px] font-bold text-dark">Meilleurs prestataires</h2>
         <div class="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
           <ProviderCard
-            v-for="provider in featuredProviders"
+            v-for="(provider, i) in featuredProviders"
             :key="`featured-${provider.id}`"
             :provider="provider"
             :badge="provider.badge"
             :is-favorite="favoriteProviderIds.has(provider.id)"
+            :reveal-delay="i * 60"
             @favorite-changed="refreshFavorites"
           />
         </div>
@@ -215,10 +216,11 @@ function restartDemo() {
         <p class="mb-3 text-[12.5px] text-muted">Basé sur votre localisation : {{ nearbyCity }}</p>
         <div class="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
           <ProviderCard
-            v-for="provider in nearbyProviders"
+            v-for="(provider, i) in nearbyProviders"
             :key="`nearby-${provider.id}`"
             :provider="provider"
             :is-favorite="favoriteProviderIds.has(provider.id)"
+            :reveal-delay="i * 60"
             @favorite-changed="refreshFavorites"
           />
         </div>
@@ -281,10 +283,11 @@ function restartDemo() {
         <ResultsEmptyState v-else-if="results.length === 0" @action="resetFilters" />
         <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
           <ProviderCard
-            v-for="provider in results"
+            v-for="(provider, i) in results"
             :key="provider.id"
             :provider="provider"
             :is-favorite="favoriteProviderIds.has(provider.id)"
+            :reveal-delay="Math.min(i, 10) * 45"
             @favorite-changed="refreshFavorites"
           />
         </div>
