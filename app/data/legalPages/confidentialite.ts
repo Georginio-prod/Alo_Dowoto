@@ -41,6 +41,7 @@ export const CONFIDENTIALITE: LegalPage = {
     {
       heading: 'Base légale des traitements',
       body: [
+        'Les traitements de données personnelles réalisés sur WorkTogo sont soumis à la loi togolaise n° 2019-014 du 29 octobre 2019 relative à la protection des données à caractère personnel, sous le contrôle de l\'Instance de Protection des Données à Caractère Personnel (IPDCP).',
         'Les traitements décrits ci-dessus reposent sur l\'exécution du contrat qui vous lie à WorkTogo (fourniture du service), sur votre consentement lorsqu\'il est requis (cookies non essentiels), ou sur l\'intérêt légitime de WorkTogo à assurer la sécurité et l\'amélioration de la plateforme.',
       ],
     },
@@ -70,7 +71,7 @@ export const CONFIDENTIALITE: LegalPage = {
     },
     {
       heading: 'Vos droits',
-      body: ['Conformément à la réglementation applicable en matière de protection des données personnelles, vous disposez des droits suivants sur vos données :'],
+      body: ['Conformément à la loi togolaise n° 2019-014 relative à la protection des données à caractère personnel, vous disposez des droits suivants sur vos données :'],
       list: [
         'Droit d\'accès et à la portabilité : téléchargez à tout moment une copie structurée de vos données depuis votre profil (section « Mes données ») ;',
         'Droit de rectification : corriger des données inexactes ou incomplètes depuis votre profil ;',
@@ -83,6 +84,7 @@ export const CONFIDENTIALITE: LegalPage = {
       body: [
         'Le téléchargement de vos données et la suppression de votre compte sont accessibles en libre-service depuis votre profil WorkTogo (section « Mes données »), sans attendre de réponse manuelle.',
         `Pour toute autre demande relative à vos données (droit de rectification approfondi, droit d'opposition, question sur cette politique), contactez-nous à ${SUPPORT_EMAIL} ou au ${SUPPORT_PHONE}. Une réponse vous sera apportée dans les meilleurs délais.`,
+        'Si vous estimez, après nous avoir contactés, que vos droits ne sont pas respectés, vous pouvez introduire une réclamation auprès de l\'Instance de Protection des Données à Caractère Personnel (IPDCP), autorité de contrôle compétente au Togo.',
       ],
     },
     {
