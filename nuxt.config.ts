@@ -5,7 +5,26 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   modules: ['@nuxt/eslint'],
   devtools: { enabled: true },
-  css: ['~/assets/css/main.css', '~/assets/css/themes.css'],
+  css: [
+    // Police Poppins auto-hébergée (@fontsource) plutôt que servie depuis le
+    // CDN Google — voir #341 : évite de transmettre l'IP des visiteurs à
+    // Google (conformité loi togolaise 2019-014) et supprime une connexion
+    // tierce bloquante. Les fichiers .woff2 sont packagés localement.
+    // Sous-ensembles latin + latin-ext uniquement (couvrent le français, y
+    // compris œ / caractères accentués) — on n'embarque pas le devanagari.
+    '@fontsource/poppins/latin-400.css',
+    '@fontsource/poppins/latin-500.css',
+    '@fontsource/poppins/latin-600.css',
+    '@fontsource/poppins/latin-700.css',
+    '@fontsource/poppins/latin-800.css',
+    '@fontsource/poppins/latin-ext-400.css',
+    '@fontsource/poppins/latin-ext-500.css',
+    '@fontsource/poppins/latin-ext-600.css',
+    '@fontsource/poppins/latin-ext-700.css',
+    '@fontsource/poppins/latin-ext-800.css',
+    '~/assets/css/main.css',
+    '~/assets/css/themes.css',
+  ],
   eslint: {
     config: {
       typescript: {
@@ -29,11 +48,9 @@ export default defineNuxtConfig({
     // Transition globale entre les pages (voir .page-* dans main.css).
     pageTransition: { name: 'page', mode: 'out-in' },
     head: {
-      link: [
-        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
-        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap' }
-      ],
+      // La police Poppins est désormais auto-hébergée (voir la liste `css`
+      // ci-dessus, #341) : plus aucun `link` vers fonts.googleapis.com /
+      // fonts.gstatic.com ni `preconnect` associé.
       script: [
         {
           // Applique le thème enregistré avant le premier rendu (évite le flash).
