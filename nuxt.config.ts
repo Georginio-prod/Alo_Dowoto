@@ -29,6 +29,10 @@ export default defineNuxtConfig({
     // Transition globale entre les pages (voir .page-* dans main.css).
     pageTransition: { name: 'page', mode: 'out-in' },
     head: {
+      // Langue du document : requise pour les lecteurs d'écran (prononciation)
+      // et le référencement (contenu intégralement en français). Sans elle,
+      // `<html>` n'a aucun `lang` et l'assistive technology devine la langue.
+      htmlAttrs: { lang: 'fr' },
       link: [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
