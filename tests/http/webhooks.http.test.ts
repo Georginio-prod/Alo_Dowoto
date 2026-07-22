@@ -75,7 +75,7 @@ describe('POST /payments/webhook (#34)', () => {
   it('chemin nominal : confirme le paiement et active l’abonnement associé', async () => {
     await ensureProviderUser('provider-webhook-1')
     const subscription = await createPendingSubscription('provider-webhook-1', 'mensuel')
-    const payment = createPayment({
+    const payment = await createPayment({
       userId: 'provider-webhook-1',
       subscriptionId: subscription.id,
       provider: 'flooz',
@@ -90,14 +90,14 @@ describe('POST /payments/webhook (#34)', () => {
 
     expect(status).toBe(200)
     expect((json as { payment: { status: string } }).payment.status).toBe('confirmed')
-    expect(getPayment(payment.id)?.operatorRef).toBe('OP-REF-1')
+    expect((await getPayment(payment.id))?.operatorRef).toBe('OP-REF-1')
     expect((await getSubscriptionById(subscription.id))?.status).toBe('actif')
   })
 
   it('idempotence : un rejeu du même webhook ne retraite pas le paiement (statut déjà résolu renvoyé tel quel)', async () => {
     await ensureProviderUser('provider-webhook-2')
     const subscription = await createPendingSubscription('provider-webhook-2', 'mensuel')
-    const payment = createPayment({
+    const payment = await createPayment({
       userId: 'provider-webhook-2',
       subscriptionId: subscription.id,
       provider: 'flooz',
@@ -115,7 +115,7 @@ describe('POST /payments/webhook (#34)', () => {
     expect(replay.status).toBe(200)
     expect((replay.json as { payment: { operatorRef: string } }).payment.operatorRef).toBe('OP-REF-2')
     // Un seul enregistrement resolvedAt, pas modifié par le rejeu.
-    expect(getPayment(payment.id)?.resolvedAt).toBe((first.json as { payment: { resolvedAt: number } }).payment.resolvedAt)
+    expect((await getPayment(payment.id))?.resolvedAt).toBe((first.json as { payment: { resolvedAt: number } }).payment.resolvedAt)
   })
 
   it('renvoie 404 pour un paiement inconnu (signature valide, id inexistant)', async () => {

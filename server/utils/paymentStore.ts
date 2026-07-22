@@ -1,8 +1,10 @@
-import { randomUUID } from 'node:crypto'
+import type { Payment as PrismaPayment } from '@prisma/client'
+import { prisma } from '~~/server/utils/prisma'
 
 /**
- * Store en mémoire pour les paiements Mobile Money. Suffisant pour ce lot
- * (pas de base de données encore en place, voir #45/#46).
+ * Persistance des paiements Mobile Money en base (Prisma/SQLite, #342,
+ * ADR 0013, étape 2). Contrairement à l'ancien store en mémoire, les
+ * paiements survivent aux redémarrages du serveur.
  */
 
 export type PaymentProvider = 'flooz' | 'tmoney'
@@ -21,46 +23,68 @@ export interface Payment {
   resolvedAt: number | null
 }
 
-const payments = new Map<string, Payment>()
+function toPayment(row: PrismaPayment): Payment {
+  return {
+    id: row.id,
+    userId: row.userId,
+    subscriptionId: row.subscriptionId,
+    provider: row.provider as PaymentProvider,
+    phone: row.phone,
+    amount: row.amount,
+    status: row.status as PaymentStatus,
+    operatorRef: row.operatorRef,
+    createdAt: row.createdAt.getTime(),
+    resolvedAt: row.resolvedAt?.getTime() ?? null,
+  }
+}
 
-export function createPayment(input: {
+export async function createPayment(input: {
   userId: string
   subscriptionId: string
   provider: PaymentProvider
   phone: string
   amount: number
-}): Payment {
-  const payment: Payment = {
-    id: randomUUID(),
-    userId: input.userId,
-    subscriptionId: input.subscriptionId,
-    provider: input.provider,
-    phone: input.phone,
-    amount: input.amount,
-    status: 'pending',
-    operatorRef: null,
-    createdAt: Date.now(),
-    resolvedAt: null,
-  }
-  payments.set(payment.id, payment)
-  return payment
+}): Promise<Payment> {
+  const row = await prisma.payment.create({
+    data: {
+      userId: input.userId,
+      subscriptionId: input.subscriptionId,
+      provider: input.provider,
+      phone: input.phone,
+      amount: input.amount,
+    },
+  })
+  return toPayment(row)
 }
 
-export function getPayment(id: string): Payment | null {
-  return payments.get(id) ?? null
+export async function getPayment(id: string): Promise<Payment | null> {
+  const row = await prisma.payment.findUnique({ where: { id } })
+  return row ? toPayment(row) : null
 }
 
 /**
  * Applique le résultat d'une confirmation opérateur (webhook réel en prod,
  * simulation en dev — voir server/api/payments/initiate.post.ts).
- * Idempotent : un paiement déjà résolu n'est jamais réévalué.
+ * Idempotent : un paiement déjà résolu n'est jamais réévalué. La résolution
+ * est conditionnée par `where: { status: 'pending' }` pour rester correcte
+ * même sous double envoi concurrent de l'opérateur (ce que la Map
+ * mono-thread masquait auparavant).
  */
-export function resolvePayment(id: string, status: 'confirmed' | 'failed', operatorRef?: string): Payment | null {
-  const payment = payments.get(id)
-  if (!payment || payment.status !== 'pending') return payment ?? null
+export async function resolvePayment(id: string, status: 'confirmed' | 'failed', operatorRef?: string): Promise<Payment | null> {
+  const existing = await prisma.payment.findUnique({ where: { id } })
+  if (!existing) return null
+  if (existing.status !== 'pending') return toPayment(existing)
 
-  payment.status = status
-  payment.operatorRef = operatorRef ?? null
-  payment.resolvedAt = Date.now()
-  return payment
+  const result = await prisma.payment.updateMany({
+    where: { id, status: 'pending' },
+    data: { status, operatorRef: operatorRef ?? null, resolvedAt: new Date() },
+  })
+  // Un autre webhook concurrent a pu résoudre entre-temps : on relit l'état
+  // effectif plutôt que de présumer du résultat.
+  if (result.count === 0) {
+    const current = await prisma.payment.findUnique({ where: { id } })
+    return current ? toPayment(current) : null
+  }
+  const row = await prisma.payment.findUnique({ where: { id } })
+  return row ? toPayment(row) : null
 }
