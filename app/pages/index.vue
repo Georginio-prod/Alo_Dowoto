@@ -41,6 +41,7 @@ function onSelectSubSector(name: string) {
     <HeroSection />
     <SectorGrid @select="openSectorDrawer" @select-sub="(_sector, name) => onSelectSubSector(name)" />
     <HowItWorks />
+    <ReassuranceBar />
     <PricingTeaser />
     <TestimonialsSection />
     <SectorDrawer :sector="activeSector" @close="closeSectorDrawer" @select="onSelectSubSector" />
