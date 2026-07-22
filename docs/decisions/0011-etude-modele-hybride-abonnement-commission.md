@@ -1,4 +1,4 @@
-# ADR 0007 — Étude comparative : abonnement seul vs modèle hybride abonnement + commission
+# ADR 0011 — Étude comparative : abonnement seul vs modèle hybride abonnement + commission
 
 **Statut :** Étude livrée pour validation par l'équipe ; **décision finale de tarification en attente**
 **Contexte :** issue #279 (« Étudier un modèle hybride abonnement + commission »)

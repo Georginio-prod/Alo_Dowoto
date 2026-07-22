@@ -1,4 +1,4 @@
-# ADR 0007 — Instrumentation d'erreurs en production
+# ADR 0009 — Instrumentation d'erreurs en production
 
 **Statut :** Adopté pour la partie technique ; **décision produit/infra en attente** pour le fournisseur (2026-07-21)
 **Contexte :** issue #262 (« Instrumentation d'erreurs en production (Sentry ou équivalent) »)

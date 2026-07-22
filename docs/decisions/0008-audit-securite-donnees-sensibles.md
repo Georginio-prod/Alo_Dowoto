@@ -1,4 +1,4 @@
-# ADR 0007 — Audit de sécurité du stockage des données sensibles
+# ADR 0008 — Audit de sécurité du stockage des données sensibles
 
 **Statut :** Adopté (2026-07-21)
 **Contexte :** issue #286 (« Conformité protection des données personnelles »)
@@ -112,8 +112,7 @@ anti-contournement, contenant potentiellement les numéros/e-mails qu'ils
 visent justement à empêcher de fuiter) n'ont aucune limite de conservation
 ni interface de purge — mais aucune route ne les expose publiquement
 aujourd'hui (aucun panneau d'administration n'existe dans ce prototype, voir
-ADR 0007 [numérotation à harmoniser à la fusion] sur le signalement du
-contournement).
+ADR 0007 sur le signalement du contournement).
 
 **Décision :** consigné comme suivi ultérieur plutôt que traité dans cette
 itération — le risque est plus faible (pas de route d'exposition, données

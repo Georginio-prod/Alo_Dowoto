@@ -1,4 +1,4 @@
-# ADR 0007 — Harnais de test d'intégration HTTP
+# ADR 0012 — Harnais de test d'intégration HTTP
 
 **Statut :** Adopté (2026-07-21)
 **Contexte :** issue #261 (« Tests d'intégration HTTP sur les routes escrow / paiement / webhook »)

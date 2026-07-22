@@ -1,4 +1,4 @@
-# ADR 0007 — Obligations fiscales de déclaration des revenus prestataires
+# ADR 0010 — Obligations fiscales de déclaration des revenus prestataires
 
 **Statut :** Analyse préliminaire documentée ; **avis fiscal écrit externe requis avant toute mise en œuvre**
 **Contexte :** issue #287 (« Clarifier les obligations fiscales de déclaration des revenus prestataires »)
