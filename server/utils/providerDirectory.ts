@@ -57,7 +57,17 @@ export interface ProviderSearchFilters {
   longitude?: number
   /** Rayon de recherche en km, ignoré si `latitude`/`longitude` absents. */
   radiusKm?: number
+  /**
+   * Tri explicite demandé par le chercheur (barre de tri des résultats).
+   * Quand il est fourni, il l'emporte sur l'ordre par défaut (proximité si
+   * coordonnées, sinon score multi-critères) — un choix explicite de
+   * l'utilisateur prime toujours. Absent = comportement historique inchangé.
+   */
+  sort?: ProviderSortOption
 }
+
+/** Options de tri explicites de la barre de résultats (voir `searchProviders`). */
+export type ProviderSortOption = 'note' | 'prix_asc' | 'prix_desc'
 
 const DIRECTORY: ProviderSearchResult[] = [
   { id: 'p01', displayName: 'Akofa M.', sector: 'menage', subSector: 'Ménage à domicile', city: 'Lomé', verified: true, rating: 4.8, reviewCount: 32, priceFrom: 3000, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
@@ -165,6 +175,14 @@ export function searchProviders(filters: ProviderSearchFilters): ProviderSearchR
       return { ...provider, distanceKm }
     })
 
+  // Tri explicite demandé (barre de tri des résultats) : prime sur l'ordre
+  // par défaut (proximité/score). La distance reste calculée ci-dessus pour
+  // l'affichage, seul l'ordre change. Tri sur les mêmes valeurs que celles
+  // affichées par ProviderCard (`rating`, `priceFrom`) pour rester cohérent.
+  if (filters.sort) {
+    return sortResults(filtered, filters.sort)
+  }
+
   // Coordonnées du chercheur fournies : tri par proximité (#263), comme
   // avant la fusion avec le tri multi-critères (#288) ci-dessous.
   if (searcherCoords) {
@@ -189,6 +207,24 @@ export function searchProviders(filters: ProviderSearchFilters): ProviderSearchR
     .map((provider) => ({ provider, score: scoreSearchResult(provider) }))
     .sort((a, b) => b.score - a.score)
     .map((entry) => entry.provider)
+}
+
+/**
+ * Applique un tri explicite à un jeu de résultats déjà filtré. Copie le
+ * tableau avant de trier (ne mute pas l'entrée). « Mieux notés » départage les
+ * ex æquo par nombre d'avis décroissant (une note identique avec plus d'avis
+ * est plus fiable), cohérent avec l'esprit du score de mise en avant.
+ */
+function sortResults(results: ProviderSearchResult[], sort: ProviderSortOption): ProviderSearchResult[] {
+  const sorted = [...results]
+  switch (sort) {
+    case 'note':
+      return sorted.sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount)
+    case 'prix_asc':
+      return sorted.sort((a, b) => a.priceFrom - b.priceFrom)
+    case 'prix_desc':
+      return sorted.sort((a, b) => b.priceFrom - a.priceFrom)
+  }
 }
 
 /** Score multi-critères (0-100) d'un résultat de recherche, voir `searchProviders`. */

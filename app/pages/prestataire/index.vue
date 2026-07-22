@@ -87,6 +87,37 @@ const subscriptionBannerText = computed(() =>
     : "Votre profil n'est pas complet : choisissez une formule pour profiter de toutes les fonctionnalités.",
 )
 
+// Complétude du profil (levier Upwork/Malt) : un score chiffré + une checklist
+// des éléments manquants incitent à enrichir la fiche, ce qui la rend plus
+// crédible et attire davantage de demandes. Calculé côté client à partir du
+// profil déjà chargé (/api/providers/me) — aucune requête supplémentaire,
+// aucune donnée inventée. Chaque item pèse identiquement et pointe vers la
+// sous-page où le compléter.
+interface ChecklistItem {
+  key: string
+  label: string
+  done: boolean
+  to: string
+}
+const profileChecklist = computed<ChecklistItem[]>(() => {
+  const p = profileData.value?.profile
+  return [
+    { key: 'photo', label: 'Photo de profil', done: !!p?.photoUrl, to: '/prestataire/profil-professionnel' },
+    { key: 'description', label: 'Description', done: !!p?.description, to: '/prestataire/profil-professionnel' },
+    { key: 'rate', label: 'Tarif de base', done: (p?.rateFrom ?? 0) > 0, to: '/prestataire/profil-professionnel' },
+    { key: 'cv', label: 'CV', done: !!p?.cvUrl, to: '/prestataire/cv' },
+    { key: 'languages', label: 'Langues', done: !!p?.languages?.length, to: '/prestataire/langues' },
+    { key: 'formation', label: 'Formation', done: !!p?.formations?.length, to: '/prestataire/formation' },
+    { key: 'certifications', label: 'Certifications', done: !!p?.certifications?.length, to: '/prestataire/certifications' },
+    { key: 'verified', label: 'Identité vérifiée', done: !!user.value?.verified, to: '/prestataire/profil?open=verification' },
+  ]
+})
+const completionPercent = computed(() => {
+  const items = profileChecklist.value
+  return Math.round((items.filter((i) => i.done).length / items.length) * 100)
+})
+const missingProfileItems = computed(() => profileChecklist.value.filter((i) => !i.done))
+
 function formatDate(timestamp: number): string {
   return new Date(timestamp).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
 }
@@ -113,6 +144,34 @@ function restartDemo() {
         </span>
       </div>
     </div>
+
+    <!-- Jauge de complétude du profil (levier de qualité, style Upwork/Malt). -->
+    <section class="mb-6 rounded-card border border-hairline bg-surface p-5 shadow-card-sm">
+      <div class="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <h2 class="text-[14px] font-bold text-dark">Complétude de votre profil</h2>
+          <p class="text-[12.5px] text-muted">Un profil complet inspire confiance et attire plus de demandes.</p>
+        </div>
+        <span class="shrink-0 text-[22px] font-extrabold text-primary">{{ completionPercent }}%</span>
+      </div>
+      <div class="mb-3 h-2 overflow-hidden rounded-pill bg-bg">
+        <div
+          class="h-full rounded-pill bg-primary transition-[width] duration-500 ease-out"
+          :style="{ width: `${completionPercent}%` }"
+        />
+      </div>
+      <div v-if="missingProfileItems.length" class="flex flex-wrap gap-2">
+        <NuxtLink
+          v-for="item in missingProfileItems"
+          :key="item.key"
+          :to="item.to"
+          class="press inline-flex items-center gap-1.5 rounded-pill border border-hairline bg-white px-3 py-1 text-[12.5px] font-semibold text-muted hover:border-primary/40 hover:text-dark"
+        >
+          <span aria-hidden="true" class="font-bold text-primary">+</span> {{ item.label }}
+        </NuxtLink>
+      </div>
+      <p v-else class="text-[13px] font-semibold text-primary">✓ Votre profil est complet. Excellent&nbsp;!</p>
+    </section>
 
     <NuxtLink
       v-if="!user?.verified"

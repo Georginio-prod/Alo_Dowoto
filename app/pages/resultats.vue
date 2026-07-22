@@ -41,10 +41,19 @@ const subSectorOptions = computed(
   () => SECTORS.find((s) => s.slug === activeSectorSlug.value)?.subSectors.map((sub) => sub.name) ?? [],
 )
 
+const PRICE_MAX_DEFAULT = 6000
+
 const filterSubSectors = ref<string[]>([])
 const filterCity = ref('')
 const filterRatingMin = ref<number | null>(null)
-const filterPriceMax = ref(6000)
+const filterPriceMax = ref(PRICE_MAX_DEFAULT)
+
+// Tri explicite de la barre de résultats (inspiré Upwork/Malt/Fiverr).
+// « Pertinence » = ordre par défaut du serveur (proximité si géoloc, sinon
+// score multi-critères) : on n'envoie alors aucun paramètre `tri`, le
+// comportement historique est strictement préservé.
+type SortOption = 'pertinence' | 'note' | 'prix_asc' | 'prix_desc'
+const sortBy = ref<SortOption>('pertinence')
 
 // Le texte libre ne sert qu'à choisir le secteur affiché (ci-dessus) : une
 // fois ce secteur résolu, la requête utilise les filtres structurés plutôt
@@ -57,10 +66,37 @@ const { data, pending } = await useFetch<SearchResponse>('/api/providers/search'
     ville: filterCity.value || undefined,
     note_min: filterRatingMin.value ?? undefined,
     prix_max: filterPriceMax.value,
+    tri: sortBy.value === 'pertinence' ? undefined : sortBy.value,
     pageSize: 24,
   })),
 })
 const results = computed(() => data.value?.results ?? [])
+const totalResults = computed(() => data.value?.total ?? 0)
+
+// Puces de filtres actifs (pattern Malt/Upwork) : récapitulent en un coup
+// d'œil ce qui restreint la recherche et se retirent d'un clic. Chaque puce
+// porte sa propre fonction de retrait, ciblant le v-model concerné.
+interface FilterChip {
+  id: string
+  label: string
+  clear: () => void
+}
+const activeFilters = computed<FilterChip[]>(() => {
+  const chips: FilterChip[] = []
+  for (const sub of filterSubSectors.value) {
+    chips.push({ id: `sub-${sub}`, label: sub, clear: () => { filterSubSectors.value = filterSubSectors.value.filter((s) => s !== sub) } })
+  }
+  if (filterCity.value) {
+    chips.push({ id: 'city', label: filterCity.value, clear: () => { filterCity.value = '' } })
+  }
+  if (filterRatingMin.value !== null) {
+    chips.push({ id: 'rating', label: `${filterRatingMin.value}★ et plus`, clear: () => { filterRatingMin.value = null } })
+  }
+  if (filterPriceMax.value < PRICE_MAX_DEFAULT) {
+    chips.push({ id: 'price', label: `≤ ${filterPriceMax.value} FCFA`, clear: () => { filterPriceMax.value = PRICE_MAX_DEFAULT } })
+  }
+  return chips
+})
 
 // Sections « accueil » (#187) : uniquement pertinentes en navigation libre
 // (aucun terme recherché) — une recherche précise (q) bascule la page en
@@ -201,7 +237,46 @@ function restartDemo() {
       </aside>
 
       <section class="min-w-0 flex-1">
-        <h2 v-if="showHomeSections" class="mb-3 text-[15px] font-bold text-dark">Tous les prestataires</h2>
+        <!-- Barre d'outils résultats : compteur (réassurance) + tri explicite. -->
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 class="text-[15px] font-bold text-dark">
+            {{ showHomeSections ? 'Tous les prestataires' : 'Résultats' }}
+            <span v-if="!pending" class="ml-1 text-[13px] font-medium text-muted">({{ totalResults }})</span>
+          </h2>
+          <label class="flex items-center gap-2 text-[12.5px] text-muted">
+            Trier par
+            <select
+              v-model="sortBy"
+              class="h-[38px] rounded-field border border-hairline bg-white px-2.5 text-[13px] font-semibold text-dark outline-none focus:border-primary"
+              aria-label="Trier les résultats"
+            >
+              <option value="pertinence">Pertinence</option>
+              <option value="note">Mieux notés</option>
+              <option value="prix_asc">Prix croissant</option>
+              <option value="prix_desc">Prix décroissant</option>
+            </select>
+          </label>
+        </div>
+
+        <!-- Filtres actifs retirables (récapitulatif clair de la recherche). -->
+        <div v-if="activeFilters.length" class="mb-4 flex flex-wrap items-center gap-2">
+          <span class="text-[12px] font-semibold text-muted">Filtres actifs :</span>
+          <button
+            v-for="chip in activeFilters"
+            :key="chip.id"
+            type="button"
+            class="press inline-flex items-center gap-1.5 rounded-pill border border-primary/30 bg-primary/10 px-3 py-1 text-[12.5px] font-semibold text-primary hover:border-primary/50"
+            @click="chip.clear()"
+          >
+            {{ chip.label }}
+            <span aria-hidden="true">×</span>
+            <span class="sr-only">Retirer le filtre {{ chip.label }}</span>
+          </button>
+          <button type="button" class="press text-[12.5px] font-semibold text-muted underline hover:text-dark" @click="resetFilters">
+            Tout effacer
+          </button>
+        </div>
+
         <ResultsSkeleton v-if="pending" />
         <ResultsEmptyState v-else-if="results.length === 0" @action="resetFilters" />
         <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">

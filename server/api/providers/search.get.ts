@@ -1,7 +1,9 @@
 import { SECTORS } from '~~/app/data/sectors'
+import type { ProviderSortOption } from '~~/server/utils/providerDirectory'
 
 const VALID_SECTOR_SLUGS = new Set(SECTORS.map((sector) => sector.slug))
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+const VALID_SORT_OPTIONS = new Set<ProviderSortOption>(['note', 'prix_asc', 'prix_desc'])
 
 const DEFAULT_PAGE_SIZE = 12
 const MAX_PAGE_SIZE = 50
@@ -68,6 +70,15 @@ export default defineEventHandler((event) => {
     badRequest('Date invalide (format attendu : AAAA-MM-JJ).')
   }
 
+  // Tri explicite de la barre de résultats (optionnel) : validé contre la
+  // liste blanche, une valeur inconnue est rejetée plutôt qu'ignorée
+  // silencieusement (cohérent avec les autres paramètres ci-dessus).
+  const sortRaw = firstValue(query.tri)
+  if (sortRaw !== undefined && !VALID_SORT_OPTIONS.has(sortRaw as ProviderSortOption)) {
+    badRequest('Option de tri invalide.')
+  }
+  const sort = sortRaw as ProviderSortOption | undefined
+
   const matches = searchProviders({
     sector,
     subSectors: toList(query.sous_secteur),
@@ -79,6 +90,7 @@ export default defineEventHandler((event) => {
     latitude,
     longitude,
     radiusKm,
+    sort,
   })
 
   const total = matches.length

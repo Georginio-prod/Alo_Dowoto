@@ -71,6 +71,28 @@ describe('searchProviders — tri multi-critères plutôt que par ordre d’inse
   })
 })
 
+describe('searchProviders — tri explicite de la barre de résultats', () => {
+  it('trie par prix croissant', () => {
+    const prices = searchProviders({ sector: 'menage', sort: 'prix_asc' }).map((p) => p.priceFrom)
+    expect(prices).toEqual([...prices].sort((a, b) => a - b))
+  })
+
+  it('trie par prix décroissant', () => {
+    const prices = searchProviders({ sector: 'menage', sort: 'prix_desc' }).map((p) => p.priceFrom)
+    expect(prices).toEqual([...prices].sort((a, b) => b - a))
+  })
+
+  it('trie par note décroissante', () => {
+    const ratings = searchProviders({ sector: 'menage', sort: 'note' }).map((p) => p.rating)
+    expect(ratings).toEqual([...ratings].sort((a, b) => b - a))
+  })
+
+  it('le tri explicite prime sur le tri par proximité (coordonnées fournies)', () => {
+    const prices = searchProviders({ sector: 'menage', latitude: 6.13, longitude: 1.22, sort: 'prix_asc' }).map((p) => p.priceFrom)
+    expect(prices).toEqual([...prices].sort((a, b) => a - b))
+  })
+})
+
 describe('searchProviders — distance réelle (#263)', () => {
   it('renvoie distanceKm à null pour tous les résultats sans coordonnées du chercheur', () => {
     const results = searchProviders({ sector: 'menage' })
