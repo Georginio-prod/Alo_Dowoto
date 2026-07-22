@@ -33,10 +33,10 @@ export default defineEventHandler(async (event) => {
   const resolved = resolvePayment(payment.id, body.status === 'success' ? 'confirmed' : 'failed', body.operatorRef)
 
   if (resolved?.status === 'confirmed') {
-    const subscription = getSubscriptionById(resolved.subscriptionId)
+    const subscription = await getSubscriptionById(resolved.subscriptionId)
     const plan = subscription ? findPlan(subscription.plan) : undefined
     if (subscription && plan) {
-      activateSubscription(subscription.id, plan.durationDays)
+      await activateSubscription(subscription.id, plan.durationDays)
     }
   }
 

@@ -16,5 +16,5 @@ export default defineEventHandler(async (event) => {
 
   // Recalcul à la demande (contrairement à GET /api/requests/:id qui renvoie
   // l'instantané figé au moment de la création de la demande).
-  return { matches: computeMatches(request, limit) }
+  return { matches: await computeMatches(request, limit) }
 })

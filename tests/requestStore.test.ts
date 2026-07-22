@@ -10,8 +10,8 @@ function tick() {
 }
 
 describe('listRequestsByUser — « Mon espace » chercheur (#64)', () => {
-  it('ne renvoie que les demandes de cet utilisateur', () => {
-    createServiceRequest('client-space-1', {
+  it('ne renvoie que les demandes de cet utilisateur', async () => {
+    await createServiceRequest('client-space-1', {
       title: 'Ménage',
       skills: ['Ménage à domicile'],
       description: '',
@@ -20,7 +20,7 @@ describe('listRequestsByUser — « Mon espace » chercheur (#64)', () => {
       location: 'Lomé',
       sector: 'menage',
     })
-    createServiceRequest('client-space-2', {
+    await createServiceRequest('client-space-2', {
       title: 'Plomberie',
       skills: ['Plomberie'],
       description: '',
@@ -35,8 +35,8 @@ describe('listRequestsByUser — « Mon espace » chercheur (#64)', () => {
     expect(mine[0]?.title).toBe('Ménage')
   })
 
-  it('trie les demandes de la plus récente à la plus ancienne', () => {
-    const older = createServiceRequest('client-space-3', {
+  it('trie les demandes de la plus récente à la plus ancienne', async () => {
+    const older = await createServiceRequest('client-space-3', {
       title: 'Première demande',
       skills: ['Ménage à domicile'],
       description: '',
@@ -46,7 +46,7 @@ describe('listRequestsByUser — « Mon espace » chercheur (#64)', () => {
       sector: 'menage',
     })
     tick()
-    const newer = createServiceRequest('client-space-3', {
+    const newer = await createServiceRequest('client-space-3', {
       title: 'Deuxième demande',
       skills: ['Plomberie'],
       description: '',
@@ -66,8 +66,8 @@ describe('listRequestsByUser — « Mon espace » chercheur (#64)', () => {
 })
 
 describe('listRequestsForProvider — « Demandes reçues » prestataire (#hub-profil-prestataire)', () => {
-  it('renvoie les demandes où le prestataire figure dans le top de correspondances', () => {
-    const request = createServiceRequest('client-received-1', {
+  it('renvoie les demandes où le prestataire figure dans le top de correspondances', async () => {
+    const request = await createServiceRequest('client-received-1', {
       title: 'Nettoyage de bureau',
       skills: ['Ménage à domicile'],
       description: '',

@@ -1,12 +1,15 @@
-import { randomUUID } from 'node:crypto'
+import type { Subscription as PrismaSubscription } from '@prisma/client'
+import { prisma } from '~~/server/utils/prisma'
 import type { PlanSlug } from '~~/app/data/plans'
 
 /**
- * Store en mémoire pour les abonnements. Suffisant pour ce lot (pas de
- * base de données encore en place, voir #45/#46).
+ * Persistance des abonnements prestataire en base (Prisma/SQLite, #342,
+ * ADR 0013). Contrairement à l'ancien store en mémoire, les abonnements
+ * survivent aux redémarrages du serveur.
  *
  * Association 1-1 avec le compte prestataire : un seul abonnement par
- * utilisateur, indexé par userId.
+ * utilisateur (garanti par les chemins d'écriture ci-dessous, qui ne créent
+ * jamais un second abonnement pour un même `userId`).
  */
 
 export type SubscriptionStatus = 'en_attente' | 'actif' | 'expire'
@@ -26,13 +29,22 @@ export interface Subscription {
 /**
  * Durée de l'essai gratuit à la première souscription (#281), affichée
  * depuis toujours sur /abonnement (« Essai gratuit de 14 jours, sans
- * engagement ») et dans PLAN_COMPARISON — jusqu'ici sans contrepartie
- * côté serveur : un prestataire était renvoyé vers le paiement immédiat
- * malgré cette promesse.
+ * engagement ») et dans PLAN_COMPARISON.
  */
 export const TRIAL_DURATION_DAYS = 14
 
-const subscriptionsByUserId = new Map<string, Subscription>()
+function toSubscription(row: PrismaSubscription): Subscription {
+  return {
+    id: row.id,
+    userId: row.userId,
+    plan: row.plan as PlanSlug,
+    status: row.status as SubscriptionStatus,
+    dateDebut: row.dateDebut?.getTime() ?? null,
+    dateFin: row.dateFin?.getTime() ?? null,
+    createdAt: row.createdAt.getTime(),
+    isTrial: row.isTrial,
+  }
+}
 
 /**
  * Crée (ou remet en attente) l'abonnement d'un prestataire pour la formule
@@ -41,24 +53,21 @@ const subscriptionsByUserId = new Map<string, Subscription>()
  * jamais réécrit par ce chemin (pas de changement/downgrade de formule
  * implicite — non couvert par le prototype actuel).
  */
-export function createPendingSubscription(userId: string, plan: PlanSlug): Subscription {
-  const existing = subscriptionsByUserId.get(userId)
+export async function createPendingSubscription(userId: string, plan: PlanSlug): Promise<Subscription> {
+  const existing = await prisma.subscription.findFirst({ where: { userId } })
   if (existing?.status === 'actif') {
     conflict('Un abonnement actif existe déjà.')
   }
 
-  const subscription: Subscription = {
-    id: existing?.id ?? randomUUID(),
-    userId,
-    plan,
-    status: 'en_attente',
-    dateDebut: null,
-    dateFin: null,
-    createdAt: existing?.createdAt ?? Date.now(),
-    isTrial: false,
-  }
-  subscriptionsByUserId.set(userId, subscription)
-  return subscription
+  const row = existing
+    ? await prisma.subscription.update({
+        where: { id: existing.id },
+        data: { plan, status: 'en_attente', dateDebut: null, dateFin: null, isTrial: false },
+      })
+    : await prisma.subscription.create({
+        data: { userId, plan, status: 'en_attente' },
+      })
+  return toSubscription(row)
 }
 
 export type ActivateTrialResult =
@@ -72,52 +81,58 @@ export type ActivateTrialResult =
  * Contrairement à `activateSubscription`, aucun paiement préalable requis :
  * la souscription est directement active.
  */
-export function activateTrialSubscription(userId: string, plan: PlanSlug): ActivateTrialResult {
-  if (subscriptionsByUserId.has(userId)) {
+export async function activateTrialSubscription(userId: string, plan: PlanSlug): Promise<ActivateTrialResult> {
+  const existing = await prisma.subscription.findFirst({ where: { userId } })
+  if (existing) {
     return { ok: false, error: 'already_used' }
   }
 
   const now = Date.now()
-  const subscription: Subscription = {
-    id: randomUUID(),
-    userId,
-    plan,
-    status: 'actif',
-    dateDebut: now,
-    dateFin: now + TRIAL_DURATION_DAYS * 24 * 60 * 60 * 1000,
-    createdAt: now,
-    isTrial: true,
-  }
-  subscriptionsByUserId.set(userId, subscription)
-  return { ok: true, subscription }
+  const row = await prisma.subscription.create({
+    data: {
+      userId,
+      plan,
+      status: 'actif',
+      dateDebut: new Date(now),
+      dateFin: new Date(now + TRIAL_DURATION_DAYS * 24 * 60 * 60 * 1000),
+      isTrial: true,
+    },
+  })
+  return { ok: true, subscription: toSubscription(row) }
 }
 
 /** Un prestataire n'ayant jamais eu d'abonnement (même abandonné en attente) reste éligible à l'essai gratuit (#281). */
-export function isEligibleForTrial(userId: string): boolean {
-  return !subscriptionsByUserId.has(userId)
+export async function isEligibleForTrial(userId: string): Promise<boolean> {
+  const count = await prisma.subscription.count({ where: { userId } })
+  return count === 0
 }
 
-export function getSubscriptionByUserId(userId: string): Subscription | null {
-  return subscriptionsByUserId.get(userId) ?? null
+export async function getSubscriptionByUserId(userId: string): Promise<Subscription | null> {
+  const row = await prisma.subscription.findFirst({ where: { userId } })
+  return row ? toSubscription(row) : null
 }
 
-export function getSubscriptionById(id: string): Subscription | null {
-  for (const subscription of subscriptionsByUserId.values()) {
-    if (subscription.id === id) return subscription
-  }
-  return null
+export async function getSubscriptionById(id: string): Promise<Subscription | null> {
+  const row = await prisma.subscription.findUnique({ where: { id } })
+  return row ? toSubscription(row) : null
 }
 
 /**
  * Active un abonnement en attente après confirmation du paiement (#34).
+ * Retourne `null` si l'abonnement n'existe pas.
  */
-export function activateSubscription(id: string, durationDays: number): Subscription | null {
-  const subscription = getSubscriptionById(id)
-  if (!subscription) return null
+export async function activateSubscription(id: string, durationDays: number): Promise<Subscription | null> {
+  const existing = await prisma.subscription.findUnique({ where: { id } })
+  if (!existing) return null
 
   const now = Date.now()
-  subscription.status = 'actif'
-  subscription.dateDebut = now
-  subscription.dateFin = now + durationDays * 24 * 60 * 60 * 1000
-  return subscription
+  const row = await prisma.subscription.update({
+    where: { id },
+    data: {
+      status: 'actif',
+      dateDebut: new Date(now),
+      dateFin: new Date(now + durationDays * 24 * 60 * 60 * 1000),
+    },
+  })
+  return toSubscription(row)
 }

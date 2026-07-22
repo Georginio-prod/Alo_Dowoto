@@ -13,6 +13,6 @@ export default defineEventHandler(async (event) => {
     badRequest('Formule invalide.')
   }
 
-  const subscription = createPendingSubscription(user.id, plan.slug)
+  const subscription = await createPendingSubscription(user.id, plan.slug)
   return { subscription }
 })

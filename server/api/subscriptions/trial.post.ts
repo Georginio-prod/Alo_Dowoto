@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     badRequest('Formule invalide.')
   }
 
-  const result = activateTrialSubscription(user.id, plan.slug)
+  const result = await activateTrialSubscription(user.id, plan.slug)
   if (!result.ok) {
     conflict("L'essai gratuit n'est disponible qu'à la première souscription.")
   }

@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
 
   const body = await readSchemaBody(event, createServiceRequestSchema)
 
-  const request = createServiceRequest(user.id, {
+  const request = await createServiceRequest(user.id, {
     title: body.title,
     skills: body.skills,
     description: body.description,

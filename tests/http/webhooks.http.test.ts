@@ -2,6 +2,7 @@
 //
 // Voir escrowRoutes.http.test.ts pour l'explication du choix d'environnement.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { prisma } from '~~/server/utils/prisma'
 import { createPayment, getPayment } from '~~/server/utils/paymentStore'
 import { createPendingSubscription, getSubscriptionById } from '~~/server/utils/subscriptionStore'
 import { createRecharge, getRecharge } from '~~/server/utils/walletRechargeStore'
@@ -32,6 +33,19 @@ afterAll(async () => {
   await server.close()
 })
 
+/**
+ * Depuis la bascule des abonnements sur Prisma (#342), un abonnement référence
+ * un vrai compte (FK `Subscription.userId → User`). On matérialise donc le
+ * compte prestataire avant de lui créer un abonnement. Idempotent (upsert).
+ */
+async function ensureProviderUser(providerId: string) {
+  await prisma.user.upsert({
+    where: { id: providerId },
+    update: {},
+    create: { id: providerId, contact: `prov-${providerId}`, role: 'prestataire' },
+  })
+}
+
 async function postWebhook(path: string, rawBody: string, signature: string | undefined) {
   const response = await fetch(`${server.url}${path}`, {
     method: 'POST',
@@ -59,7 +73,8 @@ describe('POST /payments/webhook (#34)', () => {
   })
 
   it('chemin nominal : confirme le paiement et active l’abonnement associé', async () => {
-    const subscription = createPendingSubscription('provider-webhook-1', 'mensuel')
+    await ensureProviderUser('provider-webhook-1')
+    const subscription = await createPendingSubscription('provider-webhook-1', 'mensuel')
     const payment = createPayment({
       userId: 'provider-webhook-1',
       subscriptionId: subscription.id,
@@ -76,11 +91,12 @@ describe('POST /payments/webhook (#34)', () => {
     expect(status).toBe(200)
     expect((json as { payment: { status: string } }).payment.status).toBe('confirmed')
     expect(getPayment(payment.id)?.operatorRef).toBe('OP-REF-1')
-    expect(getSubscriptionById(subscription.id)?.status).toBe('actif')
+    expect((await getSubscriptionById(subscription.id))?.status).toBe('actif')
   })
 
   it('idempotence : un rejeu du même webhook ne retraite pas le paiement (statut déjà résolu renvoyé tel quel)', async () => {
-    const subscription = createPendingSubscription('provider-webhook-2', 'mensuel')
+    await ensureProviderUser('provider-webhook-2')
+    const subscription = await createPendingSubscription('provider-webhook-2', 'mensuel')
     const payment = createPayment({
       userId: 'provider-webhook-2',
       subscriptionId: subscription.id,

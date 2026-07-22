@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     badRequest('Entrez un numéro valide (8 chiffres).')
   }
 
-  const subscription = body.subscriptionId ? getSubscriptionById(body.subscriptionId) : null
+  const subscription = body.subscriptionId ? await getSubscriptionById(body.subscriptionId) : null
   if (!subscription || subscription.userId !== user.id) {
     notFound('Abonnement introuvable.')
   }
@@ -43,7 +43,10 @@ export default defineEventHandler(async (event) => {
       resolvePayment(payment.id, 'confirmed', `SIMULATED-${payment.id.slice(0, 8)}`)
       const resolved = getPayment(payment.id)
       if (resolved?.status === 'confirmed') {
-        activateSubscription(resolved.subscriptionId, plan.durationDays)
+        // Activation asynchrone (abonnement en base) : on ne peut pas
+        // `await` dans un callback setTimeout, on capture donc les erreurs
+        // éventuelles pour ne pas laisser de rejet de promesse non géré.
+        void activateSubscription(resolved.subscriptionId, plan.durationDays).catch(() => {})
       }
     }, SIMULATED_CONFIRMATION_DELAY_MS)
   }

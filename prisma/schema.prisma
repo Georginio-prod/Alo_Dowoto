@@ -201,6 +201,9 @@ model Subscription {
   dateDebut DateTime?
   dateFin   DateTime?
   createdAt DateTime           @default(now())
+  /// `true` si la période active courante est l'essai gratuit (#281), pas une
+  /// période payée — voir server/utils/subscriptionStore.ts.
+  isTrial   Boolean            @default(false)
 
   payments Payment[]
 }
