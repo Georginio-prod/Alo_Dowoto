@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   const user = await requireSessionUser(event)
 
   const providerProfile = user.role === 'prestataire' ? getProviderProfile(user.id) : null
-  const subscription = user.role === 'prestataire' ? getSubscriptionByUserId(user.id) : null
+  const subscription = user.role === 'prestataire' ? await getSubscriptionByUserId(user.id) : null
   const verification = getVerification(user.id)
 
   return {
@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     account: toPublicUser(user),
     providerProfile,
     subscription,
-    walletBalance: getBalance(user.id),
+    walletBalance: await getBalance(user.id),
     verification: verification
       ? { submittedAt: verification.submittedAt, purgedAt: verification.purgedAt }
       : null,

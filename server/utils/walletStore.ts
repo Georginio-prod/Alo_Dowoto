@@ -1,16 +1,16 @@
 import { randomUUID } from 'node:crypto'
+import type { Prisma, WalletMovement as PrismaWalletMovement } from '@prisma/client'
+import { prisma } from '~~/server/utils/prisma'
 
 /**
- * Store en mémoire pour le portefeuille interne WorkTogo et la traçabilité
- * des mouvements de fonds (#192, socle du système de séquestre — voir
- * l'epic #191). Suffisant pour ce lot (pas de base de données encore en
- * place, voir #45/#46), même limite que server/utils/paymentStore.ts.
+ * Portefeuille interne WorkTogo et traçabilité des mouvements de fonds (#192,
+ * socle du séquestre — epic #191), persistés en base (Prisma/SQLite, #342,
+ * ADR 0013). Les mouvements survivent désormais aux redémarrages du serveur.
  *
  * Le solde n'est jamais stocké : il est toujours recalculé à partir du
- * journal des mouvements (`listMovements`) pour garantir qu'il reste
- * vérifiable et qu'aucune dérive n'est possible entre un compteur et son
- * historique (critère d'acceptation #192). Le journal est un append-only
- * log : aucune fonction ne modifie ni ne supprime un mouvement existant.
+ * journal des mouvements (critère d'acceptation #192). Le journal est un
+ * append-only log : aucune fonction ne modifie ni ne supprime un mouvement
+ * existant.
  */
 
 /**
@@ -71,8 +71,6 @@ const MOVEMENT_SIGN: Record<WalletMovementType, 1 | -1> = {
   cancellation_compensation: 1,
 }
 
-const movementsByUserId = new Map<string, WalletMovement[]>()
-
 export interface RecordMovementInput {
   walletUserId: string
   type: WalletMovementType
@@ -81,61 +79,93 @@ export interface RecordMovementInput {
   counterpartyUserId?: string | null
 }
 
-function appendMovement(input: RecordMovementInput): WalletMovement {
-  const movement: WalletMovement = {
+function toMovement(row: PrismaWalletMovement): WalletMovement {
+  return {
+    id: row.id,
+    walletUserId: row.walletUserId,
+    type: row.type as WalletMovementType,
+    amount: row.amount,
+    reference: row.reference,
+    counterpartyUserId: row.counterpartyUserId,
+    createdAt: row.createdAt.getTime(),
+  }
+}
+
+/** Somme signée d'un ensemble de mouvements (crédit/débit selon `type`). */
+function sumBalance(rows: Pick<PrismaWalletMovement, 'amount' | 'type'>[]): number {
+  return rows.reduce((total, m) => total + m.amount * MOVEMENT_SIGN[m.type as WalletMovementType], 0)
+}
+
+function buildMovementData(input: RecordMovementInput): Prisma.WalletMovementCreateInput {
+  return {
     id: randomUUID(),
     walletUserId: input.walletUserId,
     type: input.type,
     amount: input.amount,
     reference: input.reference,
     counterpartyUserId: input.counterpartyUserId ?? null,
-    createdAt: Date.now(),
+    // Horodatage applicatif (et non `@default(now())` côté base) : garantit un
+    // ordre déterministe même pour des insertions rapprochées et reste
+    // sensible à un mock de `Date.now` dans les tests.
+    createdAt: new Date(Date.now()),
   }
-  const list = movementsByUserId.get(input.walletUserId)
-  if (!list) movementsByUserId.set(input.walletUserId, [movement])
-  else list.push(movement)
-  return movement
 }
 
 /** Journal des mouvements d'un utilisateur, du plus récent au plus ancien. */
-export function listMovements(userId: string): WalletMovement[] {
-  return [...(movementsByUserId.get(userId) ?? [])].sort((a, b) => b.createdAt - a.createdAt)
+export async function listMovements(userId: string): Promise<WalletMovement[]> {
+  const rows = await prisma.walletMovement.findMany({
+    where: { walletUserId: userId },
+    orderBy: { createdAt: 'desc' },
+  })
+  return rows.map(toMovement)
 }
 
 /** Solde courant, toujours recalculé à partir du journal (jamais mis en cache). */
-export function getBalance(userId: string): number {
-  const movements = movementsByUserId.get(userId) ?? []
-  return movements.reduce((total, movement) => total + movement.amount * MOVEMENT_SIGN[movement.type], 0)
+export async function getBalance(userId: string): Promise<number> {
+  const rows = await prisma.walletMovement.findMany({
+    where: { walletUserId: userId },
+    select: { amount: true, type: true },
+  })
+  return sumBalance(rows)
 }
 
 /**
  * Crédite le portefeuille (recharge, libération de séquestre, remboursement
- * ou commission plateforme). `amount` doit être strictement positif.
+ * ou commission plateforme). `amount` doit être strictement positif. Un crédit
+ * est append-only et ne dépend d'aucune lecture préalable : pas de transaction.
  */
-export function creditWallet(input: RecordMovementInput): WalletMovement {
+export async function creditWallet(input: RecordMovementInput): Promise<WalletMovement> {
   if (input.type === 'escrow_debit') {
     throw new Error('creditWallet ne doit pas recevoir de mouvement escrow_debit (utiliser debitWallet).')
   }
   if (input.amount <= 0) {
     throw new Error('Le montant crédité doit être positif.')
   }
-  return appendMovement(input)
+  const row = await prisma.walletMovement.create({ data: buildMovementData(input) })
+  return toMovement(row)
 }
 
 /**
  * Débite le portefeuille (mise en séquestre lors d'un paiement, #194).
  * Retourne `null` si le solde est insuffisant — le mouvement n'est alors
- * pas journalisé et le solde reste inchangé. L'appelant traduit ce cas en
- * réponse HTTP appropriée (409, voir server/utils/apiError.ts).
+ * pas journalisé et le solde reste inchangé. La vérification du solde et
+ * l'écriture du mouvement sont encadrées par une transaction : contrairement
+ * à l'ancienne `Map` mono-thread, deux débits concurrents ne peuvent plus
+ * passer tous les deux la vérification et créer un découvert.
  */
-export function debitWallet(input: Omit<RecordMovementInput, 'type'>): WalletMovement | null {
+export async function debitWallet(input: Omit<RecordMovementInput, 'type'>): Promise<WalletMovement | null> {
   if (input.amount <= 0) {
     throw new Error('Le montant débité doit être positif.')
   }
-  if (getBalance(input.walletUserId) < input.amount) {
-    return null
-  }
-  return appendMovement({ ...input, type: 'escrow_debit' })
+  return prisma.$transaction(async (tx) => {
+    const rows = await tx.walletMovement.findMany({
+      where: { walletUserId: input.walletUserId },
+      select: { amount: true, type: true },
+    })
+    if (sumBalance(rows) < input.amount) return null
+    const row = await tx.walletMovement.create({ data: buildMovementData({ ...input, type: 'escrow_debit' }) })
+    return toMovement(row)
+  })
 }
 
 /**
@@ -151,17 +181,24 @@ export type RequestWithdrawalResult =
 
 /**
  * Demande de retrait prestataire (« Solde », dashboard prestataire) vers le
- * moyen de paiement configuré sur son profil
- * (server/utils/providerStore.ts, `payoutMethod`). Débite immédiatement le
- * portefeuille, sur le même principe que `debitWallet` pour un paiement en
- * séquestre — pas de flux d'approbation manuelle dans ce lot, un futur lot
- * pourra ajouter un statut « en cours de traitement » avant crédit effectif
- * sur mobile money.
+ * moyen de paiement configuré sur son profil. Débite immédiatement le
+ * portefeuille, sur le même principe (et la même atomicité) que `debitWallet`.
  */
-export function requestWithdrawal(userId: string, amount: number): RequestWithdrawalResult {
+export async function requestWithdrawal(userId: string, amount: number): Promise<RequestWithdrawalResult> {
   if (amount < MIN_WITHDRAWAL_AMOUNT) return { ok: false, error: 'below_minimum' }
-  if (getBalance(userId) < amount) return { ok: false, error: 'insufficient_funds' }
 
-  const movement = appendMovement({ walletUserId: userId, type: 'retrait', amount, reference: randomUUID() })
+  const movement = await prisma.$transaction(async (tx) => {
+    const rows = await tx.walletMovement.findMany({
+      where: { walletUserId: userId },
+      select: { amount: true, type: true },
+    })
+    if (sumBalance(rows) < amount) return null
+    const row = await tx.walletMovement.create({
+      data: buildMovementData({ walletUserId: userId, type: 'retrait', amount, reference: randomUUID() }),
+    })
+    return toMovement(row)
+  })
+
+  if (!movement) return { ok: false, error: 'insufficient_funds' }
   return { ok: true, movement }
 }

@@ -7,8 +7,8 @@ export default defineEventHandler(async (event) => {
   const user = await requireSessionUser(event)
 
   return {
-    balance: getBalance(user.id),
-    movements: listMovements(user.id),
+    balance: await getBalance(user.id),
+    movements: await listMovements(user.id),
     minWithdrawal: MIN_WITHDRAWAL_AMOUNT,
   }
 })

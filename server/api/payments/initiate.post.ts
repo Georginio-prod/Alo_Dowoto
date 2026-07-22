@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     badRequest('Entrez un numéro valide (8 chiffres).')
   }
 
-  const subscription = body.subscriptionId ? getSubscriptionById(body.subscriptionId) : null
+  const subscription = body.subscriptionId ? await getSubscriptionById(body.subscriptionId) : null
   if (!subscription || subscription.userId !== user.id) {
     notFound('Abonnement introuvable.')
   }
@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
     badRequest('Formule invalide.')
   }
 
-  const payment = createPayment({
+  const payment = await createPayment({
     userId: user.id,
     subscriptionId: subscription.id,
     provider: body.provider,
@@ -40,11 +40,15 @@ export default defineEventHandler(async (event) => {
   // le paiement.
   if (process.env.NODE_ENV !== 'production') {
     setTimeout(() => {
-      resolvePayment(payment.id, 'confirmed', `SIMULATED-${payment.id.slice(0, 8)}`)
-      const resolved = getPayment(payment.id)
-      if (resolved?.status === 'confirmed') {
-        activateSubscription(resolved.subscriptionId, plan.durationDays)
-      }
+      // Confirmation simulée : chaîne asynchrone (base de données) exécutée
+      // en tâche de fond. On capture les erreurs éventuelles pour ne pas
+      // laisser de rejet de promesse non géré (aucun `await` possible ici).
+      void (async () => {
+        const resolved = await resolvePayment(payment.id, 'confirmed', `SIMULATED-${payment.id.slice(0, 8)}`)
+        if (resolved?.status === 'confirmed') {
+          await activateSubscription(resolved.subscriptionId, plan.durationDays)
+        }
+      })().catch(() => {})
     }, SIMULATED_CONFIRMATION_DELAY_MS)
   }
 

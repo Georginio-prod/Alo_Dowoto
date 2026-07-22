@@ -87,8 +87,8 @@ function toCandidate(provider: ProviderSearchResult): MatchCandidate {
  * mais non actif (en attente/expiré) retombe en revanche sur un quota de 0
  * (non éligible à recevoir de nouvelles demandes tant qu'il n'est pas actif).
  */
-function isAtRequestsQuota(providerId: string): boolean {
-  const subscription = getSubscriptionByUserId(providerId)
+async function isAtRequestsQuota(providerId: string): Promise<boolean> {
+  const subscription = await getSubscriptionByUserId(providerId)
   if (!subscription) return false
 
   const plan = subscription.status === 'actif' ? subscription.plan : null
@@ -98,7 +98,7 @@ function isAtRequestsQuota(providerId: string): boolean {
 }
 
 /** Calcule (ou recalcule) le classement des prestataires pour une demande. */
-export function computeMatches(request: ServiceRequest, limit = 5): MatchedProvider[] {
+export async function computeMatches(request: ServiceRequest, limit = 5): Promise<MatchedProvider[]> {
   const candidates = searchProviders(request.sector ? { sector: request.sector } : {})
   const candidatesById = new Map(candidates.map((provider) => [provider.id, provider]))
 
@@ -109,8 +109,15 @@ export function computeMatches(request: ServiceRequest, limit = 5): MatchedProvi
     urgency: request.urgency,
   }
 
-  const available = candidates.filter((provider) => !isAtRequestsQuota(provider.id))
-  const atQuota = candidates.filter((provider) => isAtRequestsQuota(provider.id))
+  // Statut de quota calculé une fois par candidat (lecture d'abonnement en
+  // base, asynchrone) avant les filtres synchrones de partition.
+  const atQuotaFlags = new Map<string, boolean>()
+  for (const provider of candidates) {
+    atQuotaFlags.set(provider.id, await isAtRequestsQuota(provider.id))
+  }
+
+  const available = candidates.filter((provider) => !atQuotaFlags.get(provider.id))
+  const atQuota = candidates.filter((provider) => atQuotaFlags.get(provider.id))
 
   const rankedAvailable = rankProviders(matchRequest, available.map(toCandidate), DEFAULT_MATCH_WEIGHTS, limit)
   const remainingSlots = limit - rankedAvailable.length
@@ -148,7 +155,7 @@ export function computeMatches(request: ServiceRequest, limit = 5): MatchedProvi
  * sans incrémenter, pour ne pas compter plusieurs fois la même demande à
  * chaque consultation.
  */
-export function createServiceRequest(userId: string, input: CreateServiceRequestInput): ServiceRequest {
+export async function createServiceRequest(userId: string, input: CreateServiceRequestInput): Promise<ServiceRequest> {
   const request: ServiceRequest = {
     id: randomUUID(),
     userId,
@@ -156,7 +163,7 @@ export function createServiceRequest(userId: string, input: CreateServiceRequest
     createdAt: Date.now(),
   }
   requests.set(request.id, request)
-  const matches = computeMatches(request)
+  const matches = await computeMatches(request)
   matchesByRequestId.set(request.id, matches)
   for (const match of matches) {
     incrementProviderRequestsReceived(match.providerId)

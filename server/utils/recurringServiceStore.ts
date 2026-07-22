@@ -102,20 +102,20 @@ const TERMINAL_ORDER_STATUSES = new Set(['released', 'refunded'])
  * en `payment_failed` (le chercheur doit recharger puis relancer) plutôt que
  * de réessayer indéfiniment à chaque accès.
  */
-function applyDueChargeIfNeeded(service: RecurringService): void {
+async function applyDueChargeIfNeeded(service: RecurringService): Promise<void> {
   if (service.status !== 'active') return
   if (Date.now() < service.nextChargeAt) return
 
-  const existingOrder = getEscrowOrderByConversationId(service.conversationId)
+  const existingOrder = await getEscrowOrderByConversationId(service.conversationId)
   if (existingOrder && !TERMINAL_ORDER_STATUSES.has(existingOrder.status)) return
 
-  createEscrowOrder({
+  await createEscrowOrder({
     conversationId: service.conversationId,
     clientId: service.clientId,
     providerId: service.providerId,
     amount: service.amount,
   })
-  const result = payEscrowOrder(service.conversationId)
+  const result = await payEscrowOrder(service.conversationId)
 
   if (result.ok) {
     service.lastChargedAt = Date.now()
@@ -133,8 +133,8 @@ function applyDueChargeIfNeeded(service: RecurringService): void {
   }
 }
 
-export function getRecurringServiceByConversationId(conversationId: string): RecurringService | null {
+export async function getRecurringServiceByConversationId(conversationId: string): Promise<RecurringService | null> {
   const service = servicesByConversationId.get(conversationId) ?? null
-  if (service) applyDueChargeIfNeeded(service)
+  if (service) await applyDueChargeIfNeeded(service)
   return service
 }

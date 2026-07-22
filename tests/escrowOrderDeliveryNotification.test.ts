@@ -21,18 +21,18 @@ function id(): string {
  * découvrir seulement en consultant la conversation par hasard.
  */
 describe('markEscrowOrderDelivered — notification de l’échéance de validation tacite (#273)', () => {
-  it('poste un message système annonçant l’échéance dès la livraison', () => {
+  it('poste un message système annonçant l’échéance dès la livraison', async () => {
     const client = id()
     const provider = id()
     const conversation = findOrCreateConversation(client, provider)
-    creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
-    createEscrowOrder({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000 })
-    payEscrowOrder(conversation.id)
-    recordEscrowOrderCheckIn(conversation.id, null)
-    recordEscrowOrderCheckOut(conversation.id, null)
+    await creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
+    await createEscrowOrder({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000 })
+    await payEscrowOrder(conversation.id)
+    await recordEscrowOrderCheckIn(conversation.id, null)
+    await recordEscrowOrderCheckOut(conversation.id, null)
 
     const before = getMessages(conversation.id).length
-    markEscrowOrderDelivered(conversation.id)
+    await markEscrowOrderDelivered(conversation.id)
     const messages = getMessages(conversation.id)
 
     expect(messages.length).toBe(before + 1)
@@ -42,28 +42,28 @@ describe('markEscrowOrderDelivered — notification de l’échéance de validat
     expect(notification?.body).toContain('automatiquement libéré')
   })
 
-  it('le message est compté comme non lu par le chercheur (visible via le badge existant, #225)', () => {
+  it('le message est compté comme non lu par le chercheur (visible via le badge existant, #225)', async () => {
     const client = id()
     const provider = id()
     const conversation = findOrCreateConversation(client, provider)
-    creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
-    createEscrowOrder({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000 })
-    payEscrowOrder(conversation.id)
-    recordEscrowOrderCheckIn(conversation.id, null)
-    recordEscrowOrderCheckOut(conversation.id, null)
+    await creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
+    await createEscrowOrder({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000 })
+    await payEscrowOrder(conversation.id)
+    await recordEscrowOrderCheckIn(conversation.id, null)
+    await recordEscrowOrderCheckOut(conversation.id, null)
 
-    markEscrowOrderDelivered(conversation.id)
+    await markEscrowOrderDelivered(conversation.id)
 
     const notification = getMessages(conversation.id).at(-1)
     expect(notification?.senderId).not.toBe(client)
   })
 
-  it('ne poste aucun message si la commande n’est pas en séquestre (rien à livrer)', () => {
+  it('ne poste aucun message si la commande n’est pas en séquestre (rien à livrer)', async () => {
     const conversationId = id()
-    createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 3000 })
+    await createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 3000 })
 
     const before = getMessages(conversationId).length
-    markEscrowOrderDelivered(conversationId)
+    await markEscrowOrderDelivered(conversationId)
 
     expect(getMessages(conversationId).length).toBe(before)
   })

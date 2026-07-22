@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     notFound('Conversation introuvable.')
   }
 
-  const existingOrder = getEscrowOrderByConversationId(conversation.id)
+  const existingOrder = await getEscrowOrderByConversationId(conversation.id)
   if (!existingOrder || (existingOrder.status !== 'released' && existingOrder.status !== 'refunded')) {
     conflict('Une reprise n\'est possible qu\'après une prestation terminée ou annulée avec ce prestataire.')
   }
@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const message = addMessage(conversation.id, user.id, user.role, `Nouvelle demande (reprise) : ${description}`)
-  const order = createEscrowOrder({ conversationId: conversation.id, clientId: user.id, providerId: conversation.providerId, amount })
+  const order = await createEscrowOrder({ conversationId: conversation.id, clientId: user.id, providerId: conversation.providerId, amount })
 
   setResponseStatus(event, 201)
   return { message, order }

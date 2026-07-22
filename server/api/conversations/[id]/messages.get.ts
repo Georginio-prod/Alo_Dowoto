@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   // (#194, epic #191) : tant que la commande n'est pas payée, le
   // prestataire ne voit ni le contenu des messages ni le détail de la
   // demande. Le chercheur, lui, voit toujours ses propres messages.
-  const order = getEscrowOrderByConversationId(conversation.id)
+  const order = await getEscrowOrderByConversationId(conversation.id)
   // Déclenche le prélèvement dû pour un service récurrent (#271), le cas
   // échéant — même principe de vérification paresseuse à la lecture que la
   // validation tacite ou la réattribution automatique (escrowOrderStore.ts).

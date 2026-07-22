@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const viewer = await getSessionUser(getCookie(event, SESSION_COOKIE))
-  const contactRevealed = !!viewer && viewer.role === 'client' && hasReleasedOrderBetween(viewer.id, id)
+  const contactRevealed = !!viewer && viewer.role === 'client' && await hasReleasedOrderBetween(viewer.id, id)
 
   const provider = getProviderDetail(id, contactRevealed)
   if (!provider) {

@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<CheckInBody>(event).catch(() => undefined)
   const location = typeof body?.lat === 'number' && typeof body?.lng === 'number' ? { lat: body.lat, lng: body.lng } : null
 
-  const result = recordEscrowOrderCheckIn(conversation.id, location)
+  const result = await recordEscrowOrderCheckIn(conversation.id, location)
 
   if (!result.ok) {
     if (result.error === 'not_found') notFound('Aucune commande en cours pour cette conversation.')

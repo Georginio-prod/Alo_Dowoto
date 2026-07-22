@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     badRequest('Requête webhook invalide.')
   }
 
-  const payment = getPayment(body.paymentId)
+  const payment = await getPayment(body.paymentId)
   if (!payment) {
     notFound('Paiement introuvable.')
   }
@@ -30,13 +30,13 @@ export default defineEventHandler(async (event) => {
     return { payment }
   }
 
-  const resolved = resolvePayment(payment.id, body.status === 'success' ? 'confirmed' : 'failed', body.operatorRef)
+  const resolved = await resolvePayment(payment.id, body.status === 'success' ? 'confirmed' : 'failed', body.operatorRef)
 
   if (resolved?.status === 'confirmed') {
-    const subscription = getSubscriptionById(resolved.subscriptionId)
+    const subscription = await getSubscriptionById(resolved.subscriptionId)
     const plan = subscription ? findPlan(subscription.plan) : undefined
     if (subscription && plan) {
-      activateSubscription(subscription.id, plan.durationDays)
+      await activateSubscription(subscription.id, plan.durationDays)
     }
   }
 

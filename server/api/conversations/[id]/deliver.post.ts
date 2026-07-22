@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     notFound('Conversation introuvable.')
   }
 
-  const result = markEscrowOrderDelivered(conversation.id)
+  const result = await markEscrowOrderDelivered(conversation.id)
 
   if (!result.ok) {
     if (result.error === 'not_found') notFound('Aucune commande à livrer pour cette conversation.')
