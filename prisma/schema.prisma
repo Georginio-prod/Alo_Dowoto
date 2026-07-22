@@ -49,6 +49,9 @@ enum WalletMovementType {
   escrow_refund
   commission
   retrait
+  /// Indemnisation du prestataire en cas d'annulation client après le délai
+  /// de grâce (#275) — présent dans le store mais manquait à l'enum.
+  cancellation_compensation
 }
 
 /// Cycle de vie d'une commande en séquestre — voir server/utils/escrowOrderStore.ts (#194-#197).
@@ -272,8 +275,38 @@ model EscrowOrder {
   disputedAt    DateTime?
   /// Motif du litige ouvert par le chercheur (#197).
   disputeReason String?
+  /// Preuves fournies par le chercheur à l'ouverture du litige (#274).
+  disputeEvidence    String?
+  /// Réponse du prestataire au litige (#274, « en médiation »).
+  disputeResponse    String?
+  disputeRespondedAt DateTime?
+  /// Preuve d'intervention in-app (#268) : arrivée puis départ du lieu.
+  /// La géolocalisation (lat/lng) est enregistrée quand le navigateur
+  /// l'autorise, sinon null — c'est l'existence des horodatages qui fait foi.
+  checkInAt     DateTime?
+  checkInLat    Float?
+  checkInLng    Float?
+  checkOutAt    DateTime?
+  checkOutLat   Float?
+  checkOutLng   Float?
 
   @@index([status])
+}
+
+/// Recharge du portefeuille via mobile money — voir server/utils/walletRechargeStore.ts (#193).
+/// Réutilise les enums PaymentProvider/PaymentStatus (mêmes valeurs que les paiements).
+model WalletRecharge {
+  id          String          @id @default(uuid())
+  userId      String
+  provider    PaymentProvider
+  phone       String
+  amount      Int
+  status      PaymentStatus   @default(pending)
+  operatorRef String?
+  createdAt   DateTime        @default(now())
+  resolvedAt  DateTime?
+
+  @@index([userId])
 }
 
 /// Fil de messagerie entre un client et un prestataire — voir server/utils/conversationStore.ts (#59, #129).
