@@ -8,8 +8,10 @@ const props = withDefaults(
     isFavorite?: boolean
     /** Étiquette de mise en avant affichée sur les profils recommandés (#187). */
     badge?: 'top' | 'recommande' | null
+    /** Retard d'apparition au scroll (ms) pour la cascade d'une grille (#stagger). */
+    revealDelay?: number
   }>(),
-  { isFavorite: false, badge: null },
+  { isFavorite: false, badge: null, revealDelay: 0 },
 )
 
 const emit = defineEmits<{ 'favorite-changed': [] }>()
@@ -61,12 +63,20 @@ async function toggleFavorite() {
 </script>
 
 <template>
-  <div
-    class="flex flex-col overflow-hidden rounded-card border shadow-card-sm"
-    :class="badge ? 'border-primary/40 bg-surface' : 'border-hairline bg-surface'"
-  >
+  <!--
+    Séparation reveal / survol (même parti pris que SectorGrid) : le wrapper
+    externe porte l'apparition au scroll (`v-reveal` + cascade via
+    `--reveal-delay`), la carte interne porte l'élévation au survol
+    (`card-hover`). Sur deux éléments distincts, `is-visible { transform:none }`
+    ne peut jamais annuler le lift de survol, et inversement.
+  -->
+  <div v-reveal :style="{ '--reveal-delay': `${revealDelay}ms` }" class="h-full">
     <div
-      class="relative flex h-[140px] items-center justify-center bg-[repeating-linear-gradient(135deg,#e5e7eb_0_10px,#eef0f2_10px_20px)]"
+      class="card-hover group flex h-full flex-col overflow-hidden rounded-card border shadow-card-sm"
+      :class="badge ? 'border-primary/40 bg-surface' : 'border-hairline bg-surface'"
+    >
+    <div
+      class="media-zoom relative flex h-[140px] items-center justify-center bg-[repeating-linear-gradient(135deg,#e5e7eb_0_10px,#eef0f2_10px_20px)]"
     >
       <span
         v-if="badgeLabel"
@@ -125,6 +135,7 @@ async function toggleFavorite() {
       </div>
     </div>
 
-    <ProviderProfileModal v-if="showProfile" :provider-id="provider.id" @close="showProfile = false" />
+      <ProviderProfileModal v-if="showProfile" :provider-id="provider.id" @close="showProfile = false" />
+    </div>
   </div>
 </template>

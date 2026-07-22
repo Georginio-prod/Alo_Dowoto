@@ -99,7 +99,7 @@ function restartDemo() {
 <template>
   <div>
     <div class="relative mb-6 overflow-hidden rounded-card border border-hairline bg-dark p-6 shadow-card-sm sm:p-7">
-      <div class="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-primary/25 blur-3xl" aria-hidden="true" />
+      <div class="float-soft pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-primary/25 blur-3xl" aria-hidden="true" />
       <div class="relative flex flex-wrap items-start justify-between gap-4">
         <div>
           <p class="mb-1 text-[11px] font-bold uppercase tracking-wide text-primary">Espace prestataire</p>
@@ -139,7 +139,7 @@ function restartDemo() {
     <div class="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
       <NuxtLink
         to="/prestataire/demandes"
-        class="press rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm hover:border-primary/40"
+        class="card-hover rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm hover:border-primary/40"
       >
         <div class="text-[22px] font-extrabold text-dark">{{ requestsUsageLabel }}</div>
         <div class="text-[11.5px] text-muted">Demandes reçues ce mois</div>
@@ -150,7 +150,7 @@ function restartDemo() {
       </div>
       <NuxtLink
         to="/prestataire/solde"
-        class="press rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm hover:border-primary/40"
+        class="card-hover rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm hover:border-primary/40"
       >
         <div class="truncate text-[18px] font-extrabold text-dark">{{ formattedBalance }}</div>
         <div class="text-[11.5px] text-muted">Solde disponible</div>
@@ -164,10 +164,10 @@ function restartDemo() {
     <section v-if="recentMatches.length" class="mb-6">
       <div class="mb-3 flex items-center justify-between">
         <h2 class="text-[12px] font-bold uppercase tracking-wide text-muted">Demandes récentes</h2>
-        <NuxtLink to="/prestataire/demandes" class="press text-[12.5px] font-semibold text-primary">Voir tout →</NuxtLink>
+        <NuxtLink to="/prestataire/demandes" class="press link-underline text-[12.5px] font-semibold text-primary">Voir tout →</NuxtLink>
       </div>
       <ul class="flex flex-col gap-2">
-        <li v-for="item in recentMatches" :key="item.request.id">
+        <li v-for="(item, i) in recentMatches" :key="item.request.id" v-reveal :style="{ '--reveal-delay': `${i * 70}ms` }">
           <NuxtLink
             to="/prestataire/demandes"
             class="press flex items-center justify-between gap-3 rounded-card border border-hairline bg-surface p-4 shadow-card-sm hover:border-primary/40"
@@ -192,21 +192,21 @@ function restartDemo() {
     <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
       <NuxtLink
         to="/prestataire/profil"
-        class="press rounded-card border border-hairline bg-dark p-4 shadow-card-sm hover:bg-dark-hover"
+        class="card-hover rounded-card border border-hairline bg-dark p-4 shadow-card-sm hover:bg-dark-hover"
       >
         <p class="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-white/70">Profil</p>
         <p class="text-[13.5px] font-semibold text-white">Compléter mon profil</p>
       </NuxtLink>
       <NuxtLink
         to="/prestataire/solde"
-        class="press rounded-card border border-hairline bg-surface p-4 shadow-card-sm hover:border-primary/40"
+        class="card-hover rounded-card border border-hairline bg-surface p-4 shadow-card-sm hover:border-primary/40"
       >
         <p class="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-primary">Solde</p>
         <p class="text-[13.5px] font-semibold text-dark">Voir mon solde</p>
       </NuxtLink>
       <NuxtLink
         to="/prestataire/messages"
-        class="press rounded-card border border-hairline bg-surface p-4 shadow-card-sm hover:border-primary/40"
+        class="card-hover rounded-card border border-hairline bg-surface p-4 shadow-card-sm hover:border-primary/40"
       >
         <p class="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-primary">Messages</p>
         <p class="text-[13.5px] font-semibold text-dark">Voir mes messages</p>

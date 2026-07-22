@@ -35,15 +35,16 @@ const partners = [
     <h1 v-reveal class="mx-auto mb-3 max-w-2xl text-[clamp(26px,4vw,42px)] font-extrabold tracking-tight text-dark">
       Trouvez le bon prestataire, dans tous les secteurs
     </h1>
-    <p v-reveal class="mx-auto max-w-lg text-base leading-relaxed text-muted">
+    <p v-reveal :style="{ '--reveal-delay': '80ms' }" class="mx-auto max-w-lg text-base leading-relaxed text-muted">
       Artisanat, commerce, industrie, services à domicile… Comparez des professionnels vérifiés partout au Togo.
     </p>
-    <p v-reveal class="mt-6 text-sm text-muted">
+    <p v-reveal :style="{ '--reveal-delay': '160ms' }" class="mt-6 text-sm text-muted">
       Plus de <strong class="text-dark"><CountUp :value="500" suffix="+" /></strong> prestataires vérifiés déjà inscrits
     </p>
 
     <!-- Bandeau de partenaires défilant en continu (boucle sans couture). -->
-    <div v-reveal class="partners-marquee mt-6" role="group" aria-label="Ils nous font confiance">
+    <p v-reveal :style="{ '--reveal-delay': '240ms' }" class="partners-label mt-10">Ils nous font confiance</p>
+    <div v-reveal :style="{ '--reveal-delay': '300ms' }" class="partners-marquee mt-4" role="group" aria-label="Ils nous font confiance">
       <div class="partners-track">
         <span v-for="(name, i) in partners" :key="`p-${i}`" class="partner-item">{{ name }}</span>
         <span v-for="(name, i) in partners" :key="`p2-${i}`" class="partner-item" aria-hidden="true">{{ name }}</span>
