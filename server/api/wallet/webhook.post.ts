@@ -16,7 +16,14 @@ export default defineEventHandler(async (event) => {
     unauthorized('Signature invalide.')
   }
 
-  const body = JSON.parse(rawBody || '{}') as WalletWebhookBody
+  let body: WalletWebhookBody
+  try {
+    // Corps signé mais potentiellement malformé : un parse nu lèverait une 500
+    // non maîtrisée. On répond une 400 explicite à la place.
+    body = JSON.parse(rawBody || '{}') as WalletWebhookBody
+  } catch {
+    badRequest('Corps webhook illisible (JSON invalide).')
+  }
   if (!body.rechargeId || (body.status !== 'success' && body.status !== 'failed')) {
     badRequest('Requête webhook invalide.')
   }
