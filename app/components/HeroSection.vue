@@ -32,8 +32,8 @@ const partners = [
         class="float-soft mx-auto mb-6 w-full max-w-md"
       >
     </picture>
-    <h1 v-reveal class="mx-auto mb-3 max-w-2xl text-[clamp(26px,4vw,42px)] font-extrabold tracking-tight text-dark">
-      Trouvez le bon prestataire, dans tous les secteurs
+    <h1 v-reveal class="mx-auto mb-3 max-w-3xl text-[clamp(30px,5.2vw,52px)] font-extrabold leading-[1.08] tracking-tight text-dark">
+      Trouvez le <span class="hero-highlight">bon prestataire</span>, dans tous les secteurs
     </h1>
     <p v-reveal :style="{ '--reveal-delay': '80ms' }" class="mx-auto max-w-lg text-base leading-relaxed text-muted">
       Artisanat, commerce, industrie, services à domicile… Comparez des professionnels vérifiés partout au Togo.
