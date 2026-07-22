@@ -29,6 +29,32 @@ const { data: quotaData } = await useFetch<{ usage: { count: number; limit: numb
 const { data: profileData } = await useFetch<{ profile: ProviderProfile | null }>('/api/providers/me')
 
 const matches = computed(() => matchesData.value?.matches ?? [])
+
+// Tri du fil de demandes (façon « Find work » d'Upwork) : appliqué côté client
+// sur la liste déjà chargée (petit volume, borné au quota mensuel) — aucune
+// requête supplémentaire. « Correspondance » (défaut) reprend l'ordre par
+// score décroissant, le plus utile pour prioriser les demandes à traiter.
+type MatchSort = 'pertinence' | 'recent' | 'budget'
+const sortBy = ref<MatchSort>('pertinence')
+const sortedMatches = computed(() => {
+  const list = [...matches.value]
+  switch (sortBy.value) {
+    case 'recent':
+      return list.sort((a, b) => b.request.createdAt - a.request.createdAt)
+    case 'budget':
+      return list.sort((a, b) => b.request.budgetMax - a.request.budgetMax)
+    default:
+      return list.sort((a, b) => b.score.total - a.score.total)
+  }
+})
+
+// Donne un sens lisible au score /100 (les badges de correspondance d'Upwork) :
+// un « 82 » brut ne parle pas, « Forte correspondance » si.
+function matchQuality(score: number): { label: string; cls: string } {
+  if (score >= 80) return { label: 'Forte correspondance', cls: 'bg-primary/12 text-primary' }
+  if (score >= 60) return { label: 'Bonne correspondance', cls: 'bg-primary/8 text-primary' }
+  return { label: 'Correspondance modérée', cls: 'bg-bg text-muted' }
+}
 // Même définition que professionalProfileComplete dans app/pages/profil.vue :
 // distingue « profil pas encore assez rempli pour matcher » de « profil complet,
 // juste aucune demande pour l'instant » dans l'état vide ci-dessous.
@@ -96,9 +122,29 @@ function formatBudget(amount: number): string {
       </NuxtLink>
     </div>
 
-    <ul v-else class="flex flex-col gap-3">
+    <template v-else>
+      <!-- Barre d'outils du fil : compteur + tri (façon « Find work » d'Upwork). -->
+      <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <p class="text-[13px] font-semibold text-dark">
+          {{ matches.length }} demande{{ matches.length > 1 ? 's' : '' }}
+        </p>
+        <label class="flex items-center gap-2 text-[12.5px] text-muted">
+          Trier par
+          <select
+            v-model="sortBy"
+            class="h-[38px] rounded-field border border-hairline bg-white px-2.5 text-[13px] font-semibold text-dark outline-none focus:border-primary"
+            aria-label="Trier les demandes"
+          >
+            <option value="pertinence">Correspondance</option>
+            <option value="recent">Plus récentes</option>
+            <option value="budget">Budget</option>
+          </select>
+        </label>
+      </div>
+
+      <ul class="flex flex-col gap-3">
       <li
-        v-for="item in matches"
+        v-for="item in sortedMatches"
         :key="item.request.id"
         class="rounded-card border border-hairline bg-surface p-4 shadow-card-sm"
       >
@@ -107,9 +153,14 @@ function formatBudget(amount: number): string {
             <p class="truncate text-[15px] font-bold text-dark">{{ item.request.title }}</p>
             <p class="text-[12.5px] text-muted">{{ formatDate(item.request.createdAt) }}</p>
           </div>
-          <div class="shrink-0 rounded-field bg-dark px-2.5 py-1.5 text-center">
-            <div class="text-[14px] font-extrabold leading-none text-white">{{ item.score.total }}</div>
-            <div class="text-[8.5px] font-semibold uppercase tracking-wide text-white/70">/ 100</div>
+          <div class="flex shrink-0 flex-col items-end gap-1.5">
+            <div class="rounded-field bg-dark px-2.5 py-1.5 text-center">
+              <div class="text-[14px] font-extrabold leading-none text-white">{{ item.score.total }}</div>
+              <div class="text-[8.5px] font-semibold uppercase tracking-wide text-white/70">/ 100</div>
+            </div>
+            <span class="rounded-pill px-2 py-0.5 text-[10.5px] font-bold" :class="matchQuality(item.score.total).cls">
+              {{ matchQuality(item.score.total).label }}
+            </span>
           </div>
         </div>
 
@@ -132,6 +183,7 @@ function formatBudget(amount: number): string {
           </span>
         </div>
       </li>
-    </ul>
+      </ul>
+    </template>
   </div>
 </template>
