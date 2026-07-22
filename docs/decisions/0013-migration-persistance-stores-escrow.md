@@ -72,17 +72,46 @@ chantier hébergement.
 
 ### Ordre de migration (chaque étape = 1 PR, tests verts)
 
-| Étape | Store | Modèle Prisma | Pré-requis | Blast radius |
-|---|---|---|---|---|
-| 0 | *(base de prod tranchée + `provider` datasource)* | — | — | infra |
-| 1 | `subscriptionStore` | `Subscription` (+ ajouter `isTrial`) | User (fait) | 7 conso + cascade requestStore |
-| 2 | `paymentStore` | `Payment` | Étape 1 (FK) | 4 conso |
-| 3 | `walletStore` | `WalletMovement` (pas de FK) | — | 23 conso |
-| 4 | `walletRechargeStore` | *(nouveau modèle `WalletRecharge`)* | Étape 3 | 2 conso |
-| 5 | `escrowOrderStore` | `EscrowOrder` (pas de FK) | Étapes 3–4 | 24 conso |
-| 6 | `conversationStore` | `Conversation`/`Message`/`ConversationRead` | — | messagerie |
-| 7 | `requestStore` + `quotaStore` | *(nouveaux modèles)* | Étape 1 | matching |
-| 8 | `reviewStore`, `favoriteStore`, `verificationStore`, `complaintStore`, `testimonialStore`, `recurringServiceStore`, `providerAvailabilityStore`, `contournementAttemptStore` | *(nouveaux modèles)* | selon liens | divers |
+| Étape | Store | Modèle Prisma | Pré-requis | Blast radius | État |
+|---|---|---|---|---|---|
+| 0 | *(base de prod tranchée + `provider` datasource)* | — | — | infra | à faire |
+| 1 | `subscriptionStore` | `Subscription` (+ ajouter `isTrial`) | User (fait) | 7 conso + cascade requestStore | ✅ PR #347 |
+| 2 | `paymentStore` | `Payment` | Étape 1 (FK) | 4 conso | ✅ PR #348 |
+| **3–5** | **Cluster portefeuille+séquestre** (voir encadré ci-dessous) | `WalletMovement`, `EscrowOrder` (+ nouveau `WalletRecharge`) | Étapes 1–2 | **~40 fichiers, 14 tests** | à faire |
+| 6 | `conversationStore` | `Conversation`/`Message`/`ConversationRead` | — | messagerie | à faire |
+| 7 | `requestStore` + `quotaStore` | *(nouveaux modèles)* | Étape 1 | matching | à faire |
+| 8 | `reviewStore`, `favoriteStore`, `verificationStore`, `complaintStore`, `testimonialStore`, `recurringServiceStore`, `providerAvailabilityStore`, `contournementAttemptStore` | *(nouveaux modèles)* | selon liens | divers | à faire |
+
+### ⚠️ Révision : les étapes 3, 4 et 5 forment **un seul cluster couplé**
+
+L'analyse du code (étape 3 amorcée) a montré que `walletStore` **ne peut pas** être migré
+isolément : ses fonctions d'écriture `creditWallet` / `debitWallet` sont appelées **au cœur
+de** `escrowOrderStore` (libération, remboursement, indemnisation, mise en séquestre) et de
+`escrowClientCancellation`. Rendre le portefeuille asynchrone rend donc l'escrow asynchrone
+dans la même passe — `walletStore` + `walletRechargeStore` + `escrowOrderStore` +
+`escrowClientCancellation` migrent **ensemble** ou pas du tout. Surface mesurée :
+
+- **Stores :** walletStore (167 l.), walletRechargeStore (80 l.), escrowClientCancellation (63 l.), escrowOrderStore (**469 l., 15 fonctions**).
+- **Tests à réécrire en async :** **14 fichiers** (`escrowOrder*.test.ts` ×10, `escrowRoutes.http.test.ts`, `walletStore.test.ts`, `walletRechargeStore.test.ts`, `recurringServiceStore.test.ts`).
+- **Handlers API escrow :** ~24 à passer en `await`.
+
+Ce cluster est donc un **PR dédié et volumineux** (le plus gros du chantier), à traiter avec
+un soin particulier — c'est le grand livre où l'argent circule réellement entre
+client / prestataire / plateforme. Ne pas le bâcler en fin d'un autre lot.
+
+**Deux points bloquants relevés pour ce cluster :**
+
+1. **Bug de schéma à corriger d'abord :** l'enum Prisma `WalletMovementType` **ne contient pas**
+   la valeur `cancellation_compensation`, pourtant utilisée par `walletStore` (#275). À ajouter
+   à l'enum (+ migration) avant de brancher le store sur la base, sinon toute écriture d'une
+   indemnisation d'annulation échouera. *(Sur SQLite les enums sont des colonnes TEXT : la
+   migration est un no-op côté données, mais le fichier de migration reste requis pour la prod.)*
+2. **Atomicité du débit (TOCTOU) :** `debitWallet` / `requestWithdrawal` / le débit de séquestre
+   font aujourd'hui « lire le solde puis écrire » de façon atomique grâce au mono-thread de la
+   `Map`. En base, ces deux requêtes ne sont plus atomiques : encadrer la vérification de solde
+   **et** l'insertion du mouvement dans une `prisma.$transaction` (lecture du solde dans la
+   transaction) pour éviter tout découvert par débits concurrents. C'est une **amélioration** de
+   correction par rapport à la version mémoire, pas seulement une transposition.
 
 ### Patron d'implémentation (à répliquer, calqué sur `userStore.ts`)
 
