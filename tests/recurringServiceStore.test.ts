@@ -110,76 +110,76 @@ describe('cancelRecurringService', () => {
 })
 
 describe('getRecurringServiceByConversationId — déclenchement du prélèvement dû (#271)', () => {
-  it('prélève le montant dû, avance la prochaine échéance et poste un message système', () => {
+  it('prélève le montant dû, avance la prochaine échéance et poste un message système', async () => {
     const client = id()
     const provider = id()
     const conversation = findOrCreateConversation(client, provider)
-    creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
+    await creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
     createRecurringService({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000, frequency: 'hebdomadaire' })
 
-    const service = getRecurringServiceByConversationId(conversation.id)
+    const service = await getRecurringServiceByConversationId(conversation.id)
 
     expect(service?.status).toBe('active')
     expect(service?.lastChargedAt).not.toBeNull()
     expect(service?.nextChargeAt).toBeGreaterThan(Date.now())
-    expect(getBalance(client)).toBe(0)
-    expect(getEscrowOrderByConversationId(conversation.id)?.status).toBe('in_escrow')
+    expect(await getBalance(client)).toBe(0)
+    expect((await getEscrowOrderByConversationId(conversation.id))?.status).toBe('in_escrow')
 
     const notification = getMessages(conversation.id).at(-1)
     expect(notification?.body).toContain('Prélèvement automatique')
   })
 
-  it('ne prélève qu’une seule fois tant que la prochaine échéance (avancée après le 1er prélèvement) n’est pas atteinte', () => {
+  it('ne prélève qu’une seule fois tant que la prochaine échéance (avancée après le 1er prélèvement) n’est pas atteinte', async () => {
     const client = id()
     const provider = id()
     const conversation = findOrCreateConversation(client, provider)
-    creditWallet({ walletUserId: client, type: 'recharge', amount: 10000, reference: 'REF' })
+    await creditWallet({ walletUserId: client, type: 'recharge', amount: 10000, reference: 'REF' })
 
     const now = 1_000_000
     const spy = vi.spyOn(Date, 'now').mockImplementation(() => now)
     createRecurringService({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000, frequency: 'hebdomadaire' })
 
-    getRecurringServiceByConversationId(conversation.id) // 1ère échéance, due dès la création
+    await getRecurringServiceByConversationId(conversation.id) // 1ère échéance, due dès la création
     // Le cycle précédent (commande escrow) n'étant pas encore résolu (released/refunded),
     // un second accès juste après ne doit prélever ni une deuxième fois ni empiler de commande,
     // même si on avance un peu l'horloge (toujours bien avant la prochaine échéance réelle, +7j).
     spy.mockImplementation(() => now + 1000)
-    const secondRead = getRecurringServiceByConversationId(conversation.id)
+    const secondRead = await getRecurringServiceByConversationId(conversation.id)
     spy.mockRestore()
 
     expect(secondRead?.status).toBe('active')
-    expect(getBalance(client)).toBe(5000) // un seul prélèvement de 5000, pas deux
+    expect(await getBalance(client)).toBe(5000) // un seul prélèvement de 5000, pas deux
   })
 
-  it('passe en payment_failed si le solde est insuffisant, et journalise un message d’échec', () => {
+  it('passe en payment_failed si le solde est insuffisant, et journalise un message d’échec', async () => {
     const client = id()
     const provider = id()
     const conversation = findOrCreateConversation(client, provider)
     // Pas de crédit de portefeuille : solde nul.
     createRecurringService({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000, frequency: 'hebdomadaire' })
 
-    const service = getRecurringServiceByConversationId(conversation.id)
+    const service = await getRecurringServiceByConversationId(conversation.id)
 
     expect(service?.status).toBe('payment_failed')
     const notification = getMessages(conversation.id).at(-1)
     expect(notification?.body).toContain('échoué')
   })
 
-  it('n’empile pas une nouvelle commande tant que le cycle précédent n’est pas terminal (in_escrow/delivered/disputed)', () => {
+  it('n’empile pas une nouvelle commande tant que le cycle précédent n’est pas terminal (in_escrow/delivered/disputed)', async () => {
     const client = id()
     const provider = id()
     const conversation = findOrCreateConversation(client, provider)
-    creditWallet({ walletUserId: client, type: 'recharge', amount: 20000, reference: 'REF' })
+    await creditWallet({ walletUserId: client, type: 'recharge', amount: 20000, reference: 'REF' })
     // Une commande est déjà en cours (ex. première prise de contact classique), non résolue.
-    createEscrowOrder({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000 })
-    payEscrowOrder(conversation.id)
+    await createEscrowOrder({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000 })
+    await payEscrowOrder(conversation.id)
 
     createRecurringService({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000, frequency: 'hebdomadaire' })
-    const service = getRecurringServiceByConversationId(conversation.id)
+    const service = await getRecurringServiceByConversationId(conversation.id)
 
     expect(service?.status).toBe('active')
     expect(service?.lastChargedAt).toBeNull()
     // Un seul débit (celui de la commande initiale), pas un second pour le service récurrent.
-    expect(getBalance(client)).toBe(15000)
+    expect(await getBalance(client)).toBe(15000)
   })
 })

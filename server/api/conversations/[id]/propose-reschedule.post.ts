@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
     notFound('Conversation introuvable.')
   }
 
-  const order = getEscrowOrderByConversationId(conversation.id)
+  const order = await getEscrowOrderByConversationId(conversation.id)
   if (!order || (order.status !== 'in_escrow' && order.status !== 'delivered')) {
     conflict('Impossible de proposer un nouveau créneau pour cette commande dans son état actuel.')
   }

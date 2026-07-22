@@ -20,34 +20,34 @@ function id(): string {
  * à-dire sans que le montant intégral ait été débité du chercheur.
  */
 describe('EscrowOrder — paiement intégral obligatoire avant clôture (#276)', () => {
-  it('markEscrowOrderDelivered refuse une commande jamais payée (awaiting_payment)', () => {
+  it('markEscrowOrderDelivered refuse une commande jamais payée (awaiting_payment)', async () => {
     const conversationId = id()
-    createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 5000 })
+    await createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 5000 })
 
-    const result = markEscrowOrderDelivered(conversationId)
+    const result = await markEscrowOrderDelivered(conversationId)
 
     expect(result).toEqual({ ok: false, error: 'invalid_status' })
   })
 
-  it('confirmEscrowOrderReceipt (qui libère les fonds vers le prestataire) refuse une commande jamais payée', () => {
+  it('confirmEscrowOrderReceipt (qui libère les fonds vers le prestataire) refuse une commande jamais payée', async () => {
     const conversationId = id()
-    createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 5000 })
+    await createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 5000 })
 
-    const result = confirmEscrowOrderReceipt(conversationId)
+    const result = await confirmEscrowOrderReceipt(conversationId)
 
     expect(result).toEqual({ ok: false, error: 'invalid_status' })
   })
 
-  it('un chercheur au solde insuffisant ne peut pas faire progresser la commande au-delà de "awaiting_payment"', () => {
+  it('un chercheur au solde insuffisant ne peut pas faire progresser la commande au-delà de "awaiting_payment"', async () => {
     const conversationId = id()
     const client = id()
     const provider = id()
     // Solde insuffisant : le crédit couvre moins que le montant de la commande.
-    creditWallet({ walletUserId: client, type: 'recharge', amount: 1000, reference: 'REF' })
-    createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount: 5000 })
+    await creditWallet({ walletUserId: client, type: 'recharge', amount: 1000, reference: 'REF' })
+    await createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount: 5000 })
 
-    expect(markEscrowOrderDelivered(conversationId)).toEqual({ ok: false, error: 'invalid_status' })
-    expect(confirmEscrowOrderReceipt(conversationId)).toEqual({ ok: false, error: 'invalid_status' })
-    expect(getBalance(provider)).toBe(0)
+    expect(await markEscrowOrderDelivered(conversationId)).toEqual({ ok: false, error: 'invalid_status' })
+    expect(await confirmEscrowOrderReceipt(conversationId)).toEqual({ ok: false, error: 'invalid_status' })
+    expect(await getBalance(provider)).toBe(0)
   })
 })

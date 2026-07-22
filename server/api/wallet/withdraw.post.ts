@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     badRequest('Choisissez un moyen de retrait avant de faire une demande.')
   }
 
-  const result = requestWithdrawal(user.id, body.amount)
+  const result = await requestWithdrawal(user.id, body.amount)
   if (!result.ok) {
     if (result.error === 'below_minimum') {
       badRequest(`Le retrait minimum est de ${MIN_WITHDRAWAL_AMOUNT.toLocaleString('fr-FR')} F CFA.`)

@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
 
   const body = await readSchemaBody(event, cancelEscrowSchema)
 
-  const result = cancelEscrowOrder(conversation.id, body.reason)
+  const result = await cancelEscrowOrder(conversation.id, body.reason)
 
   if (!result.ok) {
     if (result.error === 'not_found') notFound('Aucune commande à annuler pour cette conversation.')

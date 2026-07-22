@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     notFound('Conversation introuvable.')
   }
 
-  const result = confirmEscrowOrderReceipt(conversation.id)
+  const result = await confirmEscrowOrderReceipt(conversation.id)
 
   if (!result.ok) {
     if (result.error === 'not_found') notFound('Aucune commande à confirmer pour cette conversation.')

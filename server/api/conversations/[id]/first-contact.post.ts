@@ -85,7 +85,7 @@ export default defineEventHandler(async (event) => {
   // d'ouvrir plusieurs demandes « pour voir » à la fois sans jamais en payer
   // aucune — chaque demande non payée occupe inutilement l'attention d'un
   // prestataire tant qu'elle reste ouverte.
-  if (countUnpaidOrdersForClient(user.id) >= MAX_SIMULTANEOUS_UNPAID_ORDERS) {
+  if (await countUnpaidOrdersForClient(user.id) >= MAX_SIMULTANEOUS_UNPAID_ORDERS) {
     conflict(`Vous avez déjà ${MAX_SIMULTANEOUS_UNPAID_ORDERS} demande(s) en attente de paiement. Réglez-les ou annulez-les avant d'en envoyer une nouvelle.`)
   }
 
@@ -105,7 +105,7 @@ export default defineEventHandler(async (event) => {
     clientId: user.id,
     providerId: conversation.providerId,
     amount,
-    recentOrderTimestamps: getRecentOrderTimestampsForClient(user.id),
+    recentOrderTimestamps: await getRecentOrderTimestampsForClient(user.id),
   })
   if (risk.blocked) {
     conflict(risk.reason)
@@ -122,7 +122,7 @@ export default defineEventHandler(async (event) => {
   const message = addMessage(conversation.id, user.id, user.role, messageLines.join('\n\n'))
   markFirstContactDone(conversation.id)
   setClientContact(conversation.id, contact)
-  const order = createEscrowOrder({ conversationId: conversation.id, clientId: user.id, providerId: conversation.providerId, amount })
+  const order = await createEscrowOrder({ conversationId: conversation.id, clientId: user.id, providerId: conversation.providerId, amount })
 
   setResponseStatus(event, 201)
   return { conversation: await toConversationSummary(conversation, user.id), message, order }

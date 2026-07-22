@@ -8,9 +8,9 @@ function id(): string {
   return randomUUID()
 }
 
-function payOnly(conversationId: string, client: string, provider: string, amount: number) {
-  creditWallet({ walletUserId: client, type: 'recharge', amount, reference: 'REF' })
-  createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount })
+async function payOnly(conversationId: string, client: string, provider: string, amount: number) {
+  await creditWallet({ walletUserId: client, type: 'recharge', amount, reference: 'REF' })
+  await createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount })
   return payEscrowOrder(conversationId)
 }
 
@@ -20,11 +20,11 @@ function payOnly(conversationId: string, client: string, provider: string, amoun
  * ne peut être déclenché sans un check-in et un check-out enregistrés.
  */
 describe('recordEscrowOrderCheckIn / recordEscrowOrderCheckOut (#268)', () => {
-  it('recordEscrowOrderCheckIn enregistre un horodatage et une localisation optionnelle', () => {
+  it('recordEscrowOrderCheckIn enregistre un horodatage et une localisation optionnelle', async () => {
     const conversationId = id()
-    payOnly(conversationId, id(), id(), 3000)
+    await payOnly(conversationId, id(), id(), 3000)
 
-    const result = recordEscrowOrderCheckIn(conversationId, { lat: 6.13, lng: 1.22 })
+    const result = await recordEscrowOrderCheckIn(conversationId, { lat: 6.13, lng: 1.22 })
 
     expect(result.ok).toBe(true)
     if (result.ok) {
@@ -33,44 +33,44 @@ describe('recordEscrowOrderCheckIn / recordEscrowOrderCheckOut (#268)', () => {
     }
   })
 
-  it('recordEscrowOrderCheckIn accepte une localisation nulle (géolocalisation refusée)', () => {
+  it('recordEscrowOrderCheckIn accepte une localisation nulle (géolocalisation refusée)', async () => {
     const conversationId = id()
-    payOnly(conversationId, id(), id(), 3000)
+    await payOnly(conversationId, id(), id(), 3000)
 
-    const result = recordEscrowOrderCheckIn(conversationId, null)
+    const result = await recordEscrowOrderCheckIn(conversationId, null)
 
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.order.checkInLocation).toBeNull()
   })
 
-  it('refuse un second check-in tant que le premier est actif', () => {
+  it('refuse un second check-in tant que le premier est actif', async () => {
     const conversationId = id()
-    payOnly(conversationId, id(), id(), 3000)
-    recordEscrowOrderCheckIn(conversationId, null)
+    await payOnly(conversationId, id(), id(), 3000)
+    await recordEscrowOrderCheckIn(conversationId, null)
 
-    expect(recordEscrowOrderCheckIn(conversationId, null)).toEqual({ ok: false, error: 'already_checked_in' })
+    expect(await recordEscrowOrderCheckIn(conversationId, null)).toEqual({ ok: false, error: 'already_checked_in' })
   })
 
-  it('refuse un check-in pour une commande non payée (awaiting_payment)', () => {
+  it('refuse un check-in pour une commande non payée (awaiting_payment)', async () => {
     const conversationId = id()
-    createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 3000 })
+    await createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 3000 })
 
-    expect(recordEscrowOrderCheckIn(conversationId, null)).toEqual({ ok: false, error: 'invalid_status' })
+    expect(await recordEscrowOrderCheckIn(conversationId, null)).toEqual({ ok: false, error: 'invalid_status' })
   })
 
-  it('refuse un check-out sans check-in préalable', () => {
+  it('refuse un check-out sans check-in préalable', async () => {
     const conversationId = id()
-    payOnly(conversationId, id(), id(), 3000)
+    await payOnly(conversationId, id(), id(), 3000)
 
-    expect(recordEscrowOrderCheckOut(conversationId, null)).toEqual({ ok: false, error: 'check_in_required' })
+    expect(await recordEscrowOrderCheckOut(conversationId, null)).toEqual({ ok: false, error: 'check_in_required' })
   })
 
-  it('recordEscrowOrderCheckOut enregistre un horodatage après un check-in valide', () => {
+  it('recordEscrowOrderCheckOut enregistre un horodatage après un check-in valide', async () => {
     const conversationId = id()
-    payOnly(conversationId, id(), id(), 3000)
-    recordEscrowOrderCheckIn(conversationId, null)
+    await payOnly(conversationId, id(), id(), 3000)
+    await recordEscrowOrderCheckIn(conversationId, null)
 
-    const result = recordEscrowOrderCheckOut(conversationId, { lat: 6.14, lng: 1.23 })
+    const result = await recordEscrowOrderCheckOut(conversationId, { lat: 6.14, lng: 1.23 })
 
     expect(result.ok).toBe(true)
     if (result.ok) {
@@ -79,44 +79,44 @@ describe('recordEscrowOrderCheckIn / recordEscrowOrderCheckOut (#268)', () => {
     }
   })
 
-  it('refuse un second check-out', () => {
+  it('refuse un second check-out', async () => {
     const conversationId = id()
-    payOnly(conversationId, id(), id(), 3000)
-    recordEscrowOrderCheckIn(conversationId, null)
-    recordEscrowOrderCheckOut(conversationId, null)
+    await payOnly(conversationId, id(), id(), 3000)
+    await recordEscrowOrderCheckIn(conversationId, null)
+    await recordEscrowOrderCheckOut(conversationId, null)
 
-    expect(recordEscrowOrderCheckOut(conversationId, null)).toEqual({ ok: false, error: 'already_checked_out' })
+    expect(await recordEscrowOrderCheckOut(conversationId, null)).toEqual({ ok: false, error: 'already_checked_out' })
   })
 
-  it('renvoie not_found pour une conversation sans commande', () => {
-    expect(recordEscrowOrderCheckIn(id(), null)).toEqual({ ok: false, error: 'not_found' })
-    expect(recordEscrowOrderCheckOut(id(), null)).toEqual({ ok: false, error: 'not_found' })
+  it('renvoie not_found pour une conversation sans commande', async () => {
+    expect(await recordEscrowOrderCheckIn(id(), null)).toEqual({ ok: false, error: 'not_found' })
+    expect(await recordEscrowOrderCheckOut(id(), null)).toEqual({ ok: false, error: 'not_found' })
   })
 })
 
 describe('markEscrowOrderDelivered — bloqué sans preuve d’intervention complète (#268)', () => {
-  it('refuse tant que le check-in n’a pas été enregistré', () => {
+  it('refuse tant que le check-in n’a pas été enregistré', async () => {
     const conversationId = id()
-    payOnly(conversationId, id(), id(), 3000)
+    await payOnly(conversationId, id(), id(), 3000)
 
-    expect(markEscrowOrderDelivered(conversationId)).toEqual({ ok: false, error: 'check_in_out_required' })
+    expect(await markEscrowOrderDelivered(conversationId)).toEqual({ ok: false, error: 'check_in_out_required' })
   })
 
-  it('refuse tant que le check-in est enregistré mais pas le check-out', () => {
+  it('refuse tant que le check-in est enregistré mais pas le check-out', async () => {
     const conversationId = id()
-    payOnly(conversationId, id(), id(), 3000)
-    recordEscrowOrderCheckIn(conversationId, null)
+    await payOnly(conversationId, id(), id(), 3000)
+    await recordEscrowOrderCheckIn(conversationId, null)
 
-    expect(markEscrowOrderDelivered(conversationId)).toEqual({ ok: false, error: 'check_in_out_required' })
+    expect(await markEscrowOrderDelivered(conversationId)).toEqual({ ok: false, error: 'check_in_out_required' })
   })
 
-  it('réussit une fois le check-in et le check-out enregistrés', () => {
+  it('réussit une fois le check-in et le check-out enregistrés', async () => {
     const conversationId = id()
-    payOnly(conversationId, id(), id(), 3000)
-    recordEscrowOrderCheckIn(conversationId, null)
-    recordEscrowOrderCheckOut(conversationId, null)
+    await payOnly(conversationId, id(), id(), 3000)
+    await recordEscrowOrderCheckIn(conversationId, null)
+    await recordEscrowOrderCheckOut(conversationId, null)
 
-    const result = markEscrowOrderDelivered(conversationId)
+    const result = await markEscrowOrderDelivered(conversationId)
 
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.order.status).toBe('delivered')

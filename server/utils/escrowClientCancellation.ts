@@ -1,22 +1,21 @@
 import { type EscrowOrder, getRawEscrowOrder } from '~~/server/utils/escrowOrderStore'
+import { prisma } from '~~/server/utils/prisma'
 import { creditWallet } from '~~/server/utils/walletStore'
 
 /**
  * Grille d'annulation symétrique (#275). Le prestataire annule toujours sans
- * pénalité pour le chercheur (voir `cancelEscrowOrder`, escrowOrderStore.ts)
- * — c'était déjà le cas. Ce qui manquait : quand c'est le *chercheur* qui
- * annule après avoir payé, rien n'indemnisait le prestataire qui s'était
- * rendu disponible. Délai de grâce : annulation sans pénalité si elle
- * intervient dans les 2h suivant le paiement (le prestataire n'a pas encore
- * eu le temps de s'organiser). Passé ce délai, une part du montant reste
- * acquise au prestataire à titre d'indemnisation, le solde est remboursé au
- * chercheur.
+ * pénalité pour le chercheur (voir `cancelEscrowOrder`, escrowOrderStore.ts).
+ * Ce qui manquait : quand c'est le *chercheur* qui annule après avoir payé,
+ * rien n'indemnisait le prestataire qui s'était rendu disponible. Délai de
+ * grâce : annulation sans pénalité si elle intervient dans les 2h suivant le
+ * paiement. Passé ce délai, une part du montant reste acquise au prestataire à
+ * titre d'indemnisation, le solde est remboursé au chercheur.
  *
- * Extrait dans son propre fichier (plutôt que dans escrowOrderStore.ts) pour
- * rester sous la limite ESLint `max-lines` (300) — utilise `getRawEscrowOrder`
- * (accès direct, sans les vérifications paresseuses de validation tacite/
- * réattribution automatique, non pertinentes pour une commande `in_escrow`
- * fraîchement payée) plutôt que la carte interne du store.
+ * Extrait dans son propre fichier (limite ESLint `max-lines`) — utilise
+ * `getRawEscrowOrder` (accès direct, sans les vérifications paresseuses de
+ * validation tacite/réattribution, non pertinentes pour une commande
+ * `in_escrow` fraîchement payée). Depuis #342 (ADR 0013), la commande est
+ * persistée : la mise à jour passe par `prisma.escrowOrder.update`.
  */
 
 export const CLIENT_CANCELLATION_GRACE_PERIOD_MS = 2 * 60 * 60 * 1000
@@ -27,14 +26,12 @@ export type CancelByClientResult =
   | { ok: false; error: 'not_found' | 'invalid_status' | 'reason_required' }
 
 /**
- * Le chercheur annule après avoir payé, avant que la prestation soit
- * marquée terminée (#275, grille d'annulation symétrique — pendant de
- * `cancelEscrowOrder` côté prestataire). Autorisé uniquement tant que la
- * commande est en séquestre (`in_escrow`) : une fois `delivered`, le
- * désaccord relève du litige (`openEscrowDispute`), pas de l'annulation.
+ * Le chercheur annule après avoir payé, avant que la prestation soit marquée
+ * terminée (#275). Autorisé uniquement tant que la commande est en séquestre
+ * (`in_escrow`) : une fois `delivered`, le désaccord relève du litige.
  */
-export function cancelEscrowOrderByClient(conversationId: string, reason: string): CancelByClientResult {
-  const order = getRawEscrowOrder(conversationId)
+export async function cancelEscrowOrderByClient(conversationId: string, reason: string): Promise<CancelByClientResult> {
+  const order = await getRawEscrowOrder(conversationId)
   if (!order) return { ok: false, error: 'not_found' }
   if (order.status !== 'in_escrow') return { ok: false, error: 'invalid_status' }
   if (!reason.trim()) return { ok: false, error: 'reason_required' }
@@ -44,7 +41,7 @@ export function cancelEscrowOrderByClient(conversationId: string, reason: string
   const clientRefund = order.amount - providerCompensation
 
   if (providerCompensation > 0) {
-    creditWallet({
+    await creditWallet({
       walletUserId: order.providerId,
       type: 'cancellation_compensation',
       amount: providerCompensation,
@@ -53,11 +50,13 @@ export function cancelEscrowOrderByClient(conversationId: string, reason: string
     })
   }
   if (clientRefund > 0) {
-    creditWallet({ walletUserId: order.clientId, type: 'escrow_refund', amount: clientRefund, reference: order.id, counterpartyUserId: order.providerId })
+    await creditWallet({ walletUserId: order.clientId, type: 'escrow_refund', amount: clientRefund, reference: order.id, counterpartyUserId: order.providerId })
   }
 
-  order.status = 'refunded'
-  order.cancelledAt = Date.now()
-  order.cancelReason = reason.trim()
-  return { ok: true, order, providerCompensation }
+  const now = Date.now()
+  await prisma.escrowOrder.update({
+    where: { id: order.id },
+    data: { status: 'refunded', cancelledAt: new Date(now), cancelReason: reason.trim() },
+  })
+  return { ok: true, order: { ...order, status: 'refunded', cancelledAt: now, cancelReason: reason.trim() }, providerCompensation }
 }

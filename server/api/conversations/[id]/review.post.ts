@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
     notFound('Conversation introuvable.')
   }
 
-  const order = getEscrowOrderByConversationId(conversation.id)
+  const order = await getEscrowOrderByConversationId(conversation.id)
   if (!order || order.status !== 'released') {
     conflict("Un avis ne peut être laissé qu'une fois la prestation validée et payée via WorkTogo.")
   }

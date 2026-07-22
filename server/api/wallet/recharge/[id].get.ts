@@ -7,7 +7,7 @@
 export default defineEventHandler(async (event) => {
   const user = await requireSessionUser(event)
   const id = getRouterParam(event, 'id')
-  const recharge = id ? getRecharge(id) : null
+  const recharge = id ? await getRecharge(id) : null
 
   if (!recharge || recharge.userId !== user.id) {
     notFound('Recharge introuvable.')

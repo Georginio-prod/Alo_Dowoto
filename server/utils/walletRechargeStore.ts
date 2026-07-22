@@ -1,14 +1,13 @@
-import { randomUUID } from 'node:crypto'
+import type { WalletRecharge as PrismaWalletRecharge } from '@prisma/client'
+import { prisma } from '~~/server/utils/prisma'
 import { creditWallet } from '~~/server/utils/walletStore'
 
 /**
- * Store en mémoire pour les recharges du portefeuille WorkTogo via mobile
- * money (#193). Même limite que server/utils/paymentStore.ts (pas de base
- * de données encore en place, voir #45/#46) et même mécanique : le montant
- * n'est crédité sur le portefeuille (server/utils/walletStore.ts) qu'une
- * fois la recharge confirmée par l'opérateur — jamais tant qu'elle est
- * `pending`, pour que le journal du portefeuille ne contienne que des
- * mouvements définitifs.
+ * Recharges du portefeuille WorkTogo via mobile money (#193), persistées en
+ * base (Prisma/SQLite, #342, ADR 0013). Même mécanique que paymentStore : le
+ * montant n'est crédité sur le portefeuille (walletStore) qu'une fois la
+ * recharge confirmée par l'opérateur — jamais tant qu'elle est `pending`, pour
+ * que le journal du portefeuille ne contienne que des mouvements définitifs.
  */
 
 export type WalletRechargeProvider = 'flooz' | 'tmoney'
@@ -26,55 +25,73 @@ export interface WalletRecharge {
   resolvedAt: number | null
 }
 
-const recharges = new Map<string, WalletRecharge>()
+function toRecharge(row: PrismaWalletRecharge): WalletRecharge {
+  return {
+    id: row.id,
+    userId: row.userId,
+    provider: row.provider as WalletRechargeProvider,
+    phone: row.phone,
+    amount: row.amount,
+    status: row.status as WalletRechargeStatus,
+    operatorRef: row.operatorRef,
+    createdAt: row.createdAt.getTime(),
+    resolvedAt: row.resolvedAt?.getTime() ?? null,
+  }
+}
 
-export function createRecharge(input: {
+export async function createRecharge(input: {
   userId: string
   provider: WalletRechargeProvider
   phone: string
   amount: number
-}): WalletRecharge {
-  const recharge: WalletRecharge = {
-    id: randomUUID(),
-    userId: input.userId,
-    provider: input.provider,
-    phone: input.phone,
-    amount: input.amount,
-    status: 'pending',
-    operatorRef: null,
-    createdAt: Date.now(),
-    resolvedAt: null,
-  }
-  recharges.set(recharge.id, recharge)
-  return recharge
+}): Promise<WalletRecharge> {
+  const row = await prisma.walletRecharge.create({
+    data: {
+      userId: input.userId,
+      provider: input.provider,
+      phone: input.phone,
+      amount: input.amount,
+    },
+  })
+  return toRecharge(row)
 }
 
-export function getRecharge(id: string): WalletRecharge | null {
-  return recharges.get(id) ?? null
+export async function getRecharge(id: string): Promise<WalletRecharge | null> {
+  const row = await prisma.walletRecharge.findUnique({ where: { id } })
+  return row ? toRecharge(row) : null
 }
 
 /**
  * Applique le résultat d'une confirmation opérateur (webhook réel en prod,
  * simulation en dev — voir server/api/wallet/recharge.post.ts). Idempotent :
- * une recharge déjà résolue n'est jamais réévaluée. Ne crédite le
- * portefeuille que si la confirmation est un succès.
+ * la résolution est conditionnée par `where: { status: 'pending' }`, donc un
+ * double envoi opérateur ne crédite jamais le portefeuille deux fois. Ne
+ * crédite le portefeuille que si la confirmation est un succès.
  */
-export function resolveRecharge(id: string, status: 'confirmed' | 'failed', operatorRef?: string): WalletRecharge | null {
-  const recharge = recharges.get(id)
-  if (!recharge || recharge.status !== 'pending') return recharge ?? null
+export async function resolveRecharge(id: string, status: 'confirmed' | 'failed', operatorRef?: string): Promise<WalletRecharge | null> {
+  const existing = await prisma.walletRecharge.findUnique({ where: { id } })
+  if (!existing) return null
+  if (existing.status !== 'pending') return toRecharge(existing)
 
-  recharge.status = status
-  recharge.operatorRef = operatorRef ?? null
-  recharge.resolvedAt = Date.now()
+  const result = await prisma.walletRecharge.updateMany({
+    where: { id, status: 'pending' },
+    data: { status, operatorRef: operatorRef ?? null, resolvedAt: new Date() },
+  })
+  if (result.count === 0) {
+    // Un envoi concurrent a résolu entre-temps : on relit l'état effectif.
+    const current = await prisma.walletRecharge.findUnique({ where: { id } })
+    return current ? toRecharge(current) : null
+  }
 
   if (status === 'confirmed') {
-    creditWallet({
-      walletUserId: recharge.userId,
+    await creditWallet({
+      walletUserId: existing.userId,
       type: 'recharge',
-      amount: recharge.amount,
-      reference: recharge.id,
+      amount: existing.amount,
+      reference: existing.id,
     })
   }
 
-  return recharge
+  const row = await prisma.walletRecharge.findUnique({ where: { id } })
+  return row ? toRecharge(row) : null
 }

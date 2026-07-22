@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     badRequest('Entrez un numéro valide (8 chiffres).')
   }
 
-  const recharge = createRecharge({ userId: user.id, provider: body.provider, phone, amount: body.amount })
+  const recharge = await createRecharge({ userId: user.id, provider: body.provider, phone, amount: body.amount })
 
   // Pas d'accès aux API sandbox Flooz/T-Money togolaises pour ce lot (#193),
   // même limite que server/api/payments/initiate.post.ts (#34) : en
@@ -19,7 +19,9 @@ export default defineEventHandler(async (event) => {
   // recharge.
   if (process.env.NODE_ENV !== 'production') {
     setTimeout(() => {
-      resolveRecharge(recharge.id, 'confirmed', `SIMULATED-${recharge.id.slice(0, 8)}`)
+      // Confirmation simulée en tâche de fond (base de données) : erreurs
+      // capturées pour éviter tout rejet de promesse non géré.
+      void resolveRecharge(recharge.id, 'confirmed', `SIMULATED-${recharge.id.slice(0, 8)}`).catch(() => {})
     }, SIMULATED_CONFIRMATION_DELAY_MS)
   }
 

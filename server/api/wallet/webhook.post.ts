@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
     badRequest('Requête webhook invalide.')
   }
 
-  const recharge = getRecharge(body.rechargeId)
+  const recharge = await getRecharge(body.rechargeId)
   if (!recharge) {
     notFound('Recharge introuvable.')
   }
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     return { recharge }
   }
 
-  const resolved = resolveRecharge(recharge.id, body.status === 'success' ? 'confirmed' : 'failed', body.operatorRef)
+  const resolved = await resolveRecharge(recharge.id, body.status === 'success' ? 'confirmed' : 'failed', body.operatorRef)
 
   return { recharge: resolved }
 })

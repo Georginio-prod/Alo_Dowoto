@@ -72,8 +72,8 @@ describe('POST /conversations/:id/pay (#194)', () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
     const conversation = findOrCreateConversation(client.user.id, provider.user.id)
-    creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
-    createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
+    await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
+    await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
 
     const { status, json } = await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
 
@@ -86,7 +86,7 @@ describe('POST /conversations/:id/pay (#194)', () => {
     const provider = await createAuthedUser('prestataire')
     const stranger = await createAuthedUser('client')
     const conversation = findOrCreateConversation(client.user.id, provider.user.id)
-    createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
+    await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
 
     const { status } = await postJson(`/conversations/${conversation.id}/pay`, stranger.cookieHeader)
 
@@ -99,8 +99,8 @@ describe('POST /conversations/:id/deliver (#195)', () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
     const conversation = findOrCreateConversation(client.user.id, provider.user.id)
-    creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
-    createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
+    await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
+    await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
     await checkInOut(conversation.id, provider.cookieHeader)
 
@@ -114,8 +114,8 @@ describe('POST /conversations/:id/deliver (#195)', () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
     const conversation = findOrCreateConversation(client.user.id, provider.user.id)
-    creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
-    createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
+    await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
+    await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
 
     const { status } = await postJson(`/conversations/${conversation.id}/deliver`, client.cookieHeader)
@@ -129,8 +129,8 @@ describe('POST /conversations/:id/receive (#195)', () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
     const conversation = findOrCreateConversation(client.user.id, provider.user.id)
-    creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
-    createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
+    await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
+    await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
     await checkInOut(conversation.id, provider.cookieHeader)
     await postJson(`/conversations/${conversation.id}/deliver`, provider.cookieHeader)
@@ -145,8 +145,8 @@ describe('POST /conversations/:id/receive (#195)', () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
     const conversation = findOrCreateConversation(client.user.id, provider.user.id)
-    creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
-    createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
+    await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
+    await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
     await postJson(`/conversations/${conversation.id}/deliver`, provider.cookieHeader)
 
@@ -165,8 +165,8 @@ describe('POST /conversations/:id/dispute (#197)', () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
     const conversation = findOrCreateConversation(client.user.id, provider.user.id)
-    creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
-    createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
+    await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
+    await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
     await checkInOut(conversation.id, provider.cookieHeader)
     await postJson(`/conversations/${conversation.id}/deliver`, provider.cookieHeader)
@@ -183,8 +183,8 @@ describe('POST /conversations/:id/dispute (#197)', () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
     const conversation = findOrCreateConversation(client.user.id, provider.user.id)
-    creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
-    createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
+    await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
+    await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
     await postJson(`/conversations/${conversation.id}/deliver`, provider.cookieHeader)
 
@@ -198,7 +198,7 @@ describe('POST /conversations/:id/dispute (#197)', () => {
     const provider = await createAuthedUser('prestataire')
     const stranger = await createAuthedUser('client')
     const conversation = findOrCreateConversation(client.user.id, provider.user.id)
-    createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
+    await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
 
     const { status } = await postJson(`/conversations/${conversation.id}/dispute`, stranger.cookieHeader, {
       reason: 'motif',
@@ -213,8 +213,8 @@ describe('POST /conversations/:id/cancel (#196)', () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
     const conversation = findOrCreateConversation(client.user.id, provider.user.id)
-    creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
-    createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
+    await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
+    await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
 
     const { status, json } = await postJson(`/conversations/${conversation.id}/cancel`, provider.cookieHeader, {
@@ -229,8 +229,8 @@ describe('POST /conversations/:id/cancel (#196)', () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
     const conversation = findOrCreateConversation(client.user.id, provider.user.id)
-    creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
-    createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
+    await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
+    await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
 
     const { status } = await postJson(`/conversations/${conversation.id}/cancel`, client.cookieHeader, { reason: 'motif' })
@@ -244,8 +244,8 @@ describe('Orchestration escrow de bout en bout via HTTP (#261)', () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
     const conversation = findOrCreateConversation(client.user.id, provider.user.id)
-    creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 8000, reference: 'REF' })
-    createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 8000 })
+    await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 8000, reference: 'REF' })
+    await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 8000 })
 
     const paid = await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
     expect(paid.status).toBe(200)
@@ -258,14 +258,14 @@ describe('Orchestration escrow de bout en bout via HTTP (#261)', () => {
     const received = await postJson(`/conversations/${conversation.id}/receive`, client.cookieHeader)
     expect(received.status).toBe(200)
 
-    expect(getEscrowOrderByConversationId(conversation.id)?.status).toBe('released')
+    expect((await getEscrowOrderByConversationId(conversation.id))?.status).toBe('released')
   })
 
   it('un état atteint dans le mauvais ordre est refusé (deliver avant tout paiement)', async () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
     const conversation = findOrCreateConversation(client.user.id, provider.user.id)
-    createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
+    await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
 
     const { status } = await postJson(`/conversations/${conversation.id}/deliver`, provider.cookieHeader)
 

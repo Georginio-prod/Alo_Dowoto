@@ -14,31 +14,31 @@ function id(): string {
   return randomUUID()
 }
 
-function payAndDeliver(conversationId: string, client: string, provider: string, amount: number) {
-  creditWallet({ walletUserId: client, type: 'recharge', amount, reference: 'REF' })
-  createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount })
-  payEscrowOrder(conversationId)
-  recordEscrowOrderCheckIn(conversationId, null)
-  recordEscrowOrderCheckOut(conversationId, null)
+async function payAndDeliver(conversationId: string, client: string, provider: string, amount: number) {
+  await creditWallet({ walletUserId: client, type: 'recharge', amount, reference: 'REF' })
+  await createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount })
+  await payEscrowOrder(conversationId)
+  await recordEscrowOrderCheckIn(conversationId, null)
+  await recordEscrowOrderCheckOut(conversationId, null)
   return markEscrowOrderDelivered(conversationId)
 }
 
 describe('openEscrowDispute — preuves à l’appui (#274)', () => {
-  it('conserve les preuves fournies avec le motif', () => {
+  it('conserve les preuves fournies avec le motif', async () => {
     const conversationId = id()
-    payAndDeliver(conversationId, id(), id(), 3000)
+    await payAndDeliver(conversationId, id(), id(), 3000)
 
-    const result = openEscrowDispute(conversationId, 'Prestation non conforme', 'Photo du résultat : photo.jpg')
+    const result = await openEscrowDispute(conversationId, 'Prestation non conforme', 'Photo du résultat : photo.jpg')
 
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.order.disputeEvidence).toBe('Photo du résultat : photo.jpg')
   })
 
-  it('accepte l’absence de preuves (optionnelles)', () => {
+  it('accepte l’absence de preuves (optionnelles)', async () => {
     const conversationId = id()
-    payAndDeliver(conversationId, id(), id(), 3000)
+    await payAndDeliver(conversationId, id(), id(), 3000)
 
-    const result = openEscrowDispute(conversationId, 'Prestation non conforme')
+    const result = await openEscrowDispute(conversationId, 'Prestation non conforme')
 
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.order.disputeEvidence).toBeNull()
@@ -46,12 +46,12 @@ describe('openEscrowDispute — preuves à l’appui (#274)', () => {
 })
 
 describe('respondToDispute — réponse du prestataire, passage en médiation (#274)', () => {
-  it('enregistre la réponse du prestataire sans changer le statut (fonds toujours gelés)', () => {
+  it('enregistre la réponse du prestataire sans changer le statut (fonds toujours gelés)', async () => {
     const conversationId = id()
-    payAndDeliver(conversationId, id(), id(), 3000)
-    openEscrowDispute(conversationId, 'Prestation non conforme', 'photo.jpg')
+    await payAndDeliver(conversationId, id(), id(), 3000)
+    await openEscrowDispute(conversationId, 'Prestation non conforme', 'photo.jpg')
 
-    const result = respondToDispute(conversationId, 'La prestation a été réalisée comme convenu.')
+    const result = await respondToDispute(conversationId, 'La prestation a été réalisée comme convenu.')
 
     expect(result.ok).toBe(true)
     if (result.ok) {
@@ -61,22 +61,22 @@ describe('respondToDispute — réponse du prestataire, passage en médiation (#
     }
   })
 
-  it('refuse sans texte de réponse', () => {
+  it('refuse sans texte de réponse', async () => {
     const conversationId = id()
-    payAndDeliver(conversationId, id(), id(), 3000)
-    openEscrowDispute(conversationId, 'Prestation non conforme')
+    await payAndDeliver(conversationId, id(), id(), 3000)
+    await openEscrowDispute(conversationId, 'Prestation non conforme')
 
-    expect(respondToDispute(conversationId, '   ')).toEqual({ ok: false, error: 'response_required' })
+    expect(await respondToDispute(conversationId, '   ')).toEqual({ ok: false, error: 'response_required' })
   })
 
-  it('refuse de répondre à une commande qui n’est pas (ou plus) en litige', () => {
+  it('refuse de répondre à une commande qui n’est pas (ou plus) en litige', async () => {
     const conversationId = id()
-    payAndDeliver(conversationId, id(), id(), 3000)
+    await payAndDeliver(conversationId, id(), id(), 3000)
 
-    expect(respondToDispute(conversationId, 'réponse')).toEqual({ ok: false, error: 'invalid_status' })
+    expect(await respondToDispute(conversationId, 'réponse')).toEqual({ ok: false, error: 'invalid_status' })
   })
 
-  it('renvoie not_found pour une conversation sans commande', () => {
-    expect(respondToDispute(id(), 'réponse')).toEqual({ ok: false, error: 'not_found' })
+  it('renvoie not_found pour une conversation sans commande', async () => {
+    expect(await respondToDispute(id(), 'réponse')).toEqual({ ok: false, error: 'not_found' })
   })
 })

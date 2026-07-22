@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
 
   const body = await readSchemaBody(event, respondDisputeSchema)
 
-  const result = respondToDispute(conversation.id, body.response)
+  const result = await respondToDispute(conversation.id, body.response)
 
   if (!result.ok) {
     if (result.error === 'not_found') notFound('Aucune commande en litige pour cette conversation.')

@@ -136,7 +136,7 @@ describe('POST /wallet/webhook (#193)', () => {
   })
 
   it('chemin nominal : confirme la recharge et crédite le portefeuille', async () => {
-    const recharge = createRecharge({ userId: 'client-webhook-1', provider: 'tmoney', phone: '90123456', amount: 3000 })
+    const recharge = await createRecharge({ userId: 'client-webhook-1', provider: 'tmoney', phone: '90123456', amount: 3000 })
 
     const rawBody = JSON.stringify({ rechargeId: recharge.id, status: 'success', operatorRef: 'OP-REF-3' })
     const signature = signWebhookBody(rawBody)
@@ -145,18 +145,18 @@ describe('POST /wallet/webhook (#193)', () => {
 
     expect(status).toBe(200)
     expect((json as { recharge: { status: string } }).recharge.status).toBe('confirmed')
-    expect(getBalance('client-webhook-1')).toBe(3000)
+    expect(await getBalance('client-webhook-1')).toBe(3000)
   })
 
   it('idempotence : un rejeu ne crédite pas le portefeuille une seconde fois', async () => {
-    const recharge = createRecharge({ userId: 'client-webhook-2', provider: 'tmoney', phone: '90123456', amount: 3000 })
+    const recharge = await createRecharge({ userId: 'client-webhook-2', provider: 'tmoney', phone: '90123456', amount: 3000 })
     const rawBody = JSON.stringify({ rechargeId: recharge.id, status: 'success', operatorRef: 'OP-REF-4' })
     const signature = signWebhookBody(rawBody)
 
     await postWebhook('/wallet/webhook', rawBody, signature)
     await postWebhook('/wallet/webhook', rawBody, signature)
 
-    expect(getBalance('client-webhook-2')).toBe(3000)
-    expect(getRecharge(recharge.id)?.status).toBe('confirmed')
+    expect(await getBalance('client-webhook-2')).toBe(3000)
+    expect((await getRecharge(recharge.id))?.status).toBe('confirmed')
   })
 })

@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     account: toPublicUser(user),
     providerProfile,
     subscription,
-    walletBalance: getBalance(user.id),
+    walletBalance: await getBalance(user.id),
     verification: verification
       ? { submittedAt: verification.submittedAt, purgedAt: verification.purgedAt }
       : null,
