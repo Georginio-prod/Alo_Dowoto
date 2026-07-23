@@ -31,6 +31,6 @@ export default defineEventHandler(async (event) => {
     badRequest('La note doit être un nombre entier entre 1 et 5.')
   }
 
-  const testimonial = addTestimonial(name, role, message, rating)
+  const testimonial = await addTestimonial(name, role, message, rating)
   return { testimonial }
 })

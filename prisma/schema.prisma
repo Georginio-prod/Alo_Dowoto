@@ -384,3 +384,16 @@ model ContournementAttempt {
 
   @@index([userId])
 }
+
+/// Avis libre affiché sur la page d'accueil (#357). Distinct des notations de
+/// collaboration (modèle Review) : n'importe quel visiteur peut partager son
+/// expérience générale, sans compte ni conversation. Les avis d'exemple
+/// (seeds) restent des constantes de code, fusionnés à la lecture.
+model Testimonial {
+  id        String   @id @default(uuid())
+  name      String
+  role      String
+  message   String
+  rating    Int
+  createdAt DateTime @default(now())
+}
