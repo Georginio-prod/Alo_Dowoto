@@ -1,3 +1,3 @@
-export default defineEventHandler(() => {
-  return { testimonials: listTestimonials() }
+export default defineEventHandler(async () => {
+  return { testimonials: await listTestimonials() }
 })

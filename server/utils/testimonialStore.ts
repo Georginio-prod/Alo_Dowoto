@@ -1,12 +1,17 @@
-import { randomUUID } from 'node:crypto'
+import type { Testimonial as PrismaTestimonial } from '@prisma/client'
+import { prisma } from '~~/server/utils/prisma'
 
 /**
- * Store en mémoire pour les avis libres affichés sur la page d'accueil
- * (section « Ce que nos utilisateurs en disent »). Distinct des notations
- * de collaboration (reviewStore.ts, liées à une conversation précise) :
- * ici, n'importe quel visiteur peut partager son expérience générale de
- * WorkTogo, sans compte ni conversation associée. Suffisant pour ce lot
- * (pas de base de données encore en place, voir #45/#46).
+ * Avis libres affichés sur la page d'accueil (section « Ce que nos
+ * utilisateurs en disent »), persistés en base (Prisma/SQLite, #357, ADR
+ * 0013). Distinct des notations de collaboration (reviewStore.ts, liées à une
+ * conversation) : ici, n'importe quel visiteur peut partager son expérience
+ * générale de WorkTogo.
+ *
+ * Les avis d'exemple (SEED_TESTIMONIALS) restent des constantes de code —
+ * baseline pour que la section ne soit jamais vide — et sont fusionnés à la
+ * lecture avec les avis réels stockés en base. Les contributions réelles,
+ * elles, survivent désormais aux redémarrages.
  */
 
 export type TestimonialRole = 'client' | 'prestataire'
@@ -22,7 +27,7 @@ export interface Testimonial {
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
-/** Avis d'exemple, pour que la section ne soit pas vide avant les premières contributions réelles. */
+/** Avis d'exemple (baseline), pour que la section ne soit pas vide avant les premières contributions réelles. */
 const SEED_TESTIMONIALS: Testimonial[] = [
   {
     id: 'seed-1',
@@ -74,15 +79,26 @@ const SEED_TESTIMONIALS: Testimonial[] = [
   },
 ]
 
-const testimonials: Testimonial[] = [...SEED_TESTIMONIALS]
-
-/** Les plus récents d'abord — nouvellement ajoutés en tête, comme un vrai fil d'avis. */
-export function listTestimonials(): Testimonial[] {
-  return [...testimonials].sort((a, b) => b.createdAt - a.createdAt)
+function toTestimonial(row: PrismaTestimonial): Testimonial {
+  return {
+    id: row.id,
+    name: row.name,
+    role: row.role as TestimonialRole,
+    message: row.message,
+    rating: row.rating,
+    createdAt: row.createdAt.getTime(),
+  }
 }
 
-export function addTestimonial(name: string, role: TestimonialRole, message: string, rating: number): Testimonial {
-  const testimonial: Testimonial = { id: randomUUID(), name, role, message, rating, createdAt: Date.now() }
-  testimonials.unshift(testimonial)
-  return testimonial
+/** Les plus récents d'abord — avis réels (base) et avis d'exemple (code) fusionnés. */
+export async function listTestimonials(): Promise<Testimonial[]> {
+  const rows = await prisma.testimonial.findMany()
+  return [...rows.map(toTestimonial), ...SEED_TESTIMONIALS].sort((a, b) => b.createdAt - a.createdAt)
+}
+
+export async function addTestimonial(name: string, role: TestimonialRole, message: string, rating: number): Promise<Testimonial> {
+  const row = await prisma.testimonial.create({
+    data: { name, role, message, rating, createdAt: new Date(Date.now()) },
+  })
+  return toTestimonial(row)
 }
