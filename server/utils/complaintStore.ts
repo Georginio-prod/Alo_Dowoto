@@ -1,20 +1,14 @@
-import { randomUUID } from 'node:crypto'
+import type { Complaint as PrismaComplaint } from '@prisma/client'
+import { prisma } from '~~/server/utils/prisma'
 import type { ComplaintCategory } from '~/data/complaintCategories'
 
 /**
- * Store en mémoire pour les réclamations déposées depuis /reclamation.
- * Remplace l'ancienne soumission purement locale (aucune route API, voir
- * l'historique de app/pages/reclamation.vue) par un vrai circuit, en
- * mémoire comme le reste de l'app tant qu'il n'y a pas de base de données
- * (voir #45/#46). Pas d'interface d'administration pour consulter/traiter
- * les réclamations dans ce lot — hors périmètre, seule la soumission est
- * couverte.
+ * Réclamations déposées depuis /reclamation (#357), persistées en base
+ * (Prisma/SQLite, ADR 0013). Contrairement à l'ancien store en mémoire, les
+ * réclamations survivent aux redémarrages du serveur.
  *
  * La liste des catégories (COMPLAINT_CATEGORIES) vit dans
- * app/data/complaintCategories.ts, pas ici : ce fichier importe
- * `node:crypto` et ne doit jamais être importé (en valeur) depuis du code
- * client, sous peine d'échec du build Vite (module Node externalisé côté
- * navigateur).
+ * app/data/complaintCategories.ts, pas ici.
  */
 
 export type { ComplaintCategory }
@@ -24,36 +18,40 @@ export interface Complaint {
   category: ComplaintCategory
   subject: string
   message: string
-  /** Email de contact pour le suivi — pré-rempli depuis le compte si connecté, sinon fourni par l'utilisateur (voir #129, même logique que FirstContactForm). */
+  /** Email de contact pour le suivi — pré-rempli depuis le compte si connecté, sinon fourni par l'utilisateur (#129). */
   contactEmail: string
   userId: string | null
   createdAt: number
 }
 
-const complaints: Complaint[] = []
+function toComplaint(row: PrismaComplaint): Complaint {
+  return {
+    id: row.id,
+    category: row.category as ComplaintCategory,
+    subject: row.subject,
+    message: row.message,
+    contactEmail: row.contactEmail,
+    userId: row.userId,
+    createdAt: row.createdAt.getTime(),
+  }
+}
 
-export function addComplaint(
+export async function addComplaint(
   category: ComplaintCategory,
   subject: string,
   message: string,
   contactEmail: string,
   userId: string | null,
-): Complaint {
-  const complaint: Complaint = {
-    id: randomUUID(),
-    category,
-    subject,
-    message,
-    contactEmail,
-    userId,
-    createdAt: Date.now(),
-  }
-  complaints.push(complaint)
-  return complaint
+): Promise<Complaint> {
+  const row = await prisma.complaint.create({
+    data: { category, subject, message, contactEmail, userId, createdAt: new Date(Date.now()) },
+  })
+  return toComplaint(row)
 }
 
-export function listComplaints(): Complaint[] {
-  return [...complaints].sort((a, b) => b.createdAt - a.createdAt)
+export async function listComplaints(): Promise<Complaint[]> {
+  const rows = await prisma.complaint.findMany({ orderBy: { createdAt: 'desc' } })
+  return rows.map(toComplaint)
 }
 
 /** Référence courte et lisible affichée à l'utilisateur pour le suivi de sa réclamation. */

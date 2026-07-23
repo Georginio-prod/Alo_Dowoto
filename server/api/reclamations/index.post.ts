@@ -43,6 +43,6 @@ export default defineEventHandler(async (event) => {
   const token = getCookie(event, SESSION_COOKIE)
   const user = await getSessionUser(token)
 
-  const complaint = addComplaint(category, subject, message, contactEmail, user?.id ?? null)
+  const complaint = await addComplaint(category, subject, message, contactEmail, user?.id ?? null)
   return { reference: complaintReference(complaint) }
 })
