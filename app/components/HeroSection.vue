@@ -42,6 +42,22 @@ const partners = [
       Plus de <strong class="text-dark"><CountUp :value="500" suffix="+" /></strong> prestataires vérifiés déjà inscrits
     </p>
 
+    <!-- Appel à l'action principal (#362) : le hero n'en avait aucun. Le lien
+         d'ancre défile en douceur vers la grille des secteurs (`#secteurs`),
+         point d'entrée existant du parcours — aucune logique nouvelle. -->
+    <div v-reveal :style="{ '--reveal-delay': '220ms' }" class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+      <a
+        href="#secteurs"
+        class="press inline-flex items-center gap-2 rounded-pill bg-primary px-7 py-3.5 text-base font-semibold text-white shadow-card-md transition-colors hover:bg-primary-hover"
+      >
+        Trouver un prestataire
+        <span aria-hidden="true">→</span>
+      </a>
+      <NuxtLink to="/formules" class="press link-underline text-sm font-medium text-muted">
+        Vous êtes prestataire ? Voir les formules
+      </NuxtLink>
+    </div>
+
     <!-- Bandeau de partenaires défilant en continu (boucle sans couture). -->
     <p v-reveal :style="{ '--reveal-delay': '240ms' }" class="partners-label mt-10">Ils nous font confiance</p>
     <div v-reveal :style="{ '--reveal-delay': '300ms' }" class="partners-marquee mt-4" role="group" aria-label="Ils nous font confiance">
