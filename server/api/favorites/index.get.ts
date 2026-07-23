@@ -6,7 +6,7 @@ export interface FavoriteItem {
 
 export default defineEventHandler(async (event) => {
   const user = await requireClientRole(event)
-  const favorites: FavoriteItem[] = listFavorites(user.id).map((favorite) => ({
+  const favorites: FavoriteItem[] = (await listFavorites(user.id)).map((favorite) => ({
     providerId: favorite.providerId,
     createdAt: favorite.createdAt,
     // Les favoris ne correspondent pas forcément à un prestataire de

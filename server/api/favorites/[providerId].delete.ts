@@ -6,6 +6,6 @@ export default defineEventHandler(async (event) => {
     badRequest('Identifiant du prestataire manquant.')
   }
 
-  removeFavorite(user.id, providerId)
+  await removeFavorite(user.id, providerId)
   return { ok: true }
 })
