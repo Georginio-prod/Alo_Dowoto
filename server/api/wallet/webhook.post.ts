@@ -2,6 +2,9 @@ interface WalletWebhookBody {
   rechargeId?: string
   status?: 'success' | 'failed'
   operatorRef?: string
+  /** Horodatage (ms epoch) et nonce anti-rejeu (#355), couverts par la signature HMAC. */
+  timestamp?: number
+  nonce?: string
 }
 
 /**
@@ -27,6 +30,9 @@ export default defineEventHandler(async (event) => {
   if (!body.rechargeId || (body.status !== 'success' && body.status !== 'failed')) {
     badRequest('Requête webhook invalide.')
   }
+  if (typeof body.timestamp !== 'number' || typeof body.nonce !== 'string' || !body.nonce) {
+    badRequest('Requête webhook invalide.')
+  }
 
   const recharge = await getRecharge(body.rechargeId)
   if (!recharge) {
@@ -34,9 +40,16 @@ export default defineEventHandler(async (event) => {
   }
 
   // Idempotent : une recharge déjà résolue renvoie son état actuel sans être
-  // retraitée (double envoi possible côté opérateur).
+  // retraitée (double envoi possible côté opérateur) — avant toute
+  // vérification anti-rejeu, qui ne protège que la fenêtre `pending` (#355).
   if (recharge.status !== 'pending') {
     return { recharge }
+  }
+
+  // Anti-rejeu (#355) : une recharge trop ancienne, ou dont le nonce a déjà
+  // servi pendant que cette recharge était `pending`, est refusée.
+  if (!isWebhookTimestampFresh(body.timestamp) || consumeWebhookNonce(body.nonce)) {
+    unauthorized('Signature invalide.')
   }
 
   const resolved = await resolveRecharge(recharge.id, body.status === 'success' ? 'confirmed' : 'failed', body.operatorRef)

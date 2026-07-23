@@ -37,3 +37,45 @@ export function isValidWebhookSignature(rawBody: string, signature: string | und
   if (expectedBuffer.length !== signatureBuffer.length) return false
   return timingSafeEqual(expectedBuffer, signatureBuffer)
 }
+
+/**
+ * Anti-rejeu (#355, audit M4) : un webhook signature valide capturé peut être
+ * rejoué tant que le paiement/recharge visé reste `pending` (une fois résolu,
+ * le rejeu est déjà sans effet — idempotence par statut dans
+ * paymentStore/walletRechargeStore). `timestamp` et `nonce` font partie du
+ * corps signé : la signature HMAC les couvre déjà, un attaquant ne peut ni
+ * les falsifier ni les retirer sans invalider la signature.
+ *
+ * Le nonce est suivi en mémoire (un seul process PM2, voir
+ * ecosystem.config.cjs) avec une expiration alignée sur la fenêtre de
+ * fraîcheur : inutile de le retenir plus longtemps qu'un webhook ne peut de
+ * toute façon plus être accepté comme frais.
+ */
+const WEBHOOK_REPLAY_WINDOW_MS = 5 * 60 * 1000
+
+const consumedNonces = new Map<string, number>()
+
+function pruneExpiredNonces(now: number): void {
+  for (const [nonce, expiresAt] of consumedNonces) {
+    if (expiresAt <= now) consumedNonces.delete(nonce)
+  }
+}
+
+/** Un webhook daté hors de la fenêtre de fraîcheur (trop ancien, ou trop dans le futur — dérive d'horloge) est refusé. */
+export function isWebhookTimestampFresh(timestamp: number): boolean {
+  return Math.abs(Date.now() - timestamp) <= WEBHOOK_REPLAY_WINDOW_MS
+}
+
+/**
+ * Marque ce nonce comme consommé et indique s'il l'était déjà. À n'appeler
+ * que pour une résolution encore `pending` — un rejeu après résolution est
+ * déjà inoffensif et ne doit pas passer par cette vérification (voir les
+ * appelants dans server/api/payments/webhook.post.ts et wallet/webhook.post.ts).
+ */
+export function consumeWebhookNonce(nonce: string): boolean {
+  const now = Date.now()
+  pruneExpiredNonces(now)
+  if (consumedNonces.has(nonce)) return true
+  consumedNonces.set(nonce, now + WEBHOOK_REPLAY_WINDOW_MS)
+  return false
+}
