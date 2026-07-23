@@ -346,3 +346,15 @@ model ConversationRead {
 
   @@id([conversationId, userId])
 }
+
+/// Favori client → prestataire (#65, #357). Pas de clé étrangère : un
+/// prestataire peut être une fiche de l'annuaire de démonstration (pas un
+/// compte User). La clé primaire composite garantit l'idempotence.
+model Favorite {
+  clientId   String
+  providerId String
+  createdAt  DateTime @default(now())
+
+  @@id([clientId, providerId])
+  @@index([clientId])
+}

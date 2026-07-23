@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     badRequest('L\'identifiant du prestataire est requis.')
   }
 
-  const favorite = addFavorite(user.id, providerId)
+  const favorite = await addFavorite(user.id, providerId)
   setResponseStatus(event, 201)
   return { favorite }
 })
