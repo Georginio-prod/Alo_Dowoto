@@ -30,8 +30,12 @@ export interface TestServer {
  */
 export async function startTestServer(
   routes: { method: 'get' | 'post' | 'delete' | 'patch'; path: string; handler: EventHandler }[],
+  middleware: EventHandler[] = [],
 ): Promise<TestServer> {
   const app = createApp()
+  for (const handler of middleware) {
+    app.use(handler)
+  }
   const router = createRouter()
   for (const route of routes) {
     router[route.method](route.path, route.handler)
