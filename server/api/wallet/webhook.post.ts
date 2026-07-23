@@ -1,9 +1,3 @@
-interface WalletWebhookBody {
-  rechargeId?: string
-  status?: 'success' | 'failed'
-  operatorRef?: string
-}
-
 /**
  * Webhook opérateur (Flooz/T-Money) confirmant une recharge de portefeuille
  * (#193), même mécanique que server/api/payments/webhook.post.ts (#34).
@@ -16,17 +10,19 @@ export default defineEventHandler(async (event) => {
     unauthorized('Signature invalide.')
   }
 
-  let body: WalletWebhookBody
+  let parsed: unknown
   try {
     // Corps signé mais potentiellement malformé : un parse nu lèverait une 500
     // non maîtrisée. On répond une 400 explicite à la place.
-    body = JSON.parse(rawBody || '{}') as WalletWebhookBody
+    parsed = JSON.parse(rawBody || '{}')
   } catch {
     badRequest('Corps webhook illisible (JSON invalide).')
   }
-  if (!body.rechargeId || (body.status !== 'success' && body.status !== 'failed')) {
-    badRequest('Requête webhook invalide.')
+  const result = walletWebhookSchema.safeParse(parsed)
+  if (!result.success) {
+    badRequest(result.error.issues[0]?.message ?? 'Requête webhook invalide.')
   }
+  const body = result.data
 
   const recharge = await getRecharge(body.rechargeId)
   if (!recharge) {

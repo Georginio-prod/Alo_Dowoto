@@ -1,7 +1,3 @@
-interface RebookBody {
-  description?: string
-}
-
 /**
  * Reprend un prestataire déjà utilisé (#266, rebooking rapide) : crée une
  * nouvelle commande en séquestre sur une conversation dont la précédente
@@ -24,11 +20,7 @@ export default defineEventHandler(async (event) => {
     conflict('Une reprise n\'est possible qu\'après une prestation terminée ou annulée avec ce prestataire.')
   }
 
-  const body = await readBody<RebookBody>(event)
-  const description = body?.description?.trim()
-  if (!description) {
-    badRequest('Décrivez votre nouvelle demande pour relancer ce prestataire.')
-  }
+  const { description } = await readSchemaBody(event, rebookSchema)
 
   const amount = resolveProviderRate(conversation.providerId)
   if (amount === null) {

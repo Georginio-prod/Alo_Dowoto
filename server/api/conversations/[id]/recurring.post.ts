@@ -1,11 +1,3 @@
-import type { RecurringFrequency } from '~~/server/utils/recurringServiceStore'
-
-interface CreateRecurringServiceBody {
-  frequency?: RecurringFrequency
-}
-
-const VALID_FREQUENCIES: RecurringFrequency[] = ['hebdomadaire', 'mensuelle']
-
 /**
  * Le chercheur met en place un service récurrent auprès du prestataire de
  * cette conversation (#271) : la fréquence choisie déclenche un prélèvement
@@ -21,10 +13,7 @@ export default defineEventHandler(async (event) => {
     notFound('Conversation introuvable.')
   }
 
-  const body = await readBody<CreateRecurringServiceBody>(event)
-  if (!body?.frequency || !VALID_FREQUENCIES.includes(body.frequency)) {
-    badRequest('Fréquence invalide (hebdomadaire ou mensuelle).')
-  }
+  const { frequency } = await readSchemaBody(event, recurringServiceSchema)
 
   const amount = resolveProviderRate(conversation.providerId)
   if (amount === null) {
@@ -36,7 +25,7 @@ export default defineEventHandler(async (event) => {
     clientId: user.id,
     providerId: conversation.providerId,
     amount,
-    frequency: body.frequency,
+    frequency,
   })
 
   if (!result.ok) {

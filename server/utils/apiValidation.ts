@@ -32,7 +32,7 @@ export async function readSchemaBody<TSchema extends z.ZodType>(
 }
 
 /** Chaîne obligatoire une fois espaces retirés, avec message dédié. */
-function requiredTrimmed(message: string) {
+export function requiredTrimmed(message: string) {
   return z
     .string({ error: message })
     .transform((value) => value.trim())
@@ -101,6 +101,26 @@ export const walletWithdrawSchema = z.object({
   amount: z
     .number({ error: 'Montant invalide.' })
     .refine((value) => Number.isFinite(value) && value > 0, 'Montant invalide.'),
+})
+
+/**
+ * Corps (déjà parsé en JSON) de `POST /api/payments/webhook` (#34) et
+ * `POST /api/wallet/webhook` (#193). Validé après vérification de signature
+ * HMAC — pas via `readSchemaBody` (le corps brut doit d'abord être lu comme
+ * texte pour la signature, voir server/utils/webhookSignature.ts), mais par
+ * un `safeParse` direct dans le handler sur l'objet déjà parsé.
+ */
+export const paymentWebhookSchema = z.object({
+  paymentId: requiredTrimmed('Requête webhook invalide.'),
+  status: z.enum(['success', 'failed'], { error: 'Requête webhook invalide.' }),
+  operatorRef: z.string().optional(),
+})
+
+/** Même forme que `paymentWebhookSchema`, pour une recharge de portefeuille plutôt qu'un paiement d'abonnement. */
+export const walletWebhookSchema = z.object({
+  rechargeId: requiredTrimmed('Requête webhook invalide.'),
+  status: z.enum(['success', 'failed'], { error: 'Requête webhook invalide.' }),
+  operatorRef: z.string().optional(),
 })
 
 /** Corps de `POST /api/conversations/[id]/dispute` (#197, ouverture d'un litige escrow). */

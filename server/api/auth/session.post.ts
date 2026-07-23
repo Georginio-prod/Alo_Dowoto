@@ -1,34 +1,9 @@
-import type { ContactMethod } from '~~/server/utils/contact'
-import type { Role } from '~~/server/utils/userStore'
-
-interface CreateSessionBody {
-  method?: ContactMethod
-  value?: string
-  role?: Role
-  /** Obligatoire pour se connecter à un compte existant déjà finalisé (#126). */
-  password?: string
-  /** Session persistante (30 jours) vs. session de navigateur (#126, "Se souvenir de moi"). */
-  rememberMe?: boolean
-  /** Collectés dès la première page d'inscription — obligatoires à la création du compte. */
-  username?: string
-  firstName?: string
-  lastName?: string
-  location?: string
-  /** Coordonnées GPS réelles, capturées en option via la géolocalisation du navigateur. */
-  latitude?: number
-  longitude?: number
-}
-
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody<CreateSessionBody>(event)
+  const body = await readSchemaBody(event, createSessionSchema)
 
-  if (body?.method !== 'phone' && body?.method !== 'email') {
-    badRequest('Méthode de contact invalide.')
-  }
-
-  const contact = normalizeContact(body.method, body.value ?? '')
+  const contact = normalizeContact(body.method, body.value)
   if (!contact) {
     badRequest('Contact invalide.')
   }
@@ -42,8 +17,7 @@ export default defineEventHandler(async (event) => {
   // par rapport à la ville en texte libre (obligatoire, voir `location`).
   const hasValidCoords = isValidCoordinatePair(body.latitude, body.longitude)
 
-  const role = body.role === 'client' || body.role === 'prestataire' ? body.role : undefined
-  const { user, created } = await findOrCreateUser(contact, role, {
+  const { user, created } = await findOrCreateUser(contact, body.role, {
     username: body.username ?? '',
     firstName: body.firstName ?? '',
     lastName: body.lastName ?? '',

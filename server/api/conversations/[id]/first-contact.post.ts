@@ -1,13 +1,5 @@
 import { getSectorFields } from '~~/app/data/firstContactSectorFields'
 
-interface FirstContactBody {
-  description?: string
-  contact?: string
-  urgency?: string
-  /** Réponses aux champs additionnels différenciés par secteur (#295, voir app/data/firstContactSectorFields.ts). */
-  sectorAnswers?: Record<string, string>
-}
-
 /**
  * Formulaire obligatoire de première prise de contact (#129), affiché côté
  * client une seule fois par conversation avant que le fil de discussion ne
@@ -27,17 +19,7 @@ export default defineEventHandler(async (event) => {
     conflict('La prise de contact a déjà été effectuée pour cette conversation.')
   }
 
-  const body = await readBody<FirstContactBody>(event)
-  const description = body?.description?.trim()
-  const contact = body?.contact?.trim()
-  const urgency = body?.urgency?.trim()
-
-  if (!description) {
-    badRequest('Décrivez votre besoin pour envoyer votre demande.')
-  }
-  if (!contact) {
-    badRequest('Vos coordonnées sont requises pour envoyer votre demande.')
-  }
+  const { description, contact, urgency, sectorAnswers } = await readSchemaBody(event, firstContactSchema)
 
   // Anti-contournement (#265) : la description et le motif d'urgence sont du
   // texte libre, contrairement à `contact` qui a son propre traitement
@@ -50,7 +32,7 @@ export default defineEventHandler(async (event) => {
   }
   const urgencyReason = urgency ? detectContournementAttempt(urgency) : null
   if (urgencyReason) {
-    await logContournementAttempt({ conversationId: conversation.id, userId: user.id, reason: urgencyReason, text: urgency as string })
+    await logContournementAttempt({ conversationId: conversation.id, userId: user.id, reason: urgencyReason, text: urgency })
     badRequest('Le champ « urgence / délai souhaité » semble contenir un numéro, un e-mail ou une proposition hors plateforme, ce qui est interdit par les CGU.')
   }
 
@@ -61,7 +43,6 @@ export default defineEventHandler(async (event) => {
   // fait pas foi (requis, anti-contournement sur les champs texte).
   const providerSector = getProviderById(conversation.providerId)?.sector ?? null
   const sectorFields = getSectorFields(providerSector)
-  const sectorAnswers = body?.sectorAnswers ?? {}
   const sectorAnswerLines: string[] = []
   for (const field of sectorFields) {
     const value = sectorAnswers[field.key]?.trim()

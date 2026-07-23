@@ -1,11 +1,5 @@
 import { findPlan } from '~~/app/data/plans'
 
-interface WebhookBody {
-  paymentId?: string
-  status?: 'success' | 'failed'
-  operatorRef?: string
-}
-
 export default defineEventHandler(async (event) => {
   const rawBody = (await readRawBody(event)) ?? ''
   const signature = getHeader(event, 'x-webhook-signature')
@@ -14,17 +8,19 @@ export default defineEventHandler(async (event) => {
     unauthorized('Signature invalide.')
   }
 
-  let body: WebhookBody
+  let parsed: unknown
   try {
     // Corps signé mais potentiellement malformé : un parse nu lèverait une 500
     // non maîtrisée. On répond une 400 explicite à la place.
-    body = JSON.parse(rawBody || '{}') as WebhookBody
+    parsed = JSON.parse(rawBody || '{}')
   } catch {
     badRequest('Corps webhook illisible (JSON invalide).')
   }
-  if (!body.paymentId || (body.status !== 'success' && body.status !== 'failed')) {
-    badRequest('Requête webhook invalide.')
+  const result = paymentWebhookSchema.safeParse(parsed)
+  if (!result.success) {
+    badRequest(result.error.issues[0]?.message ?? 'Requête webhook invalide.')
   }
+  const body = result.data
 
   const payment = await getPayment(body.paymentId)
   if (!payment) {

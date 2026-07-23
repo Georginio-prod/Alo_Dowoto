@@ -1,8 +1,3 @@
-interface AddAvailabilityBody {
-  startDate?: string
-  endDate?: string
-}
-
 /**
  * Déclare une période d'indisponibilité (#290) : le prestataire n'apparaît
  * plus dans les propositions de recherche/matching pour ces dates (voir
@@ -10,13 +5,9 @@ interface AddAvailabilityBody {
  */
 export default defineEventHandler(async (event) => {
   const user = await requireProviderRole(event)
-  const body = await readBody<AddAvailabilityBody>(event)
+  const { startDate, endDate } = await readSchemaBody(event, addAvailabilitySchema)
 
-  if (!body?.startDate || !body?.endDate) {
-    badRequest('Les dates de début et de fin sont requises.')
-  }
-
-  const result = addUnavailabilityPeriod(user.id, body.startDate, body.endDate)
+  const result = addUnavailabilityPeriod(user.id, startDate, endDate)
 
   if (!result.ok) {
     if (result.error === 'invalid_date') badRequest('Format de date invalide (attendu : AAAA-MM-JJ).')

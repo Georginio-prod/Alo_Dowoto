@@ -4,8 +4,10 @@ import {
   disputeEscrowSchema,
   initiatePaymentSchema,
   MIN_RECHARGE_AMOUNT,
+  paymentWebhookSchema,
   respondDisputeSchema,
   walletRechargeSchema,
+  walletWebhookSchema,
   walletWithdrawSchema,
 } from '~~/server/utils/apiValidation'
 
@@ -114,5 +116,37 @@ describe('cancelEscrowSchema (#196, validation POST /api/conversations/[id]/canc
   it('rejette un motif absent ou vide après trim', () => {
     expect(firstError(cancelEscrowSchema, { reason: '' })).toBe("Le motif d'annulation est obligatoire.")
     expect(firstError(cancelEscrowSchema, {})).toBe("Le motif d'annulation est obligatoire.")
+  })
+})
+
+describe('paymentWebhookSchema (#34/#356, validation du corps déjà parsé de POST /api/payments/webhook)', () => {
+  it('accepte un corps valide', () => {
+    const result = paymentWebhookSchema.safeParse({ paymentId: 'pay_1', status: 'success', operatorRef: 'OP-1' })
+    expect(result.success).toBe(true)
+  })
+
+  it('operatorRef est optionnel', () => {
+    expect(paymentWebhookSchema.safeParse({ paymentId: 'pay_1', status: 'failed' }).success).toBe(true)
+  })
+
+  it('rejette un paymentId absent ou vide', () => {
+    expect(firstError(paymentWebhookSchema, { status: 'success' })).toBe('Requête webhook invalide.')
+    expect(firstError(paymentWebhookSchema, { paymentId: '  ', status: 'success' })).toBe('Requête webhook invalide.')
+  })
+
+  it('rejette un statut hors success/failed', () => {
+    expect(firstError(paymentWebhookSchema, { paymentId: 'pay_1', status: 'en_cours' })).toBe('Requête webhook invalide.')
+    expect(firstError(paymentWebhookSchema, { paymentId: 'pay_1' })).toBe('Requête webhook invalide.')
+  })
+})
+
+describe('walletWebhookSchema (#193/#356, validation du corps déjà parsé de POST /api/wallet/webhook)', () => {
+  it('accepte un corps valide', () => {
+    expect(walletWebhookSchema.safeParse({ rechargeId: 'rec_1', status: 'success' }).success).toBe(true)
+  })
+
+  it('rejette un rechargeId absent ou un statut invalide', () => {
+    expect(firstError(walletWebhookSchema, { status: 'success' })).toBe('Requête webhook invalide.')
+    expect(firstError(walletWebhookSchema, { rechargeId: 'rec_1', status: 'annule' })).toBe('Requête webhook invalide.')
   })
 })
