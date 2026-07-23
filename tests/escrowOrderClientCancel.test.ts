@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { describe, expect, it, vi } from 'vitest'
+import { findOrCreateConversation } from '~~/server/utils/conversationStore'
 import {
   cancelEscrowOrderByClient,
   CLIENT_CANCELLATION_GRACE_PERIOD_MS,
@@ -25,7 +26,7 @@ async function payOnly(conversationId: string, client: string, provider: string,
 
 describe('cancelEscrowOrderByClient — grille d’annulation symétrique (#275)', () => {
   it('rembourse intégralement le chercheur dans le délai de grâce, sans indemniser le prestataire', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     const provider = id()
     await payOnly(conversationId, client, provider, 5000)
@@ -42,7 +43,7 @@ describe('cancelEscrowOrderByClient — grille d’annulation symétrique (#275)
   })
 
   it('indemnise le prestataire et rembourse le solde au chercheur après le délai de grâce', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     const provider = id()
     let now = 1_000_000
@@ -62,7 +63,7 @@ describe('cancelEscrowOrderByClient — grille d’annulation symétrique (#275)
   })
 
   it('refuse sans motif', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     await payOnly(conversationId, client, id(), 3000)
 
@@ -71,14 +72,14 @@ describe('cancelEscrowOrderByClient — grille d’annulation symétrique (#275)
   })
 
   it('refuse d’annuler une commande non payée (awaiting_payment)', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     await createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 3000 })
 
     expect(await cancelEscrowOrderByClient(conversationId, 'motif')).toEqual({ ok: false, error: 'invalid_status' })
   })
 
   it('refuse d’annuler une commande déjà marquée terminée (delivered) — relève du litige, pas de l’annulation', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     await payOnly(conversationId, client, id(), 3000)
     await recordEscrowOrderCheckIn(conversationId, null)
