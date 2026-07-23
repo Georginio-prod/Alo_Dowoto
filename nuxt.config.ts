@@ -3,7 +3,7 @@ import tailwindcss from '@tailwindcss/vite'
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
-  modules: ['@nuxt/eslint'],
+  modules: ['@nuxt/eslint', '@nuxtjs/i18n'],
   devtools: { enabled: true },
   css: [
     // Police Poppins auto-hébergée (@fontsource) plutôt que servie depuis le
@@ -32,6 +32,19 @@ export default defineNuxtConfig({
       }
     }
   },
+  // FR par défaut, EN en second (#364). `<html lang>` est géré dynamiquement
+  // via useLocaleHead() dans app.vue (remplace le `lang="fr"` figé de #343) :
+  // pas de préfixe d'URL (`no_prefix`) pour ne pas casser les routes déjà
+  // référencées (sitemap, liens internes, #358).
+  i18n: {
+    defaultLocale: 'fr',
+    locales: [
+      { code: 'fr', language: 'fr-FR', name: 'Français', file: 'fr.json' },
+      { code: 'en', language: 'en-US', name: 'English', file: 'en.json' }
+    ],
+    strategy: 'no_prefix',
+    detectBrowserLanguage: false
+  },
   typescript: {
     strict: true,
     typeCheck: true
@@ -48,9 +61,8 @@ export default defineNuxtConfig({
     // Transition globale entre les pages (voir .page-* dans main.css).
     pageTransition: { name: 'page', mode: 'out-in' },
     head: {
-      // Langue du document : requise pour les lecteurs d'écran (prononciation)
-      // et le référencement (contenu intégralement en français, #343).
-      htmlAttrs: { lang: 'fr' },
+      // `htmlAttrs.lang` n'est plus figé ici (#343) : géré dynamiquement par
+      // useLocaleHead() dans app.vue selon la langue active (#364).
       // La police Poppins est désormais auto-hébergée (voir la liste `css`
       // ci-dessus, #341) : plus aucun `link` vers fonts.googleapis.com /
       // fonts.gstatic.com ni `preconnect` associé.

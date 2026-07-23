@@ -1,0 +1,92 @@
+{
+  "header": {
+    "searchPlaceholder": "Search for a service: plumbing, cleaning, web developer…",
+    "searchAriaLabel": "Search for a service",
+    "searchSubmit": "Search",
+    "login": "Log in",
+    "becomeProvider": "Become a provider"
+  },
+  "nav": {
+    "ariaLabel": "Main navigation",
+    "find": {
+      "menu": "Find a provider",
+      "title": "Find the right provider",
+      "description": "Compare verified profiles, prices and reviews before reaching out.",
+      "allCategories": "All categories →",
+      "postRequest": "Post a request →"
+    },
+    "become": {
+      "menu": "Become a provider",
+      "title": "Grow your business",
+      "description": "Get requests from clients near you, with no prospecting effort.",
+      "advantagesLabel": "Benefits",
+      "dailyLabel": "Day to day",
+      "verifiedProfile": "Verified profile",
+      "verifiedProfileDesc": "Trust badge visible to clients",
+      "mobileMoney": "Mobile Money payments",
+      "mobileMoneyDesc": "Flooz and T-Money, simple and fast",
+      "freeTrial": "14-day free trial",
+      "freeTrialDesc": "No commitment beyond the first period",
+      "targetedRequests": "Targeted requests",
+      "targetedRequestsDesc": "Only in your sector and your city",
+      "messaging": "Built-in messaging",
+      "messagingDesc": "Chat directly with your clients",
+      "support": "Dedicated support",
+      "supportDesc": "A team that listens",
+      "cta": "Become a provider →",
+      "seePlans": "See plans →"
+    },
+    "why": {
+      "menu": "Why WorkTogo",
+      "title": "Why WorkTogo",
+      "description": "Connecting you with verified providers, in every sector, all across Togo.",
+      "resourcesLabel": "Resources",
+      "helpLabel": "Help",
+      "about": "About us",
+      "aboutDesc": "Our mission and our team",
+      "faq": "Frequently asked questions",
+      "faqDesc": "How it works, step by step",
+      "helpCenter": "Help center",
+      "helpCenterDesc": "Guides and detailed answers",
+      "contact": "Contact",
+      "contactDesc": "Write to our team",
+      "seeAllHelp": "See all help →"
+    },
+    "pricing": "Pricing"
+  },
+  "footer": {
+    "tagline": "Connecting you with verified providers, in every sector, all across Togo.",
+    "aboutUs": "About us",
+    "sectorsLabel": "Sectors",
+    "allCategories": "All categories",
+    "supportLabel": "Support",
+    "faq": "FAQ",
+    "helpCenter": "Help center",
+    "contactSupport": "Contact support",
+    "complaint": "Complaint",
+    "legalLabel": "Legal",
+    "legalNotice": "Legal notice",
+    "terms": "Terms of service",
+    "privacy": "Privacy",
+    "cookies": "Cookies",
+    "contactLabel": "Contact",
+    "socialComingSoon": "{name} (coming soon)",
+    "socialComingSoonAria": "{name} — coming soon",
+    "copyright": "© {year} {company} — Togo"
+  },
+  "home": {
+    "hero": {
+      "title": "Find the {highlight}, in every sector",
+      "titleHighlight": "right provider",
+      "subtitle": "Crafts, retail, industry, home services… Compare verified professionals all across Togo.",
+      "providerCountPrefix": "Over",
+      "providerCountSuffix": "verified providers already registered",
+      "ctaFind": "Find a provider",
+      "ctaProvider": "Are you a provider? See our plans",
+      "trustLabel": "Trusted by"
+    }
+  },
+  "language": {
+    "switchTo": "Switch to {name}"
+  }
+}

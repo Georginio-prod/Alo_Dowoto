@@ -4,6 +4,8 @@ import { SECTORS } from '~/data/sectors'
 
 /** Footer complet (#132) : à propos, secteurs, assistance, légal, réseaux sociaux, contact, copyright. */
 
+const { t } = useI18n({ useScope: 'global' })
+
 const year = new Date().getFullYear()
 const featuredSectors = SECTORS.slice(0, 6)
 
@@ -22,17 +24,17 @@ const SOCIAL_LINKS = [
         <div class="col-span-2 sm:col-span-3 lg:col-span-1">
           <div class="mb-2.5 text-[17px] font-extrabold text-dark">Work<span class="text-primary">Togo</span></div>
           <p class="mb-4 text-[12.5px] leading-relaxed text-muted">
-            La mise en relation avec des prestataires vérifiés, dans tous les secteurs, partout au Togo.
+            {{ t('footer.tagline') }}
           </p>
-          <NuxtLink to="/a-propos" class="press text-[12.5px] font-semibold text-primary">Qui sommes-nous</NuxtLink>
+          <NuxtLink to="/a-propos" class="press text-[12.5px] font-semibold text-primary">{{ t('footer.aboutUs') }}</NuxtLink>
 
           <div class="mt-4 flex gap-2">
             <span
               v-for="social in SOCIAL_LINKS"
               :key="social.label"
               class="flex size-8 items-center justify-center rounded-full bg-bg text-[12px] font-bold text-muted"
-              :title="`${social.label} (bientôt disponible)`"
-              :aria-label="`${social.label} — bientôt disponible`"
+              :title="t('footer.socialComingSoon', { name: social.label })"
+              :aria-label="t('footer.socialComingSoonAria', { name: social.label })"
             >
               {{ social.icon }}
             </span>
@@ -40,7 +42,7 @@ const SOCIAL_LINKS = [
         </div>
 
         <div>
-          <div class="mb-3 text-[12px] font-bold uppercase tracking-wide text-dark">Secteurs</div>
+          <div class="mb-3 text-[12px] font-bold uppercase tracking-wide text-dark">{{ t('footer.sectorsLabel') }}</div>
           <ul class="flex flex-col gap-2">
             <li v-for="sector in featuredSectors" :key="sector.slug">
               <NuxtLink :to="`/categories/${sector.slug}`" class="press text-[12.5px] text-muted hover:text-primary">
@@ -49,34 +51,34 @@ const SOCIAL_LINKS = [
             </li>
             <li>
               <NuxtLink to="/categories" class="press text-[12.5px] font-semibold text-primary">
-                Toutes les catégories
+                {{ t('footer.allCategories') }}
               </NuxtLink>
             </li>
           </ul>
         </div>
 
         <div>
-          <div class="mb-3 text-[12px] font-bold uppercase tracking-wide text-dark">Assistance</div>
+          <div class="mb-3 text-[12px] font-bold uppercase tracking-wide text-dark">{{ t('footer.supportLabel') }}</div>
           <ul class="flex flex-col gap-2">
-            <li><NuxtLink to="/faq" class="press text-[12.5px] text-muted hover:text-primary">FAQ</NuxtLink></li>
-            <li><NuxtLink to="/aide" class="press text-[12.5px] text-muted hover:text-primary">Centre d'aide</NuxtLink></li>
-            <li><NuxtLink to="/contact" class="press text-[12.5px] text-muted hover:text-primary">Contacter le support</NuxtLink></li>
-            <li><NuxtLink to="/reclamation" class="press text-[12.5px] text-muted hover:text-primary">Réclamation</NuxtLink></li>
+            <li><NuxtLink to="/faq" class="press text-[12.5px] text-muted hover:text-primary">{{ t('footer.faq') }}</NuxtLink></li>
+            <li><NuxtLink to="/aide" class="press text-[12.5px] text-muted hover:text-primary">{{ t('footer.helpCenter') }}</NuxtLink></li>
+            <li><NuxtLink to="/contact" class="press text-[12.5px] text-muted hover:text-primary">{{ t('footer.contactSupport') }}</NuxtLink></li>
+            <li><NuxtLink to="/reclamation" class="press text-[12.5px] text-muted hover:text-primary">{{ t('footer.complaint') }}</NuxtLink></li>
           </ul>
         </div>
 
         <div>
-          <div class="mb-3 text-[12px] font-bold uppercase tracking-wide text-dark">Légal</div>
+          <div class="mb-3 text-[12px] font-bold uppercase tracking-wide text-dark">{{ t('footer.legalLabel') }}</div>
           <ul class="flex flex-col gap-2">
-            <li><NuxtLink to="/mentions-legales" class="press text-[12.5px] text-muted hover:text-primary">Mentions légales</NuxtLink></li>
-            <li><NuxtLink to="/cgu" class="press text-[12.5px] text-muted hover:text-primary">CGU</NuxtLink></li>
-            <li><NuxtLink to="/confidentialite" class="press text-[12.5px] text-muted hover:text-primary">Confidentialité</NuxtLink></li>
-            <li><NuxtLink to="/cookies" class="press text-[12.5px] text-muted hover:text-primary">Cookies</NuxtLink></li>
+            <li><NuxtLink to="/mentions-legales" class="press text-[12.5px] text-muted hover:text-primary">{{ t('footer.legalNotice') }}</NuxtLink></li>
+            <li><NuxtLink to="/cgu" class="press text-[12.5px] text-muted hover:text-primary">{{ t('footer.terms') }}</NuxtLink></li>
+            <li><NuxtLink to="/confidentialite" class="press text-[12.5px] text-muted hover:text-primary">{{ t('footer.privacy') }}</NuxtLink></li>
+            <li><NuxtLink to="/cookies" class="press text-[12.5px] text-muted hover:text-primary">{{ t('footer.cookies') }}</NuxtLink></li>
           </ul>
         </div>
 
         <div>
-          <div class="mb-3 text-[12px] font-bold uppercase tracking-wide text-dark">Contact</div>
+          <div class="mb-3 text-[12px] font-bold uppercase tracking-wide text-dark">{{ t('footer.contactLabel') }}</div>
           <ul class="flex flex-col gap-2">
             <li>
               <a :href="`mailto:${SUPPORT_EMAIL}`" class="press text-[12.5px] text-muted hover:text-primary">{{ SUPPORT_EMAIL }}</a>
@@ -89,7 +91,7 @@ const SOCIAL_LINKS = [
       </div>
 
       <div class="mt-10 border-t border-hairline pt-5 text-center text-[11.5px] text-muted">
-        © {{ year }} {{ COMPANY_NAME }} — Togo
+        {{ t('footer.copyright', { year, company: COMPANY_NAME }) }}
       </div>
     </div>
   </footer>
