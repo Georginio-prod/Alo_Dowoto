@@ -358,3 +358,29 @@ model Favorite {
   @@id([clientId, providerId])
   @@index([clientId])
 }
+
+/// Réclamation déposée depuis /reclamation (#357). Pas de clé étrangère :
+/// `userId` est null pour une réclamation déposée sans compte connecté.
+model Complaint {
+  id           String   @id @default(uuid())
+  category     String
+  subject      String
+  message      String
+  contactEmail String
+  userId       String?
+  createdAt    DateTime @default(now())
+}
+
+/// Journal des tentatives de contournement détectées dans la messagerie
+/// (#265, #357) — pour identifier des comptes récidivistes côté support.
+model ContournementAttempt {
+  id             String   @id @default(uuid())
+  conversationId String
+  userId         String
+  reason         String
+  /// Extrait tronqué du message bloqué (audit) — jamais le message intégral.
+  excerpt        String
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+}

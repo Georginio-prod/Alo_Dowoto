@@ -45,12 +45,12 @@ export default defineEventHandler(async (event) => {
   // ici est bloqué et journalisé de la même façon que dans la messagerie.
   const descriptionReason = detectContournementAttempt(description)
   if (descriptionReason) {
-    logContournementAttempt({ conversationId: conversation.id, userId: user.id, reason: descriptionReason, text: description })
+    await logContournementAttempt({ conversationId: conversation.id, userId: user.id, reason: descriptionReason, text: description })
     badRequest('Votre description semble contenir un numéro, un e-mail ou une proposition hors plateforme, ce qui est interdit par les CGU.')
   }
   const urgencyReason = urgency ? detectContournementAttempt(urgency) : null
   if (urgencyReason) {
-    logContournementAttempt({ conversationId: conversation.id, userId: user.id, reason: urgencyReason, text: urgency as string })
+    await logContournementAttempt({ conversationId: conversation.id, userId: user.id, reason: urgencyReason, text: urgency as string })
     badRequest('Le champ « urgence / délai souhaité » semble contenir un numéro, un e-mail ou une proposition hors plateforme, ce qui est interdit par les CGU.')
   }
 
@@ -72,7 +72,7 @@ export default defineEventHandler(async (event) => {
     if (field.type === 'text') {
       const reason = detectContournementAttempt(value)
       if (reason) {
-        logContournementAttempt({ conversationId: conversation.id, userId: user.id, reason, text: value })
+        await logContournementAttempt({ conversationId: conversation.id, userId: user.id, reason, text: value })
         badRequest(`Le champ « ${field.label} » semble contenir un numéro, un e-mail ou une proposition hors plateforme, ce qui est interdit par les CGU.`)
       }
     }

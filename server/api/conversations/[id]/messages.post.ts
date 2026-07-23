@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
   // écriture, et journalisé pour l'équipe support.
   const contournementReason = detectContournementAttempt(text)
   if (contournementReason) {
-    logContournementAttempt({ conversationId: conversation.id, userId: user.id, reason: contournementReason, text })
+    await logContournementAttempt({ conversationId: conversation.id, userId: user.id, reason: contournementReason, text })
     badRequest('Ce message semble contenir un numéro, un e-mail ou une proposition hors plateforme, ce qui est interdit par les CGU. Utilisez la messagerie WorkTogo pour tous vos échanges.')
   }
 
