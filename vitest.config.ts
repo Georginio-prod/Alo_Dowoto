@@ -23,8 +23,13 @@ export default defineConfig({
           h3: [
             'defineEventHandler', 'getRouterParam', 'getRouterParams', 'readBody', 'readRawBody',
             'getQuery', 'getCookie', 'setCookie', 'deleteCookie', 'setResponseStatus', 'createError',
-            'getHeader', 'getRequestURL', 'sendRedirect', 'setResponseHeader',
+            'getHeader', 'getRequestURL', 'sendRedirect', 'setResponseHeader', 'setResponseHeaders',
           ],
+          // server/plugins/**, même logique que server/api/** ci-dessus (#354).
+          // `nitropack/runtime/plugin` plutôt que le barrel `nitropack/runtime` :
+          // ce dernier réexporte des modules à imports virtuels (ex. storage),
+          // introuvables hors d'une vraie build Nitro.
+          'nitropack/runtime/plugin': ['defineNitroPlugin'],
         },
       ],
       dts: false,
