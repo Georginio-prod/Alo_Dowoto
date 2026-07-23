@@ -6,7 +6,7 @@
 export default defineEventHandler(async (event) => {
   const user = await requireClientRole(event)
   const id = getRouterParam(event, 'id')
-  const conversation = id ? getConversationById(id) : null
+  const conversation = id ? await getConversationById(id) : null
 
   if (!conversation || !isConversationParticipant(conversation, user.id) || conversation.clientId !== user.id) {
     notFound('Conversation introuvable.')

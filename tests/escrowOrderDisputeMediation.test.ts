@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
+import { findOrCreateConversation } from '~~/server/utils/conversationStore'
 import { recordEscrowOrderCheckIn, recordEscrowOrderCheckOut } from '~~/server/utils/escrowInterventionProof'
 import {
   createEscrowOrder,
@@ -25,7 +26,7 @@ async function payAndDeliver(conversationId: string, client: string, provider: s
 
 describe('openEscrowDispute — preuves à l’appui (#274)', () => {
   it('conserve les preuves fournies avec le motif', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     await payAndDeliver(conversationId, id(), id(), 3000)
 
     const result = await openEscrowDispute(conversationId, 'Prestation non conforme', 'Photo du résultat : photo.jpg')
@@ -35,7 +36,7 @@ describe('openEscrowDispute — preuves à l’appui (#274)', () => {
   })
 
   it('accepte l’absence de preuves (optionnelles)', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     await payAndDeliver(conversationId, id(), id(), 3000)
 
     const result = await openEscrowDispute(conversationId, 'Prestation non conforme')
@@ -47,7 +48,7 @@ describe('openEscrowDispute — preuves à l’appui (#274)', () => {
 
 describe('respondToDispute — réponse du prestataire, passage en médiation (#274)', () => {
   it('enregistre la réponse du prestataire sans changer le statut (fonds toujours gelés)', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     await payAndDeliver(conversationId, id(), id(), 3000)
     await openEscrowDispute(conversationId, 'Prestation non conforme', 'photo.jpg')
 
@@ -62,7 +63,7 @@ describe('respondToDispute — réponse du prestataire, passage en médiation (#
   })
 
   it('refuse sans texte de réponse', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     await payAndDeliver(conversationId, id(), id(), 3000)
     await openEscrowDispute(conversationId, 'Prestation non conforme')
 
@@ -70,7 +71,7 @@ describe('respondToDispute — réponse du prestataire, passage en médiation (#
   })
 
   it('refuse de répondre à une commande qui n’est pas (ou plus) en litige', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     await payAndDeliver(conversationId, id(), id(), 3000)
 
     expect(await respondToDispute(conversationId, 'réponse')).toEqual({ ok: false, error: 'invalid_status' })

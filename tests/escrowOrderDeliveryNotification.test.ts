@@ -24,16 +24,16 @@ describe('markEscrowOrderDelivered — notification de l’échéance de validat
   it('poste un message système annonçant l’échéance dès la livraison', async () => {
     const client = id()
     const provider = id()
-    const conversation = findOrCreateConversation(client, provider)
+    const conversation = await findOrCreateConversation(client, provider)
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
     await createEscrowOrder({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000 })
     await payEscrowOrder(conversation.id)
     await recordEscrowOrderCheckIn(conversation.id, null)
     await recordEscrowOrderCheckOut(conversation.id, null)
 
-    const before = getMessages(conversation.id).length
+    const before = (await getMessages(conversation.id)).length
     await markEscrowOrderDelivered(conversation.id)
-    const messages = getMessages(conversation.id)
+    const messages = await getMessages(conversation.id)
 
     expect(messages.length).toBe(before + 1)
     const notification = messages[messages.length - 1]
@@ -45,7 +45,7 @@ describe('markEscrowOrderDelivered — notification de l’échéance de validat
   it('le message est compté comme non lu par le chercheur (visible via le badge existant, #225)', async () => {
     const client = id()
     const provider = id()
-    const conversation = findOrCreateConversation(client, provider)
+    const conversation = await findOrCreateConversation(client, provider)
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
     await createEscrowOrder({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000 })
     await payEscrowOrder(conversation.id)
@@ -54,7 +54,7 @@ describe('markEscrowOrderDelivered — notification de l’échéance de validat
 
     await markEscrowOrderDelivered(conversation.id)
 
-    const notification = getMessages(conversation.id).at(-1)
+    const notification = (await getMessages(conversation.id)).at(-1)
     expect(notification?.senderId).not.toBe(client)
   })
 
@@ -62,10 +62,10 @@ describe('markEscrowOrderDelivered — notification de l’échéance de validat
     const conversationId = id()
     await createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 3000 })
 
-    const before = getMessages(conversationId).length
+    const before = (await getMessages(conversationId)).length
     await markEscrowOrderDelivered(conversationId)
 
-    expect(getMessages(conversationId).length).toBe(before)
+    expect((await getMessages(conversationId)).length).toBe(before)
   })
 })
 

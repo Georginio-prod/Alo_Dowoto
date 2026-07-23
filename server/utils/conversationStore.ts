@@ -1,12 +1,15 @@
-import { randomUUID } from 'node:crypto'
+import type { Conversation as PrismaConversation, Message as PrismaMessage } from '@prisma/client'
 import { getProviderById } from '~~/server/utils/providerDirectory'
+import { prisma } from '~~/server/utils/prisma'
 import { hasReviewed } from '~~/server/utils/reviewStore'
 import { getUserById, type Role } from '~~/server/utils/userStore'
 
 /**
- * Store en mémoire pour les conversations et messages liés à une mise en
- * relation client/prestataire (#59). Suffisant pour ce lot (pas de base de
- * données encore en place, voir #45/#46).
+ * Conversations et messages liés à une mise en relation client/prestataire
+ * (#59), persistés en base (Prisma/SQLite, #357, ADR 0013, étape 6 — dernier
+ * store du chantier migré en premier car l'escrow s'y appuie). Contrairement
+ * à l'ancien store en mémoire, les fils de discussion survivent aux
+ * redémarrages du serveur.
  *
  * Une conversation est identifiée par la paire (clientId, providerId).
  * `clientId` référence toujours un vrai `User` (server/utils/userStore.ts).
@@ -102,55 +105,64 @@ export interface ConversationSummary extends Conversation {
   unreadCount: number
 }
 
-const conversations = new Map<string, Conversation>()
-const messagesByConversationId = new Map<string, Message[]>()
-/** Horodatage de dernière lecture par (conversationId, userId) — en mémoire, comme le reste de ce store (#225). */
-const lastReadAtByConversationId = new Map<string, Map<string, number>>()
+/** Jamais lu = tout est non lu (voir unreadCountFor). */
+const EPOCH = new Date(0)
 
-function findConversation(clientId: string, providerId: string): Conversation | undefined {
-  for (const conversation of conversations.values()) {
-    if (conversation.clientId === clientId && conversation.providerId === providerId) return conversation
+function toConversation(row: PrismaConversation): Conversation {
+  return {
+    id: row.id,
+    clientId: row.clientId,
+    providerId: row.providerId,
+    createdAt: row.createdAt.getTime(),
+    firstContactDone: row.firstContactDone,
+    clientContact: row.clientContact,
   }
-  return undefined
+}
+
+function toMessage(row: PrismaMessage): Message {
+  return {
+    id: row.id,
+    conversationId: row.conversationId,
+    senderId: row.senderId,
+    senderRole: row.senderRole,
+    body: row.body,
+    kind: row.kind,
+    location: row.locationLat !== null && row.locationLng !== null ? { lat: row.locationLat, lng: row.locationLng } : null,
+    proposedAt: row.proposedAt?.getTime() ?? null,
+    resolvedAt: row.resolvedAt?.getTime() ?? null,
+    createdAt: row.createdAt.getTime(),
+  }
 }
 
 /** Retrouve la conversation existante entre ce client et ce prestataire, ou la crée (idempotent). */
-export function findOrCreateConversation(clientId: string, providerId: string): Conversation {
-  const existing = findConversation(clientId, providerId)
-  if (existing) return existing
-
-  const conversation: Conversation = {
-    id: randomUUID(),
-    clientId,
-    providerId,
-    createdAt: Date.now(),
-    firstContactDone: false,
-    clientContact: null,
-  }
-  conversations.set(conversation.id, conversation)
-  messagesByConversationId.set(conversation.id, [])
-  return conversation
+export async function findOrCreateConversation(clientId: string, providerId: string): Promise<Conversation> {
+  const row = await prisma.conversation.upsert({
+    where: { clientId_providerId: { clientId, providerId } },
+    update: {},
+    create: { clientId, providerId },
+  })
+  return toConversation(row)
 }
 
-export function getConversationById(id: string): Conversation | null {
-  return conversations.get(id) ?? null
+export async function getConversationById(id: string): Promise<Conversation | null> {
+  const row = await prisma.conversation.findUnique({ where: { id } })
+  return row ? toConversation(row) : null
 }
 
 /** Marque le formulaire de première prise de contact comme soumis (#129), une seule fois par conversation. */
-export function markFirstContactDone(conversationId: string): void {
-  const conversation = conversations.get(conversationId)
-  if (conversation) conversation.firstContactDone = true
+export async function markFirstContactDone(conversationId: string): Promise<void> {
+  await prisma.conversation.updateMany({ where: { id: conversationId }, data: { firstContactDone: true } })
 }
 
 /** Enregistre les coordonnées brutes transmises par le chercheur au premier contact (#129), non exposées avant validation finale (#264). */
-export function setClientContact(conversationId: string, contact: string): void {
-  const conversation = conversations.get(conversationId)
-  if (conversation) conversation.clientContact = contact
+export async function setClientContact(conversationId: string, contact: string): Promise<void> {
+  await prisma.conversation.updateMany({ where: { id: conversationId }, data: { clientContact: contact } })
 }
 
 /** Coordonnées brutes du chercheur pour cette conversation, ou `null` si non encore transmises (#264). */
-export function getClientContact(conversationId: string): string | null {
-  return conversations.get(conversationId)?.clientContact ?? null
+export async function getClientContact(conversationId: string): Promise<string | null> {
+  const row = await prisma.conversation.findUnique({ where: { id: conversationId }, select: { clientContact: true } })
+  return row?.clientContact ?? null
 }
 
 /** Vérifie que l'utilisateur fait partie de la conversation (client ou prestataire). */
@@ -158,70 +170,68 @@ export function isConversationParticipant(conversation: Conversation, userId: st
   return conversation.clientId === userId || conversation.providerId === userId
 }
 
-function lastMessageOf(conversationId: string): Message | undefined {
-  const messages = messagesByConversationId.get(conversationId) ?? []
-  return messages[messages.length - 1]
+async function lastMessageOf(conversationId: string): Promise<Message | null> {
+  const row = await prisma.message.findFirst({ where: { conversationId }, orderBy: { createdAt: 'desc' } })
+  return row ? toMessage(row) : null
 }
 
 /** Liste les conversations où l'utilisateur est client ou prestataire, triées par dernier message décroissant. */
-export function listConversationsForUser(userId: string): Conversation[] {
-  const userConversations = [...conversations.values()].filter(
-    (conversation) => conversation.clientId === userId || conversation.providerId === userId,
-  )
-  return userConversations.sort((a, b) => {
-    const aLast = lastMessageOf(a.id)?.createdAt ?? a.createdAt
-    const bLast = lastMessageOf(b.id)?.createdAt ?? b.createdAt
-    return bLast - aLast
+export async function listConversationsForUser(userId: string): Promise<Conversation[]> {
+  const rows = await prisma.conversation.findMany({
+    where: { OR: [{ clientId: userId }, { providerId: userId }] },
+    include: { messages: { orderBy: { createdAt: 'desc' }, take: 1 } },
   })
+  return rows
+    .sort((a, b) => {
+      const aLast = (a.messages[0]?.createdAt ?? a.createdAt).getTime()
+      const bLast = (b.messages[0]?.createdAt ?? b.createdAt).getTime()
+      return bLast - aLast
+    })
+    .map(toConversation)
 }
 
-export function getMessages(conversationId: string): Message[] {
-  return messagesByConversationId.get(conversationId) ?? []
+export async function getMessages(conversationId: string): Promise<Message[]> {
+  const rows = await prisma.message.findMany({ where: { conversationId }, orderBy: { createdAt: 'asc' } })
+  return rows.map(toMessage)
 }
 
 /** Marque une conversation comme lue par cet utilisateur à l'instant présent (#225, badges de non-lus). */
-export function markConversationRead(conversationId: string, userId: string): void {
-  let byUser = lastReadAtByConversationId.get(conversationId)
-  if (!byUser) {
-    byUser = new Map()
-    lastReadAtByConversationId.set(conversationId, byUser)
-  }
-  byUser.set(userId, Date.now())
+export async function markConversationRead(conversationId: string, userId: string): Promise<void> {
+  await prisma.conversationRead.upsert({
+    where: { conversationId_userId: { conversationId, userId } },
+    update: { lastReadAt: new Date() },
+    create: { conversationId, userId, lastReadAt: new Date() },
+  })
 }
 
 /** Nombre de messages de l'autre partie reçus depuis la dernière lecture (jamais lue = tout est non lu). */
-function unreadCountFor(conversationId: string, viewerId: string): number {
-  const lastReadAt = lastReadAtByConversationId.get(conversationId)?.get(viewerId) ?? 0
-  const messages = messagesByConversationId.get(conversationId) ?? []
-  return messages.filter((message) => message.senderId !== viewerId && message.createdAt > lastReadAt).length
+async function unreadCountFor(conversationId: string, viewerId: string): Promise<number> {
+  const read = await prisma.conversationRead.findUnique({ where: { conversationId_userId: { conversationId, userId: viewerId } } })
+  return prisma.message.count({
+    where: { conversationId, senderId: { not: viewerId }, createdAt: { gt: read?.lastReadAt ?? EPOCH } },
+  })
 }
 
-export function addMessage(
+export async function addMessage(
   conversationId: string,
   senderId: string,
   senderRole: MessageSenderRole,
   body: string,
   options?: { kind?: MessageKind; location?: { lat: number; lng: number }; proposedAt?: number },
-): Message {
-  const message: Message = {
-    id: randomUUID(),
-    conversationId,
-    senderId,
-    senderRole,
-    body,
-    kind: options?.kind ?? 'text',
-    location: options?.location ?? null,
-    proposedAt: options?.proposedAt ?? null,
-    resolvedAt: null,
-    createdAt: Date.now(),
-  }
-  const list = messagesByConversationId.get(conversationId)
-  if (!list) {
-    messagesByConversationId.set(conversationId, [message])
-  } else {
-    list.push(message)
-  }
-  return message
+): Promise<Message> {
+  const row = await prisma.message.create({
+    data: {
+      conversationId,
+      senderId,
+      senderRole,
+      body,
+      kind: options?.kind ?? 'text',
+      locationLat: options?.location?.lat ?? null,
+      locationLng: options?.location?.lng ?? null,
+      proposedAt: options?.proposedAt !== undefined ? new Date(options.proposedAt) : null,
+    },
+  })
+  return toMessage(row)
 }
 
 /**
@@ -229,23 +239,26 @@ export function addMessage(
  * confirmation de prise en charge, demande de partage de localisation…
  * Jamais envoyé par un vrai utilisateur, voir `WORKTOGO_SYSTEM_SENDER_ID`.
  */
-export function addSystemMessage(conversationId: string, body: string, kind: MessageKind = 'text'): Message {
+export async function addSystemMessage(conversationId: string, body: string, kind: MessageKind = 'text'): Promise<Message> {
   return addMessage(conversationId, WORKTOGO_SYSTEM_SENDER_ID, 'system', body, { kind })
 }
 
 /** Dernier message actionnable non résolu d'un type donné, pour valider une action côté client (confirmer/partager) sans état supplémentaire. */
-export function findLatestUnresolvedMessage(conversationId: string, kind: MessageKind): Message | null {
-  const messages = messagesByConversationId.get(conversationId) ?? []
-  const match = messages.findLast((message) => message.kind === kind && message.resolvedAt === null)
-  return match ?? null
+export async function findLatestUnresolvedMessage(conversationId: string, kind: MessageKind): Promise<Message | null> {
+  const row = await prisma.message.findFirst({
+    where: { conversationId, kind, resolvedAt: null },
+    orderBy: { createdAt: 'desc' },
+  })
+  return row ? toMessage(row) : null
 }
 
 /** Marque un message actionnable comme résolu (une réponse ne peut être apportée qu'une seule fois). */
-export function resolveMessage(conversationId: string, messageId: string): Message | null {
-  const message = (messagesByConversationId.get(conversationId) ?? []).find((m) => m.id === messageId)
-  if (!message) return null
-  message.resolvedAt = Date.now()
-  return message
+export async function resolveMessage(conversationId: string, messageId: string): Promise<Message | null> {
+  const existing = await prisma.message.findUnique({ where: { id: messageId } })
+  if (!existing || existing.conversationId !== conversationId) return null
+
+  const row = await prisma.message.update({ where: { id: messageId }, data: { resolvedAt: new Date() } })
+  return toMessage(row)
 }
 
 /**
@@ -280,7 +293,10 @@ export async function toConversationSummary(conversation: Conversation, viewerId
     if (clientUser) otherPartyName = clientUser.contact
   }
 
-  const last = lastMessageOf(conversation.id)
+  const [last, unreadCount] = await Promise.all([
+    lastMessageOf(conversation.id),
+    unreadCountFor(conversation.id, viewerId),
+  ])
 
   return {
     ...conversation,
@@ -289,6 +305,6 @@ export async function toConversationSummary(conversation: Conversation, viewerId
     sectorSlug,
     lastMessage: last ? { body: last.body, createdAt: last.createdAt } : null,
     alreadyReviewed: hasReviewed(conversation.id, viewerId),
-    unreadCount: unreadCountFor(conversation.id, viewerId),
+    unreadCount,
   }
 }

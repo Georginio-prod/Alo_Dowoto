@@ -12,7 +12,7 @@
 export default defineEventHandler(async (event) => {
   const user = await requireClientRole(event)
   const id = getRouterParam(event, 'id')
-  const conversation = id ? getConversationById(id) : null
+  const conversation = id ? await getConversationById(id) : null
 
   if (!conversation || !isConversationParticipant(conversation, user.id) || conversation.clientId !== user.id) {
     notFound('Conversation introuvable.')
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
     paymentRequired('Solde insuffisant : rechargez votre portefeuille WorkTogo avant de payer cette commande.')
   }
 
-  addSystemMessage(
+  await addSystemMessage(
     conversation.id,
     'Nouvelle demande transmise et payée par le chercheur. Confirmez-vous la prise en charge de cette commande ?',
     'order_confirmation',

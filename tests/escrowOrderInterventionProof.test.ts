@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
+import { findOrCreateConversation } from '~~/server/utils/conversationStore'
 import { recordEscrowOrderCheckIn, recordEscrowOrderCheckOut } from '~~/server/utils/escrowInterventionProof'
 import { createEscrowOrder, markEscrowOrderDelivered, payEscrowOrder } from '~~/server/utils/escrowOrderStore'
 import { creditWallet } from '~~/server/utils/walletStore'
@@ -21,7 +22,7 @@ async function payOnly(conversationId: string, client: string, provider: string,
  */
 describe('recordEscrowOrderCheckIn / recordEscrowOrderCheckOut (#268)', () => {
   it('recordEscrowOrderCheckIn enregistre un horodatage et une localisation optionnelle', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     await payOnly(conversationId, id(), id(), 3000)
 
     const result = await recordEscrowOrderCheckIn(conversationId, { lat: 6.13, lng: 1.22 })
@@ -34,7 +35,7 @@ describe('recordEscrowOrderCheckIn / recordEscrowOrderCheckOut (#268)', () => {
   })
 
   it('recordEscrowOrderCheckIn accepte une localisation nulle (géolocalisation refusée)', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     await payOnly(conversationId, id(), id(), 3000)
 
     const result = await recordEscrowOrderCheckIn(conversationId, null)
@@ -44,7 +45,7 @@ describe('recordEscrowOrderCheckIn / recordEscrowOrderCheckOut (#268)', () => {
   })
 
   it('refuse un second check-in tant que le premier est actif', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     await payOnly(conversationId, id(), id(), 3000)
     await recordEscrowOrderCheckIn(conversationId, null)
 
@@ -52,21 +53,21 @@ describe('recordEscrowOrderCheckIn / recordEscrowOrderCheckOut (#268)', () => {
   })
 
   it('refuse un check-in pour une commande non payée (awaiting_payment)', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     await createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 3000 })
 
     expect(await recordEscrowOrderCheckIn(conversationId, null)).toEqual({ ok: false, error: 'invalid_status' })
   })
 
   it('refuse un check-out sans check-in préalable', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     await payOnly(conversationId, id(), id(), 3000)
 
     expect(await recordEscrowOrderCheckOut(conversationId, null)).toEqual({ ok: false, error: 'check_in_required' })
   })
 
   it('recordEscrowOrderCheckOut enregistre un horodatage après un check-in valide', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     await payOnly(conversationId, id(), id(), 3000)
     await recordEscrowOrderCheckIn(conversationId, null)
 
@@ -80,7 +81,7 @@ describe('recordEscrowOrderCheckIn / recordEscrowOrderCheckOut (#268)', () => {
   })
 
   it('refuse un second check-out', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     await payOnly(conversationId, id(), id(), 3000)
     await recordEscrowOrderCheckIn(conversationId, null)
     await recordEscrowOrderCheckOut(conversationId, null)
@@ -96,14 +97,14 @@ describe('recordEscrowOrderCheckIn / recordEscrowOrderCheckOut (#268)', () => {
 
 describe('markEscrowOrderDelivered — bloqué sans preuve d’intervention complète (#268)', () => {
   it('refuse tant que le check-in n’a pas été enregistré', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     await payOnly(conversationId, id(), id(), 3000)
 
     expect(await markEscrowOrderDelivered(conversationId)).toEqual({ ok: false, error: 'check_in_out_required' })
   })
 
   it('refuse tant que le check-in est enregistré mais pas le check-out', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     await payOnly(conversationId, id(), id(), 3000)
     await recordEscrowOrderCheckIn(conversationId, null)
 
@@ -111,7 +112,7 @@ describe('markEscrowOrderDelivered — bloqué sans preuve d’intervention comp
   })
 
   it('réussit une fois le check-in et le check-out enregistrés', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     await payOnly(conversationId, id(), id(), 3000)
     await recordEscrowOrderCheckIn(conversationId, null)
     await recordEscrowOrderCheckOut(conversationId, null)
