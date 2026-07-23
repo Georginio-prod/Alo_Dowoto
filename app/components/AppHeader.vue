@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useI18n({ useScope: 'global' })
 const { open } = useChoiceModal()
 
 const query = ref('')
@@ -45,18 +46,19 @@ function onSearch() {
           v-model="query"
           type="text"
           class="min-w-0 flex-1 rounded-sm border-none bg-transparent text-[14.5px] text-ink outline-none placeholder:text-muted"
-          placeholder="Rechercher un service : plomberie, ménage, développeur web…"
-          aria-label="Rechercher un service"
+          :placeholder="t('header.searchPlaceholder')"
+          :aria-label="t('header.searchAriaLabel')"
         >
         <button
           type="submit"
           class="press shrink-0 rounded-pill bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
         >
-          Rechercher
+          {{ t('header.searchSubmit') }}
         </button>
       </form>
 
       <div class="ml-auto flex shrink-0 items-center gap-2.5">
+        <LanguageSwitcher />
         <WalletBalanceChip v-if="sessionUser?.role === 'client'" />
         <AccountMenu v-if="sessionUser" :user="sessionUser" />
         <template v-else>
@@ -64,13 +66,13 @@ function onSearch() {
             to="/auth"
             class="press px-2 py-2.5 text-[14.5px] font-semibold text-dark hover:text-primary"
           >
-            Se connecter
+            {{ t('header.login') }}
           </NuxtLink>
           <NuxtLink
             to="/auth?role=prestataire"
             class="press rounded-[9px] bg-dark px-5 py-2.5 text-[14.5px] font-semibold text-white hover:bg-dark-hover"
           >
-            Devenir prestataire
+            {{ t('header.becomeProvider') }}
           </NuxtLink>
         </template>
       </div>

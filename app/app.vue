@@ -1,11 +1,22 @@
 <script setup lang="ts">
 import { COMPANY_NAME } from '~/data/companyInfo'
 
+const { locale } = useI18n({ useScope: 'global' })
+
+// `<html lang>` dynamique selon la langue active (#364) — remplace le
+// `lang="fr"` figé dans nuxt.config.ts (#343). `seo: false` : pas de liens
+// hreflang alternates, sans objet en stratégie `no_prefix` (même URL pour
+// toutes les langues, rien à distinguer entre elles).
+const localeHead = useLocaleHead({ seo: false })
+useHead(() => ({
+  htmlAttrs: localeHead.value.htmlAttrs,
+}))
+
 // Données structurées JSON-LD (#358, SEO) : Organization + WebSite, injectées
 // sur toutes les pages. L'origine est déduite de la requête (useRequestURL)
 // pour rester correcte en dev/preview/prod sans domaine codé en dur.
 const origin = useRequestURL().origin
-useHead({
+useHead(() => ({
   script: [
     {
       type: 'application/ld+json',
@@ -24,7 +35,7 @@ useHead({
             '@type': 'WebSite',
             name: COMPANY_NAME,
             url: origin,
-            inLanguage: 'fr',
+            inLanguage: locale.value,
             potentialAction: {
               '@type': 'SearchAction',
               target: `${origin}/resultats?q={search_term_string}`,
@@ -35,7 +46,7 @@ useHead({
       }),
     },
   ],
-})
+}))
 </script>
 
 <template>

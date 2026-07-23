@@ -1,0 +1,92 @@
+{
+  "header": {
+    "searchPlaceholder": "Rechercher un service : plomberie, ménage, développeur web…",
+    "searchAriaLabel": "Rechercher un service",
+    "searchSubmit": "Rechercher",
+    "login": "Se connecter",
+    "becomeProvider": "Devenir prestataire"
+  },
+  "nav": {
+    "ariaLabel": "Navigation principale",
+    "find": {
+      "menu": "Trouver un prestataire",
+      "title": "Trouvez le bon prestataire",
+      "description": "Comparez les profils vérifiés, les tarifs et les avis avant de contacter.",
+      "allCategories": "Toutes les catégories →",
+      "postRequest": "Publier une demande →"
+    },
+    "become": {
+      "menu": "Devenir prestataire",
+      "title": "Développez votre activité",
+      "description": "Recevez des demandes de clients près de chez vous, sans effort de prospection.",
+      "advantagesLabel": "Avantages",
+      "dailyLabel": "Au quotidien",
+      "verifiedProfile": "Profil vérifié",
+      "verifiedProfileDesc": "Badge de confiance visible par les clients",
+      "mobileMoney": "Paiement Mobile Money",
+      "mobileMoneyDesc": "Flooz et T-Money, simple et rapide",
+      "freeTrial": "Essai gratuit 14 jours",
+      "freeTrialDesc": "Sans engagement au-delà de la première période",
+      "targetedRequests": "Demandes ciblées",
+      "targetedRequestsDesc": "Uniquement dans votre secteur et votre ville",
+      "messaging": "Messagerie intégrée",
+      "messagingDesc": "Échangez directement avec vos clients",
+      "support": "Support dédié",
+      "supportDesc": "Une équipe à votre écoute",
+      "cta": "Devenir prestataire →",
+      "seePlans": "Voir les formules →"
+    },
+    "why": {
+      "menu": "Pourquoi WorkTogo",
+      "title": "Pourquoi WorkTogo",
+      "description": "La mise en relation avec des prestataires vérifiés, dans tous les secteurs, partout au Togo.",
+      "resourcesLabel": "Ressources",
+      "helpLabel": "Aide",
+      "about": "À propos",
+      "aboutDesc": "Notre mission et notre équipe",
+      "faq": "Questions fréquentes",
+      "faqDesc": "Comment ça marche, pas à pas",
+      "helpCenter": "Centre d'aide",
+      "helpCenterDesc": "Guides et réponses détaillées",
+      "contact": "Contact",
+      "contactDesc": "Écrivez à notre équipe",
+      "seeAllHelp": "Voir toute l'aide →"
+    },
+    "pricing": "Tarification"
+  },
+  "footer": {
+    "tagline": "La mise en relation avec des prestataires vérifiés, dans tous les secteurs, partout au Togo.",
+    "aboutUs": "Qui sommes-nous",
+    "sectorsLabel": "Secteurs",
+    "allCategories": "Toutes les catégories",
+    "supportLabel": "Assistance",
+    "faq": "FAQ",
+    "helpCenter": "Centre d'aide",
+    "contactSupport": "Contacter le support",
+    "complaint": "Réclamation",
+    "legalLabel": "Légal",
+    "legalNotice": "Mentions légales",
+    "terms": "CGU",
+    "privacy": "Confidentialité",
+    "cookies": "Cookies",
+    "contactLabel": "Contact",
+    "socialComingSoon": "{name} (bientôt disponible)",
+    "socialComingSoonAria": "{name} — bientôt disponible",
+    "copyright": "© {year} {company} — Togo"
+  },
+  "home": {
+    "hero": {
+      "title": "Trouvez le {highlight}, dans tous les secteurs",
+      "titleHighlight": "bon prestataire",
+      "subtitle": "Artisanat, commerce, industrie, services à domicile… Comparez des professionnels vérifiés partout au Togo.",
+      "providerCountPrefix": "Plus de",
+      "providerCountSuffix": "prestataires vérifiés déjà inscrits",
+      "ctaFind": "Trouver un prestataire",
+      "ctaProvider": "Vous êtes prestataire ? Voir les formules",
+      "trustLabel": "Ils nous font confiance"
+    }
+  },
+  "language": {
+    "switchTo": "Passer en {name}"
+  }
+}
