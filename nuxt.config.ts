@@ -69,6 +69,9 @@ export default defineNuxtConfig({
       script: [
         {
           // Applique le thème enregistré avant le premier rendu (évite le flash).
+          // Autorisé par la CSP (#354) via un nonce par requête, injecté par
+          // server/plugins/cspNonce.ts (ce script n'a aucun moyen de le
+          // connaître au moment où Nuxt construit cette configuration statique).
           innerHTML: ";(function(){try{var t=localStorage.getItem('wt-theme');if(t&&t!=='clair'){document.documentElement.setAttribute('data-theme',t)}}catch(e){}})();",
           tagPosition: 'head'
         }

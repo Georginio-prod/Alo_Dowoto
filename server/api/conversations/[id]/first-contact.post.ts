@@ -10,7 +10,7 @@ import { getSectorFields } from '~~/app/data/firstContactSectorFields'
 export default defineEventHandler(async (event) => {
   const user = await requireClientRole(event)
   const id = getRouterParam(event, 'id')
-  const conversation = id ? getConversationById(id) : null
+  const conversation = id ? await getConversationById(id) : null
 
   if (!conversation || !isConversationParticipant(conversation, user.id)) {
     notFound('Conversation introuvable.')
@@ -100,9 +100,9 @@ export default defineEventHandler(async (event) => {
   const messageLines = [description, ...sectorAnswerLines, `Contact : ${maskContact(contact)}`]
   if (urgency) messageLines.push(`Urgence / délai souhaité : ${urgency}`)
 
-  const message = addMessage(conversation.id, user.id, user.role, messageLines.join('\n\n'))
-  markFirstContactDone(conversation.id)
-  setClientContact(conversation.id, contact)
+  const message = await addMessage(conversation.id, user.id, user.role, messageLines.join('\n\n'))
+  await markFirstContactDone(conversation.id)
+  await setClientContact(conversation.id, contact)
   const order = await createEscrowOrder({ conversationId: conversation.id, clientId: user.id, providerId: conversation.providerId, amount })
 
   setResponseStatus(event, 201)

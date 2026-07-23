@@ -201,9 +201,9 @@ async function releaseOrderFunds(order: EscrowOrder): Promise<EscrowOrder> {
   // Validation finale (#264, anti-fuite) : les coordonnées réelles du chercheur,
   // masquées jusqu'ici dans le fil, ne sont révélées au prestataire qu'une fois
   // la prestation intégralement validée et payée.
-  const contact = getClientContact(order.conversationId)
+  const contact = await getClientContact(order.conversationId)
   if (contact) {
-    addSystemMessage(order.conversationId, `Prestation validée : voici les coordonnées du chercheur pour la suite — ${contact}`)
+    await addSystemMessage(order.conversationId, `Prestation validée : voici les coordonnées du chercheur pour la suite — ${contact}`)
   }
   return updated
 }
@@ -247,12 +247,12 @@ async function applyAutoReassignmentIfExpired(order: EscrowOrder): Promise<Escro
   if (order.status !== 'in_escrow' || order.paidAt === null) return order
   if (Date.now() - order.paidAt < PROVIDER_RESPONSE_TIMEOUT_MS) return order
 
-  const pendingConfirmation = findLatestUnresolvedMessage(order.conversationId, 'order_confirmation')
+  const pendingConfirmation = await findLatestUnresolvedMessage(order.conversationId, 'order_confirmation')
   if (!pendingConfirmation) return order
 
   const nextProvider = findNextAvailableProvider(order.providerId)
   if (!nextProvider) {
-    addSystemMessage(
+    await addSystemMessage(
       order.conversationId,
       "Le prestataire n'a pas répondu à temps et aucune alternative n'est disponible pour le moment. Vous pouvez annuler cette commande ou réessayer plus tard.",
     )
@@ -265,20 +265,20 @@ async function applyAutoReassignmentIfExpired(order: EscrowOrder): Promise<Escro
     cancelledAt: new Date(Date.now()),
     cancelReason: "Réattribution automatique : le prestataire n'a pas confirmé la prise en charge à temps.",
   })
-  resolveMessage(order.conversationId, pendingConfirmation.id)
-  addSystemMessage(
+  await resolveMessage(order.conversationId, pendingConfirmation.id)
+  await addSystemMessage(
     order.conversationId,
     `Le prestataire n'a pas répondu à temps. Remboursement intégral effectué, et votre demande a été transmise automatiquement à ${nextProvider.displayName}.`,
   )
 
-  const newConversation = findOrCreateConversation(order.clientId, nextProvider.id)
-  const clientContact = getClientContact(order.conversationId)
-  if (clientContact) setClientContact(newConversation.id, clientContact)
-  markFirstContactDone(newConversation.id)
+  const newConversation = await findOrCreateConversation(order.clientId, nextProvider.id)
+  const clientContact = await getClientContact(order.conversationId)
+  if (clientContact) await setClientContact(newConversation.id, clientContact)
+  await markFirstContactDone(newConversation.id)
 
   const newAmount = resolveProviderRate(nextProvider.id) ?? order.amount
   await createEscrowOrder({ conversationId: newConversation.id, clientId: order.clientId, providerId: nextProvider.id, amount: newAmount })
-  addSystemMessage(
+  await addSystemMessage(
     newConversation.id,
     "Cette demande vous a été transmise automatiquement suite à l'absence de réponse d'un autre prestataire. Réglez le paiement pour la confirmer.",
   )
@@ -356,7 +356,7 @@ export async function markEscrowOrderDelivered(conversationId: string): Promise<
   const order = await updateOrder(row.id, { status: 'delivered', deliveredAt: new Date(deliveredAt) })
 
   // Notifie le chercheur du délai de validation tacite (#273).
-  addSystemMessage(
+  await addSystemMessage(
     conversationId,
     `Le prestataire a marqué la prestation comme terminée. Vous avez jusqu'au ${formatTacitValidationDeadline(deliveredAt)} pour confirmer la réception ou signaler un problème ; passé ce délai, le paiement sera automatiquement libéré au prestataire.`,
   )

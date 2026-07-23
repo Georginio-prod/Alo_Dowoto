@@ -18,7 +18,7 @@ function formatProposedDate(timestamp: number): string {
 export default defineEventHandler(async (event) => {
   const user = await requireSessionUser(event)
   const id = getRouterParam(event, 'id')
-  const conversation = id ? getConversationById(id) : null
+  const conversation = id ? await getConversationById(id) : null
 
   if (!conversation || !isConversationParticipant(conversation, user.id) || conversation.providerId !== user.id) {
     notFound('Conversation introuvable.')
@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
     ? `Nouveau créneau proposé : ${formatProposedDate(proposedAt)}. ${note}`
     : `Nouveau créneau proposé : ${formatProposedDate(proposedAt)}.`
 
-  const message = addMessage(conversation.id, user.id, user.role, text, { kind: 'reschedule_request', proposedAt })
+  const message = await addMessage(conversation.id, user.id, user.role, text, { kind: 'reschedule_request', proposedAt })
 
   setResponseStatus(event, 201)
   return { message }

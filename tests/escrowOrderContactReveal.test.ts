@@ -15,6 +15,12 @@ function id(): string {
   return randomUUID()
 }
 
+/**
+ * `markEscrowOrderDelivered` poste toujours un message système (#273) : la
+ * conversation doit donc réellement exister (Message.conversationId est une
+ * clé étrangère vers Conversation, #357) — contrairement à `EscrowOrder`,
+ * dont `conversationId` n'est qu'un identifiant sans contrainte.
+ */
 async function payAndDeliver(conversationId: string, client: string, provider: string, amount: number) {
   await creditWallet({ walletUserId: client, type: 'recharge', amount, reference: 'REF' })
   await createEscrowOrder({ conversationId, clientId: client, providerId: provider, amount })
@@ -30,27 +36,28 @@ describe('hasReleasedOrderBetween — démasquage des coordonnées après valida
     const provider = id()
     expect(await hasReleasedOrderBetween(client, provider)).toBe(false)
 
-    await payAndDeliver(id(), client, provider, 3000)
+    const conversation = await findOrCreateConversation(client, provider)
+    await payAndDeliver(conversation.id, client, provider, 3000)
     expect(await hasReleasedOrderBetween(client, provider)).toBe(false)
   })
 
   it('renvoie true une fois la commande libérée (confirmation explicite du chercheur)', async () => {
-    const conversationId = id()
     const client = id()
     const provider = id()
-    await payAndDeliver(conversationId, client, provider, 3000)
+    const conversation = await findOrCreateConversation(client, provider)
+    await payAndDeliver(conversation.id, client, provider, 3000)
 
-    await confirmEscrowOrderReceipt(conversationId)
+    await confirmEscrowOrderReceipt(conversation.id)
 
     expect(await hasReleasedOrderBetween(client, provider)).toBe(true)
   })
 
   it('ne renvoie pas true pour une autre paire client/prestataire', async () => {
-    const conversationId = id()
     const client = id()
     const provider = id()
-    await payAndDeliver(conversationId, client, provider, 3000)
-    await confirmEscrowOrderReceipt(conversationId)
+    const conversation = await findOrCreateConversation(client, provider)
+    await payAndDeliver(conversation.id, client, provider, 3000)
+    await confirmEscrowOrderReceipt(conversation.id)
 
     expect(await hasReleasedOrderBetween(client, id())).toBe(false)
     expect(await hasReleasedOrderBetween(id(), provider)).toBe(false)
@@ -61,30 +68,32 @@ describe('releaseOrderFunds — révélation des coordonnées du chercheur à la
   it('poste un message système avec le contact réel une fois la commande libérée', async () => {
     const client = id()
     const provider = id()
-    const conversation = findOrCreateConversation(client, provider)
+    const conversation = await findOrCreateConversation(client, provider)
     const conversationId = conversation.id
-    setClientContact(conversationId, '+228 90 12 34 56')
+    await setClientContact(conversationId, '+228 90 12 34 56')
     await payAndDeliver(conversationId, client, provider, 3000)
 
     await confirmEscrowOrderReceipt(conversationId)
 
-    const systemMessage = getMessages(conversationId).find((m) => m.body.includes('+228 90 12 34 56'))
+    const messages = await getMessages(conversationId)
+    const systemMessage = messages.find((m) => m.body.includes('+228 90 12 34 56'))
     expect(systemMessage).toBeDefined()
     expect(systemMessage?.senderRole).toBe('system')
   })
 
   it("ne poste aucun message de révélation si aucun contact n'a été enregistré", async () => {
-    const conversationId = id()
     const client = id()
     const provider = id()
+    const conversation = await findOrCreateConversation(client, provider)
+    const conversationId = conversation.id
     await payAndDeliver(conversationId, client, provider, 3000)
     // Capturé après la livraison (qui poste déjà le message de notification
     // d'échéance, #273) pour isoler spécifiquement le comportement de
     // révélation du contact à la libération des fonds.
-    const beforeRelease = getMessages(conversationId).length
+    const beforeRelease = (await getMessages(conversationId)).length
 
     await confirmEscrowOrderReceipt(conversationId)
 
-    expect(getMessages(conversationId).length).toBe(beforeRelease)
+    expect((await getMessages(conversationId)).length).toBe(beforeRelease)
   })
 })

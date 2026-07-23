@@ -71,7 +71,7 @@ describe('POST /conversations/:id/pay (#194)', () => {
   it('chemin nominal : le client paie une commande en attente, elle passe en séquestre', async () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
-    const conversation = findOrCreateConversation(client.user.id, provider.user.id)
+    const conversation = await findOrCreateConversation(client.user.id, provider.user.id)
     await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
     await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
 
@@ -85,7 +85,7 @@ describe('POST /conversations/:id/pay (#194)', () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
     const stranger = await createAuthedUser('client')
-    const conversation = findOrCreateConversation(client.user.id, provider.user.id)
+    const conversation = await findOrCreateConversation(client.user.id, provider.user.id)
     await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
 
     const { status } = await postJson(`/conversations/${conversation.id}/pay`, stranger.cookieHeader)
@@ -98,7 +98,7 @@ describe('POST /conversations/:id/deliver (#195)', () => {
   it('chemin nominal : le prestataire marque une commande en séquestre comme livrée', async () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
-    const conversation = findOrCreateConversation(client.user.id, provider.user.id)
+    const conversation = await findOrCreateConversation(client.user.id, provider.user.id)
     await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
     await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
@@ -113,7 +113,7 @@ describe('POST /conversations/:id/deliver (#195)', () => {
   it('refus d’autorisation : le client (pas le prestataire) reçoit 404', async () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
-    const conversation = findOrCreateConversation(client.user.id, provider.user.id)
+    const conversation = await findOrCreateConversation(client.user.id, provider.user.id)
     await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
     await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
@@ -128,7 +128,7 @@ describe('POST /conversations/:id/receive (#195)', () => {
   it('chemin nominal : le client confirme la réception, les fonds sont libérés', async () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
-    const conversation = findOrCreateConversation(client.user.id, provider.user.id)
+    const conversation = await findOrCreateConversation(client.user.id, provider.user.id)
     await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
     await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
@@ -144,7 +144,7 @@ describe('POST /conversations/:id/receive (#195)', () => {
   it('refus d’autorisation : le prestataire (pas le client) reçoit 403 (requireClientRole précède le contrôle de propriété)', async () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
-    const conversation = findOrCreateConversation(client.user.id, provider.user.id)
+    const conversation = await findOrCreateConversation(client.user.id, provider.user.id)
     await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
     await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
@@ -164,7 +164,7 @@ describe('POST /conversations/:id/dispute (#197)', () => {
   it('chemin nominal : le client ouvre un litige avec un motif, les fonds sont gelés', async () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
-    const conversation = findOrCreateConversation(client.user.id, provider.user.id)
+    const conversation = await findOrCreateConversation(client.user.id, provider.user.id)
     await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
     await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
@@ -182,7 +182,7 @@ describe('POST /conversations/:id/dispute (#197)', () => {
   it('validation : un motif manquant est refusé avec 400 (zod, readSchemaBody)', async () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
-    const conversation = findOrCreateConversation(client.user.id, provider.user.id)
+    const conversation = await findOrCreateConversation(client.user.id, provider.user.id)
     await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
     await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
@@ -197,7 +197,7 @@ describe('POST /conversations/:id/dispute (#197)', () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
     const stranger = await createAuthedUser('client')
-    const conversation = findOrCreateConversation(client.user.id, provider.user.id)
+    const conversation = await findOrCreateConversation(client.user.id, provider.user.id)
     await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
 
     const { status } = await postJson(`/conversations/${conversation.id}/dispute`, stranger.cookieHeader, {
@@ -212,7 +212,7 @@ describe('POST /conversations/:id/cancel (#196)', () => {
   it('chemin nominal : le prestataire annule avec un motif, remboursement intégral', async () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
-    const conversation = findOrCreateConversation(client.user.id, provider.user.id)
+    const conversation = await findOrCreateConversation(client.user.id, provider.user.id)
     await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
     await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
@@ -228,7 +228,7 @@ describe('POST /conversations/:id/cancel (#196)', () => {
   it('refus d’autorisation : le client (pas le prestataire) reçoit 404', async () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
-    const conversation = findOrCreateConversation(client.user.id, provider.user.id)
+    const conversation = await findOrCreateConversation(client.user.id, provider.user.id)
     await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 5000, reference: 'REF' })
     await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
     await postJson(`/conversations/${conversation.id}/pay`, client.cookieHeader)
@@ -243,7 +243,7 @@ describe('Orchestration escrow de bout en bout via HTTP (#261)', () => {
   it('pay → deliver → receive enchaînés par de vraies requêtes HTTP successives', async () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
-    const conversation = findOrCreateConversation(client.user.id, provider.user.id)
+    const conversation = await findOrCreateConversation(client.user.id, provider.user.id)
     await creditWallet({ walletUserId: client.user.id, type: 'recharge', amount: 8000, reference: 'REF' })
     await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 8000 })
 
@@ -264,7 +264,7 @@ describe('Orchestration escrow de bout en bout via HTTP (#261)', () => {
   it('un état atteint dans le mauvais ordre est refusé (deliver avant tout paiement)', async () => {
     const client = await createAuthedUser('client')
     const provider = await createAuthedUser('prestataire')
-    const conversation = findOrCreateConversation(client.user.id, provider.user.id)
+    const conversation = await findOrCreateConversation(client.user.id, provider.user.id)
     await createEscrowOrder({ conversationId: conversation.id, clientId: client.user.id, providerId: provider.user.id, amount: 5000 })
 
     const { status } = await postJson(`/conversations/${conversation.id}/deliver`, provider.cookieHeader)

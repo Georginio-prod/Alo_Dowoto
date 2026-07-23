@@ -309,6 +309,26 @@ model WalletRecharge {
   @@index([userId])
 }
 
+/// Type de message d'un fil — voir server/utils/conversationStore.ts (#357, ADR 0013 étape 6).
+/// `order_confirmation`/`location_request`/`reschedule_request` sont des messages
+/// actionnables (voir Message.resolvedAt) ; `location_shared` porte des coordonnées
+/// (Message.locationLat/Lng) ; `text` est un message classique.
+enum MessageKind {
+  text
+  order_confirmation
+  location_request
+  location_shared
+  reschedule_request
+}
+
+/// Émetteur d'un message — distinct de `Role` (User.role) : `system` désigne un
+/// message automatique WorkTogo, jamais un vrai compte (voir WORKTOGO_SYSTEM_SENDER_ID).
+enum MessageSenderRole {
+  client
+  prestataire
+  system
+}
+
 /// Fil de messagerie entre un client et un prestataire — voir server/utils/conversationStore.ts (#59, #129).
 model Conversation {
   id               String    @id @default(uuid())
@@ -316,6 +336,10 @@ model Conversation {
   providerId       String
   /// Formulaire obligatoire de première prise de contact déjà soumis (#129) ?
   firstContactDone Boolean   @default(false)
+  /// Coordonnées brutes du chercheur transmises au premier contact (#129),
+  /// jamais exposées telles quelles dans un message avant validation finale
+  /// (`released`, #264 anti-fuite).
+  clientContact    String?
   createdAt        DateTime  @default(now())
 
   messages Message[]
@@ -326,13 +350,21 @@ model Conversation {
 
 /// Message d'un fil de conversation — voir server/utils/conversationStore.ts (#59).
 model Message {
-  id             String       @id @default(uuid())
+  id             String            @id @default(uuid())
   conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversation   Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   senderId       String
-  senderRole     Role
+  senderRole     MessageSenderRole
   body           String
-  createdAt      DateTime     @default(now())
+  kind           MessageKind       @default(text)
+  /// Coordonnées d'un message `location_shared`, sinon `null`.
+  locationLat    Float?
+  locationLng    Float?
+  /// Horodatage du créneau proposé pour un message `reschedule_request` (#270), sinon `null`.
+  proposedAt     DateTime?
+  /// Horodatage de la réponse à un message actionnable, sinon `null` (non résolu).
+  resolvedAt     DateTime?
+  createdAt      DateTime          @default(now())
 
   @@index([conversationId])
 }
@@ -383,4 +415,17 @@ model ContournementAttempt {
   createdAt      DateTime @default(now())
 
   @@index([userId])
+}
+
+/// Avis libre affiché sur la page d'accueil (#357). Distinct des notations de
+/// collaboration (modèle Review) : n'importe quel visiteur peut partager son
+/// expérience générale, sans compte ni conversation. Les avis d'exemple
+/// (seeds) restent des constantes de code, fusionnés à la lecture.
+model Testimonial {
+  id        String   @id @default(uuid())
+  name      String
+  role      String
+  message   String
+  rating    Int
+  createdAt DateTime @default(now())
 }

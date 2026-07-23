@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { describe, expect, it, vi } from 'vitest'
+import { findOrCreateConversation } from '~~/server/utils/conversationStore'
 import { recordEscrowOrderCheckIn, recordEscrowOrderCheckOut } from '~~/server/utils/escrowInterventionProof'
 import {
   cancelEscrowOrder,
@@ -21,7 +22,7 @@ function id(): string {
 
 describe('escrowOrderStore (#194 devis, engagement et paiement bloquant)', () => {
   it('createEscrowOrder crée une commande en attente de paiement', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const order = await createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 3000 })
 
     expect(order.status).toBe('awaiting_payment')
@@ -30,7 +31,7 @@ describe('escrowOrderStore (#194 devis, engagement et paiement bloquant)', () =>
   })
 
   it('createEscrowOrder est idempotent pour une même conversation', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const first = await createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 3000 })
     const second = await createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 9999 })
 
@@ -39,7 +40,7 @@ describe('escrowOrderStore (#194 devis, engagement et paiement bloquant)', () =>
   })
 
   it('payEscrowOrder débite le chercheur et met la commande en séquestre si le solde est suffisant', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     const provider = id()
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
@@ -56,7 +57,7 @@ describe('escrowOrderStore (#194 devis, engagement et paiement bloquant)', () =>
   })
 
   it('payEscrowOrder refuse si le solde est insuffisant, sans modifier la commande', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     await createEscrowOrder({ conversationId, clientId: client, providerId: id(), amount: 3000 })
 
@@ -68,7 +69,7 @@ describe('escrowOrderStore (#194 devis, engagement et paiement bloquant)', () =>
   })
 
   it('payEscrowOrder refuse une commande déjà payée', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
     await createEscrowOrder({ conversationId, clientId: client, providerId: id(), amount: 3000 })
@@ -96,13 +97,13 @@ async function payAndDeliver(conversationId: string, client: string, provider: s
 
 describe('escrowOrderStore — double validation et libération (#195)', () => {
   it('markEscrowOrderDelivered échoue si la commande n’est pas en séquestre', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     await createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 3000 })
     expect(await markEscrowOrderDelivered(conversationId)).toEqual({ ok: false, error: 'invalid_status' })
   })
 
   it('markEscrowOrderDelivered passe la commande en "delivered"', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const result = await payAndDeliver(conversationId, id(), id(), 3000)
     expect(result.ok).toBe(true)
     if (result.ok) {
@@ -112,7 +113,7 @@ describe('escrowOrderStore — double validation et libération (#195)', () => {
   })
 
   it('confirmEscrowOrderReceipt libère les fonds nets de commission vers le prestataire et crédite la commission', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     const provider = id()
     await payAndDeliver(conversationId, client, provider, 10000)
@@ -135,7 +136,7 @@ describe('escrowOrderStore — double validation et libération (#195)', () => {
   })
 
   it('confirmEscrowOrderReceipt échoue tant que la prestation n’est pas marquée terminée', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     const provider = id()
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
@@ -146,7 +147,7 @@ describe('escrowOrderStore — double validation et libération (#195)', () => {
   })
 
   it('une commande livrée depuis plus de 72h est libérée automatiquement à la prochaine lecture (validation tacite)', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     const provider = id()
     let now = 1_000_000
@@ -164,7 +165,7 @@ describe('escrowOrderStore — double validation et libération (#195)', () => {
   })
 
   it('une commande livrée depuis moins de 72h n’est pas libérée automatiquement', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     const provider = id()
     let now = 1_000_000
@@ -184,7 +185,7 @@ describe('escrowOrderStore — double validation et libération (#195)', () => {
 
 describe('cancelEscrowOrder — annulation prestataire et remboursement (#196)', () => {
   it('rembourse intégralement le chercheur quand la commande est en séquestre (in_escrow)', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
     await createEscrowOrder({ conversationId, clientId: client, providerId: id(), amount: 3000 })
@@ -201,7 +202,7 @@ describe('cancelEscrowOrder — annulation prestataire et remboursement (#196)',
   })
 
   it('rembourse intégralement (sans commission) même si la prestation a déjà été marquée terminée (delivered)', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     const provider = id()
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
@@ -219,7 +220,7 @@ describe('cancelEscrowOrder — annulation prestataire et remboursement (#196)',
   })
 
   it('refuse sans motif', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
     await createEscrowOrder({ conversationId, clientId: client, providerId: id(), amount: 3000 })
@@ -230,13 +231,13 @@ describe('cancelEscrowOrder — annulation prestataire et remboursement (#196)',
   })
 
   it('refuse d’annuler une commande non payée', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     await createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 3000 })
     expect(await cancelEscrowOrder(conversationId, 'motif')).toEqual({ ok: false, error: 'invalid_status' })
   })
 
   it('refuse d’annuler une commande déjà libérée', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
     await createEscrowOrder({ conversationId, clientId: client, providerId: id(), amount: 3000 })
@@ -256,7 +257,7 @@ describe('cancelEscrowOrder — annulation prestataire et remboursement (#196)',
 
 describe('openEscrowDispute — litige sur une commande en séquestre (#197)', () => {
   it('gèle les fonds sans les libérer ni les rembourser', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     const provider = id()
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
@@ -278,7 +279,7 @@ describe('openEscrowDispute — litige sur une commande en séquestre (#197)', (
   })
 
   it('refuse sans motif', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
     await createEscrowOrder({ conversationId, clientId: client, providerId: id(), amount: 3000 })
@@ -291,7 +292,7 @@ describe('openEscrowDispute — litige sur une commande en séquestre (#197)', (
   })
 
   it('refuse tant que la prestation n’a pas été marquée terminée', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
     await createEscrowOrder({ conversationId, clientId: client, providerId: id(), amount: 3000 })
@@ -301,7 +302,7 @@ describe('openEscrowDispute — litige sur une commande en séquestre (#197)', (
   })
 
   it('une commande en litige n’est jamais libérée automatiquement, même après le délai de validation tacite', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     const provider = id()
     let now = 1_000_000
@@ -329,7 +330,7 @@ describe('openEscrowDispute — litige sur une commande en séquestre (#197)', (
   })
 
   it('listDisputedOrders liste uniquement les commandes en litige', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
     await createEscrowOrder({ conversationId, clientId: client, providerId: id(), amount: 3000 })

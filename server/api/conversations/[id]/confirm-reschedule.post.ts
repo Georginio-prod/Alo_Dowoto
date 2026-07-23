@@ -6,19 +6,19 @@
 export default defineEventHandler(async (event) => {
   const user = await requireClientRole(event)
   const id = getRouterParam(event, 'id')
-  const conversation = id ? getConversationById(id) : null
+  const conversation = id ? await getConversationById(id) : null
 
   if (!conversation || !isConversationParticipant(conversation, user.id) || conversation.clientId !== user.id) {
     notFound('Conversation introuvable.')
   }
 
-  const pending = findLatestUnresolvedMessage(conversation.id, 'reschedule_request')
+  const pending = await findLatestUnresolvedMessage(conversation.id, 'reschedule_request')
   if (!pending) {
     conflict('Aucune proposition de nouveau créneau en attente pour cette conversation.')
   }
 
-  resolveMessage(conversation.id, pending.id)
-  const confirmation = addSystemMessage(conversation.id, 'Le chercheur a confirmé le nouveau créneau proposé.')
+  await resolveMessage(conversation.id, pending.id)
+  const confirmation = await addSystemMessage(conversation.id, 'Le chercheur a confirmé le nouveau créneau proposé.')
 
   setResponseStatus(event, 201)
   return { confirmation }

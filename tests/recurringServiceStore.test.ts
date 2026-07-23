@@ -14,8 +14,8 @@ function id(): string {
 }
 
 describe('createRecurringService (#271 offres récurrentes natives)', () => {
-  it('crée un service actif avec une première échéance immédiatement due', () => {
-    const conversation = findOrCreateConversation(id(), id())
+  it('crée un service actif avec une première échéance immédiatement due', async () => {
+    const conversation = await findOrCreateConversation(id(), id())
     const result = createRecurringService({
       conversationId: conversation.id,
       clientId: conversation.clientId,
@@ -32,8 +32,8 @@ describe('createRecurringService (#271 offres récurrentes natives)', () => {
     }
   })
 
-  it('refuse une création si un service récurrent est déjà actif pour cette conversation', () => {
-    const conversation = findOrCreateConversation(id(), id())
+  it('refuse une création si un service récurrent est déjà actif pour cette conversation', async () => {
+    const conversation = await findOrCreateConversation(id(), id())
     createRecurringService({
       conversationId: conversation.id,
       clientId: conversation.clientId,
@@ -52,8 +52,8 @@ describe('createRecurringService (#271 offres récurrentes natives)', () => {
     expect(second).toEqual({ ok: false, error: 'already_active' })
   })
 
-  it('permet de relancer un service récurrent après annulation', () => {
-    const conversation = findOrCreateConversation(id(), id())
+  it('permet de relancer un service récurrent après annulation', async () => {
+    const conversation = await findOrCreateConversation(id(), id())
     createRecurringService({
       conversationId: conversation.id,
       clientId: conversation.clientId,
@@ -75,8 +75,8 @@ describe('createRecurringService (#271 offres récurrentes natives)', () => {
 })
 
 describe('cancelRecurringService', () => {
-  it('annule un service actif', () => {
-    const conversation = findOrCreateConversation(id(), id())
+  it('annule un service actif', async () => {
+    const conversation = await findOrCreateConversation(id(), id())
     createRecurringService({
       conversationId: conversation.id,
       clientId: conversation.clientId,
@@ -94,8 +94,8 @@ describe('cancelRecurringService', () => {
     expect(cancelRecurringService(id())).toEqual({ ok: false, error: 'not_found' })
   })
 
-  it('refuse d’annuler un service déjà annulé', () => {
-    const conversation = findOrCreateConversation(id(), id())
+  it('refuse d’annuler un service déjà annulé', async () => {
+    const conversation = await findOrCreateConversation(id(), id())
     createRecurringService({
       conversationId: conversation.id,
       clientId: conversation.clientId,
@@ -113,7 +113,7 @@ describe('getRecurringServiceByConversationId — déclenchement du prélèvemen
   it('prélève le montant dû, avance la prochaine échéance et poste un message système', async () => {
     const client = id()
     const provider = id()
-    const conversation = findOrCreateConversation(client, provider)
+    const conversation = await findOrCreateConversation(client, provider)
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
     createRecurringService({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000, frequency: 'hebdomadaire' })
 
@@ -125,14 +125,14 @@ describe('getRecurringServiceByConversationId — déclenchement du prélèvemen
     expect(await getBalance(client)).toBe(0)
     expect((await getEscrowOrderByConversationId(conversation.id))?.status).toBe('in_escrow')
 
-    const notification = getMessages(conversation.id).at(-1)
+    const notification = (await getMessages(conversation.id)).at(-1)
     expect(notification?.body).toContain('Prélèvement automatique')
   })
 
   it('ne prélève qu’une seule fois tant que la prochaine échéance (avancée après le 1er prélèvement) n’est pas atteinte', async () => {
     const client = id()
     const provider = id()
-    const conversation = findOrCreateConversation(client, provider)
+    const conversation = await findOrCreateConversation(client, provider)
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 10000, reference: 'REF' })
 
     const now = 1_000_000
@@ -154,21 +154,21 @@ describe('getRecurringServiceByConversationId — déclenchement du prélèvemen
   it('passe en payment_failed si le solde est insuffisant, et journalise un message d’échec', async () => {
     const client = id()
     const provider = id()
-    const conversation = findOrCreateConversation(client, provider)
+    const conversation = await findOrCreateConversation(client, provider)
     // Pas de crédit de portefeuille : solde nul.
     createRecurringService({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000, frequency: 'hebdomadaire' })
 
     const service = await getRecurringServiceByConversationId(conversation.id)
 
     expect(service?.status).toBe('payment_failed')
-    const notification = getMessages(conversation.id).at(-1)
+    const notification = (await getMessages(conversation.id)).at(-1)
     expect(notification?.body).toContain('échoué')
   })
 
   it('n’empile pas une nouvelle commande tant que le cycle précédent n’est pas terminal (in_escrow/delivered/disputed)', async () => {
     const client = id()
     const provider = id()
-    const conversation = findOrCreateConversation(client, provider)
+    const conversation = await findOrCreateConversation(client, provider)
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 20000, reference: 'REF' })
     // Une commande est déjà en cours (ex. première prise de contact classique), non résolue.
     await createEscrowOrder({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000 })

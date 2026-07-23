@@ -6,6 +6,6 @@
 export default defineEventHandler(async (event) => {
   const { name, role, message, rating } = await readSchemaBody(event, createTestimonialSchema)
 
-  const testimonial = addTestimonial(name, role, message, rating)
+  const testimonial = await addTestimonial(name, role, message, rating)
   return { testimonial }
 })

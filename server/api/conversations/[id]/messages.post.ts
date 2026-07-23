@@ -1,7 +1,7 @@
 export default defineEventHandler(async (event) => {
   const user = await requireSessionUser(event)
   const id = getRouterParam(event, 'id')
-  const conversation = id ? getConversationById(id) : null
+  const conversation = id ? await getConversationById(id) : null
 
   if (!conversation || !isConversationParticipant(conversation, user.id)) {
     notFound('Conversation introuvable.')
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
     badRequest('Ce message semble contenir un numéro, un e-mail ou une proposition hors plateforme, ce qui est interdit par les CGU. Utilisez la messagerie WorkTogo pour tous vos échanges.')
   }
 
-  const message = addMessage(conversation.id, user.id, user.role, text)
+  const message = await addMessage(conversation.id, user.id, user.role, text)
   setResponseStatus(event, 201)
   return { message }
 })

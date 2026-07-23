@@ -10,21 +10,21 @@
 export default defineEventHandler(async (event) => {
   const user = await requireSessionUser(event)
   const id = getRouterParam(event, 'id')
-  const conversation = id ? getConversationById(id) : null
+  const conversation = id ? await getConversationById(id) : null
 
   if (!conversation || !isConversationParticipant(conversation, user.id) || conversation.clientId !== user.id) {
     notFound('Conversation introuvable.')
   }
 
-  const pending = findLatestUnresolvedMessage(conversation.id, 'location_request')
+  const pending = await findLatestUnresolvedMessage(conversation.id, 'location_request')
   if (!pending) {
     conflict('Aucune demande de localisation en attente pour cette conversation.')
   }
 
   const { lat, lng } = await readSchemaBody(event, shareLocationSchema)
 
-  resolveMessage(conversation.id, pending.id)
-  const message = addMessage(conversation.id, user.id, user.role, '📍 Localisation partagée avec le prestataire.', {
+  await resolveMessage(conversation.id, pending.id)
+  const message = await addMessage(conversation.id, user.id, user.role, '📍 Localisation partagée avec le prestataire.', {
     kind: 'location_shared',
     location: { lat, lng },
   })

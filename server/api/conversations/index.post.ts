@@ -22,6 +22,6 @@ export default defineEventHandler(async (event) => {
     forbidden("Ce prestataire n'a pas encore terminé sa vérification d'identité.")
   }
 
-  const conversation = findOrCreateConversation(user.id, providerId)
+  const conversation = await findOrCreateConversation(user.id, providerId)
   return { conversation: await toConversationSummary(conversation, user.id) }
 })

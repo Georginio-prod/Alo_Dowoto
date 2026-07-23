@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
+import { findOrCreateConversation } from '~~/server/utils/conversationStore'
 import { recordEscrowOrderCheckIn, recordEscrowOrderCheckOut } from '~~/server/utils/escrowInterventionProof'
 import {
   cancelEscrowOrder,
@@ -23,7 +24,7 @@ function id(): string {
  */
 describe('createEscrowOrder — reprise après une commande terminale (#266)', () => {
   it('reste idempotente tant que la commande précédente est active (awaiting_payment)', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const first = await createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 3000 })
     const second = await createEscrowOrder({ conversationId, clientId: id(), providerId: id(), amount: 9000 })
 
@@ -32,7 +33,7 @@ describe('createEscrowOrder — reprise après une commande terminale (#266)', (
   })
 
   it('reste idempotente tant que la commande précédente est en séquestre (in_escrow)', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
     const first = await createEscrowOrder({ conversationId, clientId: client, providerId: id(), amount: 3000 })
@@ -43,7 +44,7 @@ describe('createEscrowOrder — reprise après une commande terminale (#266)', (
   })
 
   it('crée une toute nouvelle commande une fois la précédente libérée (released)', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     const provider = id()
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
@@ -62,7 +63,7 @@ describe('createEscrowOrder — reprise après une commande terminale (#266)', (
   })
 
   it('crée une toute nouvelle commande une fois la précédente remboursée (refunded)', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     const provider = id()
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })
@@ -77,7 +78,7 @@ describe('createEscrowOrder — reprise après une commande terminale (#266)', (
   })
 
   it('reste idempotente tant qu’un litige est en cours (disputed) — pas de reprise possible pendant une médiation', async () => {
-    const conversationId = id()
+    const conversationId = (await findOrCreateConversation(id(), id())).id
     const client = id()
     const provider = id()
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 3000, reference: 'REF' })

@@ -9,7 +9,7 @@
 export default defineEventHandler(async (event) => {
   const user = await requireClientRole(event)
   const id = getRouterParam(event, 'id')
-  const conversation = id ? getConversationById(id) : null
+  const conversation = id ? await getConversationById(id) : null
 
   if (!conversation || !isConversationParticipant(conversation, user.id) || conversation.clientId !== user.id) {
     notFound('Conversation introuvable.')
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     conflict('Ce prestataire n\'a pas encore configuré de tarif fixe : demande impossible pour le moment.')
   }
 
-  const message = addMessage(conversation.id, user.id, user.role, `Nouvelle demande (reprise) : ${description}`)
+  const message = await addMessage(conversation.id, user.id, user.role, `Nouvelle demande (reprise) : ${description}`)
   const order = await createEscrowOrder({ conversationId: conversation.id, clientId: user.id, providerId: conversation.providerId, amount })
 
   setResponseStatus(event, 201)

@@ -1,5 +1,6 @@
+import { randomUUID } from 'node:crypto'
 import { afterEach, describe, expect, it } from 'vitest'
-import { isValidWebhookSignature, signWebhookBody } from '~~/server/utils/webhookSignature'
+import { consumeWebhookNonce, isValidWebhookSignature, isWebhookTimestampFresh, signWebhookBody } from '~~/server/utils/webhookSignature'
 
 const RAW_BODY = JSON.stringify({ paymentId: 'pay_1', status: 'success' })
 
@@ -54,5 +55,30 @@ describe('webhookSignature (#34/#193)', () => {
     process.env.NODE_ENV = 'production'
     const signature = signWebhookBody(RAW_BODY)
     expect(isValidWebhookSignature(RAW_BODY, signature)).toBe(true)
+  })
+})
+
+describe('anti-rejeu (#355)', () => {
+  it('un timestamp récent est frais', () => {
+    expect(isWebhookTimestampFresh(Date.now())).toBe(true)
+  })
+
+  it('un timestamp de plus de 5 minutes est refusé', () => {
+    expect(isWebhookTimestampFresh(Date.now() - 6 * 60 * 1000)).toBe(false)
+  })
+
+  it('un timestamp dans le futur au-delà de la fenêtre est refusé (dérive d’horloge)', () => {
+    expect(isWebhookTimestampFresh(Date.now() + 6 * 60 * 1000)).toBe(false)
+  })
+
+  it('un nonce inédit n’est pas signalé comme rejeu, un nonce déjà consommé si', () => {
+    const nonce = randomUUID()
+    expect(consumeWebhookNonce(nonce)).toBe(false)
+    expect(consumeWebhookNonce(nonce)).toBe(true)
+  })
+
+  it('deux nonces distincts sont indépendants', () => {
+    expect(consumeWebhookNonce(randomUUID())).toBe(false)
+    expect(consumeWebhookNonce(randomUUID())).toBe(false)
   })
 })
