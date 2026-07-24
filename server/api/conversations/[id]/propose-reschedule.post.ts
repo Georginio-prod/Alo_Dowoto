@@ -1,8 +1,3 @@
-interface ProposeRescheduleBody {
-  proposedAt?: number
-  note?: string
-}
-
 function formatProposedDate(timestamp: number): string {
   return new Date(timestamp).toLocaleString('fr-FR', {
     day: '2-digit',
@@ -34,13 +29,13 @@ export default defineEventHandler(async (event) => {
     conflict('Impossible de proposer un nouveau créneau pour cette commande dans son état actuel.')
   }
 
-  const body = await readBody<ProposeRescheduleBody>(event)
-  const proposedAt = body?.proposedAt
-  if (typeof proposedAt !== 'number' || !Number.isFinite(proposedAt) || proposedAt <= Date.now()) {
+  const body = await readSchemaBody(event, proposeRescheduleSchema)
+  const proposedAt = body.proposedAt
+  if (proposedAt <= Date.now()) {
     badRequest('La date proposée doit être une date future valide.')
   }
 
-  const note = body?.note?.trim()
+  const note = body.note?.trim()
   const text = note
     ? `Nouveau créneau proposé : ${formatProposedDate(proposedAt)}. ${note}`
     : `Nouveau créneau proposé : ${formatProposedDate(proposedAt)}.`

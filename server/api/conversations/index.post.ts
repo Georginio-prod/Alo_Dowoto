@@ -1,7 +1,3 @@
-interface CreateConversationBody {
-  providerId?: string
-}
-
 /**
  * Crée (ou retrouve, idempotent) la conversation avec un prestataire — c'est
  * la route appelée par le bouton « Contacter » des résultats de matching
@@ -14,11 +10,7 @@ export default defineEventHandler(async (event) => {
     forbidden("Vérifiez votre identité avant de contacter un prestataire (carte d'identité + photo passeport).")
   }
 
-  const body = await readBody<CreateConversationBody>(event)
-  const providerId = body?.providerId?.trim()
-  if (!providerId) {
-    badRequest('providerId est requis.')
-  }
+  const { providerId } = await readSchemaBody(event, createConversationSchema)
 
   // `providerId` référence soit l'annuaire de démo (server/utils/providerDirectory.ts,
   // pas de vrai compte), soit un vrai compte prestataire — voir la documentation de

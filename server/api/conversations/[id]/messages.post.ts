@@ -1,7 +1,3 @@
-interface SendMessageBody {
-  body?: string
-}
-
 export default defineEventHandler(async (event) => {
   const user = await requireSessionUser(event)
   const id = getRouterParam(event, 'id')
@@ -17,11 +13,7 @@ export default defineEventHandler(async (event) => {
     conflict('Complétez le formulaire de première prise de contact avant d\'envoyer un message.')
   }
 
-  const payload = await readBody<SendMessageBody>(event)
-  const text = payload?.body?.trim()
-  if (!text) {
-    badRequest('Le message ne peut pas être vide.')
-  }
+  const { body: text } = await readSchemaBody(event, sendMessageSchema)
 
   // Anti-contournement (#265) : un numéro, un e-mail ou une mention de
   // paiement hors plateforme dans un message libre est bloqué avant

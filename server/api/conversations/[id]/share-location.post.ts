@@ -1,8 +1,3 @@
-interface ShareLocationBody {
-  lat?: number
-  lng?: number
-}
-
 /**
  * Le chercheur valide le partage de sa localisation
  * (#hub-messages-automatiques), en réponse au message automatique WorkTogo
@@ -26,12 +21,7 @@ export default defineEventHandler(async (event) => {
     conflict('Aucune demande de localisation en attente pour cette conversation.')
   }
 
-  const body = await readBody<ShareLocationBody>(event)
-  const lat = body?.lat
-  const lng = body?.lng
-  if (typeof lat !== 'number' || typeof lng !== 'number' || Number.isNaN(lat) || Number.isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-    badRequest('Coordonnées de localisation invalides.')
-  }
+  const { lat, lng } = await readSchemaBody(event, shareLocationSchema)
 
   await resolveMessage(conversation.id, pending.id)
   const message = await addMessage(conversation.id, user.id, user.role, '📍 Localisation partagée avec le prestataire.', {

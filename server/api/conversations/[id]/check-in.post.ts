@@ -1,8 +1,3 @@
-interface CheckInBody {
-  lat?: number
-  lng?: number
-}
-
 /**
  * Le prestataire enregistre son arrivée sur le lieu d'intervention (#268,
  * preuve d'intervention in-app anti-fuite). Requiert que la commande soit en
@@ -20,8 +15,8 @@ export default defineEventHandler(async (event) => {
     notFound('Conversation introuvable.')
   }
 
-  const body = await readBody<CheckInBody>(event).catch(() => undefined)
-  const location = typeof body?.lat === 'number' && typeof body?.lng === 'number' ? { lat: body.lat, lng: body.lng } : null
+  const body = await readSchemaBody(event, checkInOutSchema)
+  const location = body.lat !== undefined && body.lng !== undefined ? { lat: body.lat, lng: body.lng } : null
 
   const result = await recordEscrowOrderCheckIn(conversation.id, location)
 

@@ -1,9 +1,3 @@
-interface SetPasswordBody {
-  currentPassword?: string
-  password?: string
-  confirmPassword?: string
-}
-
 /**
  * Sert deux usages :
  *  - Étape « Créer votre mot de passe », obligatoire juste après la
@@ -17,12 +11,12 @@ interface SetPasswordBody {
 export default defineEventHandler(async (event) => {
   const user = await requireSessionUser(event)
 
-  const body = await readBody<SetPasswordBody>(event)
-  const password = body?.password ?? ''
-  const confirmPassword = body?.confirmPassword ?? ''
+  const body = await readSchemaBody(event, setPasswordSchema)
+  const password = body.password
+  const confirmPassword = body.confirmPassword
 
   if (hasPassword(user)) {
-    const currentPassword = body?.currentPassword ?? ''
+    const currentPassword = body.currentPassword
     if (!currentPassword) {
       badRequest('Le mot de passe actuel est requis.')
     }

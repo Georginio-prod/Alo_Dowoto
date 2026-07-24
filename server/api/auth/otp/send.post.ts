@@ -1,20 +1,10 @@
-import type { ContactMethod } from '~~/server/utils/contact'
 import { isEmailConfigured, sendEmail } from '~~/server/utils/email'
 import { isSmsConfigured, sendSms } from '~~/server/utils/sms'
 
-interface SendOtpBody {
-  method?: ContactMethod
-  value?: string
-}
-
 export default defineEventHandler(async (event) => {
-  const body = await readBody<SendOtpBody>(event)
+  const body = await readSchemaBody(event, sendOtpSchema)
 
-  if (body?.method !== 'phone' && body?.method !== 'email') {
-    badRequest('Méthode de contact invalide.')
-  }
-
-  const contact = normalizeContact(body.method, body.value ?? '')
+  const contact = normalizeContact(body.method, body.value)
   if (!contact) {
     badRequest(
       body.method === 'phone'
