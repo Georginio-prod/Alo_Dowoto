@@ -114,6 +114,9 @@ export const paymentWebhookSchema = z.object({
   paymentId: requiredTrimmed('Requête webhook invalide.'),
   status: z.enum(['success', 'failed'], { error: 'Requête webhook invalide.' }),
   operatorRef: z.string().optional(),
+  /** Anti-rejeu (#355), couverts par la signature HMAC — voir server/utils/webhookSignature.ts. */
+  timestamp: z.number({ error: 'Requête webhook invalide.' }),
+  nonce: requiredTrimmed('Requête webhook invalide.'),
 })
 
 /** Même forme que `paymentWebhookSchema`, pour une recharge de portefeuille plutôt qu'un paiement d'abonnement. */
@@ -121,6 +124,8 @@ export const walletWebhookSchema = z.object({
   rechargeId: requiredTrimmed('Requête webhook invalide.'),
   status: z.enum(['success', 'failed'], { error: 'Requête webhook invalide.' }),
   operatorRef: z.string().optional(),
+  timestamp: z.number({ error: 'Requête webhook invalide.' }),
+  nonce: requiredTrimmed('Requête webhook invalide.'),
 })
 
 /** Corps de `POST /api/conversations/[id]/dispute` (#197, ouverture d'un litige escrow). */

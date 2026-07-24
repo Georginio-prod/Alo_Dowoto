@@ -1,14 +1,5 @@
 import { findPlan } from '~~/app/data/plans'
 
-interface WebhookBody {
-  paymentId?: string
-  status?: 'success' | 'failed'
-  operatorRef?: string
-  /** Horodatage (ms epoch) et nonce anti-rejeu (#355), couverts par la signature HMAC. */
-  timestamp?: number
-  nonce?: string
-}
-
 export default defineEventHandler(async (event) => {
   const rawBody = (await readRawBody(event)) ?? ''
   const signature = getHeader(event, 'x-webhook-signature')
@@ -29,9 +20,7 @@ export default defineEventHandler(async (event) => {
   if (!result.success) {
     badRequest(result.error.issues[0]?.message ?? 'Requête webhook invalide.')
   }
-  if (typeof body.timestamp !== 'number' || typeof body.nonce !== 'string' || !body.nonce) {
-    badRequest('Requête webhook invalide.')
-  }
+  const body = result.data
 
   const payment = await getPayment(body.paymentId)
   if (!payment) {

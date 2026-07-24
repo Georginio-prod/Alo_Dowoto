@@ -120,33 +120,53 @@ describe('cancelEscrowSchema (#196, validation POST /api/conversations/[id]/canc
 })
 
 describe('paymentWebhookSchema (#34/#356, validation du corps déjà parsé de POST /api/payments/webhook)', () => {
+  function validBody() {
+    return { paymentId: 'pay_1', status: 'success', timestamp: Date.now(), nonce: 'nonce-1' }
+  }
+
   it('accepte un corps valide', () => {
-    const result = paymentWebhookSchema.safeParse({ paymentId: 'pay_1', status: 'success', operatorRef: 'OP-1' })
-    expect(result.success).toBe(true)
+    expect(paymentWebhookSchema.safeParse({ ...validBody(), operatorRef: 'OP-1' }).success).toBe(true)
   })
 
   it('operatorRef est optionnel', () => {
-    expect(paymentWebhookSchema.safeParse({ paymentId: 'pay_1', status: 'failed' }).success).toBe(true)
+    expect(paymentWebhookSchema.safeParse(validBody()).success).toBe(true)
   })
 
   it('rejette un paymentId absent ou vide', () => {
-    expect(firstError(paymentWebhookSchema, { status: 'success' })).toBe('Requête webhook invalide.')
-    expect(firstError(paymentWebhookSchema, { paymentId: '  ', status: 'success' })).toBe('Requête webhook invalide.')
+    const { paymentId: _paymentId, ...withoutPaymentId } = validBody()
+    expect(firstError(paymentWebhookSchema, withoutPaymentId)).toBe('Requête webhook invalide.')
+    expect(firstError(paymentWebhookSchema, { ...validBody(), paymentId: '  ' })).toBe('Requête webhook invalide.')
   })
 
   it('rejette un statut hors success/failed', () => {
-    expect(firstError(paymentWebhookSchema, { paymentId: 'pay_1', status: 'en_cours' })).toBe('Requête webhook invalide.')
-    expect(firstError(paymentWebhookSchema, { paymentId: 'pay_1' })).toBe('Requête webhook invalide.')
+    expect(firstError(paymentWebhookSchema, { ...validBody(), status: 'en_cours' })).toBe('Requête webhook invalide.')
+  })
+
+  it('rejette un timestamp ou un nonce absent (#355, anti-rejeu)', () => {
+    const { timestamp: _timestamp, ...withoutTimestamp } = validBody()
+    expect(firstError(paymentWebhookSchema, withoutTimestamp)).toBe('Requête webhook invalide.')
+    const { nonce: _nonce, ...withoutNonce } = validBody()
+    expect(firstError(paymentWebhookSchema, withoutNonce)).toBe('Requête webhook invalide.')
   })
 })
 
 describe('walletWebhookSchema (#193/#356, validation du corps déjà parsé de POST /api/wallet/webhook)', () => {
+  function validBody() {
+    return { rechargeId: 'rec_1', status: 'success', timestamp: Date.now(), nonce: 'nonce-1' }
+  }
+
   it('accepte un corps valide', () => {
-    expect(walletWebhookSchema.safeParse({ rechargeId: 'rec_1', status: 'success' }).success).toBe(true)
+    expect(walletWebhookSchema.safeParse(validBody()).success).toBe(true)
   })
 
   it('rejette un rechargeId absent ou un statut invalide', () => {
-    expect(firstError(walletWebhookSchema, { status: 'success' })).toBe('Requête webhook invalide.')
-    expect(firstError(walletWebhookSchema, { rechargeId: 'rec_1', status: 'annule' })).toBe('Requête webhook invalide.')
+    const { rechargeId: _rechargeId, ...withoutRechargeId } = validBody()
+    expect(firstError(walletWebhookSchema, withoutRechargeId)).toBe('Requête webhook invalide.')
+    expect(firstError(walletWebhookSchema, { ...validBody(), status: 'annule' })).toBe('Requête webhook invalide.')
+  })
+
+  it('rejette un timestamp ou un nonce absent (#355, anti-rejeu)', () => {
+    const { timestamp: _timestamp, ...withoutTimestamp } = validBody()
+    expect(firstError(walletWebhookSchema, withoutTimestamp)).toBe('Requête webhook invalide.')
   })
 })

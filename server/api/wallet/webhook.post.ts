@@ -1,12 +1,3 @@
-interface WalletWebhookBody {
-  rechargeId?: string
-  status?: 'success' | 'failed'
-  operatorRef?: string
-  /** Horodatage (ms epoch) et nonce anti-rejeu (#355), couverts par la signature HMAC. */
-  timestamp?: number
-  nonce?: string
-}
-
 /**
  * Webhook opérateur (Flooz/T-Money) confirmant une recharge de portefeuille
  * (#193), même mécanique que server/api/payments/webhook.post.ts (#34).
@@ -31,9 +22,7 @@ export default defineEventHandler(async (event) => {
   if (!result.success) {
     badRequest(result.error.issues[0]?.message ?? 'Requête webhook invalide.')
   }
-  if (typeof body.timestamp !== 'number' || typeof body.nonce !== 'string' || !body.nonce) {
-    badRequest('Requête webhook invalide.')
-  }
+  const body = result.data
 
   const recharge = await getRecharge(body.rechargeId)
   if (!recharge) {
