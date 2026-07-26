@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { describe, expect, it, vi } from 'vitest'
-import { MIN_WITHDRAWAL_AMOUNT, creditWallet, debitWallet, getBalance, listMovements, requestWithdrawal } from '~~/server/utils/walletStore'
+import { debitWalletForPenalty, MIN_WITHDRAWAL_AMOUNT, creditWallet, debitWallet, getBalance, listMovements, requestWithdrawal } from '~~/server/utils/walletStore'
 
 /** Chaque test utilise un identifiant unique — isolation dans la base de test partagée (#342). */
 function userId(): string {
@@ -95,6 +95,38 @@ describe('walletStore (#192 modèle de données du solde & traçabilité)', () =
     spy.mockRestore()
 
     expect((await listMovements(user)).map((m) => m.reference)).toEqual(['C', 'B', 'A'])
+  })
+})
+
+describe('debitWalletForPenalty — pénalité de litige (#274)', () => {
+  it('débite intégralement quand le solde est suffisant', async () => {
+    const provider = userId()
+    await creditWallet({ walletUserId: provider, type: 'escrow_release', amount: 20000, reference: 'ORDER-1' })
+
+    const movement = await debitWalletForPenalty({ walletUserId: provider, amount: 750, reference: 'ORDER-2' })
+
+    expect(movement?.amount).toBe(750)
+    expect(movement?.type).toBe('dispute_penalty')
+    expect(await getBalance(provider)).toBe(20000 - 750)
+  })
+
+  it('plafonne le débit au solde disponible plutôt que de refuser (jamais de découvert)', async () => {
+    const provider = userId()
+    await creditWallet({ walletUserId: provider, type: 'escrow_release', amount: 300, reference: 'ORDER-1' })
+
+    const movement = await debitWalletForPenalty({ walletUserId: provider, amount: 750, reference: 'ORDER-2' })
+
+    expect(movement?.amount).toBe(300)
+    expect(await getBalance(provider)).toBe(0)
+  })
+
+  it('renvoie null sans solde disponible, sans journaliser de mouvement', async () => {
+    const provider = userId()
+
+    const movement = await debitWalletForPenalty({ walletUserId: provider, amount: 750, reference: 'ORDER-1' })
+
+    expect(movement).toBeNull()
+    expect(await listMovements(provider)).toHaveLength(0)
   })
 })
 

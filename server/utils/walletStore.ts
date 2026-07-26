@@ -29,6 +29,11 @@ import { prisma } from '~~/server/utils/prisma'
  *   grâce (#275, grille d'annulation) — indemnise le prestataire pour le
  *   temps bloqué, distinct de `escrow_release` (prestation effectivement
  *   réalisée et validée).
+ * - `dispute_penalty` : un litige se résout en défaveur du prestataire
+ *   (chercheur confirme que le travail n'est pas fait, ou timeout sans
+ *   confirmation) — voir escrowDisputeResolution.ts.
+ * - `dispute_compensation` : contrepartie de `dispute_penalty`, versée au
+ *   chercheur en plus du remboursement intégral du séquestre.
  */
 export type WalletMovementType =
   | 'recharge'
@@ -38,6 +43,8 @@ export type WalletMovementType =
   | 'commission'
   | 'retrait'
   | 'cancellation_compensation'
+  | 'dispute_penalty'
+  | 'dispute_compensation'
 
 /** Identifiant conventionnel du portefeuille interne WorkTogo (commissions). */
 export const PLATFORM_WALLET_USER_ID = 'worktogo-platform'
@@ -69,6 +76,8 @@ const MOVEMENT_SIGN: Record<WalletMovementType, 1 | -1> = {
   commission: 1,
   retrait: -1,
   cancellation_compensation: 1,
+  dispute_penalty: -1,
+  dispute_compensation: 1,
 }
 
 export interface RecordMovementInput {
@@ -164,6 +173,32 @@ export async function debitWallet(input: Omit<RecordMovementInput, 'type'>): Pro
     })
     if (sumBalance(rows) < input.amount) return null
     const row = await tx.walletMovement.create({ data: buildMovementData({ ...input, type: 'escrow_debit' }) })
+    return toMovement(row)
+  })
+}
+
+/**
+ * Débite le portefeuille au titre d'une pénalité (litige résolu en défaveur
+ * du prestataire, voir escrowDisputeResolution.ts) — contrairement à
+ * `debitWallet`, ne renvoie jamais `null` : un prestataire fautif sans solde
+ * suffisant ne doit pas échapper à toute conséquence faute de fonds à
+ * débiter. Le montant réellement débité est plafonné au solde disponible
+ * (jamais de découvert) et renvoyé pour que l'appelant sache si la pénalité
+ * a été appliquée intégralement.
+ */
+export async function debitWalletForPenalty(input: Omit<RecordMovementInput, 'type' | 'amount'> & { amount: number }): Promise<WalletMovement | null> {
+  if (input.amount <= 0) {
+    throw new Error('Le montant de la pénalité doit être positif.')
+  }
+  return prisma.$transaction(async (tx) => {
+    const rows = await tx.walletMovement.findMany({
+      where: { walletUserId: input.walletUserId },
+      select: { amount: true, type: true },
+    })
+    const balance = sumBalance(rows)
+    if (balance <= 0) return null
+    const amount = Math.min(input.amount, balance)
+    const row = await tx.walletMovement.create({ data: buildMovementData({ ...input, type: 'dispute_penalty', amount }) })
     return toMovement(row)
   })
 }

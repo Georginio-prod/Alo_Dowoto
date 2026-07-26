@@ -52,6 +52,12 @@ enum WalletMovementType {
   /// Indemnisation du prestataire en cas d'annulation client après le délai
   /// de grâce (#275) — présent dans le store mais manquait à l'enum.
   cancellation_compensation
+  /// Pénalité prélevée sur le solde du prestataire (débit) quand un litige
+  /// se résout en sa défaveur — voir escrowDisputeResolution.ts.
+  dispute_penalty
+  /// Contrepartie (crédit) de dispute_penalty : versée au chercheur en plus
+  /// du remboursement intégral du séquestre.
+  dispute_compensation
 }
 
 /// Cycle de vie d'une commande en séquestre — voir server/utils/escrowOrderStore.ts (#194-#197).
@@ -436,6 +442,8 @@ model Testimonial {
 /// d'événement (MessageKind).
 enum NotificationType {
   new_message
+  /// Mise à jour d'un litige escrow (réponse du prestataire, résolution) — voir escrowDisputeResolution.ts.
+  dispute_update
 }
 
 /// Notification in-app (#360, centre de notifications — premier incrément :

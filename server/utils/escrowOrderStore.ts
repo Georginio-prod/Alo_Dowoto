@@ -15,6 +15,8 @@ import {
   resolveProviderRate,
   searchProviders,
 } from '~~/server/utils/providerDirectory'
+import { applyDisputeResolutionTimeoutIfExpired } from '~~/server/utils/escrowDisputeResolution'
+import { notifyDisputeUpdate } from '~~/server/utils/notificationStore'
 import { prisma } from '~~/server/utils/prisma'
 import { creditWallet, debitWallet, PLATFORM_WALLET_USER_ID } from '~~/server/utils/walletStore'
 
@@ -185,7 +187,7 @@ export async function createEscrowOrder(input: {
  * aussi bien par la confirmation explicite du chercheur que par la validation
  * tacite après 72h — jamais deux fois pour la même commande.
  */
-async function releaseOrderFunds(order: EscrowOrder): Promise<EscrowOrder> {
+export async function releaseOrderFunds(order: EscrowOrder): Promise<EscrowOrder> {
   const commission = Math.round(order.amount * ESCROW_COMMISSION_RATE)
   const providerNet = order.amount - commission
 
@@ -291,6 +293,7 @@ export async function getEscrowOrderByConversationId(conversationId: string): Pr
   let order = toOrder(row)
   order = await applyTacitValidationIfExpired(order)
   order = await applyAutoReassignmentIfExpired(order)
+  order = await applyDisputeResolutionTimeoutIfExpired(order)
   return order
 }
 
@@ -438,6 +441,16 @@ export async function respondToDispute(conversationId: string, response: string)
   if (!response.trim()) return { ok: false, error: 'response_required' }
 
   const order = await updateOrder(row.id, { disputeResponse: response.trim(), disputeRespondedAt: new Date(Date.now()) })
+
+  // Le chercheur doit maintenant confirmer ou contester cette réponse (#274,
+  // panneau de médiation) — voir escrowDisputeResolution.ts.
+  await notifyDisputeUpdate({
+    recipientId: order.clientId,
+    conversationId: order.conversationId,
+    title: 'Réponse du prestataire à votre litige',
+    body: "Le prestataire indique que la prestation est terminée. Merci de confirmer si c'est bien le cas.",
+  })
+
   return { ok: true, order }
 }
 
