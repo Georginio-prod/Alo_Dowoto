@@ -60,6 +60,7 @@ function onSearch() {
       <div class="ml-auto flex shrink-0 items-center gap-2.5">
         <LanguageSwitcher />
         <WalletBalanceChip v-if="sessionUser?.role === 'client'" />
+        <NotificationBell v-if="sessionUser" />
         <AccountMenu v-if="sessionUser" :user="sessionUser" />
         <template v-else>
           <NuxtLink

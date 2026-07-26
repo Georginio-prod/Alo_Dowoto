@@ -25,6 +25,19 @@ export default defineEventHandler(async (event) => {
   }
 
   const message = await addMessage(conversation.id, user.id, user.role, text)
+
+  // Notifie l'autre partie (#360) : ne doit jamais faire échouer l'envoi du
+  // message lui-même déjà enregistré — best-effort, erreurs journalisées.
+  const recipientId = user.id === conversation.clientId ? conversation.providerId : conversation.clientId
+  const senderName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim()
+    || user.username
+    || (user.role === 'prestataire' ? 'Un prestataire' : 'Un chercheur')
+  try {
+    await notifyNewMessage({ recipientId, conversationId: conversation.id, senderName, messageBody: text })
+  } catch (error) {
+    console.error(`[notifications] Échec de la notification pour la conversation ${conversation.id} :`, error)
+  }
+
   setResponseStatus(event, 201)
   return { message }
 })

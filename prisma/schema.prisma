@@ -429,3 +429,32 @@ model Testimonial {
   rating    Int
   createdAt DateTime @default(now())
 }
+
+/// Type d'événement notifié — un seul cas pour l'instant (#360, premier
+/// incrément) ; les événements paiement/escrow/litige de l'issue restent à
+/// ajouter dans un incrément ultérieur, même patron que les autres enums
+/// d'événement (MessageKind).
+enum NotificationType {
+  new_message
+}
+
+/// Notification in-app (#360, centre de notifications — premier incrément :
+/// nouveau message reçu, côté chercheur comme prestataire). Pas de clé
+/// étrangère vers User (même choix que Favorite/Complaint) : `userId` peut
+/// référencer un compte réel ou, côté prestataire, un id de l'annuaire de
+/// démo tant que ce dernier n'est pas remplacé par de vrais comptes (voir
+/// conversationStore.ts).
+model Notification {
+  id             String           @id @default(uuid())
+  userId         String
+  type           NotificationType
+  title          String
+  body           String
+  /// Conversation à ouvrir au clic, quand pertinent (toujours le cas pour `new_message`).
+  conversationId String?
+  /// `null` tant que non lue.
+  readAt         DateTime?
+  createdAt      DateTime         @default(now())
+
+  @@index([userId, readAt])
+}
