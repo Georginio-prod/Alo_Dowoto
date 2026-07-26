@@ -90,6 +90,24 @@ export async function markAllNotificationsRead(userId: string): Promise<void> {
   })
 }
 
+/**
+ * Notifie le chercheur d'une mise à jour de son litige (réponse du
+ * prestataire, voir escrowOrderStore.ts) — in-app uniquement, pas
+ * d'email/SMS comme pour `notifyNewMessage` : l'action attendue se fait
+ * depuis l'app (confirmer ou non que le travail est fait), un rappel in-app
+ * suffit.
+ */
+export async function notifyDisputeUpdate(params: {
+  recipientId: string
+  conversationId: string
+  title: string
+  body: string
+}): Promise<void> {
+  const recipient = await getUserById(params.recipientId)
+  if (!recipient) return
+  await createNotification({ userId: params.recipientId, type: 'dispute_update', title: params.title, body: params.body, conversationId: params.conversationId })
+}
+
 const MESSAGE_PREVIEW_MAX_LENGTH = 140
 
 /**

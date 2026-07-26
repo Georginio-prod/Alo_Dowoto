@@ -15,6 +15,8 @@ const TYPE_LABELS: Record<WalletMovementType, string> = {
   commission: 'Commission WorkTogo',
   retrait: 'Retrait',
   cancellation_compensation: 'Indemnisation (annulation tardive du chercheur)',
+  dispute_penalty: 'Pénalité (litige résolu en votre défaveur)',
+  dispute_compensation: 'Compensation (litige résolu en votre faveur)',
 }
 
 const typeFilter = ref<'all' | WalletMovementType>('all')

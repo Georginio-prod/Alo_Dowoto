@@ -145,6 +145,11 @@ export const cancelEscrowSchema = z.object({
   reason: requiredTrimmed("Le motif d'annulation est obligatoire."),
 })
 
+/** Corps de `POST /api/conversations/[id]/confirm-dispute-resolution` (#274, le chercheur tranche après la réponse du prestataire). */
+export const confirmDisputeResolutionSchema = z.object({
+  confirmed: z.boolean({ error: 'Confirmation invalide.' }),
+})
+
 /**
  * Valide une paire de coordonnées GPS (même plage que
  * `server/api/conversations/[id]/share-location.post.ts`). Utilisée pour les

@@ -38,6 +38,26 @@ async function handleRespondToDispute() {
     isRespondingToDispute.value = false
   }
 }
+
+const isConfirmingDisputeResolution = ref(false)
+const confirmDisputeResolutionError = ref('')
+
+async function handleConfirmDisputeResolution(confirmed: boolean) {
+  if (isConfirmingDisputeResolution.value) return
+  isConfirmingDisputeResolution.value = true
+  confirmDisputeResolutionError.value = ''
+  try {
+    await $fetch(`/api/conversations/${props.conversationId}/confirm-dispute-resolution`, {
+      method: 'POST',
+      body: { confirmed },
+    })
+    emit('changed')
+  } catch {
+    confirmDisputeResolutionError.value = "Votre confirmation n'a pas pu être envoyée. Réessayez."
+  } finally {
+    isConfirmingDisputeResolution.value = false
+  }
+}
 </script>
 
 <template>
@@ -56,6 +76,30 @@ async function handleRespondToDispute() {
     <p v-else-if="isViewerClient" class="mt-1 text-[12px] text-muted">
       En attente de la réponse du prestataire.
     </p>
+
+    <div v-if="isViewerClient && escrowOrder.disputeResponse" class="mt-3 space-y-2 border-t border-hairline pt-3">
+      <p class="text-[12.5px] font-semibold text-dark">Le prestataire indique que la prestation est terminée</p>
+      <p class="text-[12px] text-muted">Confirmez-vous que le travail a bien été réalisé ?</p>
+      <div class="flex gap-2">
+        <button
+          type="button"
+          class="press rounded-field bg-primary px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
+          :disabled="isConfirmingDisputeResolution"
+          @click="handleConfirmDisputeResolution(true)"
+        >
+          Oui, c'est fait
+        </button>
+        <button
+          type="button"
+          class="press rounded-field border border-error px-4 py-2 text-[12.5px] font-semibold text-error disabled:cursor-not-allowed disabled:opacity-45"
+          :disabled="isConfirmingDisputeResolution"
+          @click="handleConfirmDisputeResolution(false)"
+        >
+          Non, ce n'est pas fait
+        </button>
+      </div>
+      <p v-if="confirmDisputeResolutionError" class="text-[12.5px] text-error">{{ confirmDisputeResolutionError }}</p>
+    </div>
 
     <div v-if="isViewerProvider && !escrowOrder.disputeResponse" class="mt-3 space-y-2 border-t border-hairline pt-3">
       <p class="text-[12.5px] font-semibold text-dark">Répondre au litige (en médiation)</p>
