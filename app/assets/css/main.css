@@ -127,17 +127,10 @@
     50% { opacity: 1; }
   }
 
-  /* Mot-clé mis en valeur dans le titre du hero : vert de marque + surlignage
-     « marqueur » très doux derrière le bas du texte (traitement éditorial,
-     cf. références type Land-book/Godly). Statique — aucune animation, donc
-     rien à neutraliser sous prefers-reduced-motion. Le dégradé s'arrête net à
-     62 % de la hauteur : effet feutre plutôt que soulignement. */
+  /* Mot-clé mis en valeur dans le titre du hero : vert de marque, sans
+     surlignage derrière le texte. */
   .hero-highlight {
     color: var(--color-primary);
-    background-image: linear-gradient(transparent 62%, rgba(20, 168, 0, 0.16) 0);
-    background-repeat: no-repeat;
-    padding-inline: 0.06em;
-    border-radius: 2px;
   }
 
   [data-parallax] {
