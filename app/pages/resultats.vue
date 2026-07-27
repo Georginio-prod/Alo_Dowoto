@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { SECTORS } from '~/data/sectors'
+import { DEFAULT_RADIUS_KM } from '~/data/searchRadius'
 import type { FeaturedProviderResult, ProviderSearchResult } from '~~/server/utils/providerDirectory'
 
 interface SearchResponse {
@@ -7,6 +8,7 @@ interface SearchResponse {
   total: number
   page: number
   pageSize: number
+  proximity: { requestedRadiusKm: number; usedRadiusKm: number; widened: boolean } | null
 }
 
 interface FeaturedResponse {
@@ -55,6 +57,23 @@ const filterPriceMax = ref(PRICE_MAX_DEFAULT)
 type SortOption = 'pertinence' | 'note' | 'prix_asc' | 'prix_desc'
 const sortBy = ref<SortOption>('pertinence')
 
+// Position et rayon de recherche (#geoloc, 1.1/1.3) : possédés par
+// LocationRadiusPicker.vue (géolocalisation + repli quartier), cette page ne
+// fait que les transmettre à la requête, comme les autres filtres ci-dessus.
+type ViewMode = 'liste' | 'carte'
+const viewMode = ref<ViewMode>('liste')
+const searchLatitude = ref<number>()
+const searchLongitude = ref<number>()
+const searchQuartier = ref('')
+const searchRadiusKm = ref(DEFAULT_RADIUS_KM)
+const selectedMapProviderId = ref<string | null>(null)
+
+const searcherPosition = computed(() =>
+  searchLatitude.value !== undefined && searchLongitude.value !== undefined
+    ? { latitude: searchLatitude.value, longitude: searchLongitude.value }
+    : null,
+)
+
 // Le texte libre ne sert qu'à choisir le secteur affiché (ci-dessus) : une
 // fois ce secteur résolu, la requête utilise les filtres structurés plutôt
 // que de recombiner `q` (qui ne matcherait pas, par ex., les sous-secteurs
@@ -64,14 +83,19 @@ const { data, pending } = await useFetch<SearchResponse>('/api/providers/search'
     secteur: activeSectorSlug.value,
     sous_secteur: filterSubSectors.value.length ? filterSubSectors.value : undefined,
     ville: filterCity.value || undefined,
+    quartier: searchQuartier.value || undefined,
     note_min: filterRatingMin.value ?? undefined,
     prix_max: filterPriceMax.value,
     tri: sortBy.value === 'pertinence' ? undefined : sortBy.value,
+    lat: searchLatitude.value,
+    lng: searchLongitude.value,
+    rayon_km: searcherPosition.value ? searchRadiusKm.value : undefined,
     pageSize: 24,
   })),
 })
 const results = computed(() => data.value?.results ?? [])
 const totalResults = computed(() => data.value?.total ?? 0)
+const proximity = computed(() => data.value?.proximity ?? null)
 
 // Puces de filtres actifs (pattern Malt/Upwork) : récapitulent en un coup
 // d'œil ce qui restreint la recherche et se retirent d'un clic. Chaque puce
@@ -228,7 +252,13 @@ function restartDemo() {
     </div>
 
     <div class="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-6 lg:flex-row lg:items-start">
-      <aside class="w-full shrink-0 lg:w-[240px]">
+      <aside class="w-full shrink-0 space-y-4 lg:w-[240px]">
+        <LocationRadiusPicker
+          v-model:latitude="searchLatitude"
+          v-model:longitude="searchLongitude"
+          v-model:quartier="searchQuartier"
+          v-model:radius-km="searchRadiusKm"
+        />
         <ResultsFilters
           v-model:sub-sectors="filterSubSectors"
           v-model:city="filterCity"
@@ -238,60 +268,28 @@ function restartDemo() {
         />
       </aside>
 
-      <section class="min-w-0 flex-1">
-        <!-- Barre d'outils résultats : compteur (réassurance) + tri explicite. -->
-        <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h2 class="text-[15px] font-bold text-dark">
-            {{ showHomeSections ? 'Tous les prestataires' : 'Résultats' }}
-            <span v-if="!pending" class="ml-1 text-[13px] font-medium text-muted">({{ totalResults }})</span>
-          </h2>
-          <label class="flex items-center gap-2 text-[12.5px] text-muted">
-            Trier par
-            <select
-              v-model="sortBy"
-              class="h-[38px] rounded-field border border-hairline bg-white px-2.5 text-[13px] font-semibold text-dark outline-none focus:border-primary"
-              aria-label="Trier les résultats"
-            >
-              <option value="pertinence">Pertinence</option>
-              <option value="note">Mieux notés</option>
-              <option value="prix_asc">Prix croissant</option>
-              <option value="prix_desc">Prix décroissant</option>
-            </select>
-          </label>
-        </div>
-
-        <!-- Filtres actifs retirables (récapitulatif clair de la recherche). -->
-        <div v-if="activeFilters.length" class="mb-4 flex flex-wrap items-center gap-2">
-          <span class="text-[12px] font-semibold text-muted">Filtres actifs :</span>
-          <button
-            v-for="chip in activeFilters"
-            :key="chip.id"
-            type="button"
-            class="press inline-flex items-center gap-1.5 rounded-pill border border-primary/30 bg-primary/10 px-3 py-1 text-[12.5px] font-semibold text-primary hover:border-primary/50"
-            @click="chip.clear()"
-          >
-            {{ chip.label }}
-            <span aria-hidden="true">×</span>
-            <span class="sr-only">Retirer le filtre {{ chip.label }}</span>
-          </button>
-          <button type="button" class="press text-[12.5px] font-semibold text-muted underline hover:text-dark" @click="resetFilters">
-            Tout effacer
-          </button>
-        </div>
-
-        <ResultsSkeleton v-if="pending" />
-        <ResultsEmptyState v-else-if="results.length === 0" @action="resetFilters" />
-        <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
-          <ProviderCard
-            v-for="(provider, i) in results"
-            :key="provider.id"
-            :provider="provider"
-            :is-favorite="favoriteProviderIds.has(provider.id)"
-            :reveal-delay="Math.min(i, 10) * 45"
-            @favorite-changed="refreshFavorites"
-          />
-        </div>
-      </section>
+      <ResultsListSection
+        v-model:view-mode="viewMode"
+        v-model:sort-by="sortBy"
+        :results="results"
+        :pending="pending"
+        :total-results="totalResults"
+        :proximity="proximity"
+        :active-filters="activeFilters"
+        :show-home-sections="showHomeSections"
+        :searcher-position="searcherPosition"
+        :search-radius-km="searchRadiusKm"
+        :favorite-provider-ids="favoriteProviderIds"
+        @reset-filters="resetFilters"
+        @favorite-changed="refreshFavorites"
+        @select-provider="selectedMapProviderId = $event"
+      />
     </div>
+
+    <ProviderProfileModal
+      v-if="selectedMapProviderId"
+      :provider-id="selectedMapProviderId"
+      @close="selectedMapProviderId = null"
+    />
   </div>
 </template>
