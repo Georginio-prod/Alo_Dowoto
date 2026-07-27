@@ -1,6 +1,6 @@
 import { SECTORS } from '~~/app/data/sectors'
 import { isValidCoordinatePair } from '~~/server/utils/apiValidation'
-import { fuzzCoordinate, haversineDistanceKm } from '~~/server/utils/geo'
+import { boundingBoxAround, fuzzCoordinate, haversineDistanceKm, isWithinBoundingBox } from '~~/server/utils/geo'
 import { isProviderAvailableOn, todayIsoDate } from '~~/server/utils/providerAvailabilityStore'
 import { getAverageRating } from '~~/server/utils/reviewStore'
 import { getProviderProfile, listProviderProfiles } from '~~/server/utils/providerStore'
@@ -50,6 +50,8 @@ export interface ProviderSearchFilters {
   sector?: string
   subSectors?: string[]
   city?: string
+  /** Slug d'un quartier de app/data/regions.ts (#geoloc) — filtre en plus de (pas à la place de) `city`. */
+  quartier?: string
   ratingMin?: number
   priceMax?: number
   query?: string
@@ -175,17 +177,33 @@ export function searchProviders(filters: ProviderSearchFilters): ProviderSearchR
     ? { latitude: filters.latitude as number, longitude: filters.longitude as number }
     : null
 
+  // Pré-filtrage par boîte englobante (#geoloc, 1.3) : un rectangle lat/lng
+  // est bien plus rapide à comparer qu'un calcul Haversine (sin/cos/asin) —
+  // écarte ici les prestataires certainement hors rayon, avant même de
+  // calculer leur distance exacte plus bas. Ne change jamais le résultat
+  // final (le rectangle englobe toujours le cercle du rayon demandé, voir
+  // geo.ts#boundingBoxAround) : seul un gain de performance, utile quand la
+  // table de prestataires grossira au-delà de l'annuaire de démonstration.
+  const radiusBoundingBox = searcherCoords && filters.radiusKm !== undefined
+    ? boundingBoxAround(searcherCoords, filters.radiusKm)
+    : null
+
   const filtered = allProviders()
     .filter((provider) => {
       if (filters.sector && provider.sector !== filters.sector) return false
       if (filters.subSectors?.length && !filters.subSectors.includes(provider.subSector)) return false
       if (filters.city && provider.city !== filters.city) return false
+      if (filters.quartier && provider.quartier !== filters.quartier) return false
       if (filters.ratingMin !== undefined && provider.rating < filters.ratingMin) return false
       if (filters.priceMax !== undefined && provider.priceFrom > filters.priceMax) return false
       if (!isProviderAvailableOn(provider.id, availabilityDate)) return false
       if (query) {
         const haystack = normalize(`${provider.displayName} ${provider.subSector} ${provider.city}`)
         if (!haystack.includes(query)) return false
+      }
+      if (radiusBoundingBox && provider.latitude !== null && provider.longitude !== null) {
+        const providerCoords = { latitude: provider.latitude, longitude: provider.longitude }
+        if (!isWithinBoundingBox(providerCoords, radiusBoundingBox)) return false
       }
       return true
     })
@@ -227,6 +245,48 @@ export function searchProviders(filters: ProviderSearchFilters): ProviderSearchR
     .map((provider) => ({ provider, score: scoreSearchResult(provider) }))
     .sort((a, b) => b.score - a.score)
     .map((entry) => entry.provider)
+}
+
+/** Paliers du curseur de rayon (#geoloc, 1.3) — aussi utilisés comme paliers d'élargissement automatique. */
+export const RADIUS_SLIDER_OPTIONS_KM = [1, 2, 5, 10, 20, 50]
+
+/** Rayon par défaut d'une recherche de proximité (#geoloc, 1.3) tant que l'utilisateur n'a pas ajusté le curseur. */
+export const DEFAULT_RADIUS_KM = 5
+
+export interface NearbySearchResult {
+  results: ProviderSearchResult[]
+  requestedRadiusKm: number
+  /** Rayon effectivement utilisé pour produire `results` — supérieur à `requestedRadiusKm` seulement si la recherche a dû être élargie faute de résultats. */
+  usedRadiusKm: number
+  widened: boolean
+}
+
+/**
+ * Recherche de proximité avec élargissement automatique (#geoloc, 1.3) :
+ * plutôt que de renvoyer une page vide quand rien ne se trouve dans le rayon
+ * demandé, réessaie aux paliers de `RADIUS_SLIDER_OPTIONS_KM` strictement
+ * supérieurs, dans l'ordre, jusqu'au premier qui renvoie au moins un
+ * résultat (ou jusqu'au dernier palier si aucun n'en renvoie). `widened`
+ * indique à l'appelant (API, assistant IA) qu'il doit prévenir l'utilisateur
+ * du changement plutôt que de le laisser croire que le rayon demandé a été
+ * respecté.
+ */
+export function searchProvidersNearby(
+  filters: Omit<ProviderSearchFilters, 'radiusKm'>,
+  requestedRadiusKm: number = DEFAULT_RADIUS_KM,
+): NearbySearchResult {
+  const widerSteps = RADIUS_SLIDER_OPTIONS_KM.filter((step) => step > requestedRadiusKm)
+
+  let usedRadiusKm = requestedRadiusKm
+  let results = searchProviders({ ...filters, radiusKm: usedRadiusKm })
+
+  for (const radiusKm of widerSteps) {
+    if (results.length > 0) break
+    results = searchProviders({ ...filters, radiusKm })
+    usedRadiusKm = radiusKm
+  }
+
+  return { results, requestedRadiusKm, usedRadiusKm, widened: usedRadiusKm !== requestedRadiusKm }
 }
 
 /**
