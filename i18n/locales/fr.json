@@ -439,7 +439,7 @@
     "phoneLabel": "Numéro de téléphone",
     "phonePlaceholder": "90 12 34 56",
     "emailLabel": "Adresse email",
-    "emailPlaceholder": "vous@exemple.com",
+    "emailPlaceholder": "vous{'@'}exemple.com",
     "errorRequiredFields": "Merci de renseigner nom d'utilisateur, prénom, nom et localisation.",
     "errorPhoneInvalid": "Entrez un numéro valide (8 chiffres).",
     "errorEmailInvalid": "Entrez une adresse email valide.",
