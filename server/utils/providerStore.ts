@@ -186,3 +186,21 @@ export function resolveRequiredOnboardingFields(
   }
   return { ok: true, city, payoutMethod }
 }
+
+/**
+ * Supprime la position GPS précise enregistrée d'un prestataire (#geoloc,
+ * partie 3 — vie privée). Action distincte de `upsertProviderProfile` : ce
+ * dernier ne peut pas effacer `latitude`/`longitude` (un patch sans ces
+ * champs conserve la valeur existante, par conception — voir sa
+ * documentation), donc « supprimer ma position » a besoin de son propre
+ * geste explicite, comme `userStore.clearUserPosition`. `quartier` et
+ * `city` ne sont volontairement pas effacés : ce ne sont pas des
+ * coordonnées précises.
+ */
+export function clearProviderPosition(userId: string): ProviderProfile | null {
+  const existing = profilesByUserId.get(userId)
+  if (!existing) return null
+  const updated: ProviderProfile = { ...existing, latitude: undefined, longitude: undefined, updatedAt: Date.now() }
+  profilesByUserId.set(userId, updated)
+  return updated
+}

@@ -21,6 +21,29 @@ const quartiers = listQuartiers()
 
 const isLocating = ref(false)
 const locationError = ref('')
+const isClearingPosition = ref(false)
+const clearPositionError = ref('')
+
+/**
+ * Supprime la position enregistrée côté serveur (#geoloc, partie 3 — vie
+ * privée), pas seulement le brouillon local : distinct d'un simple vidage
+ * des champs, qui n'aurait aucun effet tant que « Enregistrer » n'est pas
+ * cliqué plus bas (voir ProfessionalProfileForm.vue).
+ */
+async function clearStoredPosition() {
+  if (isClearingPosition.value) return
+  isClearingPosition.value = true
+  clearPositionError.value = ''
+  try {
+    await $fetch('/api/providers/me/position', { method: 'DELETE' })
+    latitude.value = undefined
+    longitude.value = undefined
+  } catch (fetchError) {
+    clearPositionError.value = apiErrorMessage(fetchError, 'La suppression de votre position a échoué. Réessayez.')
+  } finally {
+    isClearingPosition.value = false
+  }
+}
 
 function useCurrentPosition() {
   if (isLocating.value) return
@@ -68,7 +91,17 @@ function useCurrentPosition() {
       <span v-if="isLocating" class="size-3 shrink-0 animate-spin rounded-full border-[1.5px] border-primary/30 border-t-primary" aria-hidden="true" />
       {{ isLocating ? 'Localisation…' : latitude !== undefined ? '📍 Position enregistrée — mettre à jour' : '📍 Utiliser ma position actuelle' }}
     </button>
+    <button
+      v-if="latitude !== undefined"
+      type="button"
+      class="press mb-1.5 ml-3 text-[12.5px] font-semibold text-error underline disabled:cursor-not-allowed disabled:opacity-60"
+      :disabled="isClearingPosition"
+      @click="clearStoredPosition"
+    >
+      {{ isClearingPosition ? 'Suppression…' : 'Supprimer ma position enregistrée' }}
+    </button>
     <p v-if="locationError" class="mb-3.5 text-[12.5px] text-error">{{ locationError }}</p>
+    <p v-if="clearPositionError" class="mb-3.5 text-[12.5px] text-error">{{ clearPositionError }}</p>
 
     <label for="plf-quartier" class="mb-1.5 block text-[13px] font-semibold text-dark">Quartier (Région Maritime)</label>
     <select

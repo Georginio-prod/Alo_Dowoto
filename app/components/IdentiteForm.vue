@@ -19,6 +19,27 @@ const error = ref('')
 const success = ref(false)
 const isSubmitting = ref(false)
 
+// Suppression de la position GPS enregistrée (#geoloc, partie 3 — vie
+// privée) : action distincte de l'enregistrement du profil ci-dessus, voir
+// server/utils/userStore.ts#clearUserPosition.
+const hasStoredPosition = computed(() => user.value?.latitude !== undefined)
+const isClearingPosition = ref(false)
+const clearPositionError = ref('')
+
+async function clearPosition() {
+  if (isClearingPosition.value) return
+  isClearingPosition.value = true
+  clearPositionError.value = ''
+  try {
+    const { user: updated } = await $fetch<{ user: PublicUser }>('/api/auth/position', { method: 'DELETE' })
+    setSession(updated)
+  } catch (fetchError) {
+    clearPositionError.value = apiErrorMessage(fetchError, 'La suppression de votre position a échoué. Réessayez.')
+  } finally {
+    isClearingPosition.value = false
+  }
+}
+
 async function submit() {
   if (isSubmitting.value) return
   error.value = ''
@@ -106,5 +127,24 @@ async function submit() {
     >
       {{ isSubmitting ? 'Enregistrement…' : 'Enregistrer' }}
     </button>
+
+    <div class="mt-5 border-t border-hairline pt-4">
+      <p class="mb-1 text-[13px] font-semibold text-dark">Position GPS</p>
+      <p class="mb-2 text-[12px] text-muted">
+        {{ hasStoredPosition
+          ? 'Une position précise est enregistrée sur votre compte (utilisée pour les résultats triés par distance).'
+          : "Aucune position précise n'est enregistrée sur votre compte." }}
+      </p>
+      <button
+        v-if="hasStoredPosition"
+        type="button"
+        class="press text-[12.5px] font-semibold text-error underline disabled:cursor-not-allowed disabled:opacity-60"
+        :disabled="isClearingPosition"
+        @click="clearPosition"
+      >
+        {{ isClearingPosition ? 'Suppression…' : 'Supprimer ma position enregistrée' }}
+      </button>
+      <p v-if="clearPositionError" class="mt-1 text-[12px] text-error">{{ clearPositionError }}</p>
+    </div>
   </div>
 </template>

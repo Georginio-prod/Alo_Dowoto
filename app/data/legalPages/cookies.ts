@@ -25,6 +25,7 @@ export const COOKIES: LegalPage = {
       heading: 'Cookies tiers',
       body: [
         'WorkTogo n\'utilise à ce jour aucun cookie publicitaire ni aucun cookie de mesure d\'audience tiers (type Google Analytics ou équivalent). Si cela devait évoluer, cette page serait mise à jour et votre consentement recueilli lorsque requis.',
+        'La géolocalisation (recherche de prestataires à proximité) et l\'assistant conversationnel ne reposent sur aucun cookie : ce sont des fonctionnalités distinctes, activées uniquement par une action explicite de votre part, décrites dans notre Politique de confidentialité.',
       ],
     },
     {

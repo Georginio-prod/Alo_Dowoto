@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getProviderProfile, resolveRequiredOnboardingFields, upsertProviderProfile } from '~~/server/utils/providerStore'
+import { clearProviderPosition, getProviderProfile, resolveRequiredOnboardingFields, upsertProviderProfile } from '~~/server/utils/providerStore'
 
 describe('providerStore — localisation & mode de rémunération (#123)', () => {
   it('sauvegarde le mode de rémunération sélectionné (correction du bug #123)', () => {
@@ -44,6 +44,23 @@ describe('providerStore — champs géolocalisation (#geoloc)', () => {
     const updated = upsertProviderProfile('provider-geo-2', { displayName: 'Prestataire Visible', sector: 'commerce', description: 'Boutique physique' })
 
     expect(updated.positionApproximative).toBe(false)
+  })
+})
+
+describe('clearProviderPosition (#geoloc, partie 3 — vie privée)', () => {
+  it('efface latitude/longitude tout en conservant le reste du profil', () => {
+    upsertProviderProfile('provider-geo-clear', { displayName: 'À effacer', sector: 'menage', city: 'Lomé', latitude: 6.13, longitude: 1.22 })
+
+    const updated = clearProviderPosition('provider-geo-clear')
+
+    expect(updated?.latitude).toBeUndefined()
+    expect(updated?.longitude).toBeUndefined()
+    expect(updated?.city).toBe('Lomé')
+    expect(updated?.displayName).toBe('À effacer')
+  })
+
+  it('renvoie null pour un profil inexistant (cas limite)', () => {
+    expect(clearProviderPosition('profil-inexistant')).toBeNull()
   })
 })
 

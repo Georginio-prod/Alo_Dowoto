@@ -140,6 +140,21 @@ export async function updateUserProfile(userId: string, profile: NewUserProfile)
   return toUser(row)
 }
 
+/**
+ * Supprime la position GPS enregistrée d'un utilisateur (#geoloc, partie 3 —
+ * vie privée) : action distincte de `updateUserProfile`, qui ne touche
+ * jamais aux coordonnées, pour que « supprimer ma position » reste un geste
+ * explicite et irréversible (pas un simple champ vide oublié dans un
+ * formulaire). `location` (ville en texte libre) n'est volontairement pas
+ * effacée : ce n'est pas une donnée de géolocalisation précise.
+ */
+export async function clearUserPosition(userId: string): Promise<User> {
+  const existing = await prisma.user.findUnique({ where: { id: userId } })
+  if (!existing) notFound('Utilisateur introuvable.')
+  const row = await prisma.user.update({ where: { id: userId }, data: { latitude: null, longitude: null } })
+  return toUser(row)
+}
+
 export async function createSession(userId: string): Promise<string> {
   const token = randomUUID()
   await prisma.session.create({

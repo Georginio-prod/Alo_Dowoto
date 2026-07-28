@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   anonymizeUser,
+  clearUserPosition,
   createSession,
   destroySession,
   findOrCreateUser,
@@ -136,5 +137,27 @@ describe('userStore — droit à l’effacement, anonymisation du compte (#286)'
 
     await anonymizeUser(first.id)
     await expect(anonymizeUser(second.id)).resolves.not.toThrow()
+  })
+})
+
+describe('clearUserPosition (#geoloc, partie 3 — supprimer sa position sans supprimer son compte)', () => {
+  it('efface latitude/longitude tout en conservant le reste du profil', async () => {
+    const { user } = await findOrCreateUser('+22891112260', 'client', {
+      ...TEST_PROFILE,
+      latitude: 6.1319,
+      longitude: 1.2228,
+    })
+
+    const updated = await clearUserPosition(user.id)
+
+    expect(updated.latitude).toBeUndefined()
+    expect(updated.longitude).toBeUndefined()
+    expect(updated.location).toBe(TEST_PROFILE.location)
+    expect(updated.username).toBe(TEST_PROFILE.username)
+  })
+
+  it('ne fait rien de destructeur pour un compte sans position enregistrée (cas limite)', async () => {
+    const { user } = await findOrCreateUser('+22891112261', 'client', TEST_PROFILE)
+    await expect(clearUserPosition(user.id)).resolves.not.toThrow()
   })
 })

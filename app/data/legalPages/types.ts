@@ -15,4 +15,4 @@ export interface LegalPage {
 }
 
 /** Date de dernière mise à jour commune aux pages légales versionnées (mentions légales, CGU, confidentialité, cookies). */
-export const LAST_UPDATED = '14 juillet 2026'
+export const LAST_UPDATED = '28 juillet 2026'
