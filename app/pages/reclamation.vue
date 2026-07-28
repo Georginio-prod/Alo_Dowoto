@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { COMPLAINT_CATEGORIES } from '~/data/complaintCategories'
+import { getComplaintCategories } from '~/data/complaintCategories'
 
-useHead({ title: 'Réclamation — WorkTogo' })
+const { t } = useI18n({ useScope: 'global' })
+
+useHead(() => ({ title: t('reclamationPage.pageTitle') }))
+
+const COMPLAINT_CATEGORIES = computed(() => getComplaintCategories(t))
 
 const { user } = useSession()
 
@@ -36,7 +40,7 @@ async function submit() {
     })
     reference.value = ref
   } catch (fetchError) {
-    error.value = apiErrorMessage(fetchError, "L'envoi de votre réclamation a échoué. Réessayez.")
+    error.value = apiErrorMessage(fetchError, t('reclamationPage.errorSendFailed'))
   } finally {
     isSubmitting.value = false
   }
@@ -45,62 +49,60 @@ async function submit() {
 
 <template>
   <div class="mx-auto max-w-2xl px-6 py-12">
-    <h1 class="mb-2 text-2xl font-extrabold text-dark">Déposer une réclamation</h1>
+    <h1 class="mb-2 text-2xl font-extrabold text-dark">{{ t('reclamationPage.heading') }}</h1>
     <p class="mb-8 text-[14.5px] leading-relaxed text-muted">
-      Décrivez le problème rencontré avec un chercheur, un prestataire ou le service : notre équipe reviendra vers
-      vous par email.
+      {{ t('reclamationPage.intro') }}
     </p>
 
     <div v-if="reference" class="rounded-card border border-hairline bg-surface p-5 text-center">
       <div class="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-primary/12 text-xl text-primary">
         ✓
       </div>
-      <p class="text-[14px] font-semibold text-dark">Votre réclamation a bien été enregistrée.</p>
+      <p class="text-[14px] font-semibold text-dark">{{ t('reclamationPage.successText') }}</p>
       <p class="mt-1 text-[12.5px] text-muted">
-        Référence : <span class="font-mono font-semibold text-dark">{{ reference }}</span> — conservez-la pour le
-        suivi de votre demande.
+        {{ t('reclamationPage.referenceLabel') }} <span class="font-mono font-semibold text-dark">{{ reference }}</span> {{ t('reclamationPage.referenceHint') }}
       </p>
     </div>
 
     <template v-else>
-      <label for="reclamation-category" class="mb-1.5 block text-[13px] font-semibold text-dark">Catégorie</label>
+      <label for="reclamation-category" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('reclamationPage.categoryLabel') }}</label>
       <select
         id="reclamation-category"
         v-model="category"
         class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline bg-white px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
       >
-        <option value="" disabled>Sélectionner une catégorie…</option>
+        <option value="" disabled>{{ t('reclamationPage.categoryPlaceholder') }}</option>
         <option v-for="option in COMPLAINT_CATEGORIES" :key="option.value" :value="option.value">
           {{ option.label }}
         </option>
       </select>
 
-      <label for="reclamation-subject" class="mb-1.5 block text-[13px] font-semibold text-dark">Sujet</label>
+      <label for="reclamation-subject" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('reclamationPage.subjectLabel') }}</label>
       <input
         id="reclamation-subject"
         v-model="subject"
         type="text"
-        placeholder="Ex. Problème avec un prestataire"
+        :placeholder="t('reclamationPage.subjectPlaceholder')"
         class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
       >
 
-      <label for="reclamation-message" class="mb-1.5 block text-[13px] font-semibold text-dark">Message</label>
+      <label for="reclamation-message" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('reclamationPage.messageLabel') }}</label>
       <textarea
         id="reclamation-message"
         v-model="message"
         rows="5"
-        placeholder="Décrivez votre réclamation…"
+        :placeholder="t('reclamationPage.messagePlaceholder')"
         class="mb-3.5 w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13.5px] text-ink outline-none focus:border-primary"
       />
 
       <label for="reclamation-contact" class="mb-1.5 block text-[13px] font-semibold text-dark">
-        Email ou téléphone de contact
+        {{ t('reclamationPage.contactLabel') }}
       </label>
       <input
         id="reclamation-contact"
         v-model="contactEmail"
         type="text"
-        placeholder="Pour vous répondre"
+        :placeholder="t('reclamationPage.contactPlaceholder')"
         class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
       >
 
@@ -112,7 +114,7 @@ async function submit() {
         :disabled="!isValid || isSubmitting"
         @click="submit"
       >
-        {{ isSubmitting ? 'Envoi…' : 'Envoyer la réclamation' }}
+        {{ isSubmitting ? t('reclamationPage.submitting') : t('reclamationPage.submit') }}
       </button>
     </template>
   </div>

@@ -7,8 +7,8 @@ import type { ComplaintCategory } from '~/data/complaintCategories'
  * (Prisma/SQLite, ADR 0013). Contrairement à l'ancien store en mémoire, les
  * réclamations survivent aux redémarrages du serveur.
  *
- * La liste des catégories (COMPLAINT_CATEGORIES) vit dans
- * app/data/complaintCategories.ts, pas ici.
+ * La liste des catégories (COMPLAINT_CATEGORY_VALUES, getComplaintCategories)
+ * vit dans app/data/complaintCategories.ts, pas ici.
  */
 
 export type { ComplaintCategory }

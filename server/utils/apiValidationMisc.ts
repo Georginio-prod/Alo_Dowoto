@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { COMPLAINT_CATEGORIES } from '~/data/complaintCategories'
+import { COMPLAINT_CATEGORY_VALUES } from '~/data/complaintCategories'
 import type { ComplaintCategory } from '~/data/complaintCategories'
 import { requiredTrimmed } from '~~/server/utils/apiValidation'
 import { isValidIdentityImage } from '~~/server/utils/verificationStore'
@@ -11,11 +11,9 @@ export const addFavoriteSchema = z.object({
   providerId: requiredTrimmed("L'identifiant du prestataire est requis."),
 })
 
-const VALID_COMPLAINT_CATEGORIES = COMPLAINT_CATEGORIES.map((option) => option.value)
-
 /** Corps de `POST /api/reclamations` (ouvert à tout visiteur, pas de session requise). */
 export const createComplaintSchema = z.object({
-  category: z.enum(VALID_COMPLAINT_CATEGORIES as [ComplaintCategory, ...ComplaintCategory[]], { error: 'Sélectionnez une catégorie de réclamation.' }),
+  category: z.enum(COMPLAINT_CATEGORY_VALUES as [ComplaintCategory, ...ComplaintCategory[]], { error: 'Sélectionnez une catégorie de réclamation.' }),
   subject: z
     .string({ error: 'Le sujet doit contenir entre 3 et 120 caractères.' })
     .transform((v) => v.trim())
