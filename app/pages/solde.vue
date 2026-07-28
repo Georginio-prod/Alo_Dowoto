@@ -6,11 +6,14 @@
  */
 definePageMeta({ layout: 'blank', middleware: 'auth' })
 
-const { t } = useI18n({ useScope: 'global' })
+const { t, locale, locales } = useI18n({ useScope: 'global' })
 const { balance, movements, ensure, refresh } = useWallet()
 await ensure()
 
-const formattedBalance = computed(() => (balance.value === null ? '…' : `${balance.value.toLocaleString('fr-FR')} F CFA`))
+const languageTag = computed(() =>
+  (locales.value as Array<{ code: string, language?: string }>).find((l) => l.code === locale.value)?.language ?? 'fr-FR',
+)
+const formattedBalance = computed(() => (balance.value === null ? '…' : `${balance.value.toLocaleString(languageTag.value)} F CFA`))
 </script>
 
 <template>

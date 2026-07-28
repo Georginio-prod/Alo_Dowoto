@@ -38,6 +38,8 @@ interface ChatMessage {
   providers?: AssistantProvider[]
 }
 
+const { t } = useI18n({ useScope: 'global' })
+
 const isOpen = ref(false)
 const draft = ref('')
 const messages = ref<ChatMessage[]>([])
@@ -78,8 +80,8 @@ async function send() {
     })
   } catch (error) {
     sendError.value = (error as { statusCode?: number }).statusCode === 429
-      ? 'Trop de messages envoyés en peu de temps. Patientez une minute.'
-      : "L'assistant est momentanément indisponible. Réessayez dans un instant."
+      ? t('assistantWidget.errorRateLimited')
+      : t('assistantWidget.errorUnavailable')
   } finally {
     isSending.value = false
     scrollToBottom()
@@ -98,7 +100,7 @@ function reset() {
       type="button"
       class="press flex size-14 items-center justify-center rounded-full bg-primary text-white shadow-card-md hover:bg-primary-hover"
       :aria-expanded="isOpen"
-      aria-label="Ouvrir l'assistant WorkTogo"
+      :aria-label="t('assistantWidget.openAria')"
       @click="isOpen = !isOpen"
     >
       <span class="text-2xl" aria-hidden="true">{{ isOpen ? '✕' : '💬' }}</span>
@@ -108,21 +110,21 @@ function reset() {
       v-if="isOpen"
       class="animate-[wt-fade_0.2s_ease] absolute bottom-[4.5rem] right-0 flex h-[520px] w-[340px] max-w-[90vw] flex-col overflow-hidden rounded-card border border-hairline bg-surface shadow-card-lg"
       role="dialog"
-      aria-label="Assistant WorkTogo"
+      :aria-label="t('assistantWidget.dialogAria')"
     >
       <header class="flex shrink-0 items-center justify-between border-b border-hairline bg-dark px-4 py-3">
         <div>
-          <p class="text-[13.5px] font-bold text-white">Assistant WorkTogo</p>
-          <p class="text-[11px] text-white/70">Réponses générées par IA, pas par un humain</p>
+          <p class="text-[13.5px] font-bold text-white">{{ t('assistantWidget.title') }}</p>
+          <p class="text-[11px] text-white/70">{{ t('assistantWidget.subtitle') }}</p>
         </div>
         <button v-if="messages.length" type="button" class="press text-[11px] font-semibold text-white/70 underline" @click="reset">
-          Effacer
+          {{ t('assistantWidget.clear') }}
         </button>
       </header>
 
       <div ref="messageListEl" class="flex-1 space-y-3 overflow-y-auto p-3" aria-live="polite">
         <div v-if="messages.length === 0" class="rounded-card border border-dashed border-hairline p-3 text-center text-[12.5px] text-muted">
-          Posez une question sur WorkTogo, ou demandez « Je cherche un plombier à Bè » : je cherche parmi les vrais prestataires inscrits.
+          {{ t('assistantWidget.emptyPrompt') }}
         </div>
 
         <div v-for="(message, index) in messages" :key="index" class="flex" :class="message.role === 'user' ? 'justify-end' : 'justify-start'">
@@ -130,7 +132,7 @@ function reset() {
             class="animate-[wt-fade_0.25s_ease] max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px]"
             :class="message.role === 'user' ? 'rounded-br-md bg-dark text-white' : 'rounded-bl-md border border-hairline bg-bg text-dark'"
           >
-            <p v-if="message.degraded" class="mb-1 text-[11px] font-semibold text-error">Mode dégradé — assistant IA indisponible</p>
+            <p v-if="message.degraded" class="mb-1 text-[11px] font-semibold text-error">{{ t('assistantWidget.degradedNotice') }}</p>
             <p class="whitespace-pre-line">{{ message.text }}</p>
 
             <div v-if="message.providers?.length" class="mt-2 space-y-1.5">
@@ -147,7 +149,7 @@ function reset() {
                 </p>
                 <p class="text-[11px] text-muted">
                   {{ provider.secteur }} · {{ provider.ville }}
-                  <span v-if="provider.distanceKm !== null"> · à {{ provider.distanceKm }} km</span>
+                  <span v-if="provider.distanceKm !== null"> · {{ t('assistantWidget.distanceSuffix', { km: provider.distanceKm }) }}</span>
                   · {{ provider.note.toFixed(1) }}★
                 </p>
               </NuxtLink>
@@ -155,7 +157,7 @@ function reset() {
           </div>
         </div>
 
-        <p v-if="isSending" class="text-[12px] text-muted">L'assistant réfléchit…</p>
+        <p v-if="isSending" class="text-[12px] text-muted">{{ t('assistantWidget.thinking') }}</p>
         <p v-if="sendError" class="text-[12px] text-error">{{ sendError }}</p>
       </div>
 
@@ -163,8 +165,8 @@ function reset() {
         <input
           v-model="draft"
           type="text"
-          placeholder="Écrivez votre question…"
-          aria-label="Votre question à l'assistant"
+          :placeholder="t('assistantWidget.inputPlaceholder')"
+          :aria-label="t('assistantWidget.inputAria')"
           class="h-[40px] min-w-0 flex-1 rounded-field border-[1.5px] border-hairline px-3 text-[13px] text-ink outline-none focus:border-primary"
         >
         <button
@@ -172,12 +174,12 @@ function reset() {
           class="press rounded-field bg-primary px-3.5 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
           :disabled="!draft.trim() || isSending"
         >
-          Envoyer
+          {{ t('assistantWidget.send') }}
         </button>
       </form>
       <p class="shrink-0 border-t border-hairline px-3 py-2 text-center text-[10.5px] text-muted">
-        Besoin d'un humain ?
-        <NuxtLink to="/contact" class="font-semibold text-primary underline">Contactez le support</NuxtLink>
+        {{ t('assistantWidget.needHuman') }}
+        <NuxtLink to="/contact" class="font-semibold text-primary underline">{{ t('assistantWidget.contactSupport') }}</NuxtLink>
       </p>
     </div>
 

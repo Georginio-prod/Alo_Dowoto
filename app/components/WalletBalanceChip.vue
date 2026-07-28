@@ -4,12 +4,16 @@
  * panneau détaillé « Mon solde » (#190) au clic. Le solde reste synchronisé
  * avec le compte réel via l'état partagé `useWallet` (voir composable).
  */
+const { locale, locales } = useI18n({ useScope: 'global' })
 const { balance, ensure } = useWallet()
 await ensure()
 
-const formattedBalance = computed(() =>
-  balance.value === null ? '…' : `${balance.value.toLocaleString('fr-FR')} F CFA`,
-)
+const formattedBalance = computed(() => {
+  if (balance.value === null) return '…'
+  const languageTag = (locales.value as Array<{ code: string, language?: string }>)
+    .find((l) => l.code === locale.value)?.language ?? 'fr-FR'
+  return `${balance.value.toLocaleString(languageTag)} F CFA`
+})
 </script>
 
 <template>

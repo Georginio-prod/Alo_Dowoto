@@ -20,7 +20,7 @@ import type { Subscription } from '~~/server/utils/subscriptionStore'
 // redirections externes existantes (connexion, callback Google…).
 definePageMeta({ layout: 'dashboard-prestataire', middleware: 'auth', authRole: 'prestataire', alias: '/prestataire/accueil' })
 
-const { t } = useI18n({ useScope: 'global' })
+const { t, locale, locales } = useI18n({ useScope: 'global' })
 
 const BADGE_STYLES: Record<string, string> = {
   none: 'bg-white/10 text-white/80',
@@ -61,7 +61,12 @@ const requestsUsageLabel = computed(() => {
   return usage.limit === null ? `${usage.count} / ${t('prestataireIndex.unlimited')}` : `${usage.count} / ${usage.limit}`
 })
 
-const formattedBalance = computed(() => (balance.value === null ? '…' : `${balance.value.toLocaleString('fr-FR')} F CFA`))
+function languageTag(): string {
+  return (locales.value as Array<{ code: string, language?: string }>)
+    .find((l) => l.code === locale.value)?.language ?? 'fr-FR'
+}
+
+const formattedBalance = computed(() => (balance.value === null ? '…' : `${balance.value.toLocaleString(languageTag())} F CFA`))
 
 const subscriptionBadge = computed(() => {
   const status = subscriptionData.value?.subscription?.status
@@ -121,7 +126,7 @@ const completionPercent = computed(() => {
 const missingProfileItems = computed(() => profileChecklist.value.filter((i) => !i.done))
 
 function formatDate(timestamp: number): string {
-  return new Date(timestamp).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+  return new Date(timestamp).toLocaleDateString(languageTag(), { day: '2-digit', month: 'short' })
 }
 
 function restartDemo() {

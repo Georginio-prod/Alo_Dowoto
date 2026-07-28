@@ -13,7 +13,10 @@ import type { ProviderDetail } from '~~/server/utils/providerDirectory'
 const props = defineProps<{ providerId: string }>()
 const emit = defineEmits<{ close: [] }>()
 
-const { t } = useI18n({ useScope: 'global' })
+const { t, locale, locales } = useI18n({ useScope: 'global' })
+const languageTag = computed(() =>
+  (locales.value as Array<{ code: string, language?: string }>).find((l) => l.code === locale.value)?.language ?? 'fr-FR',
+)
 
 const provider = ref<ProviderDetail | null>(null)
 const isLoading = ref(true)
@@ -151,7 +154,7 @@ onUnmounted(() => {
           <p class="mb-4 text-[13.5px] leading-relaxed text-dark">{{ provider.bio }}</p>
 
           <p class="mb-4 text-[18px] font-bold text-dark">
-            {{ t('providerProfileModal.priceFromPrefix', { price: provider.priceFrom.toLocaleString('fr-FR') }) }}
+            {{ t('providerProfileModal.priceFromPrefix', { price: provider.priceFrom.toLocaleString(languageTag) }) }}
           </p>
 
           <div class="mb-4 grid grid-cols-2 gap-3 rounded-field bg-bg p-3.5 text-[13px]">

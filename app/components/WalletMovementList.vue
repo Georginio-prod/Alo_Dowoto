@@ -41,10 +41,12 @@ function isCredit(type: WalletMovementType): boolean {
   return type !== 'escrow_debit' && type !== 'retrait'
 }
 
+const languageTag = computed(() =>
+  (locales.value as Array<{ code: string, language?: string }>).find((l) => l.code === locale.value)?.language ?? 'fr-FR',
+)
+
 function formatDate(timestamp: number): string {
-  const languageTag = (locales.value as Array<{ code: string, language?: string }>)
-    .find((l) => l.code === locale.value)?.language ?? 'fr-FR'
-  return new Date(timestamp).toLocaleString(languageTag, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return new Date(timestamp).toLocaleString(languageTag.value, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 </script>
 
@@ -86,7 +88,7 @@ function formatDate(timestamp: number): string {
           <p class="text-[11.5px] text-muted">{{ formatDate(movement.createdAt) }} · {{ t('walletMovementList.referencePrefix') }} {{ movement.reference.slice(0, 8) }}</p>
         </div>
         <p class="shrink-0 text-[13.5px] font-bold" :class="isCredit(movement.type) ? 'text-dark' : 'text-error'">
-          {{ isCredit(movement.type) ? '+' : '−' }}{{ movement.amount.toLocaleString('fr-FR') }} F CFA
+          {{ isCredit(movement.type) ? '+' : '−' }}{{ movement.amount.toLocaleString(languageTag) }} F CFA
         </p>
       </li>
     </ul>
