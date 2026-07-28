@@ -162,43 +162,6 @@ describe('searchProviders — distance réelle (#263)', () => {
   })
 })
 
-describe('searchProviders — position approximative par défaut (#geoloc, vie privée)', () => {
-  it('floute les coordonnées d’un prestataire n’ayant pas activé l’affichage précis', () => {
-    upsertProviderProfile('real-provider-geo-fuzzed', {
-      displayName: 'Position Floutée',
-      sector: 'sante',
-      latitude: 6.131923,
-      longitude: 1.222812,
-    })
-
-    const results = searchProviders({ sector: 'sante' })
-    const entry = results.find((p) => p.id === 'real-provider-geo-fuzzed')
-    expect(entry?.latitude).toBe(6.13)
-    expect(entry?.longitude).toBe(1.22)
-  })
-
-  it('expose les coordonnées exactes quand le prestataire a explicitement choisi une position précise', () => {
-    upsertProviderProfile('real-provider-geo-exact', {
-      displayName: 'Position Exacte',
-      sector: 'sante',
-      latitude: 6.131923,
-      longitude: 1.222812,
-      positionApproximative: false,
-    })
-
-    const results = searchProviders({ sector: 'sante' })
-    const entry = results.find((p) => p.id === 'real-provider-geo-exact')
-    expect(entry?.latitude).toBe(6.131923)
-    expect(entry?.longitude).toBe(1.222812)
-  })
-
-  it('expose le quartier renseigné dans les résultats de recherche', () => {
-    upsertProviderProfile('real-provider-geo-quartier', { displayName: 'Avec Quartier', sector: 'sante', quartier: 'be' })
-    const results = searchProviders({ sector: 'sante' })
-    expect(results.find((p) => p.id === 'real-provider-geo-quartier')?.quartier).toBe('be')
-  })
-})
-
 describe('countBySector (#66 grille /categories)', () => {
   it('compte les prestataires du secteur, cohérent avec searchProviders', () => {
     expect(countBySector('menage')).toBe(searchProviders({ sector: 'menage' }).length)

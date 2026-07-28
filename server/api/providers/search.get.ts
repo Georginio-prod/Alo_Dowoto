@@ -1,5 +1,8 @@
 import { SECTORS } from '~~/app/data/sectors'
+import { listQuartiers } from '~~/app/data/regions'
 import type { ProviderSortOption } from '~~/server/utils/providerDirectory'
+
+const VALID_QUARTIER_SLUGS = new Set(listQuartiers().map((quartier) => quartier.slug))
 
 const VALID_SECTOR_SLUGS = new Set(SECTORS.map((sector) => sector.slug))
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
@@ -47,6 +50,11 @@ export default defineEventHandler((event) => {
     badRequest('Prix maximum invalide.')
   }
 
+  const quartier = firstValue(query.quartier)
+  if (quartier && !VALID_QUARTIER_SLUGS.has(quartier)) {
+    badRequest('Quartier invalide.')
+  }
+
   // Distance réelle (#263) : optionnelle, coordonnées du chercheur envoyées
   // par le front quand disponibles (session utilisateur ou géolocalisation
   // navigateur) — repli sur le filtrage par ville si absentes ou invalides.
@@ -79,19 +87,28 @@ export default defineEventHandler((event) => {
   }
   const sort = sortRaw as ProviderSortOption | undefined
 
-  const matches = searchProviders({
+  const baseFilters = {
     sector,
     subSectors: toList(query.sous_secteur),
     city: firstValue(query.ville),
+    quartier,
     ratingMin,
     priceMax,
     query: firstValue(query.q),
     date,
-    latitude,
-    longitude,
-    radiusKm,
     sort,
-  })
+  }
+
+  // Coordonnées valides : recherche de proximité avec élargissement
+  // automatique (#geoloc, 1.3) — jamais de page vide faute de prestataire
+  // dans le rayon demandé, voir providerDirectory.searchProvidersNearby.
+  // Sans coordonnées, comportement historique inchangé (filtrage par ville
+  // uniquement, tri multi-critères ou explicite).
+  const nearby = latitude !== undefined && longitude !== undefined
+    ? searchProvidersNearby({ ...baseFilters, latitude, longitude }, radiusKm)
+    : null
+
+  const matches = nearby ? nearby.results : searchProviders(baseFilters)
 
   const total = matches.length
   const start = (page - 1) * pageSize
@@ -101,5 +118,8 @@ export default defineEventHandler((event) => {
     total,
     page,
     pageSize,
+    proximity: nearby
+      ? { requestedRadiusKm: nearby.requestedRadiusKm, usedRadiusKm: nearby.usedRadiusKm, widened: nearby.widened }
+      : null,
   }
 })
