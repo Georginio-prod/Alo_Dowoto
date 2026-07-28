@@ -48,7 +48,7 @@ function pollPayment(paymentId: string) {
     } else if (payment.status === 'failed') {
       stopPolling()
       step.value = 'idle'
-      submitError.value = 'Le paiement a échoué. Réessayez.'
+      submitError.value = t('paiement.errorPaymentFailed')
     }
   }, POLL_INTERVAL_MS)
 }
@@ -84,7 +84,7 @@ async function submitPayment() {
     step.value = 'processing'
     pollPayment(payment.id)
   } catch {
-    submitError.value = 'Le paiement n\'a pas pu être initié. Réessayez.'
+    submitError.value = t('paiement.errorInitiateFailed')
   } finally {
     isSubmitting.value = false
   }
@@ -93,18 +93,18 @@ async function submitPayment() {
 
 <template>
   <div class="mx-auto max-w-[440px] px-5 pb-16 pt-7">
-    <NuxtLink to="/" class="press mb-2 inline-block py-2 text-sm text-muted">← Retour</NuxtLink>
+    <NuxtLink to="/" class="press mb-2 inline-block py-2 text-sm text-muted">{{ t('paiement.back') }}</NuxtLink>
 
     <FlowSteps
-      :steps="['Contact', 'Vérification', 'Secteur', 'Abonnement', 'Paiement']"
+      :steps="[t('flowSteps.contact'), t('flowSteps.verification'), t('flowSteps.sector'), t('flowSteps.subscription'), t('flowSteps.payment')]"
       :current-index="4"
     />
 
     <div v-if="plan" class="rounded-card border border-hairline bg-surface p-7 shadow-card-sm">
       <template v-if="step === 'idle'">
-        <h1 class="mb-1 text-lg font-bold text-dark">Paiement Mobile Money</h1>
+        <h1 class="mb-1 text-lg font-bold text-dark">{{ t('paiement.heading') }}</h1>
         <p class="mb-5 text-[13.5px] text-muted">
-          {{ planName }} — {{ plan.priceLabel }} à régler aujourd'hui
+          {{ planName }} — {{ plan.priceLabel }} {{ t('paiement.amountDueSuffix') }}
         </p>
 
         <div class="mb-5 grid grid-cols-2 gap-3">
@@ -129,7 +129,7 @@ async function submitPayment() {
         </div>
 
         <label for="payment-phone" class="mb-1.5 block text-[13px] font-semibold text-dark">
-          Numéro Mobile Money
+          {{ t('paiement.phoneLabel') }}
         </label>
         <div class="mb-1.5 flex gap-2">
           <div class="flex h-[46px] w-16 shrink-0 items-center justify-center rounded-field border-[1.5px] border-hairline bg-bg text-[14.5px] font-semibold text-dark">
@@ -140,8 +140,8 @@ async function submitPayment() {
             v-model="phone"
             type="tel"
             inputmode="numeric"
-            placeholder="90 12 34 56"
-            aria-label="Numéro Mobile Money"
+            :placeholder="t('paiement.phonePlaceholder')"
+            :aria-label="t('paiement.phoneLabel')"
             class="h-[46px] min-w-0 flex-1 rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
           >
         </div>
@@ -154,10 +154,10 @@ async function submitPayment() {
           :disabled="!isPhoneValid || isSubmitting"
           @click="submitPayment"
         >
-          Payer {{ plan.priceLabel }}
+          {{ t('paiement.payCta', { price: plan.priceLabel }) }}
         </button>
         <p class="mt-3.5 text-center text-[13px] text-muted">
-          Vous recevrez une demande de confirmation sur votre téléphone.
+          {{ t('paiement.confirmationNotice') }}
         </p>
       </template>
 
@@ -165,24 +165,23 @@ async function submitPayment() {
         <div
           class="mx-auto mb-4 h-10 w-10 animate-[wt-spin_0.8s_linear_infinite] rounded-full border-[3px] border-primary/20 border-t-primary"
         />
-        <h2 class="mb-1.5 text-base font-bold text-dark">Confirmation en cours…</h2>
-        <p class="text-[13.5px] text-muted">Validez la demande envoyée sur votre téléphone.</p>
+        <h2 class="mb-1.5 text-base font-bold text-dark">{{ t('paiement.processingHeading') }}</h2>
+        <p class="text-[13.5px] text-muted">{{ t('paiement.processingText') }}</p>
       </div>
 
       <div v-else class="py-6 text-center">
         <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/12 text-xl text-primary">
           ✓
         </div>
-        <h2 class="mb-1.5 text-base font-bold text-dark">Paiement en cours de validation</h2>
+        <h2 class="mb-1.5 text-base font-bold text-dark">{{ t('paiement.successHeading') }}</h2>
         <p class="mb-5 text-[13.5px] leading-relaxed text-muted">
-          Votre abonnement {{ planName }} sera activé dès confirmation. Vous pouvez compléter votre profil dès
-          maintenant.
+          {{ t('paiement.successText', { plan: planName }) }}
         </p>
         <NuxtLink
           to="/dashboard"
           class="press block w-full rounded-field bg-primary py-3.5 text-[15px] font-semibold text-white hover:bg-primary-hover"
         >
-          Compléter mon profil
+          {{ t('paiement.completeProfileCta') }}
         </NuxtLink>
       </div>
     </div>

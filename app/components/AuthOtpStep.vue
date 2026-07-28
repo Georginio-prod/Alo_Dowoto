@@ -3,6 +3,8 @@
 
 type Method = 'phone' | 'email'
 
+const { t } = useI18n({ useScope: 'global' })
+
 const props = defineProps<{ method: Method; contactValue: string; devCode?: string }>()
 const emit = defineEmits<{ verified: []; back: [] }>()
 
@@ -21,7 +23,9 @@ let resendTimer: ReturnType<typeof setInterval> | null = null
 const currentDevCode = ref(props.devCode)
 
 const isOtpComplete = computed(() => otp.value.every((d) => d !== ''))
-const destinationPrefix = computed(() => (props.method === 'phone' ? 'au' : 'à'))
+const destinationPrefix = computed(() =>
+  t(props.method === 'phone' ? 'authOtpStep.sentCodePrefixPhone' : 'authOtpStep.sentCodePrefixEmail'),
+)
 const destination = computed(() => (props.method === 'phone' ? `+228 ${props.contactValue}` : props.contactValue))
 
 function startResendTimer() {
@@ -72,7 +76,7 @@ async function verify() {
     emit('verified')
   } catch (error) {
     otpInvalid.value = true
-    otpError.value = apiErrorMessage(error, 'Code invalide. Réessayez.')
+    otpError.value = apiErrorMessage(error, t('authOtpStep.errorInvalidCode'))
     otp.value = ['', '', '', '', '', '']
   } finally {
     isVerifying.value = false
@@ -86,10 +90,10 @@ onUnmounted(stopResendTimer)
 <template>
   <div>
     <p class="mb-[18px] text-[13.5px] leading-relaxed text-muted">
-      Code envoyé {{ destinationPrefix }}
+      {{ t('authOtpStep.sentCodeLabel') }} {{ destinationPrefix }}
       <strong class="text-dark">{{ destination }}</strong>.
       <button type="button" class="press font-semibold text-primary" @click="emit('back')">
-        Modifier
+        {{ t('authOtpStep.modify') }}
       </button>
     </p>
 
@@ -97,7 +101,7 @@ onUnmounted(stopResendTimer)
       v-if="currentDevCode"
       class="mb-3.5 rounded-field border border-dashed border-primary/40 bg-primary/5 px-3.5 py-2.5 text-center text-[13px] text-dark"
     >
-      Mode développement — code : <strong class="font-mono tracking-widest">{{ currentDevCode }}</strong>
+      {{ t('authOtpStep.devModeLabel') }} <strong class="font-mono tracking-widest">{{ currentDevCode }}</strong>
     </p>
 
     <OtpInput
@@ -110,9 +114,9 @@ onUnmounted(stopResendTimer)
     <p v-if="otpError" class="mt-2 text-center text-[12.5px] text-error">{{ otpError }}</p>
 
     <p class="mt-3 text-center text-[13px] text-muted">
-      <template v-if="resendSeconds > 0">Renvoyer dans {{ resendSeconds }}s</template>
+      <template v-if="resendSeconds > 0">{{ t('authOtpStep.resendIn', { seconds: resendSeconds }) }}</template>
       <button v-else type="button" class="press font-semibold text-primary" @click="resendCode">
-        Renvoyer le code
+        {{ t('authOtpStep.resendCta') }}
       </button>
     </p>
 
@@ -122,7 +126,7 @@ onUnmounted(stopResendTimer)
       :disabled="!isOtpComplete || isVerifying"
       @click="verify"
     >
-      {{ isVerifying ? 'Vérification…' : 'Vérifier le code' }}
+      {{ isVerifying ? t('authOtpStep.verifying') : t('authOtpStep.verifyCta') }}
     </button>
   </div>
 </template>
