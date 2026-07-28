@@ -7,10 +7,12 @@ export default defineConfig({
   plugins: [
     // Réplique les auto-imports de Vue fournis par Nuxt (ref, computed…) pour
     // que les composants testés ici n'aient pas besoin d'imports explicites.
-    // `useI18n` (vue-i18n, réexporté par @nuxtjs/i18n) est ajouté au même
-    // titre — voir tests/setup/i18n.ts pour le plugin qui lui fournit un
-    // contexte global.
-    autoImport({ imports: ['vue', { 'vue-i18n': ['useI18n'] }], dts: false }),
+    // `useI18n` vient de tests/setup/useI18nShim.ts (pas directement de
+    // vue-i18n) : ce shim réplique l'augmentation `locales` apportée par
+    // @nuxtjs/i18n en production, sans laquelle le formatage de date localisé
+    // (ex. ConversationList.vue) plante sous Vitest — voir tests/setup/i18n.ts
+    // pour le plugin qui fournit le contexte global vue-i18n lui-même.
+    autoImport({ imports: ['vue', { '~~/tests/setup/useI18nShim': ['useI18n'] }], dts: false }),
     // Réplique l'auto-import Nitro pour les fichiers server/api/** (#261) :
     // ces handlers n'ont eux-mêmes aucun import (Nitro les injecte au
     // build) — sans ce plugin, les charger tels quels sous Vitest échouerait

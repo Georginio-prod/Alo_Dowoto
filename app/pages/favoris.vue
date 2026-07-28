@@ -9,6 +9,7 @@ interface FavoriteItem {
 
 definePageMeta({ layout: 'blank', middleware: 'auth' })
 
+const { t } = useI18n({ useScope: 'global' })
 const { data, pending, refresh } = await useFetch<{ favorites: FavoriteItem[] }>('/api/favorites')
 const favorites = computed(() => data.value?.favorites ?? [])
 
@@ -25,26 +26,26 @@ function goToResults() {
           <NuxtLink to="/" class="text-[19px] font-extrabold text-dark">
             Work<span class="text-primary">Togo</span>
           </NuxtLink>
-          <p class="text-[14.5px] text-muted">Vos prestataires favoris</p>
+          <p class="text-[14.5px] text-muted">{{ t('favorisPage.title') }}</p>
         </div>
 
         <NuxtLink
           to="/dashboard/client"
           class="press rounded-field border border-hairline bg-white px-3.5 py-2 text-[13px] font-semibold text-muted hover:text-dark"
         >
-          ← Mon espace
+          {{ t('favorisPage.backToSpace') }}
         </NuxtLink>
       </div>
     </header>
 
     <div class="mx-auto max-w-[1100px] px-5 py-6">
-      <p v-if="pending" class="text-[13px] text-muted">Chargement…</p>
+      <p v-if="pending" class="text-[13px] text-muted">{{ t('favorisPage.loading') }}</p>
 
       <ResultsEmptyState
         v-else-if="favorites.length === 0"
-        title="Aucun favori pour l'instant"
-        description="Ajoutez des prestataires depuis les résultats de matching pour les retrouver ici et les recontacter plus tard."
-        action-label="Voir des prestataires"
+        :title="t('favorisPage.emptyTitle')"
+        :description="t('favorisPage.emptyDescription')"
+        :action-label="t('favorisPage.emptyActionLabel')"
         @action="goToResults"
       />
 
@@ -57,7 +58,7 @@ function goToResults() {
             @favorite-changed="refresh"
           />
           <div v-else class="rounded-card border border-hairline bg-surface p-4 text-[13px] text-muted">
-            Prestataire {{ item.providerId }} indisponible.
+            {{ t('favorisPage.unavailableProvider', { id: item.providerId }) }}
           </div>
         </template>
       </div>

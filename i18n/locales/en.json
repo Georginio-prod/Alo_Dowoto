@@ -1070,5 +1070,177 @@
     "remove": "Remove",
     "removing": "Removing…",
     "errorRemoveFailed": "Removal failed. Please try again."
+  },
+  "dashboardShared": {
+    "providerSpaceLabel": "Provider space",
+    "backToProfile": "← Back to profile"
+  },
+  "prestataireCertifications": {
+    "heading": "Certifications",
+    "subtitle": "Upload your diplomas and certificates to get your skills certified."
+  },
+  "prestataireCoordonnees": {
+    "heading": "Contact details",
+    "subtitle": "Make it easier for future clients to reach you."
+  },
+  "prestataireCv": {
+    "heading": "CV",
+    "subtitle": "An up-to-date CV reassures clients before first contact."
+  },
+  "prestataireFormation": {
+    "heading": "Education",
+    "subtitle": "Diplomas, schools, and professional training completed."
+  },
+  "prestataireLangues": {
+    "heading": "Languages",
+    "subtitle": "Indicate the languages you can communicate with clients in."
+  },
+  "prestatairePreferences": {
+    "heading": "Preferences",
+    "subtitle": "Your rates and service conditions."
+  },
+  "prestataireProfilProfessionnel": {
+    "heading": "Professional profile",
+    "subtitle": "Help clients get to know you better before contacting you."
+  },
+  "prestataireIndex": {
+    "greeting": "Hello {name} 👋",
+    "badgeActive": "Active subscription",
+    "badgePending": "Subscription awaiting validation",
+    "badgeExpired": "Subscription expired",
+    "badgeNone": "No subscription",
+    "completionHeading": "Your profile completeness",
+    "completionSubtitle": "A complete profile builds trust and attracts more requests.",
+    "completionDone": "✓ Your profile is complete. Excellent!",
+    "checklistPhoto": "Profile photo",
+    "checklistDescription": "Description",
+    "checklistRate": "Base rate",
+    "checklistCv": "CV",
+    "checklistLanguages": "Languages",
+    "checklistFormation": "Education",
+    "checklistCertifications": "Certifications",
+    "checklistVerified": "Identity verified",
+    "verifyBanner": "Verify your identity so your first clients can contact you.",
+    "subscriptionExpiredBanner": "Your subscription has expired: renew it to keep receiving requests.",
+    "subscriptionIncompleteBanner": "Your profile isn't complete: choose a plan to unlock all features.",
+    "requestsReceivedLabel": "Requests received this month",
+    "reviewsCount": "{count} review | {count} reviews",
+    "balanceLabel": "Available balance",
+    "sectorLabel": "Sector of activity",
+    "defaultSectorFallback": "your activity",
+    "recentRequestsHeading": "Recent requests",
+    "viewAll": "View all →",
+    "noRequestsYet": "No requests yet. Complete your professional profile (photo, description, rates) to appear in matching for clients in your sectors.",
+    "completeProProfileCta": "Complete my professional profile",
+    "restartDemo": "↺ Restart demo",
+    "unlimited": "Unlimited"
+  },
+  "prestataireDemandes": {
+    "heading": "Requests received",
+    "subtitle": "Client requests matching your profile.",
+    "thisMonthLabel": "This month",
+    "infoBannerText": "These requests match your profile, but the client chooses who to contact — being listed here doesn't mean they've already written to you.",
+    "viewMessages": "View my messages →",
+    "emptyProfileCompleteText": "No requests yet. Check back regularly: new requests are matched as soon as a client posts in your sector.",
+    "emptyProfileIncompleteText": "No requests yet. Complete your professional profile to appear in matching.",
+    "completeProProfileCta": "Complete my professional profile",
+    "requestsCount": "{count} request | {count} requests",
+    "sortByLabel": "Sort by",
+    "sortAriaLabel": "Sort requests",
+    "sortRelevance": "Match",
+    "sortRecent": "Most recent",
+    "sortBudget": "Budget",
+    "matchStrong": "Strong match",
+    "matchGood": "Good match",
+    "matchModerate": "Moderate match",
+    "urgencyImmediate": "Immediate",
+    "urgencyWeek": "Within the week",
+    "urgencyFlexible": "Flexible",
+    "unlimited": "Unlimited"
+  },
+  "prestataireSolde": {
+    "heading": "Balance",
+    "subtitle": "Your balance, payout methods, and movement history.",
+    "availableBalance": "Available balance",
+    "payoutMethodHeading": "Payout method",
+    "bankTransfer": "Bank transfer",
+    "payoutSuccess": "Payout method updated.",
+    "errorSaveFailed": "Saving failed. Please try again.",
+    "saving": "Saving…",
+    "save": "Save",
+    "withdrawHeading": "Request a withdrawal",
+    "minWithdrawalText": "Minimum withdrawal: {amount} per request.",
+    "amountLabel": "Amount (FCFA)",
+    "amountPlaceholder": "E.g. 10000",
+    "selectPayoutFirst": "Choose a payout method before making a request.",
+    "withdrawSuccess": "Withdrawal request sent.",
+    "errorWithdrawFailed": "The withdrawal request failed. Please try again.",
+    "withdrawing": "Sending…",
+    "withdrawCta": "Request withdrawal"
+  },
+  "dashboardClient": {
+    "restartDemo": "↺ Restart demo",
+    "spaceLabel": "Client space",
+    "greeting": "Hello {name}",
+    "greetingFallback": "there",
+    "searchServiceCta": "Search for a service",
+    "verifyBanner": "Verify your identity to be able to post your first request.",
+    "requestsSent": "Requests sent",
+    "contactsThisMonth": "Contacts this month",
+    "favoritesLabel": "Favorites",
+    "recentRequestsHeading": "Recent requests",
+    "noRequestsYet": "No requests yet.",
+    "postFirstRequestCta": "Post my first request",
+    "messagesTitle": "Messages",
+    "messagesDescription": "Your conversations with contacted providers",
+    "favoritesTitle": "Favorites",
+    "favoritesDescription": "Providers saved to contact again later"
+  },
+  "soldeClient": {
+    "title": "My balance",
+    "backToSpace": "← My space",
+    "availableBalance": "Available balance"
+  },
+  "favorisPage": {
+    "title": "Your favorite providers",
+    "backToSpace": "← My space",
+    "loading": "Loading…",
+    "emptyTitle": "No favorites yet",
+    "emptyDescription": "Add providers from matching results to find them here and contact them again later.",
+    "emptyActionLabel": "View providers",
+    "unavailableProvider": "Provider {id} unavailable."
+  },
+  "walletRechargeForm": {
+    "heading": "Top up my balance",
+    "amountLabel": "Amount (FCFA)",
+    "phoneLabel": "Mobile Money number",
+    "errorRechargeFailedGeneric": "The top-up failed. Please try again.",
+    "errorInitiateFailed": "The top-up could not be initiated. Please try again.",
+    "rechargeCta": "Top up",
+    "processingHeading": "Confirmation in progress…",
+    "processingText": "Confirm the request sent to your phone.",
+    "confirmedHeading": "Top-up confirmed",
+    "confirmedText": "Your balance has been updated.",
+    "newRechargeCta": "New top-up"
+  },
+  "walletMovementList": {
+    "typeRecharge": "Top-up",
+    "typeEscrowDebit": "Escrow payment",
+    "typeEscrowRelease": "Payment received (escrow released)",
+    "typeEscrowRefund": "Refund",
+    "typeCommission": "WorkTogo commission",
+    "typeRetrait": "Withdrawal",
+    "typeCancellationCompensation": "Compensation (client's late cancellation)",
+    "typeDisputePenalty": "Penalty (dispute resolved against you)",
+    "typeDisputeCompensation": "Compensation (dispute resolved in your favor)",
+    "heading": "Movement history",
+    "typeFilterAria": "Filter by movement type",
+    "allTypes": "All types",
+    "periodFilterAria": "Filter by period",
+    "allPeriods": "All time",
+    "last7Days": "Last 7 days",
+    "last30Days": "Last 30 days",
+    "noMovements": "No movements.",
+    "referencePrefix": "Ref."
   }
 }

@@ -1070,5 +1070,177 @@
     "remove": "Supprimer",
     "removing": "Suppression…",
     "errorRemoveFailed": "La suppression a échoué. Réessayez."
+  },
+  "dashboardShared": {
+    "providerSpaceLabel": "Espace prestataire",
+    "backToProfile": "← Retour au profil"
+  },
+  "prestataireCertifications": {
+    "heading": "Certifications",
+    "subtitle": "Déposez vos diplômes et attestations pour faire certifier vos compétences."
+  },
+  "prestataireCoordonnees": {
+    "heading": "Coordonnées",
+    "subtitle": "Facilitez la prise de contact avec vos futurs clients."
+  },
+  "prestataireCv": {
+    "heading": "CV",
+    "subtitle": "Un CV à jour rassure les clients avant le premier contact."
+  },
+  "prestataireFormation": {
+    "heading": "Formation",
+    "subtitle": "Diplômes, écoles et formations professionnelles suivies."
+  },
+  "prestataireLangues": {
+    "heading": "Langues",
+    "subtitle": "Indiquez les langues dans lesquelles vous pouvez échanger avec vos clients."
+  },
+  "prestatairePreferences": {
+    "heading": "Préférences",
+    "subtitle": "Vos tarifs et vos conditions d'intervention."
+  },
+  "prestataireProfilProfessionnel": {
+    "heading": "Profil professionnel",
+    "subtitle": "Aidez les chercheurs à mieux vous connaître avant de vous contacter."
+  },
+  "prestataireIndex": {
+    "greeting": "Bonjour {name} 👋",
+    "badgeActive": "Abonnement actif",
+    "badgePending": "Abonnement en attente de validation",
+    "badgeExpired": "Abonnement expiré",
+    "badgeNone": "Profil non abonné",
+    "completionHeading": "Complétude de votre profil",
+    "completionSubtitle": "Un profil complet inspire confiance et attire plus de demandes.",
+    "completionDone": "✓ Votre profil est complet. Excellent !",
+    "checklistPhoto": "Photo de profil",
+    "checklistDescription": "Description",
+    "checklistRate": "Tarif de base",
+    "checklistCv": "CV",
+    "checklistLanguages": "Langues",
+    "checklistFormation": "Formation",
+    "checklistCertifications": "Certifications",
+    "checklistVerified": "Identité vérifiée",
+    "verifyBanner": "Vérifiez votre identité pour pouvoir être contacté par vos premiers clients.",
+    "subscriptionExpiredBanner": "Votre abonnement a expiré : renouvelez-le pour continuer à recevoir des demandes.",
+    "subscriptionIncompleteBanner": "Votre profil n'est pas complet : choisissez une formule pour profiter de toutes les fonctionnalités.",
+    "requestsReceivedLabel": "Demandes reçues ce mois",
+    "reviewsCount": "{count} avis | {count} avis",
+    "balanceLabel": "Solde disponible",
+    "sectorLabel": "Secteur d'activité",
+    "defaultSectorFallback": "votre activité",
+    "recentRequestsHeading": "Demandes récentes",
+    "viewAll": "Voir tout →",
+    "noRequestsYet": "Aucune demande pour l'instant. Complétez votre profil professionnel (photo, description, tarifs) pour apparaître dans le matching des clients de vos secteurs.",
+    "completeProProfileCta": "Compléter mon profil professionnel",
+    "restartDemo": "↺ Recommencer la démo",
+    "unlimited": "Illimité"
+  },
+  "prestataireDemandes": {
+    "heading": "Demandes reçues",
+    "subtitle": "Les demandes clientes correspondant à votre profil.",
+    "thisMonthLabel": "Ce mois-ci",
+    "infoBannerText": "Ces demandes correspondent à votre profil, mais c'est le client qui choisit qui contacter — être listé ici ne veut pas dire qu'il vous a déjà écrit.",
+    "viewMessages": "Voir mes messages →",
+    "emptyProfileCompleteText": "Aucune demande pour l'instant. Revenez régulièrement : de nouvelles demandes sont matchées dès qu'un client publie dans votre secteur.",
+    "emptyProfileIncompleteText": "Aucune demande pour l'instant. Complétez votre profil professionnel pour apparaître dans le matching.",
+    "completeProProfileCta": "Compléter mon profil professionnel",
+    "requestsCount": "{count} demande | {count} demandes",
+    "sortByLabel": "Trier par",
+    "sortAriaLabel": "Trier les demandes",
+    "sortRelevance": "Correspondance",
+    "sortRecent": "Plus récentes",
+    "sortBudget": "Budget",
+    "matchStrong": "Forte correspondance",
+    "matchGood": "Bonne correspondance",
+    "matchModerate": "Correspondance modérée",
+    "urgencyImmediate": "Immédiate",
+    "urgencyWeek": "Sous la semaine",
+    "urgencyFlexible": "Flexible",
+    "unlimited": "Illimité"
+  },
+  "prestataireSolde": {
+    "heading": "Solde",
+    "subtitle": "Votre solde, vos moyens de retrait et l'historique de vos mouvements.",
+    "availableBalance": "Solde disponible",
+    "payoutMethodHeading": "Moyen de retrait",
+    "bankTransfer": "Virement bancaire",
+    "payoutSuccess": "Moyen de retrait mis à jour.",
+    "errorSaveFailed": "L'enregistrement a échoué. Réessayez.",
+    "saving": "Enregistrement…",
+    "save": "Enregistrer",
+    "withdrawHeading": "Demander un retrait",
+    "minWithdrawalText": "Retrait minimum : {amount} par demande.",
+    "amountLabel": "Montant (F CFA)",
+    "amountPlaceholder": "Ex. 10000",
+    "selectPayoutFirst": "Choisissez un moyen de retrait avant de faire une demande.",
+    "withdrawSuccess": "Demande de retrait envoyée.",
+    "errorWithdrawFailed": "La demande de retrait a échoué. Réessayez.",
+    "withdrawing": "Envoi…",
+    "withdrawCta": "Demander le retrait"
+  },
+  "dashboardClient": {
+    "restartDemo": "↺ Recommencer la démo",
+    "spaceLabel": "Espace chercheur",
+    "greeting": "Bonjour {name}",
+    "greetingFallback": "vous",
+    "searchServiceCta": "Chercher un service",
+    "verifyBanner": "Vérifiez votre identité pour pouvoir publier votre première demande.",
+    "requestsSent": "Demandes envoyées",
+    "contactsThisMonth": "Contacts ce mois",
+    "favoritesLabel": "Favoris",
+    "recentRequestsHeading": "Demandes récentes",
+    "noRequestsYet": "Aucune demande pour l'instant.",
+    "postFirstRequestCta": "Publier ma première demande",
+    "messagesTitle": "Messages",
+    "messagesDescription": "Vos conversations avec les prestataires contactés",
+    "favoritesTitle": "Favoris",
+    "favoritesDescription": "Prestataires sauvegardés pour les recontacter plus tard"
+  },
+  "soldeClient": {
+    "title": "Mon solde",
+    "backToSpace": "← Mon espace",
+    "availableBalance": "Solde disponible"
+  },
+  "favorisPage": {
+    "title": "Vos prestataires favoris",
+    "backToSpace": "← Mon espace",
+    "loading": "Chargement…",
+    "emptyTitle": "Aucun favori pour l'instant",
+    "emptyDescription": "Ajoutez des prestataires depuis les résultats de matching pour les retrouver ici et les recontacter plus tard.",
+    "emptyActionLabel": "Voir des prestataires",
+    "unavailableProvider": "Prestataire {id} indisponible."
+  },
+  "walletRechargeForm": {
+    "heading": "Recharger mon solde",
+    "amountLabel": "Montant (F CFA)",
+    "phoneLabel": "Numéro Mobile Money",
+    "errorRechargeFailedGeneric": "La recharge a échoué. Réessayez.",
+    "errorInitiateFailed": "La recharge n'a pas pu être initiée. Réessayez.",
+    "rechargeCta": "Recharger",
+    "processingHeading": "Confirmation en cours…",
+    "processingText": "Validez la demande envoyée sur votre téléphone.",
+    "confirmedHeading": "Recharge confirmée",
+    "confirmedText": "Votre solde a été mis à jour.",
+    "newRechargeCta": "Nouvelle recharge"
+  },
+  "walletMovementList": {
+    "typeRecharge": "Recharge",
+    "typeEscrowDebit": "Paiement en séquestre",
+    "typeEscrowRelease": "Paiement reçu (séquestre libéré)",
+    "typeEscrowRefund": "Remboursement",
+    "typeCommission": "Commission WorkTogo",
+    "typeRetrait": "Retrait",
+    "typeCancellationCompensation": "Indemnisation (annulation tardive du chercheur)",
+    "typeDisputePenalty": "Pénalité (litige résolu en votre défaveur)",
+    "typeDisputeCompensation": "Compensation (litige résolu en votre faveur)",
+    "heading": "Historique des mouvements",
+    "typeFilterAria": "Filtrer par type de mouvement",
+    "allTypes": "Tous les types",
+    "periodFilterAria": "Filtrer par période",
+    "allPeriods": "Toute période",
+    "last7Days": "7 derniers jours",
+    "last30Days": "30 derniers jours",
+    "noMovements": "Aucun mouvement.",
+    "referencePrefix": "Réf."
   }
 }

@@ -11,6 +11,7 @@ import type { ServiceRequest } from '~~/server/utils/requestStore'
 
 definePageMeta({ layout: 'blank', middleware: 'auth' })
 
+const { t, locale, locales } = useI18n({ useScope: 'global' })
 const { user } = useSession()
 const { data: favoritesData } = await useFetch<{ favorites: { providerId: string }[] }>('/api/favorites')
 const { data: contactsQuotaData } = await useFetch<{ usage: { count: number; limit: number; month: string } }>(
@@ -27,7 +28,9 @@ const contactsUsageLabel = computed(() => {
 })
 
 function formatDate(timestamp: number): string {
-  return new Date(timestamp).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+  const languageTag = (locales.value as Array<{ code: string, language?: string }>)
+    .find((l) => l.code === locale.value)?.language ?? 'fr-FR'
+  return new Date(timestamp).toLocaleDateString(languageTag, { day: '2-digit', month: 'short' })
 }
 
 function restartDemo() {
@@ -46,21 +49,21 @@ function restartDemo() {
         class="press rounded-field border border-hairline bg-white px-3.5 py-2 text-[13px] font-semibold text-muted hover:text-dark"
         @click="restartDemo"
       >
-        ↺ Recommencer la démo
+        {{ t('dashboardClient.restartDemo') }}
       </button>
     </header>
 
     <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div>
-        <p class="mb-1 text-[11px] font-bold uppercase tracking-wide text-primary">Espace chercheur</p>
-        <h1 class="text-[21px] font-extrabold text-dark">Bonjour {{ user?.firstName || 'vous' }}</h1>
+        <p class="mb-1 text-[11px] font-bold uppercase tracking-wide text-primary">{{ t('dashboardClient.spaceLabel') }}</p>
+        <h1 class="text-[21px] font-extrabold text-dark">{{ t('dashboardClient.greeting', { name: user?.firstName || t('dashboardClient.greetingFallback') }) }}</h1>
         <p v-if="user?.location" class="mt-1 text-[13px] text-muted">📍 {{ user.location }}</p>
       </div>
       <NuxtLink
         to="/"
         class="press shrink-0 rounded-field bg-primary px-5 py-3 text-[14px] font-semibold text-white hover:bg-primary-hover"
       >
-        Chercher un service
+        {{ t('dashboardClient.searchServiceCta') }}
       </NuxtLink>
     </div>
 
@@ -70,7 +73,7 @@ function restartDemo() {
       class="press mb-6 flex items-center justify-between gap-3 rounded-card border border-primary/30 bg-primary/8 p-4 hover:border-primary/50"
     >
       <p class="text-[13px] font-semibold text-dark">
-        Vérifiez votre identité pour pouvoir publier votre première demande.
+        {{ t('dashboardClient.verifyBanner') }}
       </p>
       <span class="shrink-0 font-bold text-primary">→</span>
     </NuxtLink>
@@ -78,28 +81,28 @@ function restartDemo() {
     <div class="mb-6 grid grid-cols-3 gap-3">
       <div class="rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm">
         <div class="text-[22px] font-extrabold text-dark">{{ myRequests.length }}</div>
-        <div class="text-[11.5px] text-muted">Demandes envoyées</div>
+        <div class="text-[11.5px] text-muted">{{ t('dashboardClient.requestsSent') }}</div>
       </div>
       <div class="rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm">
         <div class="text-[22px] font-extrabold text-dark">{{ contactsUsageLabel }}</div>
-        <div class="text-[11.5px] text-muted">Contacts ce mois</div>
+        <div class="text-[11.5px] text-muted">{{ t('dashboardClient.contactsThisMonth') }}</div>
       </div>
       <div class="rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm">
         <div class="text-[22px] font-extrabold text-dark">{{ favoritesCount }}</div>
-        <div class="text-[11.5px] text-muted">Favoris</div>
+        <div class="text-[11.5px] text-muted">{{ t('dashboardClient.favoritesLabel') }}</div>
       </div>
     </div>
 
     <section class="mb-6">
-      <h2 class="mb-3 text-[12px] font-bold uppercase tracking-wide text-muted">Demandes récentes</h2>
+      <h2 class="mb-3 text-[12px] font-bold uppercase tracking-wide text-muted">{{ t('dashboardClient.recentRequestsHeading') }}</h2>
 
       <div v-if="myRequests.length === 0" class="rounded-card border border-hairline bg-surface p-6 text-center shadow-card-sm">
-        <p class="mb-3 text-[13.5px] text-muted">Aucune demande pour l'instant.</p>
+        <p class="mb-3 text-[13.5px] text-muted">{{ t('dashboardClient.noRequestsYet') }}</p>
         <NuxtLink
           to="/demande"
           class="press inline-block rounded-field border border-hairline bg-white px-4 py-2.5 text-[13.5px] font-semibold text-dark hover:border-primary"
         >
-          Publier ma première demande
+          {{ t('dashboardClient.postFirstRequestCta') }}
         </NuxtLink>
       </div>
 
@@ -124,15 +127,15 @@ function restartDemo() {
         to="/messages"
         class="press rounded-card border border-hairline bg-surface p-4 shadow-card-sm hover:border-primary/40"
       >
-        <p class="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-primary">Messages</p>
-        <p class="text-[12.5px] leading-relaxed text-muted">Vos conversations avec les prestataires contactés</p>
+        <p class="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-primary">{{ t('dashboardClient.messagesTitle') }}</p>
+        <p class="text-[12.5px] leading-relaxed text-muted">{{ t('dashboardClient.messagesDescription') }}</p>
       </NuxtLink>
       <NuxtLink
         to="/favoris"
         class="press rounded-card border border-hairline bg-surface p-4 shadow-card-sm hover:border-primary/40"
       >
-        <p class="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-primary">Favoris</p>
-        <p class="text-[12.5px] leading-relaxed text-muted">Prestataires sauvegardés pour les recontacter plus tard</p>
+        <p class="mb-1 text-[11.5px] font-bold uppercase tracking-wide text-primary">{{ t('dashboardClient.favoritesTitle') }}</p>
+        <p class="text-[12.5px] leading-relaxed text-muted">{{ t('dashboardClient.favoritesDescription') }}</p>
       </NuxtLink>
     </div>
   </div>
