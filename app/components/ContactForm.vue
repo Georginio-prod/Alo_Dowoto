@@ -12,6 +12,7 @@ import type { ProviderProfile } from '~~/server/utils/providerStore'
  */
 const emit = defineEmits<{ saved: [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
 const { user } = useSession()
 const { data } = await useFetch<{ profile: ProviderProfile | null }>('/api/providers/me')
 const existing = data.value?.profile ?? null
@@ -39,7 +40,7 @@ async function submit() {
     success.value = true
     emit('saved')
   } catch (fetchError) {
-    error.value = apiErrorMessage(fetchError, "L'enregistrement a échoué. Réessayez.")
+    error.value = apiErrorMessage(fetchError, t('contactForm.errorSaveFailed'))
   } finally {
     isSubmitting.value = false
   }
@@ -49,33 +50,33 @@ async function submit() {
 <template>
   <div>
     <div class="mb-3.5 rounded-field border border-hairline bg-bg p-3.5">
-      <p class="mb-0.5 text-[11px] font-bold uppercase tracking-wide text-muted">Contact de connexion</p>
+      <p class="mb-0.5 text-[11px] font-bold uppercase tracking-wide text-muted">{{ t('contactForm.loginContactLabel') }}</p>
       <p class="text-[13.5px] font-semibold text-dark">{{ user?.contact }}</p>
       <p class="mt-1 text-[11.5px] leading-relaxed text-muted">
-        Vérifié par code — non modifiable ici. Nom et localisation se modifient depuis
-        <NuxtLink to="/profil/identite" class="press font-semibold text-primary">Identité</NuxtLink>.
+        {{ t('contactForm.loginContactHintPrefix') }}
+        <NuxtLink to="/profil/identite" class="press font-semibold text-primary">{{ t('contactForm.loginContactHintLink') }}</NuxtLink>.
       </p>
     </div>
 
-    <label for="coord-whatsapp" class="mb-1.5 block text-[13px] font-semibold text-dark">Numéro WhatsApp</label>
+    <label for="coord-whatsapp" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('contactForm.whatsappLabel') }}</label>
     <input
       id="coord-whatsapp"
       v-model="whatsapp"
       type="tel"
-      placeholder="Ex. +228 90 00 00 00"
+      :placeholder="t('contactForm.whatsappPlaceholder')"
       class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
     >
 
-    <label for="coord-website" class="mb-1.5 block text-[13px] font-semibold text-dark">Site web / réseaux sociaux</label>
+    <label for="coord-website" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('contactForm.websiteLabel') }}</label>
     <input
       id="coord-website"
       v-model="website"
       type="text"
-      placeholder="Ex. https://facebook.com/monatelier"
+      :placeholder="t('contactForm.websitePlaceholder')"
       class="mb-1.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
     >
 
-    <p v-if="success" class="my-1 text-[12.5px] font-semibold text-primary">Coordonnées mises à jour.</p>
+    <p v-if="success" class="my-1 text-[12.5px] font-semibold text-primary">{{ t('contactForm.success') }}</p>
     <p v-if="error" class="my-1 text-[12.5px] text-error">{{ error }}</p>
 
     <button
@@ -84,7 +85,7 @@ async function submit() {
       :disabled="isSubmitting"
       @click="submit"
     >
-      {{ isSubmitting ? 'Enregistrement…' : 'Enregistrer' }}
+      {{ isSubmitting ? t('contactForm.saving') : t('contactForm.save') }}
     </button>
   </div>
 </template>

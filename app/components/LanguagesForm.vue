@@ -9,6 +9,8 @@ import type { ProviderProfile } from '~~/server/utils/providerStore'
  */
 const emit = defineEmits<{ saved: [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const SUGGESTED_LANGUAGES = ['Français', 'Anglais', 'Ewe', 'Kabiyè', 'Mina', 'Haoussa', 'Moba']
 
 const { data } = await useFetch<{ profile: ProviderProfile | null }>('/api/providers/me')
@@ -48,7 +50,7 @@ async function submit() {
     success.value = true
     emit('saved')
   } catch (fetchError) {
-    error.value = apiErrorMessage(fetchError, "L'enregistrement a échoué. Réessayez.")
+    error.value = apiErrorMessage(fetchError, t('languagesForm.errorSaveFailed'))
   } finally {
     isSubmitting.value = false
   }
@@ -67,7 +69,7 @@ async function submit() {
         <button
           type="button"
           class="press flex size-4 items-center justify-center rounded-full text-[11px] hover:bg-primary/20"
-          :aria-label="`Retirer ${lang}`"
+          :aria-label="t('languagesForm.removeAria', { lang })"
           @click="removeLanguage(lang)"
         >
           ×
@@ -87,13 +89,13 @@ async function submit() {
       </button>
     </div>
 
-    <label for="lang-custom" class="mb-1.5 block text-[13px] font-semibold text-dark">Autre langue</label>
+    <label for="lang-custom" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('languagesForm.customLabel') }}</label>
     <div class="mb-3.5 flex gap-2">
       <input
         id="lang-custom"
         v-model="newLanguage"
         type="text"
-        placeholder="Ex. Allemand…"
+        :placeholder="t('languagesForm.customPlaceholder')"
         class="h-[46px] flex-1 rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
         @keydown.enter.prevent="addFromInput"
       >
@@ -102,11 +104,11 @@ async function submit() {
         class="press shrink-0 rounded-field border-[1.5px] border-hairline px-4 text-[13.5px] font-semibold text-dark hover:border-primary/40"
         @click="addFromInput"
       >
-        Ajouter
+        {{ t('languagesForm.add') }}
       </button>
     </div>
 
-    <p v-if="success" class="my-1 text-[12.5px] font-semibold text-primary">Langues mises à jour.</p>
+    <p v-if="success" class="my-1 text-[12.5px] font-semibold text-primary">{{ t('languagesForm.success') }}</p>
     <p v-if="error" class="my-1 text-[12.5px] text-error">{{ error }}</p>
 
     <button
@@ -115,7 +117,7 @@ async function submit() {
       :disabled="isSubmitting"
       @click="submit"
     >
-      {{ isSubmitting ? 'Enregistrement…' : 'Enregistrer' }}
+      {{ isSubmitting ? t('languagesForm.saving') : t('languagesForm.save') }}
     </button>
   </div>
 </template>

@@ -11,6 +11,8 @@ import type { UnavailabilityPeriod } from '~~/server/utils/providerAvailabilityS
  */
 defineEmits<{ saved: [] }>()
 
+const { t, locale, locales } = useI18n({ useScope: 'global' })
+
 const { data, refresh } = await useFetch<{ periods: UnavailabilityPeriod[] }>('/api/providers/availability')
 const periods = computed(() => data.value?.periods ?? [])
 
@@ -35,7 +37,7 @@ async function addPeriod() {
     endDate.value = ''
     await refresh()
   } catch (fetchError) {
-    error.value = apiErrorMessage(fetchError, "L'enregistrement a échoué. Réessayez.")
+    error.value = apiErrorMessage(fetchError, t('availabilityCalendar.errorSaveFailed'))
   } finally {
     isSubmitting.value = false
   }
@@ -49,16 +51,18 @@ async function removePeriod(id: string) {
     await $fetch(`/api/providers/availability/${id}`, { method: 'DELETE' })
     await refresh()
   } catch (fetchError) {
-    error.value = apiErrorMessage(fetchError, 'La suppression a échoué. Réessayez.')
+    error.value = apiErrorMessage(fetchError, t('availabilityCalendar.errorRemoveFailed'))
   } finally {
     removingId.value = null
   }
 }
 
 function formatRange(period: UnavailabilityPeriod): string {
+  const languageTag = (locales.value as Array<{ code: string, language?: string }>)
+    .find((l) => l.code === locale.value)?.language ?? 'fr-FR'
   const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' }
-  const start = new Date(period.startDate).toLocaleDateString('fr-FR', options)
-  const end = new Date(period.endDate).toLocaleDateString('fr-FR', options)
+  const start = new Date(period.startDate).toLocaleDateString(languageTag, options)
+  const end = new Date(period.endDate).toLocaleDateString(languageTag, options)
   return start === end ? start : `${start} → ${end}`
 }
 </script>
@@ -66,13 +70,12 @@ function formatRange(period: UnavailabilityPeriod): string {
 <template>
   <div>
     <p class="mb-3.5 text-[12.5px] leading-relaxed text-muted">
-      Déclarez vos périodes d'indisponibilité : vous n'apparaîtrez plus dans les propositions de recherche pour ces
-      dates. Sans période déclarée, vous restez visible en permanence.
+      {{ t('availabilityCalendar.description') }}
     </p>
 
     <div class="mb-3.5 flex gap-2">
       <div class="flex-1">
-        <label for="availability-start" class="mb-1.5 block text-[13px] font-semibold text-dark">Du</label>
+        <label for="availability-start" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('availabilityCalendar.fromLabel') }}</label>
         <input
           id="availability-start"
           v-model="startDate"
@@ -81,7 +84,7 @@ function formatRange(period: UnavailabilityPeriod): string {
         >
       </div>
       <div class="flex-1">
-        <label for="availability-end" class="mb-1.5 block text-[13px] font-semibold text-dark">Au</label>
+        <label for="availability-end" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('availabilityCalendar.toLabel') }}</label>
         <input
           id="availability-end"
           v-model="endDate"
@@ -97,12 +100,12 @@ function formatRange(period: UnavailabilityPeriod): string {
       :disabled="!isValid || isSubmitting"
       @click="addPeriod"
     >
-      {{ isSubmitting ? 'Ajout…' : 'Ajouter une période d\'indisponibilité' }}
+      {{ isSubmitting ? t('availabilityCalendar.adding') : t('availabilityCalendar.addCta') }}
     </button>
 
     <p v-if="error" class="mb-3 text-[12.5px] text-error">{{ error }}</p>
 
-    <p v-if="periods.length === 0" class="text-[12.5px] text-muted">Aucune période d'indisponibilité déclarée.</p>
+    <p v-if="periods.length === 0" class="text-[12.5px] text-muted">{{ t('availabilityCalendar.noPeriods') }}</p>
 
     <ul v-else class="space-y-2">
       <li
@@ -117,7 +120,7 @@ function formatRange(period: UnavailabilityPeriod): string {
           :disabled="removingId === period.id"
           @click="removePeriod(period.id)"
         >
-          {{ removingId === period.id ? 'Suppression…' : 'Supprimer' }}
+          {{ removingId === period.id ? t('availabilityCalendar.removing') : t('availabilityCalendar.remove') }}
         </button>
       </li>
     </ul>

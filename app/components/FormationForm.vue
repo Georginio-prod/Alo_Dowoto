@@ -9,6 +9,8 @@ import type { FormationEntry, ProviderProfile } from '~~/server/utils/providerSt
  */
 const emit = defineEmits<{ saved: [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 function emptyFormation(): FormationEntry {
   return { title: '', institution: '', year: '' }
 }
@@ -44,7 +46,7 @@ async function submit() {
     success.value = true
     emit('saved')
   } catch (fetchError) {
-    error.value = apiErrorMessage(fetchError, "L'enregistrement a échoué. Réessayez.")
+    error.value = apiErrorMessage(fetchError, t('formationForm.errorSaveFailed'))
   } finally {
     isSubmitting.value = false
   }
@@ -59,48 +61,48 @@ async function submit() {
       class="mb-4 rounded-field border border-hairline p-3.5"
     >
       <div class="mb-2.5 flex items-center justify-between">
-        <span class="text-[12px] font-bold uppercase tracking-wide text-muted">Formation {{ index + 1 }}</span>
+        <span class="text-[12px] font-bold uppercase tracking-wide text-muted">{{ t('formationForm.entryLabel', { n: index + 1 }) }}</span>
         <button
           v-if="formations.length > 1"
           type="button"
           class="press text-[12px] font-semibold text-error"
           @click="removeFormation(index)"
         >
-          Retirer
+          {{ t('formationForm.remove') }}
         </button>
       </div>
 
       <label :for="`formation-title-${index}`" class="mb-1.5 block text-[12.5px] font-semibold text-dark">
-        Intitulé
+        {{ t('formationForm.titleLabel') }}
       </label>
       <input
         :id="`formation-title-${index}`"
         v-model="formation.title"
         type="text"
-        placeholder="Ex. CAP Électricité"
+        :placeholder="t('formationForm.titlePlaceholder')"
         class="mb-2.5 h-[42px] w-full rounded-field border-[1.5px] border-hairline px-3 text-[13.5px] text-ink outline-none focus:border-primary"
       >
 
       <label :for="`formation-institution-${index}`" class="mb-1.5 block text-[12.5px] font-semibold text-dark">
-        Établissement
+        {{ t('formationForm.institutionLabel') }}
       </label>
       <input
         :id="`formation-institution-${index}`"
         v-model="formation.institution"
         type="text"
-        placeholder="Ex. Lycée technique de Lomé"
+        :placeholder="t('formationForm.institutionPlaceholder')"
         class="mb-2.5 h-[42px] w-full rounded-field border-[1.5px] border-hairline px-3 text-[13.5px] text-ink outline-none focus:border-primary"
       >
 
       <label :for="`formation-year-${index}`" class="mb-1.5 block text-[12.5px] font-semibold text-dark">
-        Année
+        {{ t('formationForm.yearLabel') }}
       </label>
       <input
         :id="`formation-year-${index}`"
         v-model="formation.year"
         type="text"
         inputmode="numeric"
-        placeholder="Ex. 2019"
+        :placeholder="t('formationForm.yearPlaceholder')"
         class="h-[42px] w-full rounded-field border-[1.5px] border-hairline px-3 text-[13.5px] text-ink outline-none focus:border-primary"
       >
     </div>
@@ -110,10 +112,10 @@ async function submit() {
       class="press mb-3.5 w-full rounded-field border-[1.5px] border-dashed border-hairline py-2.5 text-[13px] font-semibold text-muted hover:border-primary/40 hover:text-primary"
       @click="addFormation"
     >
-      + Ajouter une formation
+      {{ t('formationForm.addFormation') }}
     </button>
 
-    <p v-if="success" class="my-1 text-[12.5px] font-semibold text-primary">Formations mises à jour.</p>
+    <p v-if="success" class="my-1 text-[12.5px] font-semibold text-primary">{{ t('formationForm.success') }}</p>
     <p v-if="error" class="my-1 text-[12.5px] text-error">{{ error }}</p>
 
     <button
@@ -122,7 +124,7 @@ async function submit() {
       :disabled="isSubmitting"
       @click="submit"
     >
-      {{ isSubmitting ? 'Enregistrement…' : 'Enregistrer' }}
+      {{ isSubmitting ? t('formationForm.saving') : t('formationForm.save') }}
     </button>
   </div>
 </template>
