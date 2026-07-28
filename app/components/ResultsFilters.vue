@@ -1,11 +1,13 @@
 <script setup lang="ts">
+const { t } = useI18n({ useScope: 'global' })
+
 const CITIES = ['Lomé', 'Kara', 'Sokodé', 'Kpalimé', 'Atakpamé', 'Dapaong']
-const RATING_OPTIONS: { label: string; value: number | null }[] = [
-  { label: 'Toutes les notes', value: null },
-  { label: '3★ et plus', value: 3 },
-  { label: '4★ et plus', value: 4 },
-  { label: '4.5★ et plus', value: 4.5 },
-]
+const RATING_OPTIONS = computed<{ label: string; value: number | null }[]>(() => [
+  { label: t('resultsFilters.ratingAll'), value: null },
+  { label: t('resultsFilters.rating3Plus'), value: 3 },
+  { label: t('resultsFilters.rating4Plus'), value: 4 },
+  { label: t('resultsFilters.rating45Plus'), value: 4.5 },
+])
 const PRICE_MIN = 500
 const PRICE_MAX = 6000
 const PRICE_STEP = 500
@@ -36,14 +38,14 @@ function reset() {
 <template>
   <div class="rounded-card border border-hairline bg-surface p-5 shadow-card-sm">
     <div class="mb-4 flex items-center justify-between">
-      <h2 class="text-[15px] font-bold text-dark">Filtres</h2>
+      <h2 class="text-[15px] font-bold text-dark">{{ t('resultsFilters.title') }}</h2>
       <button type="button" class="press text-[13px] font-semibold text-primary" @click="reset">
-        Réinitialiser
+        {{ t('resultsFilters.reset') }}
       </button>
     </div>
 
     <div v-if="subSectorOptions.length" class="mb-5">
-      <p class="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-muted">Sous-secteur</p>
+      <p class="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-muted">{{ t('resultsFilters.subSectorLabel') }}</p>
       <label
         v-for="name in subSectorOptions"
         :key="name"
@@ -61,20 +63,20 @@ function reset() {
 
     <div class="mb-5">
       <label for="filter-city" class="mb-2 block text-[11.5px] font-bold uppercase tracking-wide text-muted">
-        Ville
+        {{ t('resultsFilters.cityLabel') }}
       </label>
       <select
         id="filter-city"
         v-model="city"
         class="h-[42px] w-full rounded-field border border-hairline bg-white px-3 text-[13.5px] text-ink outline-none focus:border-primary"
       >
-        <option value="">Toutes les villes</option>
+        <option value="">{{ t('resultsFilters.allCities') }}</option>
         <option v-for="cityOption in CITIES" :key="cityOption" :value="cityOption">{{ cityOption }}</option>
       </select>
     </div>
 
     <div class="mb-5">
-      <p class="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-muted">Note minimum</p>
+      <p class="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-muted">{{ t('resultsFilters.ratingLabel') }}</p>
       <div class="flex flex-col gap-2">
         <button
           v-for="option in RATING_OPTIONS"
@@ -91,7 +93,7 @@ function reset() {
 
     <div>
       <label for="filter-price" class="mb-2 block text-[11.5px] font-bold uppercase tracking-wide text-muted">
-        Prix maximum : {{ priceMax }} FCFA
+        {{ t('resultsFilters.priceLabel', { price: priceMax }) }}
       </label>
       <input
         id="filter-price"

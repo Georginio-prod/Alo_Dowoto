@@ -29,6 +29,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{ 'reset-filters': []; 'favorite-changed': []; 'select-provider': [id: string] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 type ViewMode = 'liste' | 'carte'
 const viewMode = defineModel<ViewMode>('viewMode', { required: true })
 type SortOption = 'pertinence' | 'note' | 'prix_asc' | 'prix_desc'
@@ -42,11 +44,11 @@ const mapRadiusKm = computed(() => (props.searcherPosition ? props.searchRadiusK
     <!-- Barre d'outils résultats : compteur (réassurance), bascule liste/carte, tri explicite. -->
     <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
       <h2 class="text-[15px] font-bold text-dark">
-        {{ showHomeSections ? 'Tous les prestataires' : 'Résultats' }}
+        {{ showHomeSections ? t('resultsListSection.allProvidersHeading') : t('resultsListSection.resultsHeading') }}
         <span v-if="!pending" class="ml-1 text-[13px] font-medium text-muted">({{ totalResults }})</span>
       </h2>
       <div class="flex flex-wrap items-center gap-3">
-        <div class="flex rounded-field border border-hairline bg-white p-0.5" role="group" aria-label="Mode d'affichage">
+        <div class="flex rounded-field border border-hairline bg-white p-0.5" role="group" :aria-label="t('resultsListSection.viewModeAriaLabel')">
           <button
             type="button"
             class="press rounded-[7px] px-3 py-1.5 text-[12.5px] font-semibold"
@@ -54,7 +56,7 @@ const mapRadiusKm = computed(() => (props.searcherPosition ? props.searchRadiusK
             :aria-pressed="viewMode === 'liste'"
             @click="viewMode = 'liste'"
           >
-            ☰ Liste
+            {{ t('resultsListSection.listViewCta') }}
           </button>
           <button
             type="button"
@@ -63,20 +65,20 @@ const mapRadiusKm = computed(() => (props.searcherPosition ? props.searchRadiusK
             :aria-pressed="viewMode === 'carte'"
             @click="viewMode = 'carte'"
           >
-            🗺️ Carte
+            {{ t('resultsListSection.mapViewCta') }}
           </button>
         </div>
         <label class="flex items-center gap-2 text-[12.5px] text-muted">
-          Trier par
+          {{ t('resultsListSection.sortByLabel') }}
           <select
             v-model="sortBy"
             class="h-[38px] rounded-field border border-hairline bg-white px-2.5 text-[13px] font-semibold text-dark outline-none focus:border-primary"
-            aria-label="Trier les résultats"
+            :aria-label="t('resultsListSection.sortAriaLabel')"
           >
-            <option value="pertinence">Pertinence</option>
-            <option value="note">Mieux notés</option>
-            <option value="prix_asc">Prix croissant</option>
-            <option value="prix_desc">Prix décroissant</option>
+            <option value="pertinence">{{ t('resultsListSection.sortRelevance') }}</option>
+            <option value="note">{{ t('resultsListSection.sortRating') }}</option>
+            <option value="prix_asc">{{ t('resultsListSection.sortPriceAsc') }}</option>
+            <option value="prix_desc">{{ t('resultsListSection.sortPriceDesc') }}</option>
           </select>
         </label>
       </div>
@@ -88,12 +90,12 @@ const mapRadiusKm = computed(() => (props.searcherPosition ? props.searchRadiusK
       v-if="proximity?.widened"
       class="mb-4 rounded-field border border-primary/30 bg-primary/8 px-3.5 py-2.5 text-[12.5px] text-dark"
     >
-      Aucun prestataire dans un rayon de {{ proximity.requestedRadiusKm }} km. Voici les plus proches, jusqu'à {{ proximity.usedRadiusKm }} km.
+      {{ t('resultsListSection.widenedNotice', { requested: proximity.requestedRadiusKm, used: proximity.usedRadiusKm }) }}
     </p>
 
     <!-- Filtres actifs retirables (récapitulatif clair de la recherche). -->
     <div v-if="activeFilters.length" class="mb-4 flex flex-wrap items-center gap-2">
-      <span class="text-[12px] font-semibold text-muted">Filtres actifs :</span>
+      <span class="text-[12px] font-semibold text-muted">{{ t('resultsListSection.activeFiltersLabel') }}</span>
       <button
         v-for="chip in activeFilters"
         :key="chip.id"
@@ -103,10 +105,10 @@ const mapRadiusKm = computed(() => (props.searcherPosition ? props.searchRadiusK
       >
         {{ chip.label }}
         <span aria-hidden="true">×</span>
-        <span class="sr-only">Retirer le filtre {{ chip.label }}</span>
+        <span class="sr-only">{{ t('resultsListSection.removeFilterSr', { label: chip.label }) }}</span>
       </button>
       <button type="button" class="press text-[12.5px] font-semibold text-muted underline hover:text-dark" @click="emit('reset-filters')">
-        Tout effacer
+        {{ t('resultsListSection.clearAll') }}
       </button>
     </div>
 

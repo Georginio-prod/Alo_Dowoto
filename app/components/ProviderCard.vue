@@ -16,9 +16,13 @@ const props = withDefaults(
 
 const emit = defineEmits<{ 'favorite-changed': [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const filledStars = computed(() => Math.round(props.provider.rating))
 
-const badgeLabel = computed(() => (props.badge === 'top' ? 'Top prestataire' : props.badge === 'recommande' ? 'Recommandé' : null))
+const badgeLabel = computed(() =>
+  props.badge === 'top' ? t('providerCard.badgeTop') : props.badge === 'recommande' ? t('providerCard.badgeRecommended') : null,
+)
 
 const favorite = ref(props.isFavorite)
 const isTogglingFavorite = ref(false)
@@ -94,13 +98,13 @@ async function toggleFavorite() {
           v-if="provider.verified"
           class="rounded-pill bg-primary/12 px-2 py-0.5 text-[11px] font-bold text-primary"
         >
-          ✓ Vérifié
+          {{ t('providerCard.verifiedBadge') }}
         </span>
       </div>
 
       <p class="text-[13px] text-muted">
         {{ provider.subSector }} · {{ provider.city }}
-        <span v-if="provider.distanceKm !== null"> · à {{ provider.distanceKm }} km</span>
+        <span v-if="provider.distanceKm !== null"> · {{ t('providerCard.distanceSuffix', { km: provider.distanceKm }) }}</span>
       </p>
 
       <p class="text-[13.5px] text-dark">
@@ -108,10 +112,10 @@ async function toggleFavorite() {
           <span v-for="n in 5" :key="n" :class="n <= filledStars ? 'text-star' : 'text-hairline'">★</span>
         </span>
         <span class="ml-1 font-semibold">{{ provider.rating.toFixed(1) }}</span>
-        <span class="text-muted"> ({{ provider.reviewCount }} avis)</span>
+        <span class="text-muted"> ({{ t('providerCard.reviewsCount', provider.reviewCount) }})</span>
       </p>
 
-      <p class="text-[14.5px] font-bold text-dark">À partir de {{ provider.priceFrom }} FCFA</p>
+      <p class="text-[14.5px] font-bold text-dark">{{ t('providerCard.priceFromPrefix', { price: provider.priceFrom }) }}</p>
 
       <div class="mt-auto flex gap-2">
         <button
@@ -119,7 +123,7 @@ async function toggleFavorite() {
           class="press flex-1 rounded-field bg-dark py-2.5 text-[13.5px] font-semibold text-white hover:bg-dark-hover"
           @click="showProfile = true"
         >
-          Voir le profil
+          {{ t('providerCard.viewProfileCta') }}
         </button>
         <button
           type="button"
@@ -127,7 +131,7 @@ async function toggleFavorite() {
           :class="favorite ? 'border-primary bg-primary/10 text-primary' : 'border-hairline bg-white text-muted hover:text-dark'"
           :disabled="isTogglingFavorite"
           :aria-pressed="favorite"
-          :title="favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+          :title="favorite ? t('providerCard.removeFavoriteTitle') : t('providerCard.addFavoriteTitle')"
           @click="toggleFavorite"
         >
           {{ favorite ? '★' : '☆' }}

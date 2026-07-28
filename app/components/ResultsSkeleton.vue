@@ -1,5 +1,9 @@
+<script setup lang="ts">
+const { t } = useI18n({ useScope: 'global' })
+</script>
+
 <template>
-  <div class="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(250px,1fr))]" role="status" aria-label="Chargement des résultats">
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(250px,1fr))]" role="status" :aria-label="t('resultsSkeleton.loadingAriaLabel')">
     <div
       v-for="n in 6"
       :key="n"
