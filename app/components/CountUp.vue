@@ -8,6 +8,11 @@ const props = withDefaults(defineProps<{
   duration: 1400,
 })
 
+const { locale, locales } = useI18n({ useScope: 'global' })
+const languageTag = computed(() =>
+  (locales.value as Array<{ code: string, language?: string }>).find((l) => l.code === locale.value)?.language ?? 'fr-FR',
+)
+
 const display = ref(0)
 const el = ref<HTMLElement | null>(null)
 let started = false
@@ -46,5 +51,5 @@ onBeforeUnmount(() => io?.disconnect())
 </script>
 
 <template>
-  <span ref="el">{{ display.toLocaleString('fr-FR') }}{{ suffix }}</span>
+  <span ref="el">{{ display.toLocaleString(languageTag) }}{{ suffix }}</span>
 </template>

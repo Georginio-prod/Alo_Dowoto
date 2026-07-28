@@ -13,7 +13,7 @@ interface MessagesResponse {
 
 definePageMeta({ layout: 'messages', middleware: 'auth' })
 
-const { t } = useI18n({ useScope: 'global' })
+const { t, locale, locales } = useI18n({ useScope: 'global' })
 const route = useRoute()
 const conversationId = computed(() => String(route.params.id))
 
@@ -48,6 +48,9 @@ function onFirstContactSubmitted() {
 // invite de paiement (au lieu du fil) et le prestataire un message d'attente
 // (le serveur ne renvoie d'ailleurs aucun contenu de message dans ce cas,
 // voir messages.get.ts — cette page ne fait que refléter cet état).
+const languageTag = computed(() =>
+  (locales.value as Array<{ code: string, language?: string }>).find((l) => l.code === locale.value)?.language ?? 'fr-FR',
+)
 const escrowOrder = computed(() => data.value?.escrowOrder ?? null)
 const recurringService = computed(() => data.value?.recurringService ?? null)
 const isViewerClient = computed(() => conversation.value?.clientId === currentUserId.value)
@@ -214,7 +217,7 @@ async function submitReview() {
         <p class="mt-1 text-[13px] text-muted">
           {{ t('messageThreadPage.paymentRequiredText', { name: conversation?.otherPartyName }) }}
         </p>
-        <p class="mt-3 text-[18px] font-bold text-dark">{{ escrowOrder?.amount.toLocaleString('fr-FR') }} F CFA</p>
+        <p class="mt-3 text-[18px] font-bold text-dark">{{ escrowOrder?.amount.toLocaleString(languageTag) }} F CFA</p>
         <button
           type="button"
           class="press mt-3 rounded-field bg-primary px-5 py-2.5 text-[13.5px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"

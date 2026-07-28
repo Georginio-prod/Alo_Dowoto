@@ -11,6 +11,8 @@ interface NavItem {
   activePaths?: string[]
 }
 
+const { t } = useI18n({ useScope: 'global' })
+
 const NAV_ITEM_CLASSES = {
   active: 'bg-primary/10 text-primary',
   inactive: 'press text-muted hover:bg-bg hover:text-dark',
@@ -37,14 +39,14 @@ const PROFILE_SUBPAGES = [
 // /profil et /messages restent aussi valides (liens externes, redirections
 // de connexion) et sont donc gardés dans `activePaths` pour ne pas casser
 // la surbrillance si on y arrive par un autre chemin.
-const NAV_ITEMS: NavItem[] = [
-  { label: 'Accueil', to: '/prestataire/accueil', activePaths: ['/prestataire'] },
-  { label: 'Profil', to: '/prestataire/profil', activePaths: ['/profil', ...PROFILE_SUBPAGES] },
-  { label: 'Demandes reçues', to: '/prestataire/demandes' },
-  { label: 'Solde', to: '/prestataire/solde' },
-  { label: 'Messages', to: '/prestataire/messages', activePaths: ['/messages'] },
-  { label: 'Avis', to: null },
-]
+const NAV_ITEMS = computed<NavItem[]>(() => [
+  { label: t('dashboardPrestataireLayout.navHome'), to: '/prestataire/accueil', activePaths: ['/prestataire'] },
+  { label: t('dashboardPrestataireLayout.navProfile'), to: '/prestataire/profil', activePaths: ['/profil', ...PROFILE_SUBPAGES] },
+  { label: t('dashboardPrestataireLayout.navRequests'), to: '/prestataire/demandes' },
+  { label: t('dashboardPrestataireLayout.navBalance'), to: '/prestataire/solde' },
+  { label: t('dashboardPrestataireLayout.navMessages'), to: '/prestataire/messages', activePaths: ['/messages'] },
+  { label: t('dashboardPrestataireLayout.navReviews'), to: null },
+])
 
 const route = useRoute()
 
@@ -99,14 +101,14 @@ async function logout() {
               :class="NAV_ITEM_CLASSES.disabled"
               aria-disabled="true"
             >
-              {{ item.label }} <span class="text-[11px] font-normal">(bientôt)</span>
+              {{ item.label }} <span class="text-[11px] font-normal">{{ t('dashboardPrestataireLayout.soon') }}</span>
             </span>
           </template>
         </nav>
 
         <div class="mt-4 rounded-card border border-hairline bg-surface p-2 shadow-card-sm">
           <div v-if="confirmingLogout" class="p-1.5">
-            <p class="mb-2 px-1.5 text-[12.5px] text-dark">Confirmer la déconnexion ?</p>
+            <p class="mb-2 px-1.5 text-[12.5px] text-dark">{{ t('dashboardPrestataireLayout.confirmLogoutQuestion') }}</p>
             <div class="flex gap-2">
               <button
                 type="button"
@@ -114,14 +116,14 @@ async function logout() {
                 :disabled="isLoggingOut"
                 @click="logout"
               >
-                {{ isLoggingOut ? 'Déconnexion…' : 'Confirmer' }}
+                {{ isLoggingOut ? t('dashboardPrestataireLayout.loggingOut') : t('dashboardPrestataireLayout.confirm') }}
               </button>
               <button
                 type="button"
                 class="press flex-1 rounded-field border border-hairline bg-white py-1.5 text-[12.5px] font-semibold text-muted"
                 @click="confirmingLogout = false"
               >
-                Annuler
+                {{ t('dashboardPrestataireLayout.cancel') }}
               </button>
             </div>
           </div>
@@ -131,7 +133,7 @@ async function logout() {
             class="press block w-full rounded-field px-3.5 py-2.5 text-left text-[13.5px] font-semibold text-error hover:bg-error/10"
             @click="confirmingLogout = true"
           >
-            Se déconnecter
+            {{ t('dashboardPrestataireLayout.logout') }}
           </button>
         </div>
       </aside>

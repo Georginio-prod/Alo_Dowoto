@@ -15,6 +15,8 @@ const longitude = defineModel<number | undefined>('longitude')
 const quartier = defineModel<string>('quartier', { required: true })
 const radiusKm = defineModel<number>('radiusKm', { required: true })
 
+const { t } = useI18n({ useScope: 'global' })
+
 const quartiers = listQuartiers()
 
 const isLocating = ref(false)
@@ -30,7 +32,7 @@ function clearLocation() {
 async function useMyLocation() {
   if (isLocating.value) return
   if (!navigator.geolocation) {
-    locationError.value = "La géolocalisation n'est pas disponible sur cet appareil."
+    locationError.value = t('locationRadiusPicker.errorGeoUnavailable')
     return
   }
   isLocating.value = true
@@ -43,7 +45,7 @@ async function useMyLocation() {
       // Choisir sa position prime sur un quartier sélectionné précédemment
       // (évite d'envoyer les deux critères à la fois côté recherche).
       quartier.value = ''
-      locationLabel.value = 'Position détectée'
+      locationLabel.value = t('locationRadiusPicker.positionDetected')
 
       try {
         const response = await fetch(
@@ -51,7 +53,7 @@ async function useMyLocation() {
         )
         const data = await response.json()
         const suburb: string | undefined = data?.address?.suburb ?? data?.address?.neighbourhood ?? data?.address?.city_district
-        if (suburb) locationLabel.value = `Position détectée — ${suburb}`
+        if (suburb) locationLabel.value = t('locationRadiusPicker.positionDetectedWithSuburb', { suburb })
       } catch {
         // Purement indicatif : les coordonnées ci-dessus suffisent déjà.
       } finally {
@@ -59,7 +61,7 @@ async function useMyLocation() {
       }
     },
     () => {
-      locationError.value = 'Localisation refusée ou indisponible. Choisissez votre quartier ci-dessous.'
+      locationError.value = t('locationRadiusPicker.errorDenied')
       isLocating.value = false
     },
   )
@@ -77,7 +79,7 @@ function onRadiusInput(event: Event) {
 
 <template>
   <div class="rounded-card border border-hairline bg-surface p-4">
-    <p class="mb-3 text-[13px] font-bold text-dark">Autour de moi</p>
+    <p class="mb-3 text-[13px] font-bold text-dark">{{ t('locationRadiusPicker.aroundMe') }}</p>
 
     <div class="mb-3 flex flex-wrap items-center gap-2">
       <button
@@ -86,7 +88,7 @@ function onRadiusInput(event: Event) {
         :disabled="isLocating"
         @click="useMyLocation"
       >
-        {{ isLocating ? 'Localisation…' : '📍 Utiliser ma position actuelle' }}
+        {{ isLocating ? t('locationRadiusPicker.locating') : t('locationRadiusPicker.useCurrentPosition') }}
       </button>
       <button
         v-if="latitude !== undefined"
@@ -94,7 +96,7 @@ function onRadiusInput(event: Event) {
         class="press text-[12px] font-semibold text-muted underline"
         @click="clearLocation"
       >
-        Retirer ma position
+        {{ t('locationRadiusPicker.removePosition') }}
       </button>
     </div>
     <p v-if="locationLabel" class="mb-3 text-[12px] font-semibold text-primary">{{ locationLabel }}</p>
@@ -102,7 +104,7 @@ function onRadiusInput(event: Event) {
 
     <div class="mb-4">
       <label for="picker-quartier" class="mb-2 block text-[11.5px] font-bold uppercase tracking-wide text-muted">
-        Ou choisir un quartier (Région Maritime)
+        {{ t('locationRadiusPicker.orChooseQuartier') }}
       </label>
       <select
         id="picker-quartier"
@@ -110,14 +112,14 @@ function onRadiusInput(event: Event) {
         class="h-[42px] w-full rounded-field border border-hairline bg-white px-3 text-[13.5px] text-ink outline-none focus:border-primary"
         @change="onQuartierChange"
       >
-        <option value="">Tous quartiers</option>
+        <option value="">{{ t('locationRadiusPicker.allQuartiers') }}</option>
         <option v-for="option in quartiers" :key="option.slug" :value="option.slug">{{ option.name }}</option>
       </select>
     </div>
 
     <div>
       <label for="picker-radius" class="mb-2 block text-[11.5px] font-bold uppercase tracking-wide text-muted">
-        Rayon de recherche : {{ radiusKm }} km
+        {{ t('locationRadiusPicker.radiusLabel', { km: radiusKm }) }}
       </label>
       <input
         id="picker-radius"

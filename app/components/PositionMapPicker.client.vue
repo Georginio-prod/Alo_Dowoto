@@ -22,6 +22,8 @@ const props = withDefaults(
 
 const emit = defineEmits<{ 'update:latitude': [number]; 'update:longitude': [number] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 type IconDefaultPrototype = typeof L.Icon.Default.prototype & { _getIconUrl?: string }
 delete (L.Icon.Default.prototype as IconDefaultPrototype)._getIconUrl
 L.Icon.Default.mergeOptions({ iconRetinaUrl, iconUrl, shadowUrl })
@@ -79,7 +81,7 @@ onUnmounted(() => {
   <div>
     <div ref="mapEl" class="h-[260px] w-full overflow-hidden rounded-field border border-hairline" />
     <p class="mt-1.5 text-[11.5px] text-muted">
-      Cliquez sur la carte ou glissez le repère pour ajuster votre position.
+      {{ t('positionMapPicker.helperText') }}
     </p>
   </div>
 </template>

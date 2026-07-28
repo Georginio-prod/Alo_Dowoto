@@ -15,6 +15,8 @@ import type { FavoriteConversationEntry } from '~/utils/favoriteConversations'
  */
 const MAX_VISIBLE_AVATARS = 4
 
+const { t } = useI18n({ useScope: 'global' })
+
 const route = useRoute()
 const { user: sessionUser, ensure: ensureSession } = useSession()
 await ensureSession()
@@ -52,7 +54,7 @@ function entryHref(entry: FavoriteConversationEntry): string {
           v-for="entry in visibleEntries"
           :key="entry.providerId"
           :to="entryHref(entry)"
-          :aria-label="`Aller à la conversation avec ${entry.name}`"
+          :aria-label="t('favoritesMessagingBar.goToConversation', { name: entry.name })"
           class="press relative block size-10 shrink-0 rounded-full border-2 border-surface bg-primary/12 text-center text-[13px] font-bold leading-10 text-primary hover:z-10 hover:border-primary"
         >
           <img v-if="entry.avatarUrl" :src="entry.avatarUrl" alt="" class="size-full rounded-full object-cover">
@@ -77,7 +79,7 @@ function entryHref(entry: FavoriteConversationEntry): string {
 
       <NuxtLink
         to="/messages"
-        aria-label="Voir toutes mes conversations"
+        :aria-label="t('favoritesMessagingBar.viewAllConversations')"
         class="press relative ml-1 flex size-10 shrink-0 items-center justify-center rounded-full text-dark hover:text-primary"
       >
         <svg class="size-5" viewBox="0 0 18 18" fill="none" aria-hidden="true">
@@ -96,7 +98,7 @@ function entryHref(entry: FavoriteConversationEntry): string {
 
     <NuxtLink
       to="/messages"
-      aria-label="Voir mes messages"
+      :aria-label="t('favoritesMessagingBar.viewMessages')"
       class="press relative flex size-11 items-center justify-center rounded-full border border-hairline bg-surface text-dark shadow-card-md sm:hidden"
     >
       <svg class="size-5" viewBox="0 0 18 18" fill="none" aria-hidden="true">

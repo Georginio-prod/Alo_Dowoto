@@ -9,6 +9,8 @@
  * /messages, le fil actif occupe tout l'écran sur /messages/[id] (avec son
  * propre lien de retour vers la liste).
  */
+const { t } = useI18n({ useScope: 'global' })
+
 const route = useRoute()
 // `route.params.id` plutôt qu'une comparaison de chemin en dur : /messages
 // est aussi accessible via l'alias /prestataire/messages (voir
@@ -19,8 +21,8 @@ const isConversationOpen = computed(() => !!route.params.id)
 <template>
   <div class="flex h-screen flex-col bg-bg text-ink">
     <div class="mx-auto flex w-full max-w-[1200px] shrink-0 items-center border-x border-b border-hairline bg-surface px-4 py-2.5">
-      <NuxtLink to="/" class="press flex items-center gap-1.5 text-[13.5px] font-semibold text-muted hover:text-dark" aria-label="Retour à l'accueil">
-        ← Retour
+      <NuxtLink to="/" class="press flex items-center gap-1.5 text-[13.5px] font-semibold text-muted hover:text-dark" :aria-label="t('messagesLayout.backAria')">
+        {{ t('messagesLayout.back') }}
       </NuxtLink>
     </div>
 

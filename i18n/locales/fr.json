@@ -1543,5 +1543,99 @@
     "errorSendFailed": "L'envoi de votre réclamation a échoué. Réessayez.",
     "submitting": "Envoi…",
     "submit": "Envoyer la réclamation"
+  },
+  "assistantWidget": {
+    "openAria": "Ouvrir l'assistant WorkTogo",
+    "dialogAria": "Assistant WorkTogo",
+    "title": "Assistant WorkTogo",
+    "subtitle": "Réponses générées par IA, pas par un humain",
+    "clear": "Effacer",
+    "emptyPrompt": "Posez une question sur WorkTogo, ou demandez « Je cherche un plombier à Bè » : je cherche parmi les vrais prestataires inscrits.",
+    "degradedNotice": "Mode dégradé — assistant IA indisponible",
+    "distanceSuffix": "à {km} km",
+    "thinking": "L'assistant réfléchit…",
+    "errorRateLimited": "Trop de messages envoyés en peu de temps. Patientez une minute.",
+    "errorUnavailable": "L'assistant est momentanément indisponible. Réessayez dans un instant.",
+    "inputPlaceholder": "Écrivez votre question…",
+    "inputAria": "Votre question à l'assistant",
+    "send": "Envoyer",
+    "needHuman": "Besoin d'un humain ?",
+    "contactSupport": "Contactez le support"
+  },
+  "providerLocationFields": {
+    "cityLabel": "Localisation / zone d'intervention",
+    "cityPlaceholder": "Ex. Lomé, Kara, Kpalimé…",
+    "locating": "Localisation…",
+    "updatePosition": "📍 Position enregistrée — mettre à jour",
+    "useCurrentPosition": "📍 Utiliser ma position actuelle",
+    "clearingPosition": "Suppression…",
+    "clearPosition": "Supprimer ma position enregistrée",
+    "errorClearPosition": "La suppression de votre position a échoué. Réessayez.",
+    "errorGeoUnavailable": "La géolocalisation n'est pas disponible sur cet appareil.",
+    "errorTimeout": "La localisation a pris trop de temps. Vérifiez que le service de localisation est activé, puis réessayez.",
+    "errorDenied": "Localisation refusée ou indisponible. Autorisez l'accès à votre position puis réessayez.",
+    "quartierLabel": "Quartier (Région Maritime)",
+    "quartierNotSet": "Non renseigné",
+    "precisePositionLabel": "Position précise",
+    "landmarkLabel": "Point de repère (facultatif)",
+    "landmarkPlaceholder": "Ex. près du grand marché, vers le carrefour Agoè…",
+    "addressLabel": "Adresse (facultatif)",
+    "addressPlaceholder": "Si vous en avez une — non obligatoire au Togo",
+    "radiusLabel": "Rayon de déplacement accepté",
+    "radiusLabelWithValue": "Rayon de déplacement accepté : {km} km",
+    "privacyLabel": "Afficher une position approximative (recommandé) — seul votre quartier est visible publiquement, jamais votre position exacte, tant que cette case est cochée."
+  },
+  "dashboardPrestataireLayout": {
+    "navHome": "Accueil",
+    "navProfile": "Profil",
+    "navRequests": "Demandes reçues",
+    "navBalance": "Solde",
+    "navMessages": "Messages",
+    "navReviews": "Avis",
+    "soon": "(bientôt)",
+    "confirmLogoutQuestion": "Confirmer la déconnexion ?",
+    "confirm": "Confirmer",
+    "loggingOut": "Déconnexion…",
+    "cancel": "Annuler",
+    "logout": "Se déconnecter"
+  },
+  "locationRadiusPicker": {
+    "aroundMe": "Autour de moi",
+    "locating": "Localisation…",
+    "useCurrentPosition": "📍 Utiliser ma position actuelle",
+    "removePosition": "Retirer ma position",
+    "positionDetected": "Position détectée",
+    "positionDetectedWithSuburb": "Position détectée — {suburb}",
+    "errorGeoUnavailable": "La géolocalisation n'est pas disponible sur cet appareil.",
+    "errorDenied": "Localisation refusée ou indisponible. Choisissez votre quartier ci-dessous.",
+    "orChooseQuartier": "Ou choisir un quartier (Région Maritime)",
+    "allQuartiers": "Tous quartiers",
+    "radiusLabel": "Rayon de recherche : {km} km"
+  },
+  "providerMap": {
+    "distanceSuffix": "à {km} km"
+  },
+  "notificationBell": {
+    "ariaLabel": "Notifications",
+    "heading": "Notifications",
+    "empty": "Aucune notification pour le moment."
+  },
+  "favoritesMessagingBar": {
+    "goToConversation": "Aller à la conversation avec {name}",
+    "viewAllConversations": "Voir toutes mes conversations",
+    "viewMessages": "Voir mes messages"
+  },
+  "positionMapPicker": {
+    "helperText": "Cliquez sur la carte ou glissez le repère pour ajuster votre position."
+  },
+  "messagesLayout": {
+    "back": "← Retour",
+    "backAria": "Retour à l'accueil"
+  },
+  "themeSwitcher": {
+    "lightLabel": "Clair",
+    "northernLabel": "Northern Lights",
+    "ariaLabel": "Thème : {label}. Cliquer pour changer de thème.",
+    "titleAttr": "Thème : {label} — cliquer pour changer"
   }
 }

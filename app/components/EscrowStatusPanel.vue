@@ -23,7 +23,10 @@ const props = defineProps<{
 
 const emit = defineEmits<{ changed: [] }>()
 
-const { t } = useI18n({ useScope: 'global' })
+const { t, locale, locales } = useI18n({ useScope: 'global' })
+const languageTag = computed(() =>
+  (locales.value as Array<{ code: string, language?: string }>).find((l) => l.code === locale.value)?.language ?? 'fr-FR',
+)
 
 const isDelivering = ref(false)
 const deliverError = ref('')
@@ -129,7 +132,7 @@ const showDisputeForm = ref(false)
 <template>
   <div class="mb-3 shrink-0 rounded-card border border-hairline bg-surface p-4">
     <p v-if="escrowOrder.status === 'in_escrow' && isViewerProvider" class="text-[13px] text-dark">
-      {{ t('escrowStatusPanel.providerInEscrowText', { amount: escrowOrder.amount.toLocaleString('fr-FR') }) }}
+      {{ t('escrowStatusPanel.providerInEscrowText', { amount: escrowOrder.amount.toLocaleString(languageTag) }) }}
     </p>
     <p v-if="escrowOrder.status === 'in_escrow' && isViewerProvider" class="mt-1 text-[12px] text-muted">
       {{ t('escrowStatusPanel.providerGuaranteeNote') }}
@@ -161,7 +164,7 @@ const showDisputeForm = ref(false)
 
     <template v-else-if="escrowOrder.status === 'in_escrow' && isViewerClient">
       <p class="text-[13px] text-muted">
-        {{ t('escrowStatusPanel.clientInEscrowText', { amount: escrowOrder.amount.toLocaleString('fr-FR') }) }}
+        {{ t('escrowStatusPanel.clientInEscrowText', { amount: escrowOrder.amount.toLocaleString(languageTag) }) }}
       </p>
 
       <div class="mt-3 border-t border-hairline pt-3">

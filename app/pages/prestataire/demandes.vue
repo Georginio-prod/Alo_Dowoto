@@ -16,7 +16,7 @@ import type { ProviderMatchedRequest } from '~~/server/utils/requestStore'
  */
 definePageMeta({ layout: 'dashboard-prestataire', middleware: 'auth', authRole: 'prestataire' })
 
-const { t } = useI18n({ useScope: 'global' })
+const { t, locale, locales } = useI18n({ useScope: 'global' })
 
 const URGENCY_LABELS = computed<Record<string, string>>(() => ({
   immediate: t('prestataireDemandes.urgencyImmediate'),
@@ -72,12 +72,17 @@ function sectorLabel(slug?: string) {
   return SECTORS.find((sector) => sector.slug === slug)?.name ?? slug
 }
 
+function languageTag(): string {
+  return (locales.value as Array<{ code: string, language?: string }>)
+    .find((l) => l.code === locale.value)?.language ?? 'fr-FR'
+}
+
 function formatDate(timestamp: number): string {
-  return new Date(timestamp).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return new Date(timestamp).toLocaleDateString(languageTag(), { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function formatBudget(amount: number): string {
-  return `${amount.toLocaleString('fr-FR')} F CFA`
+  return `${amount.toLocaleString(languageTag())} F CFA`
 }
 </script>
 

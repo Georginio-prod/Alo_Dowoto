@@ -9,6 +9,8 @@
  */
 const POLL_INTERVAL_MS = 25_000
 
+const { t, locale, locales } = useI18n({ useScope: 'global' })
+
 const { notifications, unreadCount, ensure, refresh, markAllRead } = useNotifications()
 await ensure()
 
@@ -22,11 +24,13 @@ function badgeLabel(count: number): string {
 }
 
 function formatTime(timestamp: number): string {
+  const languageTag = (locales.value as Array<{ code: string, language?: string }>)
+    .find((l) => l.code === locale.value)?.language ?? 'fr-FR'
   const date = new Date(timestamp)
   const isToday = date.toDateString() === new Date().toDateString()
   return isToday
-    ? date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-    : date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
+    ? date.toLocaleTimeString(languageTag, { hour: '2-digit', minute: '2-digit' })
+    : date.toLocaleDateString(languageTag, { day: '2-digit', month: '2-digit' })
 }
 
 async function toggle() {
@@ -69,7 +73,7 @@ onUnmounted(() => {
       class="press relative flex size-9 shrink-0 items-center justify-center rounded-full text-dark hover:bg-bg"
       :aria-expanded="isOpen"
       aria-haspopup="menu"
-      aria-label="Notifications"
+      :aria-label="t('notificationBell.ariaLabel')"
       @click="toggle"
     >
       <svg class="size-[19px]" viewBox="0 0 18 18" fill="none" aria-hidden="true">
@@ -90,10 +94,10 @@ onUnmounted(() => {
       role="menu"
       class="absolute right-0 top-[calc(100%+8px)] z-30 max-h-96 w-80 animate-[wt-fade_0.16s_ease-out] overflow-y-auto rounded-card border border-hairline bg-surface p-1.5 shadow-card-md"
     >
-      <p class="px-3 py-2 text-[12px] font-bold uppercase tracking-wide text-muted">Notifications</p>
+      <p class="px-3 py-2 text-[12px] font-bold uppercase tracking-wide text-muted">{{ t('notificationBell.heading') }}</p>
 
       <p v-if="notifications.length === 0" class="px-3 py-4 text-center text-[13px] text-muted">
-        Aucune notification pour le moment.
+        {{ t('notificationBell.empty') }}
       </p>
 
       <NuxtLink

@@ -10,7 +10,7 @@ import type { PayoutMethod, ProviderProfile } from '~~/server/utils/providerStor
  */
 definePageMeta({ layout: 'dashboard-prestataire', middleware: 'auth', authRole: 'prestataire' })
 
-const { t } = useI18n({ useScope: 'global' })
+const { t, locale, locales } = useI18n({ useScope: 'global' })
 
 /** Flooz/T-Money sont des marques (jamais traduites) ; seul le virement bancaire porte un libellé traduisible. */
 const PAYOUT_OPTIONS = computed<{ value: PayoutMethod; label: string; color: string }[]>(() => [
@@ -25,8 +25,11 @@ await ensureWallet()
 const { data: profileData, refresh: refreshProfile } = await useFetch<{ profile: ProviderProfile | null }>('/api/providers/me')
 const payoutMethod = ref<PayoutMethod | null>(profileData.value?.profile?.payoutMethod ?? null)
 
-const formattedBalance = computed(() => (balance.value === null ? '…' : `${balance.value.toLocaleString('fr-FR')} F CFA`))
-const formattedMinWithdrawal = computed(() => (minWithdrawal.value === null ? '…' : `${minWithdrawal.value.toLocaleString('fr-FR')} F CFA`))
+const languageTag = computed(() =>
+  (locales.value as Array<{ code: string, language?: string }>).find((l) => l.code === locale.value)?.language ?? 'fr-FR',
+)
+const formattedBalance = computed(() => (balance.value === null ? '…' : `${balance.value.toLocaleString(languageTag.value)} F CFA`))
+const formattedMinWithdrawal = computed(() => (minWithdrawal.value === null ? '…' : `${minWithdrawal.value.toLocaleString(languageTag.value)} F CFA`))
 
 const payoutError = ref('')
 const payoutSuccess = ref(false)
