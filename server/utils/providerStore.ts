@@ -40,6 +40,21 @@ export interface ProviderProfile {
   /** Coordonnées réelles de la zone d'intervention (#263), facultatives — repli sur `city` si absentes. */
   latitude?: number
   longitude?: number
+  /** Slug d'un quartier de app/data/regions.ts (#geoloc) — complète `city` pour les zones où celle-ci ne suffit pas à situer précisément (ex. « Lomé » couvre plusieurs dizaines de quartiers). */
+  quartier?: string
+  /** Texte libre, jamais une adresse postale fiable au Togo (voir app/data/regions.ts) — renseigné à titre indicatif si le prestataire en a une. */
+  adresse?: string
+  /** Repère local en texte libre (« près du grand marché », « vers le carrefour Agoè ») affiché sur le profil en complément de la carte — la méthode la plus fiable localement quand l'adressage classique fait défaut. */
+  pointsDeRepere?: string
+  /** Distance maximale (km) que le prestataire accepte de parcourir pour intervenir chez le client — distinct de `mobility`, qui indique lui *si* il se déplace. */
+  rayonInterventionKm?: number
+  /**
+   * `true` (défaut) : seul le quartier/une position floutée (`geo.fuzzCoordinate`)
+   * est exposé publiquement, jamais les coordonnées exactes — vie privée par
+   * défaut. `false` : le prestataire a explicitement choisi d'afficher sa
+   * position précise (ex. commerce avec pignon sur rue).
+   */
+  positionApproximative?: boolean
   payoutMethod?: PayoutMethod
   photoUrl?: string
   description?: string
@@ -63,6 +78,11 @@ export interface ProviderProfilePatch {
   city?: string
   latitude?: number
   longitude?: number
+  quartier?: string
+  adresse?: string
+  pointsDeRepere?: string
+  rayonInterventionKm?: number
+  positionApproximative?: boolean
   payoutMethod?: PayoutMethod
   photoUrl?: string
   description?: string
@@ -97,6 +117,13 @@ export function upsertProviderProfile(userId: string, patch: ProviderProfilePatc
     city: patch.city ?? existing?.city,
     latitude: patch.latitude ?? existing?.latitude,
     longitude: patch.longitude ?? existing?.longitude,
+    quartier: patch.quartier ?? existing?.quartier,
+    adresse: patch.adresse ?? existing?.adresse,
+    pointsDeRepere: patch.pointsDeRepere ?? existing?.pointsDeRepere,
+    rayonInterventionKm: patch.rayonInterventionKm ?? existing?.rayonInterventionKm,
+    // `??` (pas `||`) : un `false` explicite dans `patch` (opt-out de la
+    // position approximative) doit être conservé, pas retomber sur `existing`.
+    positionApproximative: patch.positionApproximative ?? existing?.positionApproximative ?? true,
     payoutMethod: patch.payoutMethod ?? existing?.payoutMethod,
     photoUrl: patch.photoUrl ?? existing?.photoUrl,
     description: patch.description ?? existing?.description,

@@ -1,6 +1,6 @@
 import { SECTORS } from '~~/app/data/sectors'
 import { isValidCoordinatePair } from '~~/server/utils/apiValidation'
-import { haversineDistanceKm } from '~~/server/utils/geo'
+import { fuzzCoordinate, haversineDistanceKm } from '~~/server/utils/geo'
 import { isProviderAvailableOn, todayIsoDate } from '~~/server/utils/providerAvailabilityStore'
 import { getAverageRating } from '~~/server/utils/reviewStore'
 import { getProviderProfile, listProviderProfiles } from '~~/server/utils/providerStore'
@@ -31,9 +31,17 @@ export interface ProviderSearchResult {
   reviewCount: number
   priceFrom: number
   photoUrl: string | null
-  /** Coordonnées réelles de la zone d'intervention (#263), `null` si non renseignées (fiches de démo, ou prestataire n'ayant jamais activé la géolocalisation). */
+  /**
+   * Coordonnées de la zone d'intervention (#263), `null` si non renseignées
+   * (fiches de démo, ou prestataire n'ayant jamais activé la géolocalisation).
+   * Déjà floutées (`geo.fuzzCoordinate`) quand le prestataire est en position
+   * approximative (réglage par défaut, #geoloc) — jamais les coordonnées
+   * exactes dans une réponse publique, voir `toSearchResult`.
+   */
   latitude: number | null
   longitude: number | null
+  /** Slug d'un quartier de app/data/regions.ts (#geoloc), `null` si non renseigné. */
+  quartier: string | null
   /** Distance en km depuis les coordonnées du chercheur, calculée par `searchProviders` quand `filters.latitude`/`longitude` et les coordonnées du prestataire sont toutes deux disponibles — sinon `null` (repli sur le filtrage par ville). */
   distanceKm: number | null
 }
@@ -70,20 +78,20 @@ export interface ProviderSearchFilters {
 export type ProviderSortOption = 'note' | 'prix_asc' | 'prix_desc'
 
 const DIRECTORY: ProviderSearchResult[] = [
-  { id: 'p01', displayName: 'Akofa M.', sector: 'menage', subSector: 'Ménage à domicile', city: 'Lomé', verified: true, rating: 4.8, reviewCount: 32, priceFrom: 3000, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
-  { id: 'p02', displayName: 'Kossi A.', sector: 'menage', subSector: 'Ménage à domicile', city: 'Lomé', verified: true, rating: 4.6, reviewCount: 18, priceFrom: 2500, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
-  { id: 'p03', displayName: 'Essolakina T.', sector: 'menage', subSector: 'Repassage', city: 'Lomé', verified: true, rating: 4.9, reviewCount: 54, priceFrom: 1500, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
-  { id: 'p04', displayName: 'Yawa D.', sector: 'menage', subSector: 'Jardinage', city: 'Kara', verified: false, rating: 4.3, reviewCount: 9, priceFrom: 4000, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
-  { id: 'p05', displayName: 'Komi S.', sector: 'menage', subSector: "Garde d'enfants", city: 'Lomé', verified: true, rating: 4.7, reviewCount: 27, priceFrom: 3500, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
-  { id: 'p06', displayName: 'Adjoa K.', sector: 'menage', subSector: 'Cuisine à domicile', city: 'Lomé', verified: false, rating: 4.5, reviewCount: 12, priceFrom: 5000, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
-  { id: 'p07', displayName: 'Mawuli N.', sector: 'menage', subSector: 'Ménage à domicile', city: 'Sokodé', verified: false, rating: 4.2, reviewCount: 6, priceFrom: 2000, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
-  { id: 'p08', displayName: 'Ablavi F.', sector: 'menage', subSector: 'Repassage', city: 'Kpalimé', verified: true, rating: 4.8, reviewCount: 21, priceFrom: 1800, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
-  { id: 'p09', displayName: 'Kokou B.', sector: 'btp', subSector: 'Plomberie', city: 'Lomé', verified: true, rating: 4.4, reviewCount: 15, priceFrom: 4500, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
-  { id: 'p10', displayName: 'Sena A.', sector: 'digital', subSector: 'Développement web & mobile', city: 'Lomé', verified: true, rating: 4.9, reviewCount: 40, priceFrom: 6000, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
-  { id: 'p11', displayName: 'Afi D.', sector: 'beaute', subSector: 'Coiffure', city: 'Kara', verified: false, rating: 4.1, reviewCount: 5, priceFrom: 1500, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
-  { id: 'p12', displayName: 'Yao T.', sector: 'evenement', subSector: 'Traiteur', city: 'Atakpamé', verified: true, rating: 4.6, reviewCount: 22, priceFrom: 5500, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
-  { id: 'p13', displayName: 'Edem K.', sector: 'transport', subSector: 'Déménagement', city: 'Dapaong', verified: false, rating: 3.9, reviewCount: 3, priceFrom: 3500, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
-  { id: 'p14', displayName: 'Nadia P.', sector: 'menage', subSector: "Garde d'enfants", city: 'Kpalimé', verified: false, rating: 3.6, reviewCount: 4, priceFrom: 2500, photoUrl: null, latitude: null, longitude: null, distanceKm: null },
+  { id: 'p01', displayName: 'Akofa M.', sector: 'menage', subSector: 'Ménage à domicile', city: 'Lomé', verified: true, rating: 4.8, reviewCount: 32, priceFrom: 3000, photoUrl: null, latitude: null, longitude: null, quartier: null, distanceKm: null },
+  { id: 'p02', displayName: 'Kossi A.', sector: 'menage', subSector: 'Ménage à domicile', city: 'Lomé', verified: true, rating: 4.6, reviewCount: 18, priceFrom: 2500, photoUrl: null, latitude: null, longitude: null, quartier: null, distanceKm: null },
+  { id: 'p03', displayName: 'Essolakina T.', sector: 'menage', subSector: 'Repassage', city: 'Lomé', verified: true, rating: 4.9, reviewCount: 54, priceFrom: 1500, photoUrl: null, latitude: null, longitude: null, quartier: null, distanceKm: null },
+  { id: 'p04', displayName: 'Yawa D.', sector: 'menage', subSector: 'Jardinage', city: 'Kara', verified: false, rating: 4.3, reviewCount: 9, priceFrom: 4000, photoUrl: null, latitude: null, longitude: null, quartier: null, distanceKm: null },
+  { id: 'p05', displayName: 'Komi S.', sector: 'menage', subSector: "Garde d'enfants", city: 'Lomé', verified: true, rating: 4.7, reviewCount: 27, priceFrom: 3500, photoUrl: null, latitude: null, longitude: null, quartier: null, distanceKm: null },
+  { id: 'p06', displayName: 'Adjoa K.', sector: 'menage', subSector: 'Cuisine à domicile', city: 'Lomé', verified: false, rating: 4.5, reviewCount: 12, priceFrom: 5000, photoUrl: null, latitude: null, longitude: null, quartier: null, distanceKm: null },
+  { id: 'p07', displayName: 'Mawuli N.', sector: 'menage', subSector: 'Ménage à domicile', city: 'Sokodé', verified: false, rating: 4.2, reviewCount: 6, priceFrom: 2000, photoUrl: null, latitude: null, longitude: null, quartier: null, distanceKm: null },
+  { id: 'p08', displayName: 'Ablavi F.', sector: 'menage', subSector: 'Repassage', city: 'Kpalimé', verified: true, rating: 4.8, reviewCount: 21, priceFrom: 1800, photoUrl: null, latitude: null, longitude: null, quartier: null, distanceKm: null },
+  { id: 'p09', displayName: 'Kokou B.', sector: 'btp', subSector: 'Plomberie', city: 'Lomé', verified: true, rating: 4.4, reviewCount: 15, priceFrom: 4500, photoUrl: null, latitude: null, longitude: null, quartier: null, distanceKm: null },
+  { id: 'p10', displayName: 'Sena A.', sector: 'digital', subSector: 'Développement web & mobile', city: 'Lomé', verified: true, rating: 4.9, reviewCount: 40, priceFrom: 6000, photoUrl: null, latitude: null, longitude: null, quartier: null, distanceKm: null },
+  { id: 'p11', displayName: 'Afi D.', sector: 'beaute', subSector: 'Coiffure', city: 'Kara', verified: false, rating: 4.1, reviewCount: 5, priceFrom: 1500, photoUrl: null, latitude: null, longitude: null, quartier: null, distanceKm: null },
+  { id: 'p12', displayName: 'Yao T.', sector: 'evenement', subSector: 'Traiteur', city: 'Atakpamé', verified: true, rating: 4.6, reviewCount: 22, priceFrom: 5500, photoUrl: null, latitude: null, longitude: null, quartier: null, distanceKm: null },
+  { id: 'p13', displayName: 'Edem K.', sector: 'transport', subSector: 'Déménagement', city: 'Dapaong', verified: false, rating: 3.9, reviewCount: 3, priceFrom: 3500, photoUrl: null, latitude: null, longitude: null, quartier: null, distanceKm: null },
+  { id: 'p14', displayName: 'Nadia P.', sector: 'menage', subSector: "Garde d'enfants", city: 'Kpalimé', verified: false, rating: 3.6, reviewCount: 4, priceFrom: 2500, photoUrl: null, latitude: null, longitude: null, quartier: null, distanceKm: null },
 ]
 
 function normalize(value: string): string {
@@ -101,6 +109,17 @@ function normalize(value: string): string {
  */
 function toSearchResult(profile: ProviderProfile): ProviderSearchResult {
   const sectorName = SECTORS.find((sector) => sector.slug === profile.sector)?.name ?? profile.sector
+
+  // Vie privée par défaut (#geoloc) : tant que le prestataire n'a pas
+  // explicitement choisi d'afficher sa position précise, seules des
+  // coordonnées floutées (quelques centaines de mètres) sortent de ce
+  // module — jamais le point exact de son domicile/atelier.
+  const exposeExactPosition = profile.positionApproximative === false
+  const coords = isValidCoordinatePair(profile.latitude, profile.longitude)
+    ? { latitude: profile.latitude as number, longitude: profile.longitude as number }
+    : null
+  const publicCoords = coords && !exposeExactPosition ? fuzzCoordinate(coords) : coords
+
   return {
     id: profile.userId,
     displayName: profile.displayName,
@@ -112,8 +131,9 @@ function toSearchResult(profile: ProviderProfile): ProviderSearchResult {
     reviewCount: 0,
     priceFrom: profile.rateFrom ?? 0,
     photoUrl: profile.photoUrl ?? null,
-    latitude: profile.latitude ?? null,
-    longitude: profile.longitude ?? null,
+    latitude: publicCoords?.latitude ?? null,
+    longitude: publicCoords?.longitude ?? null,
+    quartier: profile.quartier ?? null,
     distanceKm: null,
   }
 }

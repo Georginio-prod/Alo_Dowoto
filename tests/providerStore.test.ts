@@ -18,6 +18,35 @@ describe('providerStore — localisation & mode de rémunération (#123)', () =>
   })
 })
 
+describe('providerStore — champs géolocalisation (#geoloc)', () => {
+  it('active la position approximative par défaut, sans que le prestataire n\'ait rien renseigné', () => {
+    const profile = upsertProviderProfile('provider-geo-default', { displayName: 'Prestataire', sector: 'menage' })
+    expect(profile.positionApproximative).toBe(true)
+  })
+
+  it('enregistre quartier, points de repère et rayon d\'intervention', () => {
+    const profile = upsertProviderProfile('provider-geo-1', {
+      displayName: 'Prestataire Géo',
+      sector: 'btp',
+      quartier: 'be',
+      adresse: 'Non renseignée',
+      pointsDeRepere: 'Près du grand marché',
+      rayonInterventionKm: 8,
+    })
+
+    expect(profile.quartier).toBe('be')
+    expect(profile.pointsDeRepere).toBe('Près du grand marché')
+    expect(profile.rayonInterventionKm).toBe(8)
+  })
+
+  it('conserve un opt-out explicite de la position approximative lors d\'une mise à jour partielle ultérieure', () => {
+    upsertProviderProfile('provider-geo-2', { displayName: 'Prestataire Visible', sector: 'commerce', positionApproximative: false })
+    const updated = upsertProviderProfile('provider-geo-2', { displayName: 'Prestataire Visible', sector: 'commerce', description: 'Boutique physique' })
+
+    expect(updated.positionApproximative).toBe(false)
+  })
+})
+
 describe('resolveRequiredOnboardingFields — obligatoire côté serveur (#124)', () => {
   it('rejette une inscription sans localisation ni mode de rémunération', () => {
     expect(resolveRequiredOnboardingFields({}, null)).toEqual({

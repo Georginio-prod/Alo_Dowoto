@@ -180,6 +180,23 @@ model ProviderProfile {
   reviewCount   Int        @default(0)
   updatedAt     DateTime   @updatedAt
 
+  /// Coordonnées réelles de la zone d'intervention (#263) — déjà présentes côté
+  /// store en mémoire (server/utils/providerStore.ts), ajoutées ici pour que ce
+  /// modèle préparatoire ne diverge plus du store qu'il documente.
+  latitude  Float?
+  longitude Float?
+  /// Slug d'un quartier de app/data/regions.ts (#geoloc), complète `city`.
+  quartier  String?
+  /// Texte libre, jamais une adresse postale fiable au Togo (voir app/data/regions.ts).
+  adresse   String?
+  /// Repère local en texte libre (« près du grand marché »...), affiché sur le profil.
+  pointsDeRepere      String?
+  /// Distance maximale (km) que le prestataire accepte de parcourir pour intervenir.
+  rayonInterventionKm Int?
+  /// `true` (défaut) : seule une position floutée est exposée publiquement — voir
+  /// server/utils/geo.ts#fuzzCoordinate et providerDirectory.ts#toSearchResult.
+  positionApproximative Boolean @default(true)
+
   reviews Review[]
 
   @@index([sectorId, city])
