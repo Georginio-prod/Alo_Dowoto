@@ -13,9 +13,10 @@ const PALETTE = [
   { bg: '#DC2626', ink: '#FFFFFF' },
 ]
 
-const props = withDefaults(defineProps<{ name: string; seed?: string; size?: 'sm' | 'md' }>(), {
+const props = withDefaults(defineProps<{ name: string; seed?: string; size?: 'sm' | 'md'; ring?: boolean }>(), {
   seed: undefined,
   size: 'md',
+  ring: false,
 })
 
 const initial = computed(() => props.name.trim().charAt(0).toUpperCase() || '?')
@@ -37,7 +38,7 @@ const sizeClasses = computed(() => (props.size === 'sm' ? 'size-9 text-[13px]' :
 <template>
   <div
     class="flex shrink-0 items-center justify-center rounded-full font-bold"
-    :class="sizeClasses"
+    :class="[sizeClasses, ring ? 'ring-2 ring-primary/25 ring-offset-2 ring-offset-surface' : '']"
     :style="{ background: colors.bg, color: colors.ink }"
   >
     {{ initial }}

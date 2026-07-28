@@ -56,22 +56,41 @@ function formatTime(timestamp: number): string {
         Aucune conversation ne correspond à « {{ query }} ».
       </p>
 
-      <ul v-else>
+      <ul v-else class="space-y-1 p-2">
         <li v-for="conversation in filteredConversations" :key="conversation.id">
           <NuxtLink
             :to="`/messages/${conversation.id}`"
-            class="press flex items-center gap-3 border-b border-hairline px-3.5 py-3 hover:bg-bg"
-            :class="conversation.id === activeConversationId ? 'bg-primary/8' : ''"
+            class="press flex items-center gap-3 rounded-card border-l-[3px] px-3 py-2.5 transition-colors"
+            :class="
+              conversation.id === activeConversationId
+                ? 'border-primary bg-primary/8 shadow-card-sm'
+                : 'border-transparent hover:bg-bg'
+            "
           >
-            <ConversationAvatar :name="conversation.otherPartyName" :seed="conversation.id" />
+            <div class="relative shrink-0">
+              <ConversationAvatar :name="conversation.otherPartyName" :seed="conversation.id" />
+              <span
+                v-if="conversation.unreadCount > 0"
+                class="absolute -right-1 -top-1 flex size-[18px] items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white ring-2 ring-surface"
+              >
+                {{ conversation.unreadCount > 9 ? '9+' : conversation.unreadCount }}
+              </span>
+            </div>
             <div class="min-w-0 flex-1">
               <div class="flex items-center justify-between gap-2">
                 <span class="truncate text-[14px] font-bold text-dark">{{ conversation.otherPartyName }}</span>
-                <span v-if="conversation.lastMessage" class="shrink-0 text-[11px] text-muted">
+                <span
+                  v-if="conversation.lastMessage"
+                  class="shrink-0 text-[11px]"
+                  :class="conversation.unreadCount > 0 ? 'font-semibold text-primary' : 'text-muted'"
+                >
                   {{ formatTime(conversation.lastMessage.createdAt) }}
                 </span>
               </div>
-              <p class="truncate text-[12.5px] text-muted">
+              <p
+                class="truncate text-[12.5px]"
+                :class="conversation.unreadCount > 0 ? 'font-semibold text-dark' : 'text-muted'"
+              >
                 {{ conversation.lastMessage?.body ?? 'Écrivez le premier message.' }}
               </p>
             </div>

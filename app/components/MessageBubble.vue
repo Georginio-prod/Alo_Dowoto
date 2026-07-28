@@ -106,9 +106,10 @@ async function confirmReschedule() {
   >
     <div
       v-if="message.senderRole === 'system'"
-      class="max-w-[85%] rounded-card border border-dashed border-primary/30 bg-primary/5 px-3.5 py-2.5 text-center text-[13px] text-dark"
+      class="animate-[wt-fade_0.25s_ease] max-w-[85%] rounded-2xl border border-dashed border-primary/30 bg-primary/5 px-4 py-3 text-center text-[13px] text-dark"
     >
-      <p>🔔 {{ message.body }}</p>
+      <div class="mx-auto mb-1.5 flex size-7 items-center justify-center rounded-full bg-primary/15 text-[13px]">🔔</div>
+      <p>{{ message.body }}</p>
       <p class="mt-1 text-[10.5px] text-muted">{{ formatTime(message.createdAt) }}</p>
 
       <button
@@ -136,8 +137,12 @@ async function confirmReschedule() {
 
     <div
       v-else
-      class="max-w-[75%] rounded-card px-3.5 py-2.5 text-[13.5px]"
-      :class="message.senderId === currentUserId ? 'bg-dark text-white' : 'border border-hairline bg-surface text-dark'"
+      class="animate-[wt-fade_0.25s_ease] max-w-[75%] rounded-2xl px-3.5 py-2.5 text-[13.5px] shadow-card-sm"
+      :class="
+        message.senderId === currentUserId
+          ? 'rounded-br-md bg-dark text-white'
+          : 'rounded-bl-md border border-hairline bg-surface text-dark'
+      "
     >
       <p>{{ message.body }}</p>
       <a

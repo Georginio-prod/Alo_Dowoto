@@ -30,28 +30,6 @@ const messages = computed(() => data.value?.messages ?? [])
 const currentUserId = computed(() => sessionUser.value?.id ?? '')
 const currentUserContact = computed(() => sessionUser.value?.contact ?? '')
 
-// Défilement automatique vers le dernier message (chargement initial, envoi,
-// ou nouveau message automatique WorkTogo) : le fil vit dans un conteneur
-// `overflow-y-auto` propre, sans quoi un message ajouté après coup (ex. la
-// confirmation du prestataire, la demande de localisation) reste invisible
-// sous le pli tant que le lecteur ne scrolle pas manuellement. `onMounted`
-// gère la position initiale (les données sont déjà résolues via SSR à ce
-// stade, donc le `watch` seul — dont le premier déclenchement `immediate`
-// tombe pendant `setup()`, avant que la ref du template ne soit attachée —
-// ne suffit pas à positionner le scroll au premier rendu).
-const messageListEl = ref<HTMLElement | null>(null)
-function scrollMessagesToBottom() {
-  if (messageListEl.value) messageListEl.value.scrollTop = messageListEl.value.scrollHeight
-}
-onMounted(async () => {
-  await nextTick()
-  scrollMessagesToBottom()
-})
-watch(() => messages.value.length, async () => {
-  await nextTick()
-  scrollMessagesToBottom()
-})
-
 // Formulaire obligatoire de première prise de contact (#129) : uniquement
 // pour le client, une seule fois par conversation (le serveur fait foi via
 // `conversation.firstContactDone`, recalculé à chaque chargement).
@@ -122,9 +100,17 @@ function onMessageActionChanged() {
   refreshConversationList()
 }
 
-const draft = ref('')
-const isSending = ref(false)
-const sendError = ref('')
+// Composeur (auto-agrandissement, envoi) possédé par MessageComposer.vue et
+// fil (regroupement par jour, suggestions de démarrage, défilement) possédé
+// par MessageThread.vue — extraits pour rester sous la limite de lignes par
+// fichier, sur le même principe que MessageBubble.vue/EscrowStatusPanel.vue.
+// `composerRef` permet uniquement aux suggestions du fil vide de préremplir
+// le champ de saisie du composeur.
+const composerRef = ref<{ focusWithText: (text: string) => void } | null>(null)
+
+function onSuggestionPicked(text: string) {
+  composerRef.value?.focusWithText(text)
+}
 
 // Notation mutuelle de fin de collaboration (#60) : le serveur fait foi
 // (`conversation.alreadyReviewed`, recalculé côté API à chaque chargement),
@@ -138,27 +124,6 @@ const reviewError = ref('')
 const reviewJustSubmitted = ref(false)
 
 const alreadyReviewed = computed(() => conversation.value?.alreadyReviewed === true || reviewJustSubmitted.value)
-
-async function sendMessage() {
-  const text = draft.value.trim()
-  if (!text || isSending.value) return
-
-  isSending.value = true
-  sendError.value = ''
-  try {
-    await $fetch(`/api/conversations/${conversationId.value}/messages`, {
-      method: 'POST',
-      body: { body: text },
-    })
-    draft.value = ''
-    await refresh()
-    refreshConversationList()
-  } catch {
-    sendError.value = "Le message n'a pas pu être envoyé. Réessayez."
-  } finally {
-    isSending.value = false
-  }
-}
 
 // Reprendre ce prestataire (#266, rebooking rapide) : disponible côté
 // chercheur une fois la précédente commande terminée (released) ou annulée
@@ -207,12 +172,14 @@ async function submitReview() {
 
 <template>
   <div class="flex h-full flex-col">
-    <header class="flex shrink-0 items-center gap-3 border-b border-hairline px-4 py-3">
-      <NuxtLink to="/messages" class="press text-lg text-muted sm:hidden" aria-label="Retour aux messages">←</NuxtLink>
+    <header class="relative flex shrink-0 items-center gap-3 overflow-hidden border-b border-hairline bg-surface px-4 py-3">
+      <div class="pointer-events-none absolute inset-0 bg-gradient-to-r from-primary/[0.06] via-transparent to-transparent" />
+
+      <NuxtLink to="/messages" class="press z-10 text-lg text-muted sm:hidden" aria-label="Retour aux messages">←</NuxtLink>
 
       <template v-if="conversation">
-        <ConversationAvatar :name="conversation.otherPartyName" :seed="conversation.id" size="sm" />
-        <div class="min-w-0">
+        <ConversationAvatar :name="conversation.otherPartyName" :seed="conversation.id" size="sm" ring class="z-10" />
+        <div class="z-10 min-w-0">
           <div class="truncate text-[14.5px] font-bold text-dark">{{ conversation.otherPartyName }}</div>
           <div v-if="conversation.otherPartySector" class="truncate text-[12px] text-muted">
             {{ conversation.otherPartySector }}
@@ -290,47 +257,27 @@ async function submitReview() {
           @changed="onRecurringServiceChanged"
         />
 
-        <div ref="messageListEl" class="flex-1 space-y-3 overflow-y-auto pb-4">
-          <p v-if="messages.length === 0" class="text-center text-[13px] text-muted">
-            Aucun message. Écrivez le premier pour démarrer la conversation.
-          </p>
+        <MessageThread
+          :messages="messages"
+          :conversation="conversation"
+          :conversation-id="conversationId"
+          :current-user-id="currentUserId"
+          :is-viewer-provider="isViewerProvider"
+          :is-viewer-client="isViewerClient"
+          @changed="onMessageActionChanged"
+          @suggestion-picked="onSuggestionPicked"
+        />
 
-          <MessageBubble
-            v-for="message in messages"
-            :key="message.id"
-            :message="message"
-            :conversation-id="conversationId"
-            :current-user-id="currentUserId"
-            :is-viewer-provider="isViewerProvider"
-            :is-viewer-client="isViewerClient"
-            @changed="onMessageActionChanged"
-          />
-        </div>
-
-        <form class="flex shrink-0 gap-2 border-t border-hairline pt-4" @submit.prevent="sendMessage">
-          <input
-            v-model="draft"
-            type="text"
-            placeholder="Écrivez votre message…"
-            aria-label="Votre message"
-            class="h-[46px] min-w-0 flex-1 rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
-          >
-          <button
-            type="submit"
-            class="press rounded-field bg-primary px-5 text-[13.5px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
-            :disabled="!draft.trim() || isSending"
-          >
-            Envoyer
-          </button>
-        </form>
-        <p v-if="sendError" class="mt-2 shrink-0 text-[12.5px] text-error">{{ sendError }}</p>
+        <MessageComposer ref="composerRef" :conversation-id="conversationId" @sent="onMessageActionChanged" />
 
         <div
           v-if="conversation && escrowOrder?.status === 'released'"
-          class="mt-5 shrink-0 overflow-y-auto rounded-card border border-hairline bg-surface p-4"
+          class="relative mt-5 shrink-0 overflow-hidden rounded-card border border-hairline bg-surface p-4"
         >
-          <p v-if="alreadyReviewed" class="text-[13px] font-semibold text-dark">
-            Merci, votre avis sur cette collaboration a déjà été publié.
+          <div class="pointer-events-none absolute -right-8 -top-10 size-32 rounded-full bg-star/10 blur-2xl" />
+
+          <p v-if="alreadyReviewed" class="flex items-center gap-2 text-[13px] font-semibold text-dark">
+            <span class="text-star">★</span> Merci, votre avis sur cette collaboration a déjà été publié.
           </p>
 
           <template v-else>
@@ -338,12 +285,12 @@ async function submitReview() {
               Comment s'est passée votre collaboration avec {{ conversation.otherPartyName }} ?
             </p>
 
-            <div class="mb-3 flex gap-1" role="radiogroup" aria-label="Note de la collaboration">
+            <div class="mb-3 flex gap-1.5" role="radiogroup" aria-label="Note de la collaboration">
               <button
                 v-for="n in 5"
                 :key="n"
                 type="button"
-                class="press text-2xl leading-none"
+                class="press text-[26px] leading-none transition-transform hover:scale-110"
                 :class="n <= (reviewHoverRating || reviewRating) ? 'text-star' : 'text-hairline'"
                 :aria-pressed="n <= reviewRating"
                 :aria-label="`${n} étoile(s)`"

@@ -39,14 +39,29 @@ async function handleSubmit() {
 
 <template>
   <div class="mb-3 shrink-0 rounded-card border border-hairline bg-surface p-4">
-    <button
-      v-if="!showForm"
-      type="button"
-      class="press rounded-field bg-primary px-4 py-2 text-[13px] font-semibold text-white hover:bg-primary-hover"
-      @click="showForm = true"
-    >
-      Reprendre ce prestataire
-    </button>
+    <div v-if="!showForm" class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <svg class="size-[18px]" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path
+              d="M4 10a6 6 0 0 1 10.2-4.2M16 10a6 6 0 0 1-10.2 4.2M14 3v3h-3M6 17v-3h3"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </span>
+        <p class="text-[13px] text-dark">Une nouvelle mission pour {{ providerName }} ?</p>
+      </div>
+      <button
+        type="button"
+        class="press shrink-0 rounded-field bg-primary px-4 py-2 text-[13px] font-semibold text-white hover:bg-primary-hover"
+        @click="showForm = true"
+      >
+        Reprendre ce prestataire
+      </button>
+    </div>
 
     <template v-else>
       <p class="mb-2 text-[13px] font-semibold text-dark">Nouvelle demande à {{ providerName }}</p>
