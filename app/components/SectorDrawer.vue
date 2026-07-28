@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Sector } from '~/data/sectors'
 
+const { t } = useI18n({ useScope: 'global' })
+
 const props = defineProps<{
   sector: Sector | null
 }>()
@@ -56,7 +58,7 @@ onUnmounted(() => {
           </div>
           <button
             type="button"
-            aria-label="Fermer"
+            :aria-label="t('sectorDrawer.close')"
             class="press flex h-8 w-8 items-center justify-center rounded-full bg-bg text-base text-muted"
             @click="emit('close')"
           >

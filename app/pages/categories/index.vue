@@ -2,7 +2,9 @@
 import { SECTORS } from '~/data/sectors'
 import type { SectorCount } from '~~/server/api/sectors/counts.get'
 
-useHead({ title: 'Toutes les catégories — WorkTogo' })
+const { t } = useI18n({ useScope: 'global' })
+
+useHead(() => ({ title: t('categories.pageTitle') }))
 
 const { data: counts, pending } = await useFetch<SectorCount[]>('/api/sectors/counts')
 
@@ -14,17 +16,16 @@ const countBySlug = computed(() => {
 
 function providerCountLabel(slug: string) {
   const count = countBySlug.value.get(slug) ?? 0
-  return `${count} prestataire${count > 1 ? 's' : ''}`
+  return t('categories.providerCount', count)
 }
 </script>
 
 <template>
   <div>
     <section class="mx-auto max-w-6xl px-6 pb-16 pt-10">
-      <h1 class="mb-1.5 text-2xl font-extrabold text-dark">Toutes les catégories</h1>
+      <h1 class="mb-1.5 text-2xl font-extrabold text-dark">{{ t('categories.heading') }}</h1>
       <p class="mb-8 text-[14.5px] text-muted">
-        Parcourez les {{ SECTORS.length }} secteurs de WorkTogo et découvrez les prestataires disponibles près de
-        chez vous.
+        {{ t('categories.intro', { count: SECTORS.length }) }}
       </p>
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">

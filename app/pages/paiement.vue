@@ -17,8 +17,11 @@ interface Payment {
 
 const POLL_INTERVAL_MS = 1500
 
+const { t } = useI18n({ useScope: 'global' })
+
 const subscription = ref<Subscription | null>(null)
 const plan = computed(() => (subscription.value ? findPlan(subscription.value.plan) : undefined))
+const planName = computed(() => (plan.value ? t(`plans.${plan.value.slug}.name`) : ''))
 
 const step = ref<Step>('idle')
 const provider = ref<Provider>('flooz')
@@ -101,7 +104,7 @@ async function submitPayment() {
       <template v-if="step === 'idle'">
         <h1 class="mb-1 text-lg font-bold text-dark">Paiement Mobile Money</h1>
         <p class="mb-5 text-[13.5px] text-muted">
-          {{ plan.name }} — {{ plan.priceLabel }} à régler aujourd'hui
+          {{ planName }} — {{ plan.priceLabel }} à régler aujourd'hui
         </p>
 
         <div class="mb-5 grid grid-cols-2 gap-3">
@@ -172,7 +175,7 @@ async function submitPayment() {
         </div>
         <h2 class="mb-1.5 text-base font-bold text-dark">Paiement en cours de validation</h2>
         <p class="mb-5 text-[13.5px] leading-relaxed text-muted">
-          Votre abonnement {{ plan.name }} sera activé dès confirmation. Vous pouvez compléter votre profil dès
+          Votre abonnement {{ planName }} sera activé dès confirmation. Vous pouvez compléter votre profil dès
           maintenant.
         </p>
         <NuxtLink

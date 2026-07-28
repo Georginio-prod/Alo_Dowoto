@@ -1,14 +1,21 @@
 <script setup lang="ts">
 import type { Testimonial } from '~~/server/utils/testimonialStore'
 
+const { t, locale, locales } = useI18n({ useScope: 'global' })
+
 const { data, refresh } = await useFetch<{ testimonials: Testimonial[] }>('/api/testimonials')
 const testimonials = computed(() => data.value?.testimonials ?? [])
 const visibleTestimonials = computed(() => testimonials.value.slice(0, 6))
 
-const roleLabel = (role: Testimonial['role']) => (role === 'prestataire' ? 'Prestataire' : 'Chercheur')
+const roleLabel = (role: Testimonial['role']) => (role === 'prestataire' ? t('testimonials.roleProvider') : t('testimonials.roleClient'))
 
+// Format de date selon la langue active (#i18n) plutôt que 'fr-FR' figé —
+// réutilise le tag BCP 47 complet déjà déclaré par langue dans
+// nuxt.config.ts (`language: 'fr-FR' | 'en-US'`), même source que
+// LanguageSwitcher.vue pour retrouver la locale courante dans `locales`.
 function formatDate(timestamp: number): string {
-  return new Date(timestamp).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+  const current = (locales.value as Array<{ code: string, language?: string }>).find((l) => l.code === locale.value)
+  return new Date(timestamp).toLocaleDateString(current?.language ?? 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function onPosted() {
@@ -19,9 +26,9 @@ function onPosted() {
 <template>
   <section class="mx-auto max-w-6xl px-6 py-14">
     <div class="mb-9 text-center">
-      <h2 v-reveal class="mb-2 text-xl font-bold text-dark">Ce que nos utilisateurs en disent</h2>
+      <h2 v-reveal class="mb-2 text-xl font-bold text-dark">{{ t('testimonials.title') }}</h2>
       <p v-reveal class="mx-auto max-w-xl text-[13.5px] leading-relaxed text-muted">
-        Des chercheurs qui ont trouvé leur prestataire, des prestataires qui développent leur activité.
+        {{ t('testimonials.subtitle') }}
       </p>
     </div>
 

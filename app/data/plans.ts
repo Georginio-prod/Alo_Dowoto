@@ -1,18 +1,17 @@
 export type PlanSlug = 'mensuel' | 'trimestriel' | 'annuel'
 
+/** Clé de traduction sous `plans.features.*` (i18n/locales/{fr,en}.json) — jamais un libellé littéral, voir #i18n. */
 export interface PlanFeature {
-  label: string
+  labelKey: string
   included: boolean
 }
 
 export interface Plan {
   slug: PlanSlug
-  name: string
   price: number
   priceLabel: string
-  period: string
-  note: string
-  tag?: string
+  /** `true` si cette formule porte un badge (« Le plus populaire »/« Meilleure offre ») — le texte du badge est traduit via `plans.<slug>.tag`. */
+  hasTag: boolean
   durationDays: number
   features: PlanFeature[]
 }
@@ -24,52 +23,44 @@ function features(
   supportPrioritaire: boolean,
 ): PlanFeature[] {
   return [
-    { label: 'Profil visible dans les résultats', included: profilVisible },
+    { labelKey: 'profileVisible', included: profilVisible },
     // Le nombre exact de demandes reçues par mois diffère par formule (voir
     // PROVIDER_REQUESTS_MONTHLY_LIMIT, server/utils/quotaStore.ts) — cette
     // ligne dit seulement "vous en recevez", le détail chiffré est dans
     // PLAN_COMPARISON ci-dessous plutôt que de promettre "illimité" à tort.
-    { label: 'Réception de demandes clients', included: receptionDemandes },
+    { labelKey: 'requestReception', included: receptionDemandes },
     // Le badge « Vérifié » vient de la vérification d'identité
     // (server/utils/verificationStore.ts), pas de la formule choisie : il
     // est donc identique quelle que soit la formule, et n'est plus un
     // paramètre de cette fonction.
-    { label: 'Badge "Vérifié" (vérification d\'identité)', included: true },
-    { label: 'Mise en avant en tête des résultats', included: miseEnAvant },
-    { label: 'Support prioritaire par chat', included: supportPrioritaire },
+    { labelKey: 'verifiedBadge', included: true },
+    { labelKey: 'featured', included: miseEnAvant },
+    { labelKey: 'prioritySupport', included: supportPrioritaire },
   ]
 }
 
 export const PLANS: [Plan, Plan, Plan] = [
   {
     slug: 'mensuel',
-    name: 'Mensuel',
     price: 5000,
     priceLabel: '5 000 FCFA',
-    period: '/mois',
-    note: 'Facturé chaque mois',
+    hasTag: false,
     durationDays: 30,
     features: features(true, true, false, false),
   },
   {
     slug: 'trimestriel',
-    name: 'Trimestriel',
     price: 13500,
     priceLabel: '13 500 FCFA',
-    period: '/3 mois',
-    note: 'Soit 4 500 FCFA/mois',
-    tag: 'Le plus populaire',
+    hasTag: true,
     durationDays: 90,
     features: features(true, true, false, true),
   },
   {
     slug: 'annuel',
-    name: 'Annuel',
     price: 48000,
     priceLabel: '48 000 FCFA',
-    period: '/an',
-    note: 'Soit 4 000 FCFA/mois',
-    tag: 'Meilleure offre',
+    hasTag: true,
     durationDays: 365,
     features: features(true, true, true, true),
   },
@@ -79,16 +70,21 @@ export function findPlan(slug: string): Plan | undefined {
   return PLANS.find((plan) => plan.slug === slug)
 }
 
-/** Valeur d'une ligne du tableau comparatif : coche/croix, ou un texte quand la formule varie plus finement qu'un simple oui/non. */
-export type PlanComparisonValue = boolean | string
+/**
+ * Valeur d'une ligne du tableau comparatif : coche/croix, ou une clé de
+ * traduction (avec paramètres optionnels, ex. `{ count: 5 }`) quand la
+ * formule varie plus finement qu'un simple oui/non — jamais un texte
+ * littéral, voir #i18n.
+ */
+export type PlanComparisonValue = boolean | { key: string, params?: Record<string, number> }
 
 export interface PlanComparisonRow {
-  label: string
+  labelKey: string
   values: Record<PlanSlug, PlanComparisonValue>
 }
 
 export interface PlanComparisonCategory {
-  title: string
+  titleKey: string
   rows: PlanComparisonRow[]
 }
 
@@ -102,41 +98,62 @@ export interface PlanComparisonCategory {
  */
 export const PLAN_COMPARISON: PlanComparisonCategory[] = [
   {
-    title: 'Visibilité',
+    titleKey: 'visibility',
     rows: [
-      { label: 'Profil visible dans les résultats de recherche', values: { mensuel: true, trimestriel: true, annuel: true } },
-      { label: 'Badge « Vérifié » (vérification d\'identité, même pour toutes les formules)', values: { mensuel: true, trimestriel: true, annuel: true } },
+      { labelKey: 'visibleInResults', values: { mensuel: true, trimestriel: true, annuel: true } },
+      { labelKey: 'verifiedBadgeAllPlans', values: { mensuel: true, trimestriel: true, annuel: true } },
       // Réservée aux prestations réglées via la plateforme (#267, CGU art. 8)
       // — un même prestataire ne conserve pas cet avantage pour une mission
       // convenue ou payée en dehors de WorkTogo.
-      { label: 'Mise en avant en tête des résultats (prestations réalisées via WorkTogo)', values: { mensuel: false, trimestriel: false, annuel: true } },
+      { labelKey: 'featuredResults', values: { mensuel: false, trimestriel: false, annuel: true } },
     ],
   },
   {
-    title: 'Demandes clients',
+    titleKey: 'clientRequests',
     rows: [
-      { label: 'Demandes reçues par mois', values: { mensuel: '5 / mois', trimestriel: '20 / mois', annuel: 'Illimité' } },
-      { label: 'Messagerie intégrée avec les clients', values: { mensuel: true, trimestriel: true, annuel: true } },
-      { label: 'Formulaire de première prise de contact', values: { mensuel: true, trimestriel: true, annuel: true } },
+      {
+        labelKey: 'requestsPerMonth',
+        values: {
+          mensuel: { key: 'plans.comparison.requestsPerMonthValue', params: { count: 5 } },
+          trimestriel: { key: 'plans.comparison.requestsPerMonthValue', params: { count: 20 } },
+          annuel: { key: 'plans.comparison.requestsUnlimited' },
+        },
+      },
+      { labelKey: 'builtInMessaging', values: { mensuel: true, trimestriel: true, annuel: true } },
+      { labelKey: 'firstContactForm', values: { mensuel: true, trimestriel: true, annuel: true } },
     ],
   },
   {
-    title: 'Réputation',
+    titleKey: 'reputation',
     rows: [
-      { label: "Réception d'avis et notes clients", values: { mensuel: true, trimestriel: true, annuel: true } },
-      { label: 'Note moyenne affichée sur le profil', values: { mensuel: true, trimestriel: true, annuel: true } },
+      { labelKey: 'reviewsReceived', values: { mensuel: true, trimestriel: true, annuel: true } },
+      { labelKey: 'averageRating', values: { mensuel: true, trimestriel: true, annuel: true } },
     ],
   },
   {
-    title: 'Paiement & assistance',
+    titleKey: 'paymentSupport',
     rows: [
-      { label: 'Paiement par Mobile Money (Flooz, T-Money)', values: { mensuel: true, trimestriel: true, annuel: true } },
+      { labelKey: 'mobileMoneyPayment', values: { mensuel: true, trimestriel: true, annuel: true } },
       // Identique quelle que soit la formule (pas un argument de vente entre
       // formules) : la garantie tient à l'usage de la plateforme, pas à
       // l'abonnement souscrit — voir CGU art. 8 (#267).
-      { label: 'Garantie de paiement (fonds sécurisés en séquestre, prestations réglées via WorkTogo)', values: { mensuel: true, trimestriel: true, annuel: true } },
-      { label: 'Support par chat', values: { mensuel: 'Standard', trimestriel: 'Prioritaire', annuel: 'Prioritaire' } },
-      { label: 'Essai gratuit à la première souscription', values: { mensuel: '14 jours', trimestriel: '14 jours', annuel: '14 jours' } },
+      { labelKey: 'paymentGuarantee', values: { mensuel: true, trimestriel: true, annuel: true } },
+      {
+        labelKey: 'chatSupport',
+        values: {
+          mensuel: { key: 'plans.comparison.chatSupportStandard' },
+          trimestriel: { key: 'plans.comparison.chatSupportPriority' },
+          annuel: { key: 'plans.comparison.chatSupportPriority' },
+        },
+      },
+      {
+        labelKey: 'freeTrialFirstSubscription',
+        values: {
+          mensuel: { key: 'plans.comparison.freeTrialDays', params: { days: 14 } },
+          trimestriel: { key: 'plans.comparison.freeTrialDays', params: { days: 14 } },
+          annuel: { key: 'plans.comparison.freeTrialDays', params: { days: 14 } },
+        },
+      },
     ],
   },
 ]

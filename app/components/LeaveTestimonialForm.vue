@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Testimonial, TestimonialRole } from '~~/server/utils/testimonialStore'
 
+const { t } = useI18n({ useScope: 'global' })
+
 const emit = defineEmits<{ posted: [testimonial: Testimonial] }>()
 
 const { user } = useSession()
@@ -43,15 +45,15 @@ async function submit() {
   error.value = ''
 
   if (name.value.trim().length < 2) {
-    error.value = 'Entrez votre nom (2 caractères minimum).'
+    error.value = t('leaveTestimonialForm.errorName')
     return
   }
   if (message.value.trim().length < 10) {
-    error.value = 'Votre avis doit contenir au moins 10 caractères.'
+    error.value = t('leaveTestimonialForm.errorMessage')
     return
   }
   if (rating.value < 1) {
-    error.value = 'Sélectionnez une note de 1 à 5 étoiles.'
+    error.value = t('leaveTestimonialForm.errorRating')
     return
   }
 
@@ -66,7 +68,7 @@ async function submit() {
     rating.value = 0
     emit('posted', testimonial)
   } catch (fetchError) {
-    error.value = apiErrorMessage(fetchError, "La publication de votre avis a échoué. Réessayez.")
+    error.value = apiErrorMessage(fetchError, t('leaveTestimonialForm.errorGeneric'))
   } finally {
     isSubmitting.value = false
   }
@@ -75,37 +77,37 @@ async function submit() {
 
 <template>
   <div class="rounded-card border border-hairline bg-white p-6">
-    <h3 class="mb-1 text-[16px] font-bold text-dark">Donnez votre avis</h3>
+    <h3 class="mb-1 text-[16px] font-bold text-dark">{{ t('leaveTestimonialForm.heading') }}</h3>
     <p class="mb-4 text-[13px] leading-relaxed text-muted">
-      Vous avez trouvé un prestataire ou décroché une mission grâce à WorkTogo ? Racontez-le en quelques mots.
+      {{ t('leaveTestimonialForm.intro') }}
     </p>
 
     <div class="mb-3.5 flex gap-2">
       <div class="flex-1">
-        <label for="testimonial-name" class="mb-1.5 block text-[13px] font-semibold text-dark">Votre nom</label>
+        <label for="testimonial-name" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('leaveTestimonialForm.nameLabel') }}</label>
         <input
           id="testimonial-name"
           v-model="name"
           type="text"
-          placeholder="Ex. Ama K."
+          :placeholder="t('leaveTestimonialForm.namePlaceholder')"
           class="h-[44px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14px] text-ink outline-none focus:border-primary"
         >
       </div>
       <div class="w-[150px] shrink-0">
-        <label for="testimonial-role" class="mb-1.5 block text-[13px] font-semibold text-dark">Je suis</label>
+        <label for="testimonial-role" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('leaveTestimonialForm.roleLabel') }}</label>
         <select
           id="testimonial-role"
           v-model="role"
           class="h-[44px] w-full rounded-field border-[1.5px] border-hairline bg-white px-3 text-[14px] text-ink outline-none focus:border-primary"
         >
-          <option value="client">Chercheur</option>
-          <option value="prestataire">Prestataire</option>
+          <option value="client">{{ t('leaveTestimonialForm.roleClientOption') }}</option>
+          <option value="prestataire">{{ t('leaveTestimonialForm.roleProviderOption') }}</option>
         </select>
       </div>
     </div>
 
-    <label class="mb-1.5 block text-[13px] font-semibold text-dark">Votre note</label>
-    <div class="mb-3.5 flex gap-1" role="radiogroup" aria-label="Note">
+    <label class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('leaveTestimonialForm.ratingLabel') }}</label>
+    <div class="mb-3.5 flex gap-1" role="radiogroup" :aria-label="t('leaveTestimonialForm.ratingAriaLabel')">
       <button
         v-for="n in 5"
         :key="n"
@@ -113,7 +115,7 @@ async function submit() {
         class="press inline-block text-2xl leading-none transition-transform duration-150 ease-out hover:scale-125"
         :class="n <= (hoverRating || rating) ? 'text-star' : 'text-hairline'"
         :aria-pressed="n <= rating"
-        :aria-label="`${n} étoile(s)`"
+        :aria-label="t('leaveTestimonialForm.starAriaLabel', { n })"
         @mouseenter="hoverRating = n"
         @mouseleave="hoverRating = 0"
         @click="setRating(n)"
@@ -122,19 +124,19 @@ async function submit() {
       </button>
     </div>
 
-    <label for="testimonial-message" class="mb-1.5 block text-[13px] font-semibold text-dark">Votre avis</label>
+    <label for="testimonial-message" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('leaveTestimonialForm.messageLabel') }}</label>
     <textarea
       id="testimonial-message"
       ref="messageTextarea"
       v-model="message"
       rows="3"
-      placeholder="Décrivez votre expérience sur WorkTogo…"
+      :placeholder="t('leaveTestimonialForm.messagePlaceholder')"
       class="mb-3.5 w-full resize-none overflow-hidden rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[14px] text-ink outline-none focus:border-primary"
       @input="resizeMessageTextarea"
     />
 
     <p v-if="success" class="mb-2 text-[12.5px] font-semibold text-primary">
-      Merci, votre avis a été publié !
+      {{ t('leaveTestimonialForm.success') }}
     </p>
     <p v-if="error" class="mb-2 text-[12.5px] text-error">{{ error }}</p>
 
@@ -144,7 +146,7 @@ async function submit() {
       :disabled="isSubmitting"
       @click="submit"
     >
-      {{ isSubmitting ? 'Publication…' : 'Publier mon avis' }}
+      {{ isSubmitting ? t('leaveTestimonialForm.submitting') : t('leaveTestimonialForm.submit') }}
     </button>
   </div>
 </template>

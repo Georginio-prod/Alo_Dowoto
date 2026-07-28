@@ -1,23 +1,25 @@
 import type { LegalPage } from './types'
 
-export const A_PROPOS: LegalPage = {
-  slug: 'a-propos',
-  title: 'Qui sommes-nous',
-  intro: 'WorkTogo met en relation les Togolaises et Togolais avec des prestataires de services vérifiés, dans tous les secteurs d\'activité.',
-  sections: [
-    {
-      heading: 'Notre mission',
-      body: [
-        'Faciliter l\'accès à des professionnels de confiance — artisanat, BTP, informatique, ménage, beauté, événementiel et bien d\'autres — partout au Togo.',
-        'Permettre à chaque prestataire indépendant de développer son activité en recevant des demandes qualifiées près de chez lui.',
-      ],
-    },
-    {
-      heading: 'Comment ça marche',
-      body: [
-        'Un chercheur décrit son besoin ou parcourt les secteurs, compare les profils vérifiés et contacte directement le prestataire de son choix.',
-        'Une fois la collaboration terminée, les deux parties peuvent se noter mutuellement pour renforcer la confiance sur la plateforme.',
-      ],
-    },
-  ],
+/**
+ * Contenu traduit (#i18n) : contrairement aux autres pages légales de ce
+ * dossier (encore en français uniquement, lot dédié à venir), cette page est
+ * entièrement pilotée par les clés `aPropos.*` de i18n/locales/{fr,en}.json —
+ * voir LegalPageView.vue, qui fournit `t` à cette fonction.
+ */
+export function getAPropos(t: (key: string) => string): LegalPage {
+  return {
+    slug: 'a-propos',
+    title: t('aPropos.title'),
+    intro: t('aPropos.intro'),
+    sections: [
+      {
+        heading: t('aPropos.missionHeading'),
+        body: [t('aPropos.missionBody1'), t('aPropos.missionBody2')],
+      },
+      {
+        heading: t('aPropos.howHeading'),
+        body: [t('aPropos.howBody1'), t('aPropos.howBody2')],
+      },
+    ],
+  }
 }
