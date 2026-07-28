@@ -88,12 +88,12 @@ async function submitWithdrawal() {
       <p class="mt-1 text-[13px] text-muted">{{ t('prestataireSolde.subtitle') }}</p>
     </div>
 
-    <div class="mb-5 rounded-card border border-hairline bg-surface p-5 shadow-card-sm">
+    <div v-reveal class="mb-5 rounded-card border border-hairline bg-surface p-5 shadow-card-sm">
       <p class="text-[13px] text-muted">{{ t('prestataireSolde.availableBalance') }}</p>
       <p class="text-[28px] font-extrabold text-dark">{{ formattedBalance }}</p>
     </div>
 
-    <div class="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div v-reveal :style="{ '--reveal-delay': '80ms' }" class="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div class="rounded-card border border-hairline bg-surface p-5 shadow-card-sm">
         <h2 class="mb-3 text-[14.5px] font-bold text-dark">{{ t('prestataireSolde.payoutMethodHeading') }}</h2>
         <div class="mb-3.5 grid grid-cols-3 gap-2">
@@ -153,6 +153,8 @@ async function submitWithdrawal() {
       </div>
     </div>
 
-    <WalletMovementList :movements="movements" />
+    <div v-reveal :style="{ '--reveal-delay': '140ms' }">
+      <WalletMovementList :movements="movements" />
+    </div>
   </div>
 </template>

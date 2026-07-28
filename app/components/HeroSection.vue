@@ -40,7 +40,13 @@ const partners = [
       tag="h1"
       class="mx-auto mb-3 max-w-3xl text-[clamp(30px,5.2vw,52px)] font-extrabold leading-[1.08] tracking-tight text-dark"
     >
-      <template #highlight><span class="hero-highlight">{{ t('home.hero.titleHighlight') }}</span></template>
+      <template #highlight>
+        <MagneticText
+          class="hero-highlight"
+          :text="t('home.hero.titleHighlight')"
+          :hover-text="t('home.hero.titleHighlightHover')"
+        />
+      </template>
     </i18n-t>
     <p v-reveal :style="{ '--reveal-delay': '80ms' }" class="mx-auto max-w-lg text-base leading-relaxed text-muted">
       {{ t('home.hero.subtitle') }}

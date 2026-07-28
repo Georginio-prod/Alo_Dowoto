@@ -69,6 +69,7 @@ function restartDemo() {
 
     <NuxtLink
       v-if="!user?.verified"
+      v-reveal
       to="/profil"
       class="press mb-6 flex items-center justify-between gap-3 rounded-card border border-primary/30 bg-primary/8 p-4 hover:border-primary/50"
     >
@@ -78,7 +79,7 @@ function restartDemo() {
       <span class="shrink-0 font-bold text-primary">→</span>
     </NuxtLink>
 
-    <div class="mb-6 grid grid-cols-3 gap-3">
+    <div v-reveal :style="{ '--reveal-delay': '60ms' }" class="mb-6 grid grid-cols-3 gap-3">
       <div class="rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm">
         <div class="text-[22px] font-extrabold text-dark">{{ myRequests.length }}</div>
         <div class="text-[11.5px] text-muted">{{ t('dashboardClient.requestsSent') }}</div>
@@ -93,7 +94,7 @@ function restartDemo() {
       </div>
     </div>
 
-    <section class="mb-6">
+    <section v-reveal :style="{ '--reveal-delay': '120ms' }" class="mb-6">
       <h2 class="mb-3 text-[12px] font-bold uppercase tracking-wide text-muted">{{ t('dashboardClient.recentRequestsHeading') }}</h2>
 
       <div v-if="myRequests.length === 0" class="rounded-card border border-hairline bg-surface p-6 text-center shadow-card-sm">
@@ -122,7 +123,7 @@ function restartDemo() {
       </ul>
     </section>
 
-    <div class="grid grid-cols-2 gap-3">
+    <div v-reveal :style="{ '--reveal-delay': '180ms' }" class="grid grid-cols-2 gap-3">
       <NuxtLink
         to="/messages"
         class="press rounded-card border border-hairline bg-surface p-4 shadow-card-sm hover:border-primary/40"

@@ -9,7 +9,7 @@ const { t } = useI18n({ useScope: 'global' })
 </script>
 
 <template>
-  <div class="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+  <div v-reveal class="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
     <div class="mb-2 flex size-14 items-center justify-center rounded-full bg-bg text-2xl">💬</div>
     <p class="text-[15px] font-bold text-dark">{{ t('messagesIndex.heading') }}</p>
     <p class="max-w-[320px] text-[13.5px] leading-relaxed text-muted">

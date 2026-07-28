@@ -83,7 +83,8 @@
       "providerCountSuffix": "prestataires vérifiés déjà inscrits",
       "ctaFind": "Trouver un prestataire",
       "ctaProvider": "Vous êtes prestataire ? Voir les formules",
-      "trustLabel": "Ils nous font confiance"
+      "trustLabel": "Ils nous font confiance",
+      "titleHighlightHover": "prestataire idéal"
     }
   },
   "language": {

@@ -153,7 +153,7 @@ function restartDemo() {
     </div>
 
     <!-- Jauge de complétude du profil (levier de qualité, style Upwork/Malt). -->
-    <section class="mb-6 rounded-card border border-hairline bg-surface p-5 shadow-card-sm">
+    <section v-reveal :style="{ '--reveal-delay': '60ms' }" class="mb-6 rounded-card border border-hairline bg-surface p-5 shadow-card-sm">
       <div class="mb-3 flex items-center justify-between gap-3">
         <div>
           <h2 class="text-[14px] font-bold text-dark">{{ t('prestataireIndex.completionHeading') }}</h2>
@@ -182,6 +182,7 @@ function restartDemo() {
 
     <NuxtLink
       v-if="!user?.verified"
+      v-reveal
       to="/prestataire/profil?open=verification"
       class="press mb-4 flex items-center justify-between gap-3 rounded-card border border-primary/30 bg-primary/8 p-4 hover:border-primary/50"
     >
@@ -202,7 +203,7 @@ function restartDemo() {
       <span class="shrink-0 font-bold text-primary">→</span>
     </NuxtLink>
 
-    <div class="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div v-reveal :style="{ '--reveal-delay': '120ms' }" class="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
       <NuxtLink
         to="/prestataire/demandes"
         class="card-hover rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm hover:border-primary/40"
@@ -237,7 +238,7 @@ function restartDemo() {
       retirées : elles doublonnaient exactement la barre latérale (mêmes
       destinations), sans rien apporter de plus.
     -->
-    <section class="mb-6">
+    <section v-reveal :style="{ '--reveal-delay': '180ms' }" class="mb-6">
       <div class="mb-3 flex items-center justify-between">
         <h2 class="text-[12px] font-bold uppercase tracking-wide text-muted">{{ t('prestataireIndex.recentRequestsHeading') }}</h2>
         <NuxtLink to="/prestataire/demandes" class="press link-underline text-[12.5px] font-semibold text-primary">{{ t('prestataireIndex.viewAll') }}</NuxtLink>

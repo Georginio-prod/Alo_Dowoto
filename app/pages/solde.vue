@@ -37,12 +37,12 @@ const formattedBalance = computed(() => (balance.value === null ? '…' : `${bal
     </header>
 
     <div class="mx-auto max-w-[1100px] px-5 py-6">
-      <div class="mb-5 rounded-card border border-hairline bg-surface p-5">
+      <div v-reveal class="mb-5 rounded-card border border-hairline bg-surface p-5">
         <p class="text-[13px] text-muted">{{ t('soldeClient.availableBalance') }}</p>
         <p class="text-[28px] font-extrabold text-dark">{{ formattedBalance }}</p>
       </div>
 
-      <div class="grid grid-cols-1 gap-5 lg:grid-cols-[380px_1fr]">
+      <div v-reveal :style="{ '--reveal-delay': '80ms' }" class="grid grid-cols-1 gap-5 lg:grid-cols-[380px_1fr]">
         <WalletRechargeForm @confirmed="refresh" />
         <WalletMovementList :movements="movements" />
       </div>

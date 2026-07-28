@@ -83,7 +83,8 @@
       "providerCountSuffix": "verified providers already registered",
       "ctaFind": "Find a provider",
       "ctaProvider": "Are you a provider? See our plans",
-      "trustLabel": "Trusted by"
+      "trustLabel": "Trusted by",
+      "titleHighlightHover": "ideal provider"
     }
   },
   "language": {

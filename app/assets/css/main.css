@@ -133,6 +133,31 @@
     color: var(--color-primary);
   }
 
+  /* Curseur magnétique (#362, MagneticText.vue) : cercle qui suit le
+     pointeur et révèle `hoverText` en négatif. Position et rayon pilotés
+     en JS via --mx/--my/--mr (inertie par frame) ; --mr par défaut à 0
+     garantit un cercle invisible avant tout survol (SSR compris). */
+  .magnetic-text {
+    position: relative;
+    display: inline-block;
+    --mx: 50%;
+    --my: 50%;
+    --mr: 0px;
+  }
+  .magnetic-text__reveal {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-inline: 0.5em;
+    text-align: center;
+    background: var(--color-primary);
+    color: #fff;
+    pointer-events: none;
+    clip-path: circle(var(--mr) at var(--mx) var(--my));
+  }
+
   [data-parallax] {
     will-change: transform;
   }

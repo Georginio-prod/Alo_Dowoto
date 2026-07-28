@@ -212,7 +212,7 @@ async function submitReview() {
         @submitted="onFirstContactSubmitted"
       />
 
-      <div v-else-if="showPaymentPrompt" class="rounded-card border border-hairline bg-surface p-5">
+      <div v-else-if="showPaymentPrompt" v-reveal class="rounded-card border border-hairline bg-surface p-5">
         <p class="text-[14.5px] font-semibold text-dark">{{ t('messageThreadPage.paymentRequiredTitle') }}</p>
         <p class="mt-1 text-[13px] text-muted">
           {{ t('messageThreadPage.paymentRequiredText', { name: conversation?.otherPartyName }) }}
@@ -229,7 +229,7 @@ async function submitReview() {
         <p v-if="payError" class="mt-2 text-[12.5px] text-error">{{ payError }}</p>
       </div>
 
-      <div v-else-if="showAwaitingPaymentNotice" class="rounded-card border border-hairline bg-surface p-5 text-center">
+      <div v-else-if="showAwaitingPaymentNotice" v-reveal class="rounded-card border border-hairline bg-surface p-5 text-center">
         <p class="text-[14.5px] font-semibold text-dark">{{ t('messageThreadPage.awaitingPaymentTitle') }}</p>
         <p class="mt-1 text-[13px] text-muted">
           {{ t('messageThreadPage.awaitingPaymentText') }}
@@ -275,6 +275,7 @@ async function submitReview() {
 
         <div
           v-if="conversation && escrowOrder?.status === 'released'"
+          v-reveal
           class="relative mt-5 shrink-0 overflow-hidden rounded-card border border-hairline bg-surface p-4"
         >
           <div class="pointer-events-none absolute -right-8 -top-10 size-32 rounded-full bg-star/10 blur-2xl" />
