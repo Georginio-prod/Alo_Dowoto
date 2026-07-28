@@ -14,6 +14,8 @@ interface Recharge {
 
 const emit = defineEmits<{ confirmed: [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const POLL_INTERVAL_MS = 1500
 const MIN_AMOUNT = 500
 
@@ -46,7 +48,7 @@ function pollRecharge(rechargeId: string) {
     } else if (recharge.status === 'failed') {
       stopPolling()
       step.value = 'idle'
-      submitError.value = 'La recharge a échoué. Réessayez.'
+      submitError.value = t('walletRechargeForm.errorRechargeFailedGeneric')
     }
   }, POLL_INTERVAL_MS)
 }
@@ -73,7 +75,7 @@ async function submitRecharge() {
     step.value = 'processing'
     pollRecharge(recharge.id)
   } catch {
-    submitError.value = "La recharge n'a pas pu être initiée. Réessayez."
+    submitError.value = t('walletRechargeForm.errorInitiateFailed')
   } finally {
     isSubmitting.value = false
   }
@@ -83,7 +85,7 @@ async function submitRecharge() {
 <template>
   <div class="rounded-card border border-hairline bg-surface p-5">
     <template v-if="step === 'idle'">
-      <p class="mb-3 text-[14.5px] font-bold text-dark">Recharger mon solde</p>
+      <p class="mb-3 text-[14.5px] font-bold text-dark">{{ t('walletRechargeForm.heading') }}</p>
 
       <div class="mb-4 grid grid-cols-2 gap-3">
         <button
@@ -106,7 +108,7 @@ async function submitRecharge() {
         </button>
       </div>
 
-      <label for="recharge-amount" class="mb-1.5 block text-[13px] font-semibold text-dark">Montant (F CFA)</label>
+      <label for="recharge-amount" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('walletRechargeForm.amountLabel') }}</label>
       <input
         id="recharge-amount"
         v-model.number="amount"
@@ -117,7 +119,7 @@ async function submitRecharge() {
         class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
       >
 
-      <label for="recharge-phone" class="mb-1.5 block text-[13px] font-semibold text-dark">Numéro Mobile Money</label>
+      <label for="recharge-phone" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('walletRechargeForm.phoneLabel') }}</label>
       <div class="mb-1.5 flex gap-2">
         <div class="flex h-[46px] w-16 shrink-0 items-center justify-center rounded-field border-[1.5px] border-hairline bg-bg text-[14.5px] font-semibold text-dark">
           +228
@@ -128,7 +130,7 @@ async function submitRecharge() {
           type="tel"
           inputmode="numeric"
           placeholder="90 12 34 56"
-          aria-label="Numéro Mobile Money"
+          :aria-label="t('walletRechargeForm.phoneLabel')"
           class="h-[46px] min-w-0 flex-1 rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
         >
       </div>
@@ -141,7 +143,7 @@ async function submitRecharge() {
         :disabled="!isPhoneValid || !isAmountValid || isSubmitting"
         @click="submitRecharge"
       >
-        Recharger
+        {{ t('walletRechargeForm.rechargeCta') }}
       </button>
     </template>
 
@@ -149,22 +151,22 @@ async function submitRecharge() {
       <div
         class="mx-auto mb-4 h-10 w-10 animate-[wt-spin_0.8s_linear_infinite] rounded-full border-[3px] border-primary/20 border-t-primary"
       />
-      <h2 class="mb-1.5 text-base font-bold text-dark">Confirmation en cours…</h2>
-      <p class="text-[13.5px] text-muted">Validez la demande envoyée sur votre téléphone.</p>
+      <h2 class="mb-1.5 text-base font-bold text-dark">{{ t('walletRechargeForm.processingHeading') }}</h2>
+      <p class="text-[13.5px] text-muted">{{ t('walletRechargeForm.processingText') }}</p>
     </div>
 
     <div v-else class="py-6 text-center">
       <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/12 text-xl text-primary">
         ✓
       </div>
-      <h2 class="mb-1.5 text-base font-bold text-dark">Recharge confirmée</h2>
-      <p class="mb-5 text-[13.5px] text-muted">Votre solde a été mis à jour.</p>
+      <h2 class="mb-1.5 text-base font-bold text-dark">{{ t('walletRechargeForm.confirmedHeading') }}</h2>
+      <p class="mb-5 text-[13.5px] text-muted">{{ t('walletRechargeForm.confirmedText') }}</p>
       <button
         type="button"
         class="press w-full rounded-field border border-hairline py-3 text-[13.5px] font-semibold text-dark hover:border-primary"
         @click="reset"
       >
-        Nouvelle recharge
+        {{ t('walletRechargeForm.newRechargeCta') }}
       </button>
     </div>
   </div>

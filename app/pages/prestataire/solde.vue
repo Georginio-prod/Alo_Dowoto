@@ -10,11 +10,14 @@ import type { PayoutMethod, ProviderProfile } from '~~/server/utils/providerStor
  */
 definePageMeta({ layout: 'dashboard-prestataire', middleware: 'auth', authRole: 'prestataire' })
 
-const PAYOUT_OPTIONS: { value: PayoutMethod; label: string; color: string }[] = [
+const { t } = useI18n({ useScope: 'global' })
+
+/** Flooz/T-Money sont des marques (jamais traduites) ; seul le virement bancaire porte un libellé traduisible. */
+const PAYOUT_OPTIONS = computed<{ value: PayoutMethod; label: string; color: string }[]>(() => [
   { value: 'flooz', label: 'Flooz', color: '#ff6600' },
   { value: 'tmoney', label: 'T-Money', color: '#ffc400' },
-  { value: 'virement', label: 'Virement bancaire', color: '#0F2318' },
-]
+  { value: 'virement', label: t('prestataireSolde.bankTransfer'), color: '#0F2318' },
+])
 
 const { balance, movements, minWithdrawal, ensure: ensureWallet, refresh: refreshWallet } = useWallet()
 await ensureWallet()
@@ -39,7 +42,7 @@ async function savePayoutMethod() {
     await refreshProfile()
     payoutSuccess.value = true
   } catch (fetchError) {
-    payoutError.value = apiErrorMessage(fetchError, "L'enregistrement a échoué. Réessayez.")
+    payoutError.value = apiErrorMessage(fetchError, t('prestataireSolde.errorSaveFailed'))
   } finally {
     isSavingPayout.value = false
   }
@@ -67,7 +70,7 @@ async function submitWithdrawal() {
     withdrawSuccess.value = true
     await refreshWallet()
   } catch (fetchError) {
-    withdrawError.value = apiErrorMessage(fetchError, 'La demande de retrait a échoué. Réessayez.')
+    withdrawError.value = apiErrorMessage(fetchError, t('prestataireSolde.errorWithdrawFailed'))
   } finally {
     isWithdrawing.value = false
   }
@@ -77,19 +80,19 @@ async function submitWithdrawal() {
 <template>
   <div>
     <div class="mb-6">
-      <p class="mb-1 text-[11px] font-bold uppercase tracking-wide text-primary">Espace prestataire</p>
-      <h1 class="text-[21px] font-extrabold text-dark">Solde</h1>
-      <p class="mt-1 text-[13px] text-muted">Votre solde, vos moyens de retrait et l'historique de vos mouvements.</p>
+      <p class="mb-1 text-[11px] font-bold uppercase tracking-wide text-primary">{{ t('dashboardShared.providerSpaceLabel') }}</p>
+      <h1 class="text-[21px] font-extrabold text-dark">{{ t('prestataireSolde.heading') }}</h1>
+      <p class="mt-1 text-[13px] text-muted">{{ t('prestataireSolde.subtitle') }}</p>
     </div>
 
     <div class="mb-5 rounded-card border border-hairline bg-surface p-5 shadow-card-sm">
-      <p class="text-[13px] text-muted">Solde disponible</p>
+      <p class="text-[13px] text-muted">{{ t('prestataireSolde.availableBalance') }}</p>
       <p class="text-[28px] font-extrabold text-dark">{{ formattedBalance }}</p>
     </div>
 
     <div class="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div class="rounded-card border border-hairline bg-surface p-5 shadow-card-sm">
-        <h2 class="mb-3 text-[14.5px] font-bold text-dark">Moyen de retrait</h2>
+        <h2 class="mb-3 text-[14.5px] font-bold text-dark">{{ t('prestataireSolde.payoutMethodHeading') }}</h2>
         <div class="mb-3.5 grid grid-cols-3 gap-2">
           <button
             v-for="option in PAYOUT_OPTIONS"
@@ -105,7 +108,7 @@ async function submitWithdrawal() {
           </button>
         </div>
 
-        <p v-if="payoutSuccess" class="mb-2 text-[12.5px] font-semibold text-primary">Moyen de retrait mis à jour.</p>
+        <p v-if="payoutSuccess" class="mb-2 text-[12.5px] font-semibold text-primary">{{ t('prestataireSolde.payoutSuccess') }}</p>
         <p v-if="payoutError" class="mb-2 text-[12.5px] text-error">{{ payoutError }}</p>
 
         <button
@@ -114,26 +117,26 @@ async function submitWithdrawal() {
           :disabled="!payoutMethod || isSavingPayout"
           @click="savePayoutMethod"
         >
-          {{ isSavingPayout ? 'Enregistrement…' : 'Enregistrer' }}
+          {{ isSavingPayout ? t('prestataireSolde.saving') : t('prestataireSolde.save') }}
         </button>
       </div>
 
       <div class="rounded-card border border-hairline bg-surface p-5 shadow-card-sm">
-        <h2 class="mb-1 text-[14.5px] font-bold text-dark">Demander un retrait</h2>
-        <p class="mb-3.5 text-[12px] text-muted">Retrait minimum : {{ formattedMinWithdrawal }} par demande.</p>
+        <h2 class="mb-1 text-[14.5px] font-bold text-dark">{{ t('prestataireSolde.withdrawHeading') }}</h2>
+        <p class="mb-3.5 text-[12px] text-muted">{{ t('prestataireSolde.minWithdrawalText', { amount: formattedMinWithdrawal }) }}</p>
 
-        <label for="withdraw-amount" class="mb-1.5 block text-[13px] font-semibold text-dark">Montant (F CFA)</label>
+        <label for="withdraw-amount" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('prestataireSolde.amountLabel') }}</label>
         <input
           id="withdraw-amount"
           v-model.number="withdrawAmount"
           type="number"
           :min="minWithdrawal ?? 0"
-          placeholder="Ex. 10000"
+          :placeholder="t('prestataireSolde.amountPlaceholder')"
           class="mb-3.5 h-[44px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14px] text-ink outline-none focus:border-primary"
         >
 
-        <p v-if="!payoutMethod" class="mb-2 text-[12px] text-muted">Choisissez un moyen de retrait avant de faire une demande.</p>
-        <p v-if="withdrawSuccess" class="mb-2 text-[12.5px] font-semibold text-primary">Demande de retrait envoyée.</p>
+        <p v-if="!payoutMethod" class="mb-2 text-[12px] text-muted">{{ t('prestataireSolde.selectPayoutFirst') }}</p>
+        <p v-if="withdrawSuccess" class="mb-2 text-[12.5px] font-semibold text-primary">{{ t('prestataireSolde.withdrawSuccess') }}</p>
         <p v-if="withdrawError" class="mb-2 text-[12.5px] text-error">{{ withdrawError }}</p>
 
         <button
@@ -142,7 +145,7 @@ async function submitWithdrawal() {
           :disabled="!canWithdraw || !withdrawAmount || isWithdrawing"
           @click="submitWithdrawal"
         >
-          {{ isWithdrawing ? 'Envoi…' : 'Demander le retrait' }}
+          {{ isWithdrawing ? t('prestataireSolde.withdrawing') : t('prestataireSolde.withdrawCta') }}
         </button>
       </div>
     </div>

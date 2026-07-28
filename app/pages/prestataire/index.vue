@@ -20,6 +20,8 @@ import type { Subscription } from '~~/server/utils/subscriptionStore'
 // redirections externes existantes (connexion, callback Google…).
 definePageMeta({ layout: 'dashboard-prestataire', middleware: 'auth', authRole: 'prestataire', alias: '/prestataire/accueil' })
 
+const { t } = useI18n({ useScope: 'global' })
+
 const BADGE_STYLES: Record<string, string> = {
   none: 'bg-white/10 text-white/80',
   pending: 'bg-primary/20 text-primary',
@@ -43,7 +45,7 @@ const recentMatches = computed(() => (matchesData.value?.matches ?? []).slice(0,
 
 const sectorName = computed(() => {
   const slug = profileData.value?.profile?.sector
-  return SECTORS.find((sector) => sector.slug === slug)?.name ?? 'votre activité'
+  return SECTORS.find((sector) => sector.slug === slug)?.name ?? t('prestataireIndex.defaultSectorFallback')
 })
 
 function sectorLabel(slug?: string) {
@@ -56,17 +58,17 @@ function sectorLabel(slug?: string) {
 const requestsUsageLabel = computed(() => {
   const usage = requestsQuotaData.value?.usage
   if (!usage) return '0 / 0'
-  return usage.limit === null ? `${usage.count} / Illimité` : `${usage.count} / ${usage.limit}`
+  return usage.limit === null ? `${usage.count} / ${t('prestataireIndex.unlimited')}` : `${usage.count} / ${usage.limit}`
 })
 
 const formattedBalance = computed(() => (balance.value === null ? '…' : `${balance.value.toLocaleString('fr-FR')} F CFA`))
 
 const subscriptionBadge = computed(() => {
   const status = subscriptionData.value?.subscription?.status
-  if (status === 'actif') return { label: 'Abonnement actif', tone: 'active' }
-  if (status === 'en_attente') return { label: 'Abonnement en attente de validation', tone: 'pending' }
-  if (status === 'expire') return { label: 'Abonnement expiré', tone: 'expired' }
-  return { label: 'Profil non abonné', tone: 'none' }
+  if (status === 'actif') return { label: t('prestataireIndex.badgeActive'), tone: 'active' }
+  if (status === 'en_attente') return { label: t('prestataireIndex.badgePending'), tone: 'pending' }
+  if (status === 'expire') return { label: t('prestataireIndex.badgeExpired'), tone: 'expired' }
+  return { label: t('prestataireIndex.badgeNone'), tone: 'none' }
 })
 
 // Rappel non intrusif tant que l'abonnement n'est pas actif (#186) : couvre
@@ -83,8 +85,8 @@ const subscriptionStatus = computed(() => subscriptionData.value?.subscription?.
 const profileIncomplete = computed(() => subscriptionStatus.value === null || subscriptionStatus.value === 'expire')
 const subscriptionBannerText = computed(() =>
   subscriptionStatus.value === 'expire'
-    ? "Votre abonnement a expiré : renouvelez-le pour continuer à recevoir des demandes."
-    : "Votre profil n'est pas complet : choisissez une formule pour profiter de toutes les fonctionnalités.",
+    ? t('prestataireIndex.subscriptionExpiredBanner')
+    : t('prestataireIndex.subscriptionIncompleteBanner'),
 )
 
 // Complétude du profil (levier Upwork/Malt) : un score chiffré + une checklist
@@ -102,14 +104,14 @@ interface ChecklistItem {
 const profileChecklist = computed<ChecklistItem[]>(() => {
   const p = profileData.value?.profile
   return [
-    { key: 'photo', label: 'Photo de profil', done: !!p?.photoUrl, to: '/prestataire/profil-professionnel' },
-    { key: 'description', label: 'Description', done: !!p?.description, to: '/prestataire/profil-professionnel' },
-    { key: 'rate', label: 'Tarif de base', done: (p?.rateFrom ?? 0) > 0, to: '/prestataire/profil-professionnel' },
-    { key: 'cv', label: 'CV', done: !!p?.cvUrl, to: '/prestataire/cv' },
-    { key: 'languages', label: 'Langues', done: !!p?.languages?.length, to: '/prestataire/langues' },
-    { key: 'formation', label: 'Formation', done: !!p?.formations?.length, to: '/prestataire/formation' },
-    { key: 'certifications', label: 'Certifications', done: !!p?.certifications?.length, to: '/prestataire/certifications' },
-    { key: 'verified', label: 'Identité vérifiée', done: !!user.value?.verified, to: '/prestataire/profil?open=verification' },
+    { key: 'photo', label: t('prestataireIndex.checklistPhoto'), done: !!p?.photoUrl, to: '/prestataire/profil-professionnel' },
+    { key: 'description', label: t('prestataireIndex.checklistDescription'), done: !!p?.description, to: '/prestataire/profil-professionnel' },
+    { key: 'rate', label: t('prestataireIndex.checklistRate'), done: (p?.rateFrom ?? 0) > 0, to: '/prestataire/profil-professionnel' },
+    { key: 'cv', label: t('prestataireIndex.checklistCv'), done: !!p?.cvUrl, to: '/prestataire/cv' },
+    { key: 'languages', label: t('prestataireIndex.checklistLanguages'), done: !!p?.languages?.length, to: '/prestataire/langues' },
+    { key: 'formation', label: t('prestataireIndex.checklistFormation'), done: !!p?.formations?.length, to: '/prestataire/formation' },
+    { key: 'certifications', label: t('prestataireIndex.checklistCertifications'), done: !!p?.certifications?.length, to: '/prestataire/certifications' },
+    { key: 'verified', label: t('prestataireIndex.checklistVerified'), done: !!user.value?.verified, to: '/prestataire/profil?open=verification' },
   ]
 })
 const completionPercent = computed(() => {
@@ -133,8 +135,8 @@ function restartDemo() {
       <div class="float-soft pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-primary/25 blur-3xl" aria-hidden="true" />
       <div class="relative flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p class="mb-1 text-[11px] font-bold uppercase tracking-wide text-primary">Espace prestataire</p>
-          <h1 class="text-[26px] font-extrabold text-white">Bonjour {{ user?.firstName || sectorName }} 👋</h1>
+          <p class="mb-1 text-[11px] font-bold uppercase tracking-wide text-primary">{{ t('dashboardShared.providerSpaceLabel') }}</p>
+          <h1 class="text-[26px] font-extrabold text-white">{{ t('prestataireIndex.greeting', { name: user?.firstName || sectorName }) }}</h1>
           <p class="mt-1.5 text-[13.5px] text-white/70">
             <span v-if="user?.location">📍 {{ user.location }} · </span>{{ sectorName }}
           </p>
@@ -149,8 +151,8 @@ function restartDemo() {
     <section class="mb-6 rounded-card border border-hairline bg-surface p-5 shadow-card-sm">
       <div class="mb-3 flex items-center justify-between gap-3">
         <div>
-          <h2 class="text-[14px] font-bold text-dark">Complétude de votre profil</h2>
-          <p class="text-[12.5px] text-muted">Un profil complet inspire confiance et attire plus de demandes.</p>
+          <h2 class="text-[14px] font-bold text-dark">{{ t('prestataireIndex.completionHeading') }}</h2>
+          <p class="text-[12.5px] text-muted">{{ t('prestataireIndex.completionSubtitle') }}</p>
         </div>
         <span class="shrink-0 text-[22px] font-extrabold text-primary">{{ completionPercent }}%</span>
       </div>
@@ -170,7 +172,7 @@ function restartDemo() {
           <span aria-hidden="true" class="font-bold text-primary">+</span> {{ item.label }}
         </NuxtLink>
       </div>
-      <p v-else class="text-[13px] font-semibold text-primary">✓ Votre profil est complet. Excellent&nbsp;!</p>
+      <p v-else class="text-[13px] font-semibold text-primary">{{ t('prestataireIndex.completionDone') }}</p>
     </section>
 
     <NuxtLink
@@ -179,7 +181,7 @@ function restartDemo() {
       class="press mb-4 flex items-center justify-between gap-3 rounded-card border border-primary/30 bg-primary/8 p-4 hover:border-primary/50"
     >
       <p class="text-[13px] font-semibold text-dark">
-        Vérifiez votre identité pour pouvoir être contacté par vos premiers clients.
+        {{ t('prestataireIndex.verifyBanner') }}
       </p>
       <span class="shrink-0 font-bold text-primary">→</span>
     </NuxtLink>
@@ -201,22 +203,22 @@ function restartDemo() {
         class="card-hover rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm hover:border-primary/40"
       >
         <div class="text-[22px] font-extrabold text-dark">{{ requestsUsageLabel }}</div>
-        <div class="text-[11.5px] text-muted">Demandes reçues ce mois</div>
+        <div class="text-[11.5px] text-muted">{{ t('prestataireIndex.requestsReceivedLabel') }}</div>
       </NuxtLink>
       <div class="rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm">
         <div class="text-[22px] font-extrabold text-dark">{{ rating.count > 0 ? rating.average.toFixed(1) : '—' }}</div>
-        <div class="text-[11.5px] text-muted">{{ rating.count }} avis</div>
+        <div class="text-[11.5px] text-muted">{{ t('prestataireIndex.reviewsCount', rating.count) }}</div>
       </div>
       <NuxtLink
         to="/prestataire/solde"
         class="card-hover rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm hover:border-primary/40"
       >
         <div class="truncate text-[18px] font-extrabold text-dark">{{ formattedBalance }}</div>
-        <div class="text-[11.5px] text-muted">Solde disponible</div>
+        <div class="text-[11.5px] text-muted">{{ t('prestataireIndex.balanceLabel') }}</div>
       </NuxtLink>
       <div class="rounded-card border border-hairline bg-surface p-4 text-center shadow-card-sm">
         <div class="truncate text-[15px] font-extrabold text-dark">{{ sectorName }}</div>
-        <div class="text-[11.5px] text-muted">Secteur d'activité</div>
+        <div class="text-[11.5px] text-muted">{{ t('prestataireIndex.sectorLabel') }}</div>
       </div>
     </div>
 
@@ -232,8 +234,8 @@ function restartDemo() {
     -->
     <section class="mb-6">
       <div class="mb-3 flex items-center justify-between">
-        <h2 class="text-[12px] font-bold uppercase tracking-wide text-muted">Demandes récentes</h2>
-        <NuxtLink to="/prestataire/demandes" class="press link-underline text-[12.5px] font-semibold text-primary">Voir tout →</NuxtLink>
+        <h2 class="text-[12px] font-bold uppercase tracking-wide text-muted">{{ t('prestataireIndex.recentRequestsHeading') }}</h2>
+        <NuxtLink to="/prestataire/demandes" class="press link-underline text-[12.5px] font-semibold text-primary">{{ t('prestataireIndex.viewAll') }}</NuxtLink>
       </div>
       <ul v-if="recentMatches.length" class="flex flex-col gap-2">
         <li v-for="item in recentMatches" :key="item.request.id">
@@ -253,20 +255,19 @@ function restartDemo() {
       </ul>
       <div v-else class="rounded-card border border-hairline bg-surface p-5 text-center shadow-card-sm">
         <p class="text-[13px] leading-relaxed text-muted">
-          Aucune demande pour l'instant. Complétez votre profil professionnel (photo, description, tarifs) pour
-          apparaître dans le matching des clients de vos secteurs.
+          {{ t('prestataireIndex.noRequestsYet') }}
         </p>
         <NuxtLink
           to="/prestataire/profil-professionnel"
           class="press mt-3 inline-block rounded-field border border-hairline bg-white px-4 py-2 text-[13px] font-semibold text-dark hover:border-primary/50"
         >
-          Compléter mon profil professionnel
+          {{ t('prestataireIndex.completeProProfileCta') }}
         </NuxtLink>
       </div>
     </section>
 
     <button type="button" class="press mt-1 text-[13px] font-semibold text-muted hover:text-dark" @click="restartDemo">
-      ↺ Recommencer la démo
+      {{ t('prestataireIndex.restartDemo') }}
     </button>
   </div>
 </template>

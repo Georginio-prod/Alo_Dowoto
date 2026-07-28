@@ -16,11 +16,13 @@ import type { ProviderMatchedRequest } from '~~/server/utils/requestStore'
  */
 definePageMeta({ layout: 'dashboard-prestataire', middleware: 'auth', authRole: 'prestataire' })
 
-const URGENCY_LABELS: Record<string, string> = {
-  immediate: 'Immédiate',
-  semaine: 'Sous la semaine',
-  flexible: 'Flexible',
-}
+const { t } = useI18n({ useScope: 'global' })
+
+const URGENCY_LABELS = computed<Record<string, string>>(() => ({
+  immediate: t('prestataireDemandes.urgencyImmediate'),
+  semaine: t('prestataireDemandes.urgencyWeek'),
+  flexible: t('prestataireDemandes.urgencyFlexible'),
+}))
 
 const { data: matchesData } = await useFetch<{ matches: ProviderMatchedRequest[] }>('/api/requests/received')
 const { data: quotaData } = await useFetch<{ usage: { count: number; limit: number | null; month: string } }>(
@@ -51,9 +53,9 @@ const sortedMatches = computed(() => {
 // Donne un sens lisible au score /100 (les badges de correspondance d'Upwork) :
 // un « 82 » brut ne parle pas, « Forte correspondance » si.
 function matchQuality(score: number): { label: string; cls: string } {
-  if (score >= 80) return { label: 'Forte correspondance', cls: 'bg-primary/12 text-primary' }
-  if (score >= 60) return { label: 'Bonne correspondance', cls: 'bg-primary/8 text-primary' }
-  return { label: 'Correspondance modérée', cls: 'bg-bg text-muted' }
+  if (score >= 80) return { label: t('prestataireDemandes.matchStrong'), cls: 'bg-primary/12 text-primary' }
+  if (score >= 60) return { label: t('prestataireDemandes.matchGood'), cls: 'bg-primary/8 text-primary' }
+  return { label: t('prestataireDemandes.matchModerate'), cls: 'bg-bg text-muted' }
 }
 // Même définition que professionalProfileComplete dans app/pages/profil.vue :
 // distingue « profil pas encore assez rempli pour matcher » de « profil complet,
@@ -62,7 +64,7 @@ const profileComplete = computed(() => !!(profileData.value?.profile?.photoUrl &
 const quotaLabel = computed(() => {
   const usage = quotaData.value?.usage
   if (!usage) return '0 / 0'
-  return usage.limit === null ? `${usage.count} / Illimité` : `${usage.count} / ${usage.limit}`
+  return usage.limit === null ? `${usage.count} / ${t('prestataireDemandes.unlimited')}` : `${usage.count} / ${usage.limit}`
 })
 
 function sectorLabel(slug?: string) {
@@ -83,42 +85,40 @@ function formatBudget(amount: number): string {
   <div>
     <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div>
-        <p class="mb-1 text-[11px] font-bold uppercase tracking-wide text-primary">Espace prestataire</p>
-        <h1 class="text-[21px] font-extrabold text-dark">Demandes reçues</h1>
-        <p class="mt-1 text-[13px] text-muted">Les demandes clientes correspondant à votre profil.</p>
+        <p class="mb-1 text-[11px] font-bold uppercase tracking-wide text-primary">{{ t('dashboardShared.providerSpaceLabel') }}</p>
+        <h1 class="text-[21px] font-extrabold text-dark">{{ t('prestataireDemandes.heading') }}</h1>
+        <p class="mt-1 text-[13px] text-muted">{{ t('prestataireDemandes.subtitle') }}</p>
       </div>
       <div class="shrink-0 rounded-card border border-hairline bg-surface px-4 py-2.5 text-center shadow-card-sm">
         <div class="text-[16px] font-extrabold text-dark">{{ quotaLabel }}</div>
-        <div class="text-[11px] text-muted">Ce mois-ci</div>
+        <div class="text-[11px] text-muted">{{ t('prestataireDemandes.thisMonthLabel') }}</div>
       </div>
     </div>
 
     <div class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-card border border-hairline bg-bg p-4">
       <p class="text-[12.5px] leading-relaxed text-muted">
-        Ces demandes correspondent à votre profil, mais c'est le client qui choisit qui contacter — être listé ici
-        ne veut pas dire qu'il vous a déjà écrit.
+        {{ t('prestataireDemandes.infoBannerText') }}
       </p>
       <NuxtLink to="/prestataire/messages" class="press shrink-0 text-[12.5px] font-semibold text-primary">
-        Voir mes messages →
+        {{ t('prestataireDemandes.viewMessages') }}
       </NuxtLink>
     </div>
 
     <div v-if="matches.length === 0 && profileComplete" class="rounded-card border border-hairline bg-surface p-6 text-center shadow-card-sm">
       <p class="text-[13.5px] text-muted">
-        Aucune demande pour l'instant. Revenez régulièrement : de nouvelles demandes sont matchées dès qu'un client
-        publie dans votre secteur.
+        {{ t('prestataireDemandes.emptyProfileCompleteText') }}
       </p>
     </div>
 
     <div v-else-if="matches.length === 0" class="rounded-card border border-hairline bg-surface p-6 text-center shadow-card-sm">
       <p class="mb-3 text-[13.5px] text-muted">
-        Aucune demande pour l'instant. Complétez votre profil professionnel pour apparaître dans le matching.
+        {{ t('prestataireDemandes.emptyProfileIncompleteText') }}
       </p>
       <NuxtLink
         to="/prestataire/profil-professionnel"
         class="press inline-block rounded-field border border-hairline bg-white px-4 py-2.5 text-[13.5px] font-semibold text-dark hover:border-primary"
       >
-        Compléter mon profil professionnel
+        {{ t('prestataireDemandes.completeProProfileCta') }}
       </NuxtLink>
     </div>
 
@@ -126,18 +126,18 @@ function formatBudget(amount: number): string {
       <!-- Barre d'outils du fil : compteur + tri (façon « Find work » d'Upwork). -->
       <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
         <p class="text-[13px] font-semibold text-dark">
-          {{ matches.length }} demande{{ matches.length > 1 ? 's' : '' }}
+          {{ t('prestataireDemandes.requestsCount', matches.length) }}
         </p>
         <label class="flex items-center gap-2 text-[12.5px] text-muted">
-          Trier par
+          {{ t('prestataireDemandes.sortByLabel') }}
           <select
             v-model="sortBy"
             class="h-[38px] rounded-field border border-hairline bg-white px-2.5 text-[13px] font-semibold text-dark outline-none focus:border-primary"
-            aria-label="Trier les demandes"
+            :aria-label="t('prestataireDemandes.sortAriaLabel')"
           >
-            <option value="pertinence">Correspondance</option>
-            <option value="recent">Plus récentes</option>
-            <option value="budget">Budget</option>
+            <option value="pertinence">{{ t('prestataireDemandes.sortRelevance') }}</option>
+            <option value="recent">{{ t('prestataireDemandes.sortRecent') }}</option>
+            <option value="budget">{{ t('prestataireDemandes.sortBudget') }}</option>
           </select>
         </label>
       </div>
