@@ -22,6 +22,7 @@ const emit = defineEmits<{
   'login-success': [user: PublicUser]
 }>()
 
+const { t } = useI18n({ useScope: 'global' })
 const { set: setSession } = useSession()
 
 const signupPassword = ref('')
@@ -43,7 +44,8 @@ function passwordRuleScore(value: string): number {
 const passwordScore = computed(() => passwordRuleScore(signupPassword.value))
 const passwordStrengthLabel = computed(() => {
   if (!signupPassword.value) return ''
-  return ['Trop faible', 'Faible', 'Moyen', 'Bon', 'Fort'][passwordScore.value]
+  const keys = ['strengthTooWeak', 'strengthWeak', 'strengthMedium', 'strengthGood', 'strengthStrong']
+  return t(`authPasswordStep.${keys[passwordScore.value]}`)
 })
 const passwordStrengthClass = computed(() => {
   if (passwordScore.value <= 1) return 'bg-error'
@@ -60,11 +62,11 @@ async function submitSignupPassword() {
   passwordError.value = ''
 
   if (passwordScore.value < 4) {
-    passwordError.value = 'Le mot de passe ne respecte pas encore toutes les règles ci-dessous.'
+    passwordError.value = t('authPasswordStep.errorRulesNotMet')
     return
   }
   if (!passwordsMatch.value) {
-    passwordError.value = 'Les deux mots de passe ne correspondent pas.'
+    passwordError.value = t('authPasswordStep.errorMismatch')
     return
   }
 
@@ -98,8 +100,8 @@ async function submitSignupPassword() {
     // incompréhensible ici — on oriente explicitement vers la connexion.
     passwordError.value =
       message === 'Mot de passe requis.'
-        ? 'Un compte existe déjà avec ce contact. Utilisez l\'onglet « Connexion » ci-dessus.'
-        : message || 'La création du compte a échoué. Réessayez.'
+        ? t('authPasswordStep.errorAccountExists')
+        : message || t('authPasswordStep.errorSignupFailed')
   } finally {
     isSubmitting.value = false
   }
@@ -117,7 +119,7 @@ async function submitLoginPassword() {
     setSession(user)
     emit('login-success', user)
   } catch (error) {
-    passwordError.value = apiErrorMessage(error, 'Mot de passe incorrect.')
+    passwordError.value = apiErrorMessage(error, t('authPasswordStep.errorLoginFailed'))
   } finally {
     isSubmitting.value = false
   }
@@ -129,17 +131,17 @@ function submitPassword() {
 }
 
 function requestPasswordReset() {
-  forgotPasswordMessage.value = 'Un lien de réinitialisation vous sera envoyé (fonctionnalité à venir).'
+  forgotPasswordMessage.value = t('authPasswordStep.forgotPasswordMessage')
 }
 </script>
 
 <template>
   <div v-if="mode === 'signup'">
     <label for="auth-password" class="mb-1 block text-[13px] font-semibold text-dark">
-      Créer votre mot de passe
+      {{ t('authPasswordStep.signupLabel') }}
     </label>
     <p class="mb-3 text-[13px] leading-relaxed text-muted">
-      Ce mot de passe vous sera redemandé à chaque connexion depuis un nouvel appareil.
+      {{ t('authPasswordStep.signupHint') }}
     </p>
 
     <input
@@ -147,8 +149,8 @@ function requestPasswordReset() {
       v-model="signupPassword"
       type="password"
       autocomplete="new-password"
-      placeholder="Mot de passe"
-      aria-label="Mot de passe"
+      :placeholder="t('authPasswordStep.passwordPlaceholder')"
+      :aria-label="t('authPasswordStep.passwordPlaceholder')"
       class="mb-2 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
     >
 
@@ -161,27 +163,27 @@ function requestPasswordReset() {
       />
     </div>
     <p v-if="signupPassword" class="mb-3 text-[12px] font-semibold text-muted">
-      Robustesse : {{ passwordStrengthLabel }}
+      {{ t('authPasswordStep.strengthPrefix', { label: passwordStrengthLabel }) }}
     </p>
 
     <ul class="mb-3.5 list-inside list-disc space-y-0.5 text-[12px] text-muted">
-      <li :class="{ 'text-primary': signupPassword.length >= 8 }">8 caractères minimum</li>
-      <li :class="{ 'text-primary': /[A-Z]/.test(signupPassword) }">Une majuscule</li>
-      <li :class="{ 'text-primary': /\d/.test(signupPassword) }">Un chiffre</li>
-      <li :class="{ 'text-primary': /[^A-Za-z0-9]/.test(signupPassword) }">Un caractère spécial</li>
+      <li :class="{ 'text-primary': signupPassword.length >= 8 }">{{ t('authPasswordStep.ruleMinLength') }}</li>
+      <li :class="{ 'text-primary': /[A-Z]/.test(signupPassword) }">{{ t('authPasswordStep.ruleUppercase') }}</li>
+      <li :class="{ 'text-primary': /\d/.test(signupPassword) }">{{ t('authPasswordStep.ruleDigit') }}</li>
+      <li :class="{ 'text-primary': /[^A-Za-z0-9]/.test(signupPassword) }">{{ t('authPasswordStep.ruleSpecial') }}</li>
     </ul>
 
     <input
       v-model="signupConfirmPassword"
       type="password"
       autocomplete="new-password"
-      placeholder="Confirmer le mot de passe"
-      aria-label="Confirmer le mot de passe"
+      :placeholder="t('authPasswordStep.confirmPlaceholder')"
+      :aria-label="t('authPasswordStep.confirmPlaceholder')"
       class="mb-1.5 h-[46px] w-full rounded-field border-[1.5px] px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
       :class="signupConfirmPassword && !passwordsMatch ? 'border-error' : 'border-hairline'"
     >
     <p v-if="signupConfirmPassword && !passwordsMatch" class="mb-1 text-[12.5px] text-error">
-      Les mots de passe ne correspondent pas.
+      {{ t('authPasswordStep.confirmMismatch') }}
     </p>
 
     <p v-if="passwordError" class="my-1 text-[12.5px] text-error">{{ passwordError }}</p>
@@ -192,21 +194,21 @@ function requestPasswordReset() {
       :disabled="isSubmitting"
       @click="submitPassword"
     >
-      {{ isSubmitting ? 'Création…' : 'Continuer' }}
+      {{ isSubmitting ? t('authPasswordStep.creating') : t('authPasswordStep.continueCta') }}
     </button>
   </div>
 
   <div v-else>
     <label for="auth-login-password" class="mb-1.5 block text-[13px] font-semibold text-dark">
-      Mot de passe
+      {{ t('authPasswordStep.loginPasswordLabel') }}
     </label>
     <input
       id="auth-login-password"
       v-model="loginPassword"
       type="password"
       autocomplete="current-password"
-      placeholder="Votre mot de passe"
-      aria-label="Mot de passe"
+      :placeholder="t('authPasswordStep.loginPasswordPlaceholder')"
+      :aria-label="t('authPasswordStep.loginPasswordLabel')"
       class="mb-1.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
       @keyup.enter="submitPassword"
     >
@@ -216,10 +218,10 @@ function requestPasswordReset() {
     <div class="mt-2 flex items-center justify-between">
       <label class="flex items-center gap-2 text-[12.5px] text-muted">
         <input v-model="rememberMe" type="checkbox" class="size-4 rounded-sm border-hairline accent-primary">
-        Se souvenir de moi
+        {{ t('authPasswordStep.rememberMe') }}
       </label>
       <button type="button" class="press text-[12.5px] font-semibold text-primary" @click="requestPasswordReset">
-        Mot de passe oublié ?
+        {{ t('authPasswordStep.forgotPassword') }}
       </button>
     </div>
     <p v-if="forgotPasswordMessage" class="mt-1.5 text-[12px] text-muted">{{ forgotPasswordMessage }}</p>
@@ -230,7 +232,7 @@ function requestPasswordReset() {
       :disabled="!loginPassword || isSubmitting"
       @click="submitPassword"
     >
-      {{ isSubmitting ? 'Connexion…' : 'Se connecter' }}
+      {{ isSubmitting ? t('authPasswordStep.connecting') : t('authPasswordStep.loginCta') }}
     </button>
   </div>
 </template>

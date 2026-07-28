@@ -5,6 +5,8 @@ const props = defineProps<{
   disabled?: boolean
 }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const emit = defineEmits<{
   'update:modelValue': [digits: string[]]
   complete: [code: string]
@@ -39,7 +41,7 @@ function onKeydown(index: number, e: KeyboardEvent) {
     class="flex justify-center gap-2"
     :class="{ 'animate-[wt-shake_0.4s_ease-in-out]': invalid }"
     role="group"
-    aria-label="Code de vérification à 6 chiffres"
+    :aria-label="t('otpInput.groupAriaLabel')"
   >
     <input
       v-for="(digit, i) in modelValue"
@@ -50,7 +52,7 @@ function onKeydown(index: number, e: KeyboardEvent) {
       inputmode="numeric"
       maxlength="1"
       :disabled="disabled"
-      :aria-label="`Chiffre ${i + 1}`"
+      :aria-label="t('otpInput.digitAriaLabel', { n: i + 1 })"
       class="h-[54px] w-11 rounded-field border-[1.5px] text-center text-lg font-semibold text-ink outline-none focus:border-primary disabled:opacity-60"
       :class="invalid ? 'border-error' : 'border-hairline'"
       @input="onInput(i, $event)"

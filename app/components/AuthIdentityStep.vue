@@ -10,19 +10,20 @@
 const props = defineProps<{ role: 'client' | 'prestataire' }>()
 const emit = defineEmits<{ done: [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
 const { user } = useSession()
 const isVerified = computed(() => user.value?.verified ?? false)
 
 const requirementCopy = computed(() =>
   props.role === 'prestataire'
-    ? 'Facultatif pour l\'instant, mais obligatoire avant de pouvoir recevoir votre premier client.'
-    : 'Facultatif pour l\'instant, mais obligatoire avant de publier votre première demande.',
+    ? t('authIdentityStep.requirementProvider')
+    : t('authIdentityStep.requirementClient'),
 )
 </script>
 
 <template>
   <div>
-    <label class="mb-1 block text-[13px] font-semibold text-dark">Vérification d'identité</label>
+    <label class="mb-1 block text-[13px] font-semibold text-dark">{{ t('authIdentityStep.label') }}</label>
     <p class="mb-3.5 text-[13px] leading-relaxed text-muted">{{ requirementCopy }}</p>
 
     <IdentityVerificationForm @submitted="emit('done')" />
@@ -33,7 +34,7 @@ const requirementCopy = computed(() =>
       class="press mt-3 w-full text-[13px] font-semibold text-muted hover:text-dark"
       @click="emit('done')"
     >
-      Passer pour l'instant
+      {{ t('authIdentityStep.skip') }}
     </button>
     <button
       v-else
@@ -41,7 +42,7 @@ const requirementCopy = computed(() =>
       class="press mt-3.5 w-full rounded-field bg-primary py-3.5 text-[15px] font-semibold text-white hover:bg-primary-hover"
       @click="emit('done')"
     >
-      Continuer
+      {{ t('authIdentityStep.continueCta') }}
     </button>
   </div>
 </template>

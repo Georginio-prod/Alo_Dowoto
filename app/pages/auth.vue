@@ -8,6 +8,7 @@ type Role = 'client' | 'prestataire'
 type Method = 'phone' | 'email'
 type Step = 'contact' | 'otp' | 'password' | 'identity' | 'sector' | 'payout'
 
+const { t } = useI18n({ useScope: 'global' })
 const route = useRoute()
 
 // `mode=login` force l'onglet Connexion même quand `role` est fourni dans
@@ -22,16 +23,18 @@ const step = ref<Step>('contact')
 
 // Erreurs renvoyées par /api/auth/google/callback (voir la correspondance
 // des codes côté serveur).
-const GOOGLE_ERRORS: Record<string, string> = {
-  google_config: "La connexion avec Google n'est pas configurée sur ce serveur. Utilisez le formulaire ci-dessous.",
-  google_denied: 'Connexion avec Google annulée.',
-  google_state: 'La vérification de sécurité Google a échoué. Réessayez.',
-  google_failed: 'La connexion avec Google a échoué. Réessayez.',
-  google_email: "Votre adresse email Google n'est pas vérifiée — utilisez le formulaire classique.",
+const GOOGLE_ERROR_KEYS: Record<string, string> = {
+  google_config: 'auth.googleErrorConfig',
+  google_denied: 'auth.googleErrorDenied',
+  google_state: 'auth.googleErrorState',
+  google_failed: 'auth.googleErrorFailed',
+  google_email: 'auth.googleErrorEmail',
 }
-const googleError = computed(() =>
-  typeof route.query.error === 'string' ? (GOOGLE_ERRORS[route.query.error] ?? '') : '',
-)
+const googleError = computed(() => {
+  const errorCode = route.query.error
+  const key = typeof errorCode === 'string' ? GOOGLE_ERROR_KEYS[errorCode] : undefined
+  return key ? t(key) : ''
+})
 
 // Retour d'inscription Google (`?google=1`) : le callback a déposé le profil
 // (email vérifié, prénom, nom) dans un cookie httpOnly — jamais dans l'URL.
@@ -62,11 +65,14 @@ const signupProfile = ref<SignupProfile | undefined>(undefined)
 
 const sectorSlug = ref('')
 
-const contactCta = computed(() => (activeTab.value === 'signup' ? 'Créer mon compte' : 'Se connecter'))
+const contactCta = computed(() => (activeTab.value === 'signup' ? t('auth.signupCta') : t('auth.loginCta')))
 const flowSteps = computed(() =>
   role.value === 'prestataire'
-    ? ['Contact', 'Vérification', 'Mot de passe', 'Identité', 'Secteur', 'Infos', 'Abonnement', 'Paiement']
-    : ['Contact', 'Vérification', 'Mot de passe', 'Identité'],
+    ? [
+        t('flowSteps.contact'), t('flowSteps.verification'), t('flowSteps.password'), t('flowSteps.identity'),
+        t('flowSteps.sector'), t('flowSteps.info'), t('flowSteps.subscription'), t('flowSteps.payment'),
+      ]
+    : [t('flowSteps.contact'), t('flowSteps.verification'), t('flowSteps.password'), t('flowSteps.identity')],
 )
 const flowStepIndex = computed(() => {
   if (step.value === 'contact') return 0
@@ -137,7 +143,7 @@ function onPayoutSaved() {
 <template>
   <div class="flex min-h-screen flex-col items-center px-5 pb-16 pt-7">
     <div class="w-full max-w-[440px]">
-      <NuxtLink to="/" class="press mb-2 inline-block py-2 text-sm text-muted">← Retour</NuxtLink>
+      <NuxtLink to="/" class="press mb-2 inline-block py-2 text-sm text-muted">{{ t('auth.back') }}</NuxtLink>
 
       <div class="mb-[22px] text-center">
         <div class="text-[22px] font-extrabold text-dark">Work<span class="text-primary">Togo</span></div>
@@ -160,7 +166,7 @@ function onPayoutSaved() {
             :class="activeTab === 'login' ? 'bg-white text-dark' : 'text-muted'"
             @click="selectTab('login')"
           >
-            Connexion
+            {{ t('auth.loginTab') }}
           </button>
           <button
             type="button"
@@ -168,12 +174,12 @@ function onPayoutSaved() {
             :class="activeTab === 'signup' ? 'bg-white text-dark' : 'text-muted'"
             @click="selectTab('signup')"
           >
-            Inscription
+            {{ t('auth.signupTab') }}
           </button>
         </div>
 
         <div v-if="activeTab === 'signup'" class="mb-5">
-          <div class="mb-2 text-[12.5px] font-medium text-muted">Vous êtes :</div>
+          <div class="mb-2 text-[12.5px] font-medium text-muted">{{ t('auth.youAreLabel') }}</div>
           <div class="flex gap-2">
             <button
               type="button"
@@ -187,9 +193,9 @@ function onPayoutSaved() {
                 class="absolute right-2 top-2 flex size-4 items-center justify-center rounded-full bg-primary text-[9px] text-white"
                 aria-hidden="true"
               >✓</span>
-              <span class="block">Client</span>
+              <span class="block">{{ t('auth.clientTitle') }}</span>
               <span class="mt-0.5 block text-[11px] font-normal" :class="role === 'client' ? 'text-dark/70' : 'text-muted'">
-                Je cherche un service
+                {{ t('auth.clientDescription') }}
               </span>
             </button>
             <button
@@ -204,9 +210,9 @@ function onPayoutSaved() {
                 class="absolute right-2 top-2 flex size-4 items-center justify-center rounded-full bg-primary text-[9px] text-white"
                 aria-hidden="true"
               >✓</span>
-              <span class="block">Prestataire</span>
+              <span class="block">{{ t('auth.providerTitle') }}</span>
               <span class="mt-0.5 block text-[11px] font-normal" :class="role === 'prestataire' ? 'text-dark/70' : 'text-muted'">
-                Je propose un service
+                {{ t('auth.providerDescription') }}
               </span>
             </button>
           </div>
@@ -245,10 +251,10 @@ function onPayoutSaved() {
 
         <div v-else-if="step === 'sector'">
           <label for="auth-sector" class="mb-1 block text-[13px] font-semibold text-dark">
-            Secteur d'activité principal
+            {{ t('auth.sectorLabel') }}
           </label>
           <p class="mb-3 text-[13px] leading-relaxed text-muted">
-            Choisissez le secteur qui correspond le mieux à votre activité.
+            {{ t('auth.sectorHint') }}
           </p>
 
           <select
@@ -256,7 +262,7 @@ function onPayoutSaved() {
             v-model="sectorSlug"
             class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline bg-white px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
           >
-            <option value="" disabled>Sélectionner un secteur…</option>
+            <option value="" disabled>{{ t('auth.sectorPlaceholder') }}</option>
             <option v-for="sector in SECTORS" :key="sector.slug" :value="sector.slug">
               {{ sector.name }}
             </option>
@@ -268,7 +274,7 @@ function onPayoutSaved() {
             :disabled="!sectorSlug"
             @click="submitSector"
           >
-            Continuer
+            {{ t('auth.continueCta') }}
           </button>
         </div>
 

@@ -11,6 +11,8 @@
 
 type Method = 'phone' | 'email'
 
+const { t } = useI18n({ useScope: 'global' })
+
 export interface SignupProfile {
   username: string
   firstName: string
@@ -66,7 +68,7 @@ const locationHint = ref('')
 async function useMyLocation() {
   if (isLocating.value) return
   if (!('geolocation' in navigator)) {
-    locationHint.value = "La géolocalisation n'est pas disponible sur cet appareil."
+    locationHint.value = t('authContactStep.locationHintUnavailable')
     return
   }
   isLocating.value = true
@@ -86,21 +88,21 @@ async function useMyLocation() {
             ?? data?.address?.municipality ?? data?.address?.county
         if (city) {
           location.value = city
-          locationHint.value = 'Position détectée.'
+          locationHint.value = t('authContactStep.locationHintDetected')
         } else {
-          locationHint.value = 'Position détectée — précisez votre ville ci-dessus.'
+          locationHint.value = t('authContactStep.locationHintImprecise')
         }
       } catch {
         // Géocodage inverse indisponible (réseau, service tiers) : les
         // coordonnées restent capturées et seront envoyées quand même,
         // seul le préremplissage automatique du nom de ville échoue.
-        locationHint.value = 'Position détectée — précisez votre ville ci-dessus.'
+        locationHint.value = t('authContactStep.locationHintImprecise')
       } finally {
         isLocating.value = false
       }
     },
     () => {
-      locationHint.value = "Localisation refusée ou indisponible. Renseignez votre ville manuellement."
+      locationHint.value = t('authContactStep.locationHintDenied')
       isLocating.value = false
     },
   )
@@ -118,18 +120,18 @@ function selectMethod(m: Method) {
 async function submit() {
   if (isSignup.value) {
     if (!username.value.trim() || !firstName.value.trim() || !lastName.value.trim() || !location.value.trim()) {
-      contactError.value = 'Merci de renseigner nom d\'utilisateur, prénom, nom et localisation.'
+      contactError.value = t('authContactStep.errorRequiredFields')
       return
     }
   }
 
   if (method.value === 'phone') {
     if (phone.value.replace(/\D/g, '').length < 8) {
-      contactError.value = 'Entrez un numéro valide (8 chiffres).'
+      contactError.value = t('authContactStep.errorPhoneInvalid')
       return
     }
   } else if (!EMAIL_RE.test(email.value.trim())) {
-    contactError.value = 'Entrez une adresse email valide.'
+    contactError.value = t('authContactStep.errorEmailInvalid')
     return
   }
 
@@ -166,7 +168,7 @@ async function submit() {
     })
     emit('sent', { method: method.value, value: contactValue.value, devCode, profile })
   } catch (error) {
-    contactError.value = apiErrorMessage(error, "L'envoi du code a échoué. Réessayez.")
+    contactError.value = apiErrorMessage(error, t('authContactStep.errorSendFailed'))
   } finally {
     isSubmitting.value = false
   }
@@ -187,12 +189,12 @@ async function submit() {
           <path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.16.28-1.7V4.97H.95A9 9 0 0 0 0 9c0 1.45.35 2.83.95 4.03l3-2.33Z" />
           <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.42 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58Z" />
         </svg>
-        {{ isSignup ? "S'inscrire avec Google" : 'Se connecter avec Google' }}
+        {{ isSignup ? t('authContactStep.signupWithGoogle') : t('authContactStep.loginWithGoogle') }}
       </button>
 
       <div class="mb-3.5 flex items-center gap-3 text-[11.5px] font-semibold uppercase text-muted">
         <span class="h-px flex-1 bg-hairline" />
-        ou
+        {{ t('authContactStep.orDivider') }}
         <span class="h-px flex-1 bg-hairline" />
       </div>
     </template>
@@ -208,55 +210,55 @@ async function submit() {
         <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.42 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58Z" />
       </svg>
       <span>
-        Compte Google vérifié : <strong>{{ google?.email }}</strong>.
-        Complétez votre profil pour terminer l'inscription.
+        {{ t('authContactStep.googleVerifiedPrefix') }} <strong>{{ google?.email }}</strong>.
+        {{ t('authContactStep.googleVerifiedSuffix') }}
       </span>
     </div>
 
     <template v-if="isSignup">
-      <label for="auth-username" class="mb-1.5 block text-[13px] font-semibold text-dark">Nom d'utilisateur</label>
+      <label for="auth-username" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('authContactStep.usernameLabel') }}</label>
       <input
         id="auth-username"
         v-model="username"
         type="text"
-        placeholder="Ex. marie90"
-        aria-label="Nom d'utilisateur"
+        :placeholder="t('authContactStep.usernamePlaceholder')"
+        :aria-label="t('authContactStep.usernameLabel')"
         class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
       >
 
       <div class="mb-3.5 flex gap-2">
         <div class="flex-1">
-          <label for="auth-first-name" class="mb-1.5 block text-[13px] font-semibold text-dark">Prénom</label>
+          <label for="auth-first-name" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('authContactStep.firstNameLabel') }}</label>
           <input
             id="auth-first-name"
             v-model="firstName"
             type="text"
-            placeholder="Marie"
-            aria-label="Prénom"
+            :placeholder="t('authContactStep.firstNamePlaceholder')"
+            :aria-label="t('authContactStep.firstNameLabel')"
             class="h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
           >
         </div>
         <div class="flex-1">
-          <label for="auth-last-name" class="mb-1.5 block text-[13px] font-semibold text-dark">Nom</label>
+          <label for="auth-last-name" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('authContactStep.lastNameLabel') }}</label>
           <input
             id="auth-last-name"
             v-model="lastName"
             type="text"
-            placeholder="Dupont"
-            aria-label="Nom"
+            :placeholder="t('authContactStep.lastNamePlaceholder')"
+            :aria-label="t('authContactStep.lastNameLabel')"
             class="h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
           >
         </div>
       </div>
 
-      <label for="auth-location" class="mb-1.5 block text-[13px] font-semibold text-dark">Localisation</label>
+      <label for="auth-location" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('authContactStep.locationLabel') }}</label>
       <div class="mb-1.5 flex gap-2">
         <input
           id="auth-location"
           v-model="location"
           type="text"
-          placeholder="Ex. Lomé, Kara…"
-          aria-label="Localisation"
+          :placeholder="t('authContactStep.locationPlaceholder')"
+          :aria-label="t('authContactStep.locationLabel')"
           class="h-[46px] min-w-0 flex-1 rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
         >
         <button
@@ -265,11 +267,11 @@ async function submit() {
           :disabled="isLocating"
           @click="useMyLocation"
         >
-          {{ isLocating ? '…' : '📍 Ma position' }}
+          {{ isLocating ? t('authContactStep.locating') : t('authContactStep.locateCta') }}
         </button>
       </div>
       <p v-if="locationHint" class="mb-3.5 text-[12px] text-muted">{{ locationHint }}</p>
-      <p v-else class="mb-3.5 text-[11.5px] text-muted">Optionnel : détecte automatiquement votre position exacte.</p>
+      <p v-else class="mb-3.5 text-[11.5px] text-muted">{{ t('authContactStep.locationHintOptional') }}</p>
     </template>
 
     <template v-if="!isGoogleSignup">
@@ -280,7 +282,7 @@ async function submit() {
           :class="method === 'phone' ? 'border-transparent bg-dark text-white' : 'border-hairline bg-white text-muted'"
           @click="selectMethod('phone')"
         >
-          Téléphone
+          {{ t('authContactStep.methodPhone') }}
         </button>
         <button
           type="button"
@@ -288,12 +290,12 @@ async function submit() {
           :class="method === 'email' ? 'border-transparent bg-dark text-white' : 'border-hairline bg-white text-muted'"
           @click="selectMethod('email')"
         >
-          Email
+          {{ t('authContactStep.methodEmail') }}
         </button>
       </div>
 
       <template v-if="method === 'phone'">
-        <label for="auth-phone" class="mb-1.5 block text-[13px] font-semibold text-dark">Numéro de téléphone</label>
+        <label for="auth-phone" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('authContactStep.phoneLabel') }}</label>
         <div class="mb-1.5 flex gap-2">
           <div class="flex h-[46px] w-16 shrink-0 items-center justify-center rounded-field border-[1.5px] border-hairline bg-bg text-[14.5px] font-semibold text-dark">
             +228
@@ -303,20 +305,20 @@ async function submit() {
             v-model="phone"
             type="tel"
             inputmode="numeric"
-            placeholder="90 12 34 56"
-            aria-label="Numéro de téléphone"
+            :placeholder="t('authContactStep.phonePlaceholder')"
+            :aria-label="t('authContactStep.phoneLabel')"
             class="h-[46px] min-w-0 flex-1 rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
           >
         </div>
       </template>
       <template v-else>
-        <label for="auth-email" class="mb-1.5 block text-[13px] font-semibold text-dark">Adresse email</label>
+        <label for="auth-email" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('authContactStep.emailLabel') }}</label>
         <input
           id="auth-email"
           v-model="email"
           type="email"
-          placeholder="vous@exemple.com"
-          aria-label="Adresse email"
+          :placeholder="t('authContactStep.emailPlaceholder')"
+          :aria-label="t('authContactStep.emailLabel')"
           class="mb-1.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
         >
       </template>
@@ -330,10 +332,10 @@ async function submit() {
       :disabled="isSubmitting"
       @click="submit"
     >
-      {{ isSubmitting ? 'Envoi…' : cta }}
+      {{ isSubmitting ? t('authContactStep.submitting') : cta }}
     </button>
     <p v-if="!isGoogleSignup" class="mt-3.5 text-center text-[11.5px] leading-relaxed text-muted">
-      En continuant, un code à 6 chiffres vous sera envoyé pour vérifier votre identité.
+      {{ t('authContactStep.otpNotice') }}
     </p>
   </div>
 </template>

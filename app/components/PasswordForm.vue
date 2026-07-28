@@ -4,6 +4,8 @@
  * (#hub-profil-modales) pour être réutilisé à la fois par cette page dédiée
  * et par la fenêtre ouverte depuis le hub `/profil`.
  */
+const { t } = useI18n({ useScope: 'global' })
+
 const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
@@ -28,15 +30,15 @@ async function submit() {
   success.value = false
 
   if (!currentPassword.value) {
-    error.value = 'Entrez votre mot de passe actuel.'
+    error.value = t('passwordForm.errorCurrentRequired')
     return
   }
   if (passwordScore.value < 4) {
-    error.value = 'Le nouveau mot de passe ne respecte pas encore toutes les règles ci-dessous.'
+    error.value = t('passwordForm.errorRulesNotMet')
     return
   }
   if (!passwordsMatch.value) {
-    error.value = 'Les deux mots de passe ne correspondent pas.'
+    error.value = t('passwordForm.errorMismatch')
     return
   }
 
@@ -51,7 +53,7 @@ async function submit() {
     newPassword.value = ''
     confirmPassword.value = ''
   } catch (fetchError) {
-    error.value = apiErrorMessage(fetchError, 'Le changement de mot de passe a échoué. Réessayez.')
+    error.value = apiErrorMessage(fetchError, t('passwordForm.errorChangeFailed'))
   } finally {
     isSubmitting.value = false
   }
@@ -61,7 +63,7 @@ async function submit() {
 <template>
   <div>
     <label for="pw-current" class="mb-1.5 block text-[13px] font-semibold text-dark">
-      Mot de passe actuel
+      {{ t('passwordForm.currentLabel') }}
     </label>
     <input
       id="pw-current"
@@ -72,7 +74,7 @@ async function submit() {
     >
 
     <label for="pw-new" class="mb-1.5 block text-[13px] font-semibold text-dark">
-      Nouveau mot de passe
+      {{ t('passwordForm.newLabel') }}
     </label>
     <input
       id="pw-new"
@@ -92,14 +94,14 @@ async function submit() {
     </div>
 
     <ul class="mb-3.5 list-inside list-disc space-y-0.5 text-[12px] text-muted">
-      <li :class="{ 'text-primary': newPassword.length >= 8 }">8 caractères minimum</li>
-      <li :class="{ 'text-primary': /[A-Z]/.test(newPassword) }">Une majuscule</li>
-      <li :class="{ 'text-primary': /\d/.test(newPassword) }">Un chiffre</li>
-      <li :class="{ 'text-primary': /[^A-Za-z0-9]/.test(newPassword) }">Un caractère spécial</li>
+      <li :class="{ 'text-primary': newPassword.length >= 8 }">{{ t('passwordForm.ruleMinLength') }}</li>
+      <li :class="{ 'text-primary': /[A-Z]/.test(newPassword) }">{{ t('passwordForm.ruleUppercase') }}</li>
+      <li :class="{ 'text-primary': /\d/.test(newPassword) }">{{ t('passwordForm.ruleDigit') }}</li>
+      <li :class="{ 'text-primary': /[^A-Za-z0-9]/.test(newPassword) }">{{ t('passwordForm.ruleSpecial') }}</li>
     </ul>
 
     <label for="pw-confirm" class="mb-1.5 block text-[13px] font-semibold text-dark">
-      Confirmer le nouveau mot de passe
+      {{ t('passwordForm.confirmLabel') }}
     </label>
     <input
       id="pw-confirm"
@@ -110,7 +112,7 @@ async function submit() {
       :class="confirmPassword && !passwordsMatch ? 'border-error' : 'border-hairline'"
     >
 
-    <p v-if="success" class="my-1 text-[12.5px] font-semibold text-primary">Mot de passe modifié.</p>
+    <p v-if="success" class="my-1 text-[12.5px] font-semibold text-primary">{{ t('passwordForm.success') }}</p>
     <p v-if="error" class="my-1 text-[12.5px] text-error">{{ error }}</p>
 
     <button
@@ -119,7 +121,7 @@ async function submit() {
       :disabled="isSubmitting"
       @click="submit"
     >
-      {{ isSubmitting ? 'Modification…' : 'Confirmer' }}
+      {{ isSubmitting ? t('passwordForm.submitting') : t('passwordForm.submit') }}
     </button>
   </div>
 </template>

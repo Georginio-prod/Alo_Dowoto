@@ -9,6 +9,8 @@
 
 const emit = defineEmits<{ submitted: [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png']
 
@@ -42,12 +44,12 @@ async function onFileSelected(event: Event, target: 'idCard' | 'passportPhoto') 
   error.value = ''
 
   if (!ACCEPTED_TYPES.includes(file.type)) {
-    error.value = 'Formats acceptés : JPEG ou PNG.'
+    error.value = t('identityVerificationForm.errorFormat')
     input.value = ''
     return
   }
   if (file.size > MAX_FILE_SIZE) {
-    error.value = 'Chaque photo doit faire 5 Mo maximum.'
+    error.value = t('identityVerificationForm.errorSize')
     input.value = ''
     return
   }
@@ -75,7 +77,7 @@ async function submit() {
     await refreshSession()
     emit('submitted')
   } catch (fetchError) {
-    error.value = apiErrorMessage(fetchError, 'L\'envoi de vos documents a échoué. Réessayez.')
+    error.value = apiErrorMessage(fetchError, t('identityVerificationForm.errorSubmitFailed'))
   } finally {
     isSubmitting.value = false
   }
@@ -86,22 +88,22 @@ async function submit() {
   <div v-if="isVerified" class="rounded-card border border-hairline bg-surface p-4">
     <p class="flex items-center gap-2 text-[13.5px] font-semibold text-dark">
       <span class="flex size-6 items-center justify-center rounded-full bg-primary/12 text-[12px] text-primary">✓</span>
-      Identité vérifiée
+      {{ t('identityVerificationForm.verifiedLabel') }}
     </p>
     <p class="mt-1 text-[12.5px] leading-relaxed text-muted">
-      Votre compte est certifié. Cette vérification n'est à faire qu'une seule fois.
+      {{ t('identityVerificationForm.verifiedHint') }}
     </p>
   </div>
 
   <div v-else>
     <label for="verif-id-card" class="mb-1.5 block text-[13px] font-semibold text-dark">
-      Carte d'identité (recto)
+      {{ t('identityVerificationForm.idCardLabel') }}
     </label>
     <label
       for="verif-id-card"
       class="press mb-3.5 flex h-[46px] w-full cursor-pointer items-center rounded-field border-[1.5px] border-dashed border-hairline px-3.5 text-[13.5px] text-muted hover:border-primary/40"
     >
-      {{ idCardFileName || 'Choisir une photo (JPEG ou PNG, 5 Mo max)' }}
+      {{ idCardFileName || t('identityVerificationForm.choosePhoto') }}
     </label>
     <input
       id="verif-id-card"
@@ -112,13 +114,13 @@ async function submit() {
     >
 
     <label for="verif-passport-photo" class="mb-1.5 block text-[13px] font-semibold text-dark">
-      Photo passeport (fond blanc, format international)
+      {{ t('identityVerificationForm.passportLabel') }}
     </label>
     <label
       for="verif-passport-photo"
       class="press mb-1.5 flex h-[46px] w-full cursor-pointer items-center rounded-field border-[1.5px] border-dashed border-hairline px-3.5 text-[13.5px] text-muted hover:border-primary/40"
     >
-      {{ passportPhotoFileName || 'Choisir une photo (JPEG ou PNG, 5 Mo max)' }}
+      {{ passportPhotoFileName || t('identityVerificationForm.choosePhoto') }}
     </label>
     <input
       id="verif-passport-photo"
@@ -128,7 +130,7 @@ async function submit() {
       @change="onFileSelected($event, 'passportPhoto')"
     >
     <p class="mb-3.5 text-[12px] text-muted">
-      Visage centré, expression neutre, fond blanc uni — comme pour une photo d'identité officielle.
+      {{ t('identityVerificationForm.passportHint') }}
     </p>
 
     <p v-if="error" class="mb-3 text-[12.5px] text-error">{{ error }}</p>
@@ -139,7 +141,7 @@ async function submit() {
       :disabled="!isValid || isSubmitting"
       @click="submit"
     >
-      {{ isSubmitting ? 'Envoi…' : 'Vérifier mon identité' }}
+      {{ isSubmitting ? t('identityVerificationForm.submitting') : t('identityVerificationForm.submit') }}
     </button>
   </div>
 </template>
