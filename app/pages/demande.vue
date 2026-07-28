@@ -4,11 +4,13 @@ import type { ServiceRequest } from '~~/server/utils/requestStore'
 
 definePageMeta({ layout: 'blank' })
 
-const URGENCY_OPTIONS: { value: Urgency; label: string }[] = [
-  { value: 'immediate', label: 'Immédiate' },
-  { value: 'semaine', label: 'Sous la semaine' },
-  { value: 'flexible', label: 'Flexible' },
-]
+const { t } = useI18n({ useScope: 'global' })
+
+const URGENCY_OPTIONS = computed<{ value: Urgency; label: string }[]>(() => [
+  { value: 'immediate', label: t('demande.urgencyImmediate') },
+  { value: 'semaine', label: t('demande.urgencyWeek') },
+  { value: 'flexible', label: t('demande.urgencyFlexible') },
+])
 
 const route = useRoute()
 
@@ -26,7 +28,7 @@ onMounted(() => {
   const q = route.query.q
   if (typeof q === 'string' && q.trim()) {
     skillsInput.value = q.trim()
-    title.value = `Recherche : ${q.trim()}`
+    title.value = t('demande.searchTitlePrefix', { term: q.trim() })
   }
 })
 
@@ -42,23 +44,23 @@ async function submit() {
   const skills = skillsInput.value.split(',').map((skill) => skill.trim()).filter(Boolean)
 
   if (!title.value.trim()) {
-    formError.value = 'Le titre de la demande est requis.'
+    formError.value = t('demande.errorTitleRequired')
     return
   }
   if (skills.length === 0) {
-    formError.value = 'Indiquez au moins une compétence recherchée.'
+    formError.value = t('demande.errorSkillsRequired')
     return
   }
   if (!budgetMax.value || budgetMax.value <= 0) {
-    formError.value = 'Entrez un budget maximum valide.'
+    formError.value = t('demande.errorBudgetInvalid')
     return
   }
   if (!urgency.value) {
-    formError.value = "Sélectionnez le niveau d'urgence."
+    formError.value = t('demande.errorUrgencyRequired')
     return
   }
   if (!location.value.trim()) {
-    formError.value = 'Indiquez votre localisation.'
+    formError.value = t('demande.errorLocationRequired')
     return
   }
 
@@ -83,11 +85,11 @@ async function submit() {
       return
     }
     if (statusCode === 403) {
-      formError.value = apiErrorMessage(error, 'Vérifiez votre identité avant de publier une demande.')
+      formError.value = apiErrorMessage(error, t('demande.errorVerifyIdentity'))
       needsVerification.value = true
       return
     }
-    formError.value = 'Une erreur est survenue. Réessayez.'
+    formError.value = t('demande.errorGeneric')
   } finally {
     isSubmitting.value = false
   }
@@ -97,58 +99,58 @@ async function submit() {
 <template>
   <div class="flex min-h-screen flex-col items-center px-5 pb-16 pt-7">
     <div class="w-full max-w-[520px]">
-      <NuxtLink to="/" class="press mb-2 inline-block py-2 text-sm text-muted">← Retour</NuxtLink>
+      <NuxtLink to="/" class="press mb-2 inline-block py-2 text-sm text-muted">{{ t('demande.back') }}</NuxtLink>
 
       <div class="mb-[22px] text-center">
         <div class="text-[22px] font-extrabold text-dark">Work<span class="text-primary">Togo</span></div>
-        <p class="mt-1 text-[13.5px] text-muted">Décrivez votre besoin, nous trouvons les meilleurs profils.</p>
+        <p class="mt-1 text-[13.5px] text-muted">{{ t('demande.subtitle') }}</p>
       </div>
 
       <form class="rounded-card border border-hairline bg-surface p-7 shadow-card-sm" @submit.prevent="submit">
-        <label for="req-title" class="mb-1.5 block text-[13px] font-semibold text-dark">Titre de la demande</label>
+        <label for="req-title" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('demande.titleLabel') }}</label>
         <input
           id="req-title"
           v-model="title"
           type="text"
-          placeholder="Ex. Fuite urgente cuisine"
-          aria-label="Titre de la demande"
+          :placeholder="t('demande.titlePlaceholder')"
+          :aria-label="t('demande.titleLabel')"
           class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
         >
 
-        <label for="req-skills" class="mb-1.5 block text-[13px] font-semibold text-dark">Compétences recherchées</label>
+        <label for="req-skills" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('demande.skillsLabel') }}</label>
         <input
           id="req-skills"
           v-model="skillsInput"
           type="text"
-          placeholder="Ex. Plomberie, Urgence"
-          aria-label="Compétences recherchées, séparées par des virgules"
+          :placeholder="t('demande.skillsPlaceholder')"
+          :aria-label="t('demande.skillsAria')"
           class="mb-1.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
         >
-        <p class="mb-3.5 text-[12px] text-muted">Séparez plusieurs compétences par des virgules.</p>
+        <p class="mb-3.5 text-[12px] text-muted">{{ t('demande.skillsHint') }}</p>
 
-        <label for="req-description" class="mb-1.5 block text-[13px] font-semibold text-dark">Description</label>
+        <label for="req-description" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('demande.descriptionLabel') }}</label>
         <textarea
           id="req-description"
           v-model="description"
           rows="3"
-          placeholder="Contexte, accès, contraintes…"
-          aria-label="Description de la demande"
+          :placeholder="t('demande.descriptionPlaceholder')"
+          :aria-label="t('demande.descriptionAria')"
           class="mb-3.5 w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[14.5px] text-ink outline-none focus:border-primary"
         />
 
-        <label for="req-budget" class="mb-1.5 block text-[13px] font-semibold text-dark">Budget maximum (FCFA)</label>
+        <label for="req-budget" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('demande.budgetLabel') }}</label>
         <input
           id="req-budget"
           v-model.number="budgetMax"
           type="number"
           min="0"
           inputmode="numeric"
-          placeholder="Ex. 6000"
-          aria-label="Budget maximum en FCFA"
+          :placeholder="t('demande.budgetPlaceholder')"
+          :aria-label="t('demande.budgetAria')"
           class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
         >
 
-        <div class="mb-1.5 text-[13px] font-semibold text-dark">Urgence</div>
+        <div class="mb-1.5 text-[13px] font-semibold text-dark">{{ t('demande.urgencyLabel') }}</div>
         <div class="mb-3.5 flex gap-2">
           <button
             v-for="option in URGENCY_OPTIONS"
@@ -162,19 +164,19 @@ async function submit() {
           </button>
         </div>
 
-        <label for="req-location" class="mb-1.5 block text-[13px] font-semibold text-dark">Localisation (ville / quartier)</label>
+        <label for="req-location" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('demande.locationLabel') }}</label>
         <input
           id="req-location"
           v-model="location"
           type="text"
-          placeholder="Ex. Lomé, Agoè"
-          aria-label="Localisation"
+          :placeholder="t('demande.locationPlaceholder')"
+          :aria-label="t('demande.locationAria')"
           class="mb-1.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
         >
 
         <p v-if="formError" class="my-1 text-[12.5px] text-error">
           {{ formError }}
-          <NuxtLink v-if="needsVerification" to="/profil" class="font-semibold underline">Vérifier mon identité</NuxtLink>
+          <NuxtLink v-if="needsVerification" to="/profil" class="font-semibold underline">{{ t('demande.verifyIdentityLink') }}</NuxtLink>
         </p>
 
         <button
@@ -182,7 +184,7 @@ async function submit() {
           class="press mt-3.5 w-full rounded-field bg-primary py-3.5 text-[15px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
           :disabled="isSubmitting"
         >
-          {{ isSubmitting ? 'Recherche des meilleurs profils…' : 'Trouver un prestataire' }}
+          {{ isSubmitting ? t('demande.submitting') : t('demande.submit') }}
         </button>
       </form>
     </div>

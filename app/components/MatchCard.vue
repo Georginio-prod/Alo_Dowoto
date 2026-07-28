@@ -16,13 +16,15 @@ const props = withDefaults(
 
 const emit = defineEmits<{ 'favorite-changed': []; contacted: [] }>()
 
-const SCORE_BARS: { key: keyof MatchedProvider['score']['breakdown']; label: string }[] = [
-  { key: 'skills', label: 'Compétences' },
-  { key: 'location', label: 'Localisation' },
-  { key: 'reviews', label: 'Avis' },
-  { key: 'availability', label: 'Disponibilité' },
-  { key: 'budget', label: 'Budget' },
-]
+const { t } = useI18n({ useScope: 'global' })
+
+const SCORE_BARS = computed<{ key: keyof MatchedProvider['score']['breakdown']; label: string }[]>(() => [
+  { key: 'skills', label: t('matchCard.scoreSkills') },
+  { key: 'location', label: t('matchCard.scoreLocation') },
+  { key: 'reviews', label: t('matchCard.scoreReviews') },
+  { key: 'availability', label: t('matchCard.scoreAvailability') },
+  { key: 'budget', label: t('matchCard.scoreBudget') },
+])
 
 const filledStars = computed(() => Math.round(props.match.rating))
 
@@ -66,7 +68,7 @@ async function contact() {
       return
     }
     if (statusCode === 429) {
-      contactError.value = 'Quota de contacts atteint ce mois-ci.'
+      contactError.value = t('matchCard.errorQuotaReached')
       // Le parent peut avoir un état de quota légèrement périmé (course
       // possible entre deux onglets) : on lui signale quand même l'essai
       // pour qu'il resynchronise l'affichage.
@@ -74,10 +76,10 @@ async function contact() {
       return
     }
     if (statusCode === 403) {
-      contactError.value = apiErrorMessage(error, "Vérifiez votre identité avant de contacter un prestataire.")
+      contactError.value = apiErrorMessage(error, t('matchCard.errorVerifyIdentity'))
       return
     }
-    contactError.value = 'Impossible de contacter ce prestataire pour le moment. Réessayez plus tard.'
+    contactError.value = t('matchCard.errorContactFailed')
   } finally {
     isContacting.value = false
   }
@@ -115,7 +117,7 @@ async function toggleFavorite() {
       <div class="flex items-center gap-2 self-start sm:self-center">
         <span class="rounded-pill bg-dark px-2.5 py-1 text-[12px] font-bold text-white">#{{ rank }}</span>
         <span v-if="rank === 1" class="rounded-pill bg-primary/12 px-2.5 py-1 text-[11px] font-bold text-primary">
-          Meilleur match
+          {{ t('matchCard.bestMatch') }}
         </span>
       </div>
       <div
@@ -143,13 +145,13 @@ async function toggleFavorite() {
             <span v-for="n in 5" :key="n" :class="n <= filledStars ? 'text-star' : 'text-hairline'">★</span>
           </span>
           <span class="ml-1 font-semibold">{{ match.rating.toFixed(1) }}</span>
-          <span class="text-muted"> ({{ match.reviewCount }} avis)</span>
+          <span class="text-muted"> ({{ t('matchCard.reviewsCount', match.reviewCount) }})</span>
         </span>
         <span
           v-if="match.verified"
           class="rounded-pill bg-primary/12 px-2 py-0.5 text-[11px] font-bold text-primary"
         >
-          Certifié, assuré
+          {{ t('matchCard.verifiedBadge') }}
         </span>
       </div>
 
@@ -171,17 +173,17 @@ async function toggleFavorite() {
           class="press rounded-field px-4 py-2 text-[13px] font-semibold"
           :class="contactQuotaReached ? 'cursor-not-allowed bg-bg text-muted/60' : 'bg-dark text-white hover:bg-dark-hover'"
           :disabled="contactQuotaReached || isContacting"
-          :title="contactQuotaReached ? 'Quota de contacts atteint ce mois-ci' : undefined"
+          :title="contactQuotaReached ? t('matchCard.contactTitleQuotaReached') : undefined"
           @click="contact"
         >
-          {{ isContacting ? 'Ouverture…' : 'Contacter' }}
+          {{ isContacting ? t('matchCard.contacting') : t('matchCard.contactCta') }}
         </button>
         <button
           type="button"
           class="press rounded-field border border-hairline bg-white px-4 py-2 text-[13px] font-semibold text-muted hover:text-dark"
           @click="showProfile = true"
         >
-          Voir le profil
+          {{ t('matchCard.viewProfileCta') }}
         </button>
         <button
           type="button"
@@ -189,14 +191,14 @@ async function toggleFavorite() {
           :class="favorite ? 'border-primary bg-primary/10 text-primary' : 'border-hairline bg-white text-muted hover:text-dark'"
           :disabled="isTogglingFavorite"
           :aria-pressed="favorite"
-          :title="favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'"
+          :title="favorite ? t('matchCard.removeFavoriteTitle') : t('matchCard.addFavoriteTitle')"
           @click="toggleFavorite"
         >
-          {{ favorite ? '★ Favori' : '☆ Favoris' }}
+          {{ favorite ? t('matchCard.favoriteCta') : t('matchCard.notFavoriteCta') }}
         </button>
 
         <p v-if="contactQuotaReached" class="w-full text-[11.5px] text-error">
-          Quota de contacts atteint ce mois-ci. Réessayez le mois prochain.
+          {{ t('matchCard.errorQuotaReachedFull') }}
         </p>
         <p v-else-if="contactError" class="w-full text-[11.5px] text-error">{{ contactError }}</p>
       </div>

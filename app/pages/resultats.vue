@@ -17,6 +17,7 @@ interface FeaturedResponse {
 
 definePageMeta({ layout: 'blank' })
 
+const { t } = useI18n({ useScope: 'global' })
 const route = useRoute()
 const { user, ensure } = useSession()
 await ensure()
@@ -114,10 +115,10 @@ const activeFilters = computed<FilterChip[]>(() => {
     chips.push({ id: 'city', label: filterCity.value, clear: () => { filterCity.value = '' } })
   }
   if (filterRatingMin.value !== null) {
-    chips.push({ id: 'rating', label: `${filterRatingMin.value}★ et plus`, clear: () => { filterRatingMin.value = null } })
+    chips.push({ id: 'rating', label: t('resultats.ratingAndAbove', { rating: filterRatingMin.value }), clear: () => { filterRatingMin.value = null } })
   }
   if (filterPriceMax.value < PRICE_MAX_DEFAULT) {
-    chips.push({ id: 'price', label: `≤ ${filterPriceMax.value} FCFA`, clear: () => { filterPriceMax.value = PRICE_MAX_DEFAULT } })
+    chips.push({ id: 'price', label: t('resultats.maxPrice', { price: filterPriceMax.value }), clear: () => { filterPriceMax.value = PRICE_MAX_DEFAULT } })
   }
   return chips
 })
@@ -185,7 +186,7 @@ function restartDemo() {
             Work<span class="text-primary">Togo</span>
           </NuxtLink>
           <p class="text-[14.5px] text-muted">
-            Résultats pour <strong class="text-dark">{{ searchTerm || 'tous les prestataires' }}</strong>
+            {{ t('resultats.resultsForPrefix') }} <strong class="text-dark">{{ searchTerm || t('resultats.allProviders') }}</strong>
           </p>
         </div>
 
@@ -194,26 +195,26 @@ function restartDemo() {
             :to="{ path: '/demande', query: searchTerm ? { q: searchTerm } : {} }"
             class="press rounded-field bg-dark px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-dark-hover"
           >
-            Publier une demande précise
+            {{ t('resultats.postRequestCta') }}
           </NuxtLink>
           <NuxtLink
             to="/dashboard/client"
             class="press rounded-field border border-hairline bg-white px-3.5 py-2 text-[13px] font-semibold text-muted hover:text-dark"
           >
-            Mon espace
+            {{ t('resultats.mySpaceCta') }}
           </NuxtLink>
           <NuxtLink
             to="/messages"
             class="press rounded-field border border-hairline bg-white px-3.5 py-2 text-[13px] font-semibold text-muted hover:text-dark"
           >
-            Mes messages
+            {{ t('resultats.myMessagesCta') }}
           </NuxtLink>
           <button
             type="button"
             class="press rounded-field border border-hairline bg-white px-3.5 py-2 text-[13px] font-semibold text-muted hover:text-dark"
             @click="restartDemo"
           >
-            ↺ Recommencer la démo
+            {{ t('resultats.restartDemo') }}
           </button>
         </div>
       </div>
@@ -221,7 +222,7 @@ function restartDemo() {
 
     <div v-if="showHomeSections" class="mx-auto max-w-[1200px] px-5 pt-6">
       <section v-if="featuredProviders.length" class="mb-8">
-        <h2 class="mb-3 text-[15px] font-bold text-dark">Meilleurs prestataires</h2>
+        <h2 class="mb-3 text-[15px] font-bold text-dark">{{ t('resultats.bestProviders') }}</h2>
         <div class="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
           <ProviderCard
             v-for="(provider, i) in featuredProviders"
@@ -236,8 +237,8 @@ function restartDemo() {
       </section>
 
       <section v-if="nearbyProviders.length" class="mb-8">
-        <h2 class="mb-3 text-[15px] font-bold text-dark">Prestataires près de vous</h2>
-        <p class="mb-3 text-[12.5px] text-muted">Basé sur votre localisation : {{ nearbyCity }}</p>
+        <h2 class="mb-3 text-[15px] font-bold text-dark">{{ t('resultats.nearbyProviders') }}</h2>
+        <p class="mb-3 text-[12.5px] text-muted">{{ t('resultats.nearbyBasedOn', { city: nearbyCity }) }}</p>
         <div class="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
           <ProviderCard
             v-for="(provider, i) in nearbyProviders"

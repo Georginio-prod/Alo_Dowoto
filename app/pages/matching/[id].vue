@@ -12,6 +12,7 @@ interface ContactsQuotaResponse {
 
 definePageMeta({ layout: 'blank' })
 
+const { t } = useI18n({ useScope: 'global' })
 const route = useRoute()
 const requestId = computed(() => String(route.params.id))
 
@@ -56,7 +57,7 @@ function newRequest() {
             Work<span class="text-primary">Togo</span>
           </NuxtLink>
           <p v-if="data?.request" class="text-[14.5px] text-muted">
-            Meilleurs profils pour <strong class="text-dark">{{ data.request.title }}</strong>
+            {{ t('matching.resultsForPrefix') }} <strong class="text-dark">{{ data.request.title }}</strong>
           </p>
         </div>
 
@@ -65,26 +66,26 @@ function newRequest() {
           class="press rounded-field border border-hairline bg-white px-3.5 py-2 text-[13px] font-semibold text-muted hover:text-dark"
           @click="restartDemo"
         >
-          ↺ Recommencer la démo
+          {{ t('matching.restartDemo') }}
         </button>
       </div>
     </header>
 
     <div class="mx-auto max-w-[900px] px-5 py-6">
-      <p v-if="pending" class="text-[13px] text-muted">Chargement…</p>
+      <p v-if="pending" class="text-[13px] text-muted">{{ t('matching.loading') }}</p>
 
       <ResultsEmptyState
         v-else-if="error"
-        title="Demande introuvable"
-        description="Cette demande n'existe pas ou a expiré."
-        action-label="Publier une nouvelle demande"
+        :title="t('matching.notFoundTitle')"
+        :description="t('matching.notFoundDescription')"
+        :action-label="t('matching.newRequestAction')"
         @action="newRequest"
       />
 
       <ResultsEmptyState
         v-else-if="matches.length === 0"
-        description="Essayez d'élargir votre recherche (compétences, localisation ou budget) et republiez votre demande."
-        action-label="Publier une nouvelle demande"
+        :description="t('matching.noMatchesDescription')"
+        :action-label="t('matching.newRequestAction')"
         @action="newRequest"
       />
 

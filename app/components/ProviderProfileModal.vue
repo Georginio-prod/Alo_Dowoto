@@ -13,6 +13,8 @@ import type { ProviderDetail } from '~~/server/utils/providerDirectory'
 const props = defineProps<{ providerId: string }>()
 const emit = defineEmits<{ close: [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const provider = ref<ProviderDetail | null>(null)
 const isLoading = ref(true)
 const loadError = ref('')
@@ -29,7 +31,7 @@ async function load() {
     const { provider: detail } = await $fetch<{ provider: ProviderDetail }>(`/api/providers/${props.providerId}`)
     provider.value = detail
   } catch {
-    loadError.value = 'Impossible de charger ce profil pour le moment.'
+    loadError.value = t('providerProfileModal.loadError')
   } finally {
     isLoading.value = false
   }
@@ -53,14 +55,14 @@ async function contactProvider() {
       return
     }
     if (statusCode === 429) {
-      contactError.value = 'Quota de contacts atteint ce mois-ci. Réessayez le mois prochain.'
+      contactError.value = t('providerProfileModal.errorQuotaReachedFull')
       return
     }
     if (statusCode === 403) {
-      contactError.value = apiErrorMessage(error, 'Vérifiez votre identité avant de contacter un prestataire.')
+      contactError.value = apiErrorMessage(error, t('providerProfileModal.errorVerifyIdentity'))
       return
     }
-    contactError.value = 'Impossible de contacter ce prestataire pour le moment. Réessayez plus tard.'
+    contactError.value = t('providerProfileModal.errorContactFailed')
   } finally {
     isContacting.value = false
   }
@@ -94,16 +96,16 @@ onUnmounted(() => {
         class="max-h-[85vh] w-full max-w-[520px] animate-[wt-fade_0.18s_ease-out] overflow-y-auto rounded-2xl bg-white p-7"
         role="dialog"
         aria-modal="true"
-        :aria-label="provider ? `Profil de ${provider.displayName}` : 'Profil prestataire'"
+        :aria-label="provider ? t('providerProfileModal.profileOf', { name: provider.displayName }) : t('providerProfileModal.defaultLabel')"
       >
-        <button type="button" class="press float-right text-lg text-muted" aria-label="Fermer" @click="emit('close')">
+        <button type="button" class="press float-right text-lg text-muted" :aria-label="t('providerProfileModal.close')" @click="emit('close')">
           ✕
         </button>
 
-        <p v-if="isLoading" class="py-8 text-center text-[13.5px] text-muted">Chargement du profil…</p>
+        <p v-if="isLoading" class="py-8 text-center text-[13.5px] text-muted">{{ t('providerProfileModal.loading') }}</p>
 
         <p v-else-if="loadError || !provider" class="py-8 text-center text-[13.5px] text-error">
-          {{ loadError || 'Prestataire introuvable.' }}
+          {{ loadError || t('providerProfileModal.notFound') }}
         </p>
 
         <template v-else>
@@ -120,13 +122,13 @@ onUnmounted(() => {
                   v-if="provider.badges.identity"
                   class="rounded-pill bg-primary/12 px-2 py-0.5 text-[11px] font-bold text-primary"
                 >
-                  ✓ Identité vérifiée
+                  {{ t('providerProfileModal.identityVerifiedBadge') }}
                 </span>
                 <span
                   v-if="provider.badges.skills"
                   class="rounded-pill bg-bg px-2 py-0.5 text-[11px] font-bold text-dark"
                 >
-                  ✓ Compétences vérifiées
+                  {{ t('providerProfileModal.skillsVerifiedBadge') }}
                 </span>
               </div>
               <p class="text-[13px] text-muted">{{ provider.subSector }} · {{ provider.city }}</p>
@@ -139,39 +141,39 @@ onUnmounted(() => {
                 <span v-for="n in 5" :key="n" :class="n <= filledStars ? 'text-star' : 'text-hairline'">★</span>
               </span>
               <span class="ml-1 font-semibold">{{ provider.rating.toFixed(1) }}</span>
-              <span class="text-muted"> ({{ provider.reviewCount }} avis)</span>
+              <span class="text-muted"> ({{ t('providerProfileModal.reviewsCount', provider.reviewCount) }})</span>
             </span>
             <span class="rounded-pill bg-bg px-2.5 py-1 text-[11.5px] font-semibold text-dark">
-              {{ provider.experienceYears }} an{{ provider.experienceYears > 1 ? 's' : '' }} d'expérience
+              {{ t('providerProfileModal.experienceYears', provider.experienceYears) }}
             </span>
           </div>
 
           <p class="mb-4 text-[13.5px] leading-relaxed text-dark">{{ provider.bio }}</p>
 
           <p class="mb-4 text-[18px] font-bold text-dark">
-            À partir de {{ provider.priceFrom.toLocaleString('fr-FR') }} FCFA
+            {{ t('providerProfileModal.priceFromPrefix', { price: provider.priceFrom.toLocaleString('fr-FR') }) }}
           </p>
 
           <div class="mb-4 grid grid-cols-2 gap-3 rounded-field bg-bg p-3.5 text-[13px]">
             <div>
-              <div class="mb-0.5 font-semibold text-dark">Localisation</div>
+              <div class="mb-0.5 font-semibold text-dark">{{ t('providerProfileModal.locationLabel') }}</div>
               <div class="text-muted">{{ provider.city }}</div>
             </div>
             <div>
-              <div class="mb-0.5 font-semibold text-dark">Disponibilité</div>
+              <div class="mb-0.5 font-semibold text-dark">{{ t('providerProfileModal.availabilityLabel') }}</div>
               <div class="text-muted">{{ provider.availability }}</div>
             </div>
             <div>
-              <div class="mb-0.5 font-semibold text-dark">Téléphone</div>
+              <div class="mb-0.5 font-semibold text-dark">{{ t('providerProfileModal.phoneLabel') }}</div>
               <div class="text-muted">{{ provider.phone }}</div>
             </div>
             <div>
-              <div class="mb-0.5 font-semibold text-dark">Email</div>
+              <div class="mb-0.5 font-semibold text-dark">{{ t('providerProfileModal.emailLabel') }}</div>
               <div class="truncate text-muted">{{ provider.email }}</div>
             </div>
           </div>
           <p v-if="!provider.contactRevealed" class="mb-4 text-[11.5px] text-muted">
-            Coordonnées partiellement masquées — contactez ce prestataire pour les voir en clair.
+            {{ t('providerProfileModal.contactsMaskedNotice') }}
           </p>
 
           <a
@@ -181,9 +183,9 @@ onUnmounted(() => {
             rel="noopener"
             class="press mb-1.5 block w-full rounded-field border border-hairline bg-white py-2.5 text-center text-[13.5px] font-semibold text-dark hover:border-primary"
           >
-            Consulter le CV
+            {{ t('providerProfileModal.viewCvCta') }}
           </a>
-          <p v-else class="mb-4 text-[12.5px] text-muted">CV non communiqué par ce prestataire.</p>
+          <p v-else class="mb-4 text-[12.5px] text-muted">{{ t('providerProfileModal.noCv') }}</p>
 
           <p v-if="contactError" class="mb-2 text-[12.5px] text-error">{{ contactError }}</p>
 
@@ -193,7 +195,7 @@ onUnmounted(() => {
             :disabled="isContacting"
             @click="contactProvider"
           >
-            {{ isContacting ? 'Ouverture…' : 'Contacter le prestataire' }}
+            {{ isContacting ? t('providerProfileModal.contacting') : t('providerProfileModal.contactCta') }}
           </button>
         </template>
       </div>

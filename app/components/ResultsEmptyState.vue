@@ -1,20 +1,19 @@
 <script setup lang="ts">
-withDefaults(
-  defineProps<{
-    title?: string
-    description?: string
-    actionLabel?: string
-  }>(),
-  {
-    title: 'Aucun prestataire trouvé',
-    description: "Essayez d'élargir votre recherche ou de réinitialiser les filtres.",
-    actionLabel: 'Réinitialiser les filtres',
-  },
-)
+const props = defineProps<{
+  title?: string
+  description?: string
+  actionLabel?: string
+}>()
 
 defineEmits<{
   action: []
 }>()
+
+const { t } = useI18n({ useScope: 'global' })
+
+const resolvedTitle = computed(() => props.title ?? t('resultsEmptyState.defaultTitle'))
+const resolvedDescription = computed(() => props.description ?? t('resultsEmptyState.defaultDescription'))
+const resolvedActionLabel = computed(() => props.actionLabel ?? t('resultsEmptyState.defaultActionLabel'))
 </script>
 
 <template>
@@ -25,14 +24,14 @@ defineEmits<{
         <line x1="12.3" y1="12.3" x2="17" y2="17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
       </svg>
     </div>
-    <p class="mb-1 text-[15px] font-bold text-dark">{{ title }}</p>
-    <p class="mb-5 text-[13.5px] text-muted">{{ description }}</p>
+    <p class="mb-1 text-[15px] font-bold text-dark">{{ resolvedTitle }}</p>
+    <p class="mb-5 text-[13.5px] text-muted">{{ resolvedDescription }}</p>
     <button
       type="button"
       class="press rounded-field bg-primary px-5 py-2.5 text-[13.5px] font-semibold text-white hover:bg-primary-hover"
       @click="$emit('action')"
     >
-      {{ actionLabel }}
+      {{ resolvedActionLabel }}
     </button>
   </div>
 </template>
