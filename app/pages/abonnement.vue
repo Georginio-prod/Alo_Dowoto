@@ -2,11 +2,13 @@
 import { PLANS, findPlan, type PlanSlug } from '~/data/plans'
 import type { Subscription } from '~~/server/utils/subscriptionStore'
 
+const { t } = useI18n({ useScope: 'global' })
+
 const { trialDays = 14 } = defineProps<{ trialDays?: number }>()
 
 const { user } = useSession()
 
-const selectedSlug = ref((PLANS.find((plan) => plan.tag) ?? PLANS[0]).slug)
+const selectedSlug = ref((PLANS.find((plan) => plan.hasTag) ?? PLANS[0]).slug)
 const selectedPlan = computed(() => findPlan(selectedSlug.value) ?? PLANS[0])
 const isSubmitting = ref(false)
 
@@ -78,17 +80,17 @@ function completeProfileLater() {
 
 <template>
   <div class="mx-auto max-w-5xl px-5 pb-32 pt-7">
-    <NuxtLink to="/" class="press mb-2 inline-block py-2 text-sm text-muted">← Retour</NuxtLink>
+    <NuxtLink to="/" class="press mb-2 inline-block py-2 text-sm text-muted">{{ t('abonnement.back') }}</NuxtLink>
 
     <FlowSteps
-      :steps="['Contact', 'Vérification', 'Secteur', 'Abonnement', 'Paiement']"
+      :steps="[t('flowSteps.contact'), t('flowSteps.verification'), t('flowSteps.sector'), t('flowSteps.subscription'), t('flowSteps.payment')]"
       :current-index="3"
     />
 
     <div class="mb-8 text-center">
-      <h1 class="mb-2 text-xl font-bold text-dark">Choisissez votre formule prestataire</h1>
+      <h1 class="mb-2 text-xl font-bold text-dark">{{ t('abonnement.heading') }}</h1>
       <p class="text-sm text-muted">
-        Essai gratuit de {{ trialDays }} jours, sans engagement au-delà de la première période.
+        {{ t('abonnement.subtitle', { days: trialDays }) }}
       </p>
     </div>
 
@@ -103,21 +105,21 @@ function completeProfileLater() {
     </div>
 
     <div class="mb-8 mt-12">
-      <h2 class="mb-4 text-lg font-bold text-dark">Fonctionnalités clés</h2>
+      <h2 class="mb-4 text-lg font-bold text-dark">{{ t('abonnement.featuresHeading') }}</h2>
       <PlanComparisonTable :selected-slug="selectedSlug" />
     </div>
 
     <div class="fixed inset-x-0 bottom-0 border-t border-hairline bg-surface px-5 py-4">
       <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4">
         <div>
-          <div class="text-[13px] text-muted">Formule sélectionnée</div>
+          <div class="text-[13px] text-muted">{{ t('abonnement.selectedPlanLabel') }}</div>
           <div class="text-base font-bold text-dark">
-            {{ selectedPlan.name }} — {{ selectedPlan.priceLabel }}{{ selectedPlan.period }}
+            {{ t(`plans.${selectedPlan.slug}.name`) }} — {{ selectedPlan.priceLabel }}{{ t(`plans.${selectedPlan.slug}.period`) }}
           </div>
         </div>
         <div class="flex items-center gap-5">
           <button type="button" class="press text-[13.5px] text-muted underline" @click="completeProfileLater">
-            Compléter mon profil plus tard
+            {{ t('abonnement.laterCta') }}
           </button>
           <button
             v-if="isTrialEligible"
@@ -126,7 +128,7 @@ function completeProfileLater() {
             :disabled="isSubmitting"
             @click="startFreeTrial"
           >
-            {{ isSubmitting ? 'Activation…' : `Commencer avec ${trialDays} jours gratuits` }}
+            {{ isSubmitting ? t('abonnement.trialActivating') : t('abonnement.trialCta', { days: trialDays }) }}
           </button>
           <button
             type="button"
@@ -135,7 +137,7 @@ function completeProfileLater() {
             :disabled="isSubmitting"
             @click="continueToPayment"
           >
-            Continuer vers le paiement
+            {{ t('abonnement.continueToPayment') }}
           </button>
         </div>
       </div>

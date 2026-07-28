@@ -13,11 +13,13 @@ definePageMeta({ layout: 'blank' })
 
 const route = useRoute()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const slug = computed(() => String(route.params.slug ?? ''))
 const sector = computed(() => SECTORS.find((s) => s.slug === slug.value) ?? null)
 
 useHead({
-  title: computed(() => `${sector.value ? sector.value.name : 'Catégorie introuvable'} — WorkTogo`),
+  title: computed(() => `${sector.value ? sector.value.name : t('categories.notFoundPageTitle')} — WorkTogo`),
 })
 
 // Slug inconnu : on ne sollicite pas l'API de recherche (elle rejetterait de
@@ -46,7 +48,7 @@ const results = computed(() => data.value?.results ?? [])
             Work<span class="text-primary">Togo</span>
           </NuxtLink>
           <NuxtLink to="/categories" class="text-[13.5px] font-semibold text-muted hover:text-dark">
-            ← Toutes les catégories
+            {{ t('categories.backToAll') }}
           </NuxtLink>
         </div>
 
@@ -55,7 +57,7 @@ const results = computed(() => data.value?.results ?? [])
           :to="{ path: '/demande', query: { q: sector.name } }"
           class="press rounded-field bg-dark px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-dark-hover"
         >
-          Publier une demande
+          {{ t('categories.postRequest') }}
         </NuxtLink>
       </div>
     </header>
@@ -80,9 +82,9 @@ const results = computed(() => data.value?.results ?? [])
         <ResultsSkeleton v-if="pending" />
         <ResultsEmptyState
           v-else-if="results.length === 0"
-          title="Aucun prestataire pour l’instant"
-          description="Ce secteur ne compte pas encore de prestataire inscrit. Publiez une demande pour être notifié dès qu'un profil correspond."
-          action-label="Publier une demande"
+          :title="t('categories.emptyTitle')"
+          :description="t('categories.emptyDescription')"
+          :action-label="t('categories.emptyAction')"
           @action="navigateTo({ path: '/demande', query: { q: sector.name } })"
         />
         <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
@@ -92,9 +94,9 @@ const results = computed(() => data.value?.results ?? [])
 
       <ResultsEmptyState
         v-else
-        title="Catégorie introuvable"
-        description="Ce secteur n'existe pas. Retrouvez la liste complète des catégories WorkTogo ci-dessous."
-        action-label="Voir toutes les catégories"
+        :title="t('categories.notFoundTitle')"
+        :description="t('categories.notFoundDescription')"
+        :action-label="t('categories.notFoundAction')"
         @action="navigateTo('/categories')"
       />
     </div>

@@ -1,4 +1,4 @@
-import { FAQ_CATEGORIES } from '~~/app/data/faq'
+import { getFaqCategoriesFr } from '~~/app/data/faq'
 import { getProviderDetail, searchProviders, searchProvidersNearby } from '~~/server/utils/providerDirectory'
 import type { AiToolDefinition } from '~~/server/utils/ai/types'
 
@@ -59,7 +59,7 @@ function normalize(value: string): string {
 /** Score simple par mots communs (>2 caractères) entre la question posée et chaque entrée FAQ — pas de dépendance externe pour un contenu aussi restreint. */
 function matchFaq(question: string, limit = 3) {
   const words = normalize(question).split(/\s+/).filter((word) => word.length > 2)
-  const allItems = FAQ_CATEGORIES.flatMap((category) => category.items)
+  const allItems = getFaqCategoriesFr().flatMap((category) => category.items)
 
   return allItems
     .map((item) => {

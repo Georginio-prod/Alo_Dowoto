@@ -7,22 +7,24 @@
  * avis mutuels de fin de prestation, paiement bloquant en séquestre, gratuité
  * côté client) — aucune promesse qui ne soit pas tenue par le produit.
  */
+const { t } = useI18n({ useScope: 'global' })
+
 interface TrustPoint {
   icon: string
   title: string
   text: string
 }
 
-const points: TrustPoint[] = [
-  { icon: '🛡️', title: 'Prestataires vérifiés', text: 'Identité et documents contrôlés avant la mise en relation.' },
-  { icon: '⭐', title: 'Avis authentiques', text: 'Notes laissées après chaque prestation réellement effectuée.' },
-  { icon: '🔒', title: 'Paiement sécurisé', text: 'Fonds bloqués en séquestre, libérés une fois le travail validé.' },
-  { icon: '🆓', title: 'Gratuit côté client', text: 'Rechercher, comparer et contacter des prestataires ne coûte rien.' },
-]
+const points = computed<TrustPoint[]>(() => [
+  { icon: '🛡️', title: t('reassurance.point1Title'), text: t('reassurance.point1Text') },
+  { icon: '⭐', title: t('reassurance.point2Title'), text: t('reassurance.point2Text') },
+  { icon: '🔒', title: t('reassurance.point3Title'), text: t('reassurance.point3Text') },
+  { icon: '🆓', title: t('reassurance.point4Title'), text: t('reassurance.point4Text') },
+])
 </script>
 
 <template>
-  <section class="mx-auto max-w-6xl px-6 py-10" aria-label="Nos garanties de confiance">
+  <section class="mx-auto max-w-6xl px-6 py-10" :aria-label="t('reassurance.ariaLabel')">
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <div
         v-for="(point, i) in points"

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Plan } from '~/data/plans'
 
+const { t } = useI18n({ useScope: 'global' })
+
 defineProps<{
   plan: Plan
   selected: boolean
@@ -17,28 +19,28 @@ defineEmits<{
     :class="selected ? 'border-primary' : 'border-hairline'"
   >
     <div
-      v-if="plan.tag"
+      v-if="plan.hasTag"
       class="absolute -top-3 left-6 rounded-pill bg-dark px-3 py-1 text-[11.5px] font-bold text-white"
     >
-      {{ plan.tag }}
+      {{ t(`plans.${plan.slug}.tag`) }}
     </div>
 
-    <div class="mb-1 text-base font-bold text-dark">{{ plan.name }}</div>
+    <div class="mb-1 text-base font-bold text-dark">{{ t(`plans.${plan.slug}.name`) }}</div>
     <div class="mb-1">
       <span class="text-2xl font-extrabold text-dark">{{ plan.priceLabel }}</span>
-      <span class="text-sm text-muted">{{ plan.period }}</span>
+      <span class="text-sm text-muted">{{ t(`plans.${plan.slug}.period`) }}</span>
     </div>
-    <div class="mb-4 text-[13px] text-muted">{{ plan.note }}</div>
+    <div class="mb-4 text-[13px] text-muted">{{ t(`plans.${plan.slug}.note`) }}</div>
 
     <ul class="mb-5 flex flex-1 flex-col gap-2.5">
       <li
         v-for="feature in plan.features"
-        :key="feature.label"
+        :key="feature.labelKey"
         class="flex items-start gap-2 text-[13.5px]"
         :class="feature.included ? 'text-ink' : 'text-muted'"
       >
         <span :class="feature.included ? 'text-primary' : 'text-muted'">{{ feature.included ? '✓' : '✕' }}</span>
-        <span>{{ feature.label }}</span>
+        <span>{{ t(`plans.features.${feature.labelKey}`) }}</span>
       </li>
     </ul>
 
@@ -48,7 +50,7 @@ defineEmits<{
       :class="selected ? 'bg-primary text-white' : 'bg-bg text-dark'"
       @click="$emit('select')"
     >
-      {{ selected ? 'Sélectionné' : 'Choisir cette formule' }}
+      {{ selected ? t('plans.selected') : t('plans.choose') }}
     </button>
   </div>
 </template>

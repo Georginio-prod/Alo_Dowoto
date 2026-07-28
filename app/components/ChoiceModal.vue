@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const { t } = useI18n({ useScope: 'global' })
+
 const props = withDefaults(
   defineProps<{
     searchTerm?: string | null
@@ -15,7 +17,7 @@ const emit = defineEmits<{
 }>()
 
 const heading = computed(() =>
-  props.searchTerm ? `Recherche : "${props.searchTerm}"` : 'Que souhaitez-vous faire ?',
+  props.searchTerm ? t('choiceModal.searchHeading', { term: props.searchTerm }) : t('choiceModal.defaultHeading'),
 )
 
 function query() {
@@ -67,7 +69,7 @@ onUnmounted(() => {
       >
         <div class="mb-[26px] text-center">
           <h2 class="mb-2 text-xl font-bold text-dark">{{ heading }}</h2>
-          <p class="text-sm text-muted">Choisissez comment vous voulez utiliser WorkTogo</p>
+          <p class="text-sm text-muted">{{ t('choiceModal.subtitle') }}</p>
         </div>
 
         <div class="flex flex-wrap gap-4">
@@ -77,11 +79,11 @@ onUnmounted(() => {
             @click="chooseClient"
           >
             <div class="mb-3.5 inline-block rounded-pill bg-primary/12 px-2.5 py-1 text-[13px] font-bold text-primary">
-              Inscription gratuite
+              {{ t('choiceModal.clientBadge') }}
             </div>
-            <div class="mb-2 text-[17px] font-bold text-dark">Je cherche un service</div>
+            <div class="mb-2 text-[17px] font-bold text-dark">{{ t('choiceModal.clientTitle') }}</div>
             <div class="text-[13.5px] leading-relaxed text-muted">
-              Trouvez un prestataire vérifié, comparez les tarifs et contactez-le gratuitement.
+              {{ t('choiceModal.clientDescription') }}
             </div>
           </button>
 
@@ -92,15 +94,15 @@ onUnmounted(() => {
           >
             <div class="mb-3.5 flex flex-wrap items-center justify-between gap-2">
               <span class="rounded-pill bg-white/15 px-2.5 py-1 text-[13px] font-bold text-white">
-                Essai gratuit {{ trialDays }} jours
+                {{ t('choiceModal.providerTrialBadge', { days: trialDays }) }}
               </span>
               <span class="whitespace-nowrap rounded-pill bg-white px-2.5 py-1 text-[11px] font-bold text-dark">
-                Abonnement requis
+                {{ t('choiceModal.providerRequiredBadge') }}
               </span>
             </div>
-            <div class="mb-2 text-[17px] font-bold text-white">Je propose un service</div>
+            <div class="mb-2 text-[17px] font-bold text-white">{{ t('choiceModal.providerTitle') }}</div>
             <div class="text-[13.5px] leading-relaxed text-white/75">
-              Recevez des demandes de clients près de chez vous et développez votre activité.
+              {{ t('choiceModal.providerDescription') }}
             </div>
           </button>
         </div>
@@ -110,7 +112,7 @@ onUnmounted(() => {
           class="press mx-auto mt-5 block bg-transparent text-[13.5px] text-muted"
           @click="emit('cancel')"
         >
-          Annuler
+          {{ t('choiceModal.cancel') }}
         </button>
       </div>
     </div>

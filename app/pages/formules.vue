@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { PLANS, findPlan, type PlanSlug } from '~/data/plans'
 
+const { t } = useI18n({ useScope: 'global' })
+
+useHead(() => ({ title: t('formules.pageTitle') }))
+
 // Page publique de comparaison des formules (#183) : contrairement à
 // /abonnement (étape finale du tunnel d'inscription prestataire, qui
 // déclenche un POST /api/subscriptions), cette page n'exécute aucune action
@@ -8,7 +12,7 @@ import { PLANS, findPlan, type PlanSlug } from '~/data/plans'
 // le tableau comparatif. La navigation vers le tunnel d'inscription
 // (/auth?role=prestataire, le vrai point d'entrée — voir auth.vue) ne se
 // produit que sur clic explicite du CTA final.
-const selectedSlug = ref((PLANS.find((plan) => plan.tag) ?? PLANS[0]).slug)
+const selectedSlug = ref((PLANS.find((plan) => plan.hasTag) ?? PLANS[0]).slug)
 const selectedPlan = computed(() => findPlan(selectedSlug.value) ?? PLANS[0])
 
 function selectPlan(slug: PlanSlug) {
@@ -22,13 +26,12 @@ function startSignup() {
 
 <template>
   <div class="mx-auto max-w-5xl px-5 pb-16 pt-7">
-    <NuxtLink to="/" class="press mb-2 inline-block py-2 text-sm text-muted">← Retour</NuxtLink>
+    <NuxtLink to="/" class="press mb-2 inline-block py-2 text-sm text-muted">{{ t('formules.back') }}</NuxtLink>
 
     <div class="mb-8 text-center">
-      <h1 class="mb-2 text-xl font-bold text-dark">Comparez les formules prestataire</h1>
+      <h1 class="mb-2 text-xl font-bold text-dark">{{ t('formules.heading') }}</h1>
       <p class="mx-auto max-w-xl text-sm text-muted">
-        Chercher et contacter un prestataire reste gratuit. Voici en détail ce que propose chaque formule
-        d'abonnement, sans engagement de votre part à ce stade.
+        {{ t('formules.subtitle') }}
       </p>
     </div>
 
@@ -43,23 +46,23 @@ function startSignup() {
     </div>
 
     <div class="mb-8 mt-12">
-      <h2 class="mb-4 text-lg font-bold text-dark">Fonctionnalités clés</h2>
+      <h2 class="mb-4 text-lg font-bold text-dark">{{ t('formules.featuresHeading') }}</h2>
       <PlanComparisonTable :selected-slug="selectedSlug" />
     </div>
 
     <div class="rounded-card border border-hairline bg-surface p-6 text-center">
       <div class="mb-1 text-base font-bold text-dark">
-        Prêt à démarrer avec la formule {{ selectedPlan.name }} ?
+        {{ t('formules.readyHeading', { plan: t(`plans.${selectedPlan.slug}.name`) }) }}
       </div>
       <p class="mb-4 text-[13px] text-muted">
-        L'inscription se fait en quelques étapes ; vous choisirez et paierez votre formule à la toute fin.
+        {{ t('formules.readySubtitle') }}
       </p>
       <button
         type="button"
         class="press rounded-field bg-primary px-6 py-3 text-[14.5px] font-semibold text-white hover:bg-primary-hover"
         @click="startSignup"
       >
-        S'inscrire comme prestataire
+        {{ t('formules.signUpCta') }}
       </button>
     </div>
   </div>

@@ -7,7 +7,10 @@ export default defineConfig({
   plugins: [
     // Réplique les auto-imports de Vue fournis par Nuxt (ref, computed…) pour
     // que les composants testés ici n'aient pas besoin d'imports explicites.
-    autoImport({ imports: ['vue'], dts: false }),
+    // `useI18n` (vue-i18n, réexporté par @nuxtjs/i18n) est ajouté au même
+    // titre — voir tests/setup/i18n.ts pour le plugin qui lui fournit un
+    // contexte global.
+    autoImport({ imports: ['vue', { 'vue-i18n': ['useI18n'] }], dts: false }),
     // Réplique l'auto-import Nitro pour les fichiers server/api/** (#261) :
     // ces handlers n'ont eux-mêmes aucun import (Nitro les injecte au
     // build) — sans ce plugin, les charger tels quels sous Vitest échouerait
@@ -48,6 +51,7 @@ export default defineConfig({
     // Base SQLite jetable pour les stores branchés sur Prisma (#218) — créée
     // par le globalSetup, URL partagée avec les workers via `env`.
     globalSetup: ['tests/setup/prismaTestDb.ts'],
+    setupFiles: ['tests/setup/i18n.ts'],
     env: {
       DATABASE_URL: `file:${fileURLToPath(new URL('./tests/setup/test.db', import.meta.url))}`,
     },

@@ -1,33 +1,23 @@
 <script setup lang="ts">
+const { t } = useI18n({ useScope: 'global' })
+
 interface Step {
   n: number
   title: string
   text: string
 }
 
-const steps: Step[] = [
-  {
-    n: 1,
-    title: 'Décrivez votre besoin',
-    text: 'Recherchez un secteur ou tapez directement ce que vous cherchez.',
-  },
-  {
-    n: 2,
-    title: 'Comparez les prestataires',
-    text: 'Consultez profils, avis et tarifs indicatifs près de chez vous.',
-  },
-  {
-    n: 3,
-    title: 'Contactez et faites-vous aider',
-    text: 'Échangez directement avec le prestataire et validez la prestation.',
-  },
-]
+const steps = computed<Step[]>(() => [
+  { n: 1, title: t('howItWorks.step1Title'), text: t('howItWorks.step1Text') },
+  { n: 2, title: t('howItWorks.step2Title'), text: t('howItWorks.step2Text') },
+  { n: 3, title: t('howItWorks.step3Title'), text: t('howItWorks.step3Text') },
+])
 </script>
 
 <template>
   <section class="mt-10 border-y border-hairline bg-surface">
     <div class="mx-auto max-w-6xl px-6 py-12">
-      <h2 v-reveal class="mb-7 text-center text-xl font-bold text-dark">Comment ça marche</h2>
+      <h2 v-reveal class="mb-7 text-center text-xl font-bold text-dark">{{ t('howItWorks.title') }}</h2>
       <div class="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-7">
         <div
           v-for="(step, i) in steps"

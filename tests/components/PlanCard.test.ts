@@ -23,9 +23,11 @@ describe('PlanCard (#29 sélection de formule d’abonnement)', () => {
 
   it('affiche le badge du plan quand présent (cas limite : plan sans tag)', () => {
     const withTag = mount(PlanCard, { props: { plan: PLANS[1], selected: false } })
-    expect(withTag.text()).toContain(PLANS[1]?.tag ?? '')
+    expect(PLANS[1]?.hasTag).toBe(true)
+    expect(withTag.find('.absolute').exists()).toBe(true)
 
     const withoutTag = mount(PlanCard, { props: { plan: PLANS[0], selected: false } })
-    expect(withoutTag.text()).not.toContain('Le plus populaire')
+    expect(PLANS[0]?.hasTag).toBe(false)
+    expect(withoutTag.find('.absolute').exists()).toBe(false)
   })
 })

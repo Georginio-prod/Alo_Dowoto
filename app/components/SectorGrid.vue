@@ -7,6 +7,8 @@ import { SECTORS, type Sector } from '~/data/sectors'
  * (ouverture de SectorDrawer via `select`) reste disponible, inchangé.
  */
 
+const { t } = useI18n({ useScope: 'global' })
+
 const emit = defineEmits<{
   select: [sector: Sector]
   'select-sub': [sector: Sector, subSectorName: string]
@@ -61,9 +63,9 @@ onUnmounted(clearCloseTimer)
 <template>
   <section id="secteurs" class="mx-auto max-w-6xl scroll-mt-24 px-6 pb-16 pt-8">
     <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-      <h2 v-reveal class="text-lg font-bold text-dark">Parcourir par secteur</h2>
+      <h2 v-reveal class="text-lg font-bold text-dark">{{ t('sectorGrid.heading') }}</h2>
       <NuxtLink to="/categories" class="press link-underline text-[13.5px] font-semibold text-primary">
-        Toutes les catégories →
+        {{ t('sectorGrid.allCategories') }}
       </NuxtLink>
     </div>
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))]">
@@ -102,7 +104,7 @@ onUnmounted(clearCloseTimer)
             <div>
               <div class="flex min-h-[2.4em] items-start text-[14.5px] font-semibold leading-tight text-dark">{{ sector.name }}</div>
               <span class="mt-1 inline-block rounded-pill bg-bg px-2 py-0.5 text-[11px] font-medium text-muted">
-                {{ sector.subSectors.length }} sous-secteurs
+                {{ t('sectorGrid.subSectorCount', { count: sector.subSectors.length }) }}
               </span>
             </div>
             <span class="translate-x-0 text-sm font-bold text-primary opacity-0 transition-all duration-200 ease-out group-hover:translate-x-0.5 group-hover:opacity-100">
@@ -128,7 +130,7 @@ onUnmounted(clearCloseTimer)
           ]"
           role="menu"
           :aria-hidden="hoveredSlug !== sector.slug"
-          :aria-label="`Sous-secteurs de ${sector.name}`"
+          :aria-label="t('sectorGrid.subSectorsOf', { name: sector.name })"
           @mouseenter="onDropdownEnter"
           @mouseleave="scheduleClose"
         >

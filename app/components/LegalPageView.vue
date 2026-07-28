@@ -2,8 +2,9 @@
 import { getLegalPage } from '~/data/legalPages'
 
 const props = defineProps<{ slug: string }>()
+const { t } = useI18n({ useScope: 'global' })
 
-const page = computed(() => getLegalPage(props.slug))
+const page = computed(() => getLegalPage(props.slug, t))
 
 useHead(() => ({ title: page.value ? `${page.value.title} — WorkTogo` : 'WorkTogo' }))
 </script>
@@ -13,7 +14,7 @@ useHead(() => ({ title: page.value ? `${page.value.title} — WorkTogo` : 'WorkT
     <template v-if="page">
       <h1 class="mb-2 text-2xl font-extrabold text-dark">{{ page.title }}</h1>
       <p v-if="page.updatedAt" class="mb-3 text-[12px] font-medium text-muted">
-        Dernière mise à jour : {{ page.updatedAt }}
+        {{ t('legalPageView.lastUpdated', { date: page.updatedAt }) }}
       </p>
       <p class="mb-8 text-[14.5px] leading-relaxed text-muted">{{ page.intro }}</p>
 
@@ -29,6 +30,6 @@ useHead(() => ({ title: page.value ? `${page.value.title} — WorkTogo` : 'WorkT
         </ul>
       </section>
     </template>
-    <p v-else class="text-[13.5px] text-muted">Page introuvable.</p>
+    <p v-else class="text-[13.5px] text-muted">{{ t('legalPageView.notFound') }}</p>
   </div>
 </template>
