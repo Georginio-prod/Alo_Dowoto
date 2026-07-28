@@ -13,10 +13,12 @@ import type { RecurringFrequency, RecurringService } from '~~/server/utils/recur
 const props = defineProps<{ recurringService: RecurringService | null; conversationId: string }>()
 const emit = defineEmits<{ changed: [] }>()
 
-const FREQUENCY_OPTIONS: { value: RecurringFrequency; label: string }[] = [
-  { value: 'hebdomadaire', label: 'Chaque semaine' },
-  { value: 'mensuelle', label: 'Chaque mois' },
-]
+const { t, locale, locales } = useI18n({ useScope: 'global' })
+
+const FREQUENCY_OPTIONS = computed<{ value: RecurringFrequency; label: string }[]>(() => [
+  { value: 'hebdomadaire', label: t('recurringServicePanel.weeklyOption') },
+  { value: 'mensuelle', label: t('recurringServicePanel.monthlyOption') },
+])
 
 const showForm = ref(false)
 const frequency = ref<RecurringFrequency>('hebdomadaire')
@@ -37,7 +39,7 @@ async function startRecurring() {
     showForm.value = false
     emit('changed')
   } catch (fetchError) {
-    error.value = apiErrorMessage(fetchError, "La mise en place du service récurrent a échoué. Réessayez.")
+    error.value = apiErrorMessage(fetchError, t('recurringServicePanel.errorStartFailed'))
   } finally {
     isSubmitting.value = false
   }
@@ -53,14 +55,16 @@ async function cancelRecurring() {
     await $fetch(`/api/conversations/${props.conversationId}/recurring`, { method: 'DELETE' })
     emit('changed')
   } catch (fetchError) {
-    error.value = apiErrorMessage(fetchError, "L'annulation a échoué. Réessayez.")
+    error.value = apiErrorMessage(fetchError, t('recurringServicePanel.errorCancelFailed'))
   } finally {
     isCancelling.value = false
   }
 }
 
 function formatDate(timestamp: number): string {
-  return new Date(timestamp).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const languageTag = (locales.value as Array<{ code: string, language?: string }>)
+    .find((l) => l.code === locale.value)?.language ?? 'fr-FR'
+  return new Date(timestamp).toLocaleDateString(languageTag, { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 </script>
 
@@ -73,11 +77,11 @@ function formatDate(timestamp: number): string {
         class="press text-[12.5px] font-semibold text-primary underline"
         @click="showForm = true"
       >
-        Configurer un service récurrent
+        {{ t('recurringServicePanel.configureCta') }}
       </button>
 
       <template v-else>
-        <p class="mb-2 text-[13px] font-semibold text-dark">Service récurrent</p>
+        <p class="mb-2 text-[13px] font-semibold text-dark">{{ t('recurringServicePanel.heading') }}</p>
         <div class="mb-2 grid grid-cols-2 gap-2">
           <button
             v-for="option in FREQUENCY_OPTIONS"
@@ -98,32 +102,31 @@ function formatDate(timestamp: number): string {
             :disabled="isSubmitting"
             @click="startRecurring"
           >
-            {{ isSubmitting ? 'Activation…' : 'Activer' }}
+            {{ isSubmitting ? t('recurringServicePanel.activating') : t('recurringServicePanel.activateCta') }}
           </button>
-          <button type="button" class="press text-[12.5px] text-muted" @click="showForm = false">Annuler</button>
+          <button type="button" class="press text-[12.5px] text-muted" @click="showForm = false">{{ t('recurringServicePanel.cancel') }}</button>
         </div>
       </template>
     </template>
 
     <template v-else-if="recurringService?.status === 'active'">
       <p class="text-[13px] text-dark">
-        Service récurrent actif ({{ recurringService.frequency === 'hebdomadaire' ? 'chaque semaine' : 'chaque mois' }}).
+        {{ recurringService.frequency === 'hebdomadaire' ? t('recurringServicePanel.activeStatusWeekly') : t('recurringServicePanel.activeStatusMonthly') }}
       </p>
-      <p class="mt-1 text-[12px] text-muted">Prochain prélèvement le {{ formatDate(recurringService.nextChargeAt) }}.</p>
+      <p class="mt-1 text-[12px] text-muted">{{ t('recurringServicePanel.nextChargeText', { date: formatDate(recurringService.nextChargeAt) }) }}</p>
       <button
         type="button"
         class="press mt-2 text-[12.5px] font-semibold text-error underline"
         :disabled="isCancelling"
         @click="cancelRecurring"
       >
-        {{ isCancelling ? 'Annulation…' : 'Annuler le service récurrent' }}
+        {{ isCancelling ? t('recurringServicePanel.cancelling') : t('recurringServicePanel.cancelRecurringCta') }}
       </button>
     </template>
 
     <template v-else-if="recurringService?.status === 'payment_failed'">
       <p class="text-[13px] text-error">
-        Le dernier prélèvement automatique a échoué (solde insuffisant). Rechargez votre portefeuille puis relancez le
-        service récurrent.
+        {{ t('recurringServicePanel.paymentFailedText') }}
       </p>
       <button
         type="button"
@@ -131,7 +134,7 @@ function formatDate(timestamp: number): string {
         :disabled="isCancelling"
         @click="cancelRecurring"
       >
-        {{ isCancelling ? 'Annulation…' : 'Annuler le service récurrent' }}
+        {{ isCancelling ? t('recurringServicePanel.cancelling') : t('recurringServicePanel.cancelRecurringCta') }}
       </button>
     </template>
 

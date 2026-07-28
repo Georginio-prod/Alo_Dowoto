@@ -23,6 +23,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{ changed: [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const isDelivering = ref(false)
 const deliverError = ref('')
 
@@ -34,7 +36,7 @@ async function handleMarkDelivered() {
     await $fetch(`/api/conversations/${props.conversationId}/deliver`, { method: 'POST' })
     emit('changed')
   } catch {
-    deliverError.value = "Cette action n'a pas pu être effectuée. Réessayez."
+    deliverError.value = t('escrowStatusPanel.errorActionFailed')
   } finally {
     isDelivering.value = false
   }
@@ -51,7 +53,7 @@ async function handleConfirmReceipt() {
     await $fetch(`/api/conversations/${props.conversationId}/receive`, { method: 'POST' })
     emit('changed')
   } catch {
-    receiptError.value = "Cette action n'a pas pu être effectuée. Réessayez."
+    receiptError.value = t('escrowStatusPanel.errorActionFailed')
   } finally {
     isConfirmingReceipt.value = false
   }
@@ -80,7 +82,7 @@ async function handleCancelOrder() {
     showCancelForm.value = false
     emit('changed')
   } catch {
-    cancelError.value = "L'annulation n'a pas pu être effectuée. Réessayez."
+    cancelError.value = t('escrowStatusPanel.errorCancelFailed')
   } finally {
     isCancelling.value = false
   }
@@ -108,7 +110,7 @@ async function handleClientCancelOrder() {
     showClientCancelForm.value = false
     emit('changed')
   } catch {
-    clientCancelError.value = "L'annulation n'a pas pu être effectuée. Réessayez."
+    clientCancelError.value = t('escrowStatusPanel.errorCancelFailed')
   } finally {
     isClientCancelling.value = false
   }
@@ -127,11 +129,10 @@ const showDisputeForm = ref(false)
 <template>
   <div class="mb-3 shrink-0 rounded-card border border-hairline bg-surface p-4">
     <p v-if="escrowOrder.status === 'in_escrow' && isViewerProvider" class="text-[13px] text-dark">
-      Paiement reçu en séquestre ({{ escrowOrder.amount.toLocaleString('fr-FR') }} F CFA). Une fois la prestation
-      terminée, marquez-la comme telle pour déclencher la validation du chercheur.
+      {{ t('escrowStatusPanel.providerInEscrowText', { amount: escrowOrder.amount.toLocaleString('fr-FR') }) }}
     </p>
     <p v-if="escrowOrder.status === 'in_escrow' && isViewerProvider" class="mt-1 text-[12px] text-muted">
-      Cette garantie de paiement ne s'applique qu'aux prestations réglées via WorkTogo — voir nos CGU.
+      {{ t('escrowStatusPanel.providerGuaranteeNote') }}
     </p>
 
     <InterventionProofPanel
@@ -149,7 +150,7 @@ const showDisputeForm = ref(false)
       :disabled="isDelivering || escrowOrder.checkOutAt === null"
       @click="handleMarkDelivered"
     >
-      {{ isDelivering ? 'Envoi…' : 'Marquer comme terminé' }}
+      {{ isDelivering ? t('escrowStatusPanel.delivering') : t('escrowStatusPanel.markDeliveredCta') }}
     </button>
 
     <ReschedulePrompt
@@ -160,8 +161,7 @@ const showDisputeForm = ref(false)
 
     <template v-else-if="escrowOrder.status === 'in_escrow' && isViewerClient">
       <p class="text-[13px] text-muted">
-        Paiement en séquestre ({{ escrowOrder.amount.toLocaleString('fr-FR') }} F CFA). Les fonds seront libérés une
-        fois la prestation terminée et votre confirmation de réception.
+        {{ t('escrowStatusPanel.clientInEscrowText', { amount: escrowOrder.amount.toLocaleString('fr-FR') }) }}
       </p>
 
       <div class="mt-3 border-t border-hairline pt-3">
@@ -171,20 +171,18 @@ const showDisputeForm = ref(false)
           class="press text-[12.5px] font-semibold text-error underline"
           @click="showClientCancelForm = true"
         >
-          Annuler la commande
+          {{ t('escrowStatusPanel.cancelOrderCta') }}
         </button>
 
         <div v-else class="space-y-2">
           <p class="text-[12px] text-muted">
-            Annulation gratuite dans les 2h suivant le paiement. Passé ce délai, une indemnisation du prestataire
-            ({{ CLIENT_LATE_CANCELLATION_PENALTY_DISPLAY_PERCENT }}% du montant) est retenue sur votre
-            remboursement.
+            {{ t('escrowStatusPanel.clientCancelPolicyText', { percent: CLIENT_LATE_CANCELLATION_PENALTY_DISPLAY_PERCENT }) }}
           </p>
           <textarea
             v-model="clientCancelReason"
             rows="2"
-            placeholder="Motif de l'annulation (obligatoire)"
-            aria-label="Motif de l'annulation"
+            :placeholder="t('escrowStatusPanel.cancelReasonPlaceholder')"
+            :aria-label="t('escrowStatusPanel.cancelReasonAria')"
             class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
           />
           <div class="flex gap-2">
@@ -194,10 +192,10 @@ const showDisputeForm = ref(false)
               :disabled="!clientCancelReason.trim() || isClientCancelling"
               @click="handleClientCancelOrder"
             >
-              {{ isClientCancelling ? 'Annulation…' : "Confirmer l'annulation" }}
+              {{ isClientCancelling ? t('escrowStatusPanel.cancelling') : t('escrowStatusPanel.confirmCancelCta') }}
             </button>
             <button type="button" class="press text-[12.5px] text-muted" @click="showClientCancelForm = false">
-              Retour
+              {{ t('escrowStatusPanel.back') }}
             </button>
           </div>
           <p v-if="clientCancelError" class="text-[12.5px] text-error">{{ clientCancelError }}</p>
@@ -207,8 +205,7 @@ const showDisputeForm = ref(false)
 
     <template v-else-if="escrowOrder.status === 'delivered' && isViewerClient">
       <p class="text-[13px] text-dark">
-        Le prestataire a marqué la prestation comme terminée. Confirmez la réception pour libérer le paiement, ou
-        contestez la qualité de la prestation (validation automatique sous 72h sans réponse).
+        {{ t('escrowStatusPanel.deliveredClientText') }}
       </p>
       <div class="mt-2 flex flex-wrap gap-2">
         <button
@@ -217,7 +214,7 @@ const showDisputeForm = ref(false)
           :disabled="isConfirmingReceipt"
           @click="handleConfirmReceipt"
         >
-          {{ isConfirmingReceipt ? 'Confirmation…' : 'Confirmer la réception' }}
+          {{ isConfirmingReceipt ? t('escrowStatusPanel.confirming') : t('escrowStatusPanel.confirmReceiptCta') }}
         </button>
         <button
           v-if="!showDisputeForm"
@@ -225,7 +222,7 @@ const showDisputeForm = ref(false)
           class="press rounded-field border border-error px-4 py-2 text-[13px] font-semibold text-error"
           @click="showDisputeForm = true"
         >
-          Contester la prestation
+          {{ t('escrowStatusPanel.disputeCta') }}
         </button>
       </div>
 
@@ -238,16 +235,15 @@ const showDisputeForm = ref(false)
     </template>
 
     <p v-else-if="escrowOrder.status === 'delivered' && isViewerProvider" class="text-[13px] text-muted">
-      En attente de confirmation du chercheur (validation automatique sous 72h sans réponse).
+      {{ t('escrowStatusPanel.deliveredProviderText') }}
     </p>
 
     <p v-else-if="escrowOrder.status === 'released'" class="text-[13px] text-dark">
-      Prestation terminée, paiement libéré{{ isViewerProvider ? ' vers votre solde WorkTogo' : '' }}.
+      {{ isViewerProvider ? t('escrowStatusPanel.releasedTextProvider') : t('escrowStatusPanel.releasedTextClient') }}
     </p>
 
     <p v-else-if="escrowOrder.status === 'refunded'" class="text-[13px] text-dark">
-      Commande annulée{{ escrowOrder.cancelReason ? ` (${escrowOrder.cancelReason})` : '' }}, chercheur remboursé
-      intégralement.
+      {{ t('escrowStatusPanel.refundedText', { reasonSuffix: escrowOrder.cancelReason ? ` (${escrowOrder.cancelReason})` : '' }) }}
     </p>
 
     <DisputeMediationPanel
@@ -269,15 +265,15 @@ const showDisputeForm = ref(false)
         class="press text-[12.5px] font-semibold text-error underline"
         @click="showCancelForm = true"
       >
-        Annuler la commande
+        {{ t('escrowStatusPanel.cancelOrderCta') }}
       </button>
 
       <div v-else class="space-y-2">
         <textarea
           v-model="cancelReason"
           rows="2"
-          placeholder="Motif de l'annulation (obligatoire)"
-          aria-label="Motif de l'annulation"
+          :placeholder="t('escrowStatusPanel.cancelReasonPlaceholder')"
+          :aria-label="t('escrowStatusPanel.cancelReasonAria')"
           class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
         />
         <div class="flex gap-2">
@@ -287,10 +283,10 @@ const showDisputeForm = ref(false)
             :disabled="!cancelReason.trim() || isCancelling"
             @click="handleCancelOrder"
           >
-            {{ isCancelling ? 'Annulation…' : 'Confirmer l\'annulation et rembourser' }}
+            {{ isCancelling ? t('escrowStatusPanel.cancelling') : t('escrowStatusPanel.confirmCancelAndRefundCta') }}
           </button>
           <button type="button" class="press text-[12.5px] text-muted" @click="showCancelForm = false">
-            Retour
+            {{ t('escrowStatusPanel.back') }}
           </button>
         </div>
         <p v-if="cancelError" class="text-[12.5px] text-error">{{ cancelError }}</p>

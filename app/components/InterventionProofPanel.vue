@@ -11,6 +11,8 @@ import type { EscrowOrder } from '~~/server/utils/escrowOrderStore'
 const props = defineProps<{ escrowOrder: EscrowOrder; conversationId: string }>()
 const emit = defineEmits<{ changed: [] }>()
 
+const { t, locale, locales } = useI18n({ useScope: 'global' })
+
 const isCheckingIn = ref(false)
 const isCheckingOut = ref(false)
 const proofError = ref('')
@@ -38,7 +40,7 @@ async function handleCheckIn() {
     await $fetch(`/api/conversations/${props.conversationId}/check-in`, { method: 'POST', body: location ?? {} })
     emit('changed')
   } catch {
-    proofError.value = "Le check-in n'a pas pu être enregistré. Réessayez."
+    proofError.value = t('interventionProofPanel.errorCheckInFailed')
   } finally {
     isCheckingIn.value = false
   }
@@ -53,23 +55,25 @@ async function handleCheckOut() {
     await $fetch(`/api/conversations/${props.conversationId}/check-out`, { method: 'POST', body: location ?? {} })
     emit('changed')
   } catch {
-    proofError.value = "Le check-out n'a pas pu être enregistré. Réessayez."
+    proofError.value = t('interventionProofPanel.errorCheckOutFailed')
   } finally {
     isCheckingOut.value = false
   }
 }
 
 function formatTime(timestamp: number): string {
-  return new Date(timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  const languageTag = (locales.value as Array<{ code: string, language?: string }>)
+    .find((l) => l.code === locale.value)?.language ?? 'fr-FR'
+  return new Date(timestamp).toLocaleTimeString(languageTag, { hour: '2-digit', minute: '2-digit' })
 }
 </script>
 
 <template>
   <div class="mb-2 rounded-field border border-hairline bg-canvas p-3">
-    <p class="mb-2 text-[12px] font-semibold text-dark">Preuve d'intervention</p>
+    <p class="mb-2 text-[12px] font-semibold text-dark">{{ t('interventionProofPanel.heading') }}</p>
 
     <p v-if="escrowOrder.checkInAt === null" class="text-[12px] text-muted">
-      Enregistrez votre arrivée sur le lieu d'intervention avant de commencer.
+      {{ t('interventionProofPanel.beforeCheckinText') }}
     </p>
     <button
       v-if="escrowOrder.checkInAt === null"
@@ -78,11 +82,11 @@ function formatTime(timestamp: number): string {
       :disabled="isCheckingIn"
       @click="handleCheckIn"
     >
-      {{ isCheckingIn ? 'Enregistrement…' : "Check-in (arrivée)" }}
+      {{ isCheckingIn ? t('interventionProofPanel.checkingIn') : t('interventionProofPanel.checkInCta') }}
     </button>
 
     <p v-else class="text-[12px] text-muted">
-      Arrivée enregistrée à {{ formatTime(escrowOrder.checkInAt) }}.
+      {{ t('interventionProofPanel.checkedInText', { time: formatTime(escrowOrder.checkInAt) }) }}
     </p>
 
     <template v-if="escrowOrder.checkInAt !== null && escrowOrder.checkOutAt === null">
@@ -92,12 +96,12 @@ function formatTime(timestamp: number): string {
         :disabled="isCheckingOut"
         @click="handleCheckOut"
       >
-        {{ isCheckingOut ? 'Enregistrement…' : "Check-out (départ)" }}
+        {{ isCheckingOut ? t('interventionProofPanel.checkingOut') : t('interventionProofPanel.checkOutCta') }}
       </button>
     </template>
 
     <p v-else-if="escrowOrder.checkOutAt !== null" class="mt-1 text-[12px] text-muted">
-      Départ enregistré à {{ formatTime(escrowOrder.checkOutAt) }}. Vous pouvez marquer la prestation comme terminée.
+      {{ t('interventionProofPanel.checkedOutText', { time: formatTime(escrowOrder.checkOutAt) }) }}
     </p>
 
     <p v-if="proofError" class="mt-1.5 text-[12px] text-error">{{ proofError }}</p>
