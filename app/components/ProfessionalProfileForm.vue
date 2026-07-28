@@ -11,14 +11,17 @@ import type { PayoutMethod, ProviderProfile } from '~~/server/utils/providerStor
  */
 const emit = defineEmits<{ saved: [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png']
 
-const PAYOUT_OPTIONS: { value: PayoutMethod; label: string; color: string }[] = [
+/** Flooz/T-Money sont des marques (jamais traduites) ; seul le virement bancaire porte un libellé traduisible. */
+const PAYOUT_OPTIONS = computed<{ value: PayoutMethod; label: string; color: string }[]>(() => [
   { value: 'flooz', label: 'Flooz', color: '#ff6600' },
   { value: 'tmoney', label: 'T-Money', color: '#ffc400' },
-  { value: 'virement', label: 'Virement bancaire', color: '#0F2318' },
-]
+  { value: 'virement', label: t('professionalProfileForm.bankTransfer'), color: '#0F2318' },
+])
 
 const { data } = await useFetch<{ profile: ProviderProfile | null }>('/api/providers/me')
 const existing = data.value?.profile ?? null
@@ -57,12 +60,12 @@ async function onPhotoSelected(event: Event) {
 
   error.value = ''
   if (!ACCEPTED_TYPES.includes(file.type)) {
-    error.value = 'Formats acceptés : JPEG ou PNG.'
+    error.value = t('professionalProfileForm.errorFormat')
     input.value = ''
     return
   }
   if (file.size > MAX_FILE_SIZE) {
-    error.value = 'La photo doit faire 5 Mo maximum.'
+    error.value = t('professionalProfileForm.errorSize')
     input.value = ''
     return
   }
@@ -77,7 +80,7 @@ async function submit() {
   success.value = false
 
   if (!sector.value || !city.value.trim() || !payoutMethod.value) {
-    error.value = 'Secteur, localisation et mode de rémunération sont requis.'
+    error.value = t('professionalProfileForm.errorRequired')
     return
   }
 
@@ -103,7 +106,7 @@ async function submit() {
     success.value = true
     emit('saved')
   } catch (fetchError) {
-    error.value = apiErrorMessage(fetchError, "L'enregistrement a échoué. Réessayez.")
+    error.value = apiErrorMessage(fetchError, t('professionalProfileForm.errorSaveFailed'))
   } finally {
     isSubmitting.value = false
   }
@@ -112,22 +115,22 @@ async function submit() {
 
 <template>
   <div>
-    <label for="pp-photo" class="mb-1.5 block text-[13px] font-semibold text-dark">Photo de profil</label>
+    <label for="pp-photo" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('professionalProfileForm.photoLabel') }}</label>
     <label
       for="pp-photo"
       class="press mb-3.5 flex h-[46px] w-full cursor-pointer items-center rounded-field border-[1.5px] border-dashed border-hairline px-3.5 text-[13.5px] text-muted hover:border-primary/40"
     >
-      {{ photoFileName || (photoUrl ? 'Photo déjà enregistrée — choisir un autre fichier' : 'Choisir une photo (JPEG ou PNG, 5 Mo max)') }}
+      {{ photoFileName || (photoUrl ? t('professionalProfileForm.photoSaved') : t('professionalProfileForm.choosePhoto')) }}
     </label>
     <input id="pp-photo" type="file" accept="image/jpeg,image/png" class="sr-only" @change="onPhotoSelected">
 
-    <label for="pp-sector" class="mb-1.5 block text-[13px] font-semibold text-dark">Secteur d'activité</label>
+    <label for="pp-sector" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('professionalProfileForm.sectorLabel') }}</label>
     <select
       id="pp-sector"
       v-model="sector"
       class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline bg-white px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
     >
-      <option value="" disabled>Choisir un secteur</option>
+      <option value="" disabled>{{ t('professionalProfileForm.chooseSector') }}</option>
       <option v-for="s in SECTORS" :key="s.slug" :value="s.slug">{{ s.emoji }} {{ s.name }}</option>
     </select>
 
@@ -142,16 +145,16 @@ async function submit() {
       v-model:position-approximative="positionApproximative"
     />
 
-    <label for="pp-description" class="mb-1.5 block text-[13px] font-semibold text-dark">Description</label>
+    <label for="pp-description" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('professionalProfileForm.descriptionLabel') }}</label>
     <textarea
       id="pp-description"
       v-model="description"
       rows="3"
-      placeholder="Présentez votre activité, votre expérience…"
+      :placeholder="t('professionalProfileForm.descriptionPlaceholder')"
       class="mb-3.5 w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[14.5px] text-ink outline-none focus:border-primary"
     />
 
-    <div class="mb-1.5 text-[13px] font-semibold text-dark">Mode de rémunération WorkTogo</div>
+    <div class="mb-1.5 text-[13px] font-semibold text-dark">{{ t('professionalProfileForm.payoutLabel') }}</div>
     <div class="mb-3.5 grid grid-cols-3 gap-2">
       <button
         v-for="option in PAYOUT_OPTIONS"
@@ -167,7 +170,7 @@ async function submit() {
       </button>
     </div>
 
-    <p v-if="success" class="my-1 text-[12.5px] font-semibold text-primary">Profil professionnel mis à jour.</p>
+    <p v-if="success" class="my-1 text-[12.5px] font-semibold text-primary">{{ t('professionalProfileForm.success') }}</p>
     <p v-if="error" class="my-1 text-[12.5px] text-error">{{ error }}</p>
 
     <button
@@ -176,7 +179,7 @@ async function submit() {
       :disabled="isSubmitting"
       @click="submit"
     >
-      {{ isSubmitting ? 'Enregistrement…' : 'Enregistrer' }}
+      {{ isSubmitting ? t('professionalProfileForm.saving') : t('professionalProfileForm.save') }}
     </button>
   </div>
 </template>

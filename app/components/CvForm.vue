@@ -8,6 +8,8 @@ import type { ProviderProfile } from '~~/server/utils/providerStore'
  */
 const emit = defineEmits<{ saved: [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const MAX_FILE_SIZE = 8 * 1024 * 1024
 const ACCEPTED_TYPES = ['application/pdf']
 
@@ -36,12 +38,12 @@ async function onFileSelected(event: Event) {
 
   error.value = ''
   if (!ACCEPTED_TYPES.includes(file.type)) {
-    error.value = 'Format accepté : PDF uniquement.'
+    error.value = t('cvForm.errorFormat')
     input.value = ''
     return
   }
   if (file.size > MAX_FILE_SIZE) {
-    error.value = 'Le CV doit faire 8 Mo maximum.'
+    error.value = t('cvForm.errorSize')
     input.value = ''
     return
   }
@@ -72,7 +74,7 @@ async function submit() {
     success.value = true
     emit('saved')
   } catch (fetchError) {
-    error.value = apiErrorMessage(fetchError, "L'enregistrement a échoué. Réessayez.")
+    error.value = apiErrorMessage(fetchError, t('cvForm.errorSaveFailed'))
   } finally {
     isSubmitting.value = false
   }
@@ -81,26 +83,26 @@ async function submit() {
 
 <template>
   <div>
-    <label for="cv-file" class="mb-1.5 block text-[13px] font-semibold text-dark">Votre CV</label>
+    <label for="cv-file" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('cvForm.label') }}</label>
     <label
       for="cv-file"
       class="press mb-1.5 flex h-[46px] w-full cursor-pointer items-center rounded-field border-[1.5px] border-dashed border-hairline px-3.5 text-[13.5px] text-muted hover:border-primary/40"
     >
-      {{ cvFileName || 'Choisir un fichier (PDF, 8 Mo max)' }}
+      {{ cvFileName || t('cvForm.choose') }}
     </label>
     <input id="cv-file" type="file" accept="application/pdf" class="sr-only" @change="onFileSelected">
 
     <div v-if="cvUrl" class="mb-3.5 flex items-center justify-between gap-3">
       <a :href="cvUrl" target="_blank" rel="noopener" class="press text-[12.5px] font-semibold text-primary">
-        Voir le fichier actuel →
+        {{ t('cvForm.viewCurrent') }}
       </a>
       <button type="button" class="press text-[12.5px] font-semibold text-error" @click="removeCv">
-        Retirer
+        {{ t('cvForm.remove') }}
       </button>
     </div>
     <div v-else class="mb-3.5" />
 
-    <p v-if="success" class="my-1 text-[12.5px] font-semibold text-primary">CV mis à jour.</p>
+    <p v-if="success" class="my-1 text-[12.5px] font-semibold text-primary">{{ t('cvForm.success') }}</p>
     <p v-if="error" class="my-1 text-[12.5px] text-error">{{ error }}</p>
 
     <button
@@ -109,7 +111,7 @@ async function submit() {
       :disabled="isSubmitting"
       @click="submit"
     >
-      {{ isSubmitting ? 'Enregistrement…' : 'Enregistrer' }}
+      {{ isSubmitting ? t('cvForm.saving') : t('cvForm.save') }}
     </button>
   </div>
 </template>

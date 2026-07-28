@@ -8,6 +8,8 @@
 defineProps<{ title: string }>()
 const emit = defineEmits<{ close: [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') emit('close')
 }
@@ -39,7 +41,7 @@ onUnmounted(() => {
       >
         <div class="mb-5 flex items-center justify-between gap-3">
           <h2 class="text-lg font-bold text-dark">{{ title }}</h2>
-          <button type="button" class="press shrink-0 text-lg text-muted" aria-label="Fermer" @click="emit('close')">
+          <button type="button" class="press shrink-0 text-lg text-muted" :aria-label="t('profileFormModal.close')" @click="emit('close')">
             ✕
           </button>
         </div>

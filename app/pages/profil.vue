@@ -42,6 +42,7 @@ import ProfessionalProfileForm from '~/components/ProfessionalProfileForm.vue'
 // de section /prestataire.
 definePageMeta({ layout: false, middleware: 'auth', alias: '/prestataire/profil' })
 
+const { t } = useI18n({ useScope: 'global' })
 const { user, ensure } = useSession()
 await ensure()
 const isProvider = computed(() => user.value?.role === 'prestataire')
@@ -94,24 +95,24 @@ type ModalKey =
  * prestataire (`/api/providers/me`) ont besoin d'un rafraîchissement
  * explicite ici pour que les badges du hub restent à jour.
  */
-const MODAL_CONFIG: Record<ModalKey, { title: string; component: Component; refreshOnSave: boolean }> = {
-  identite: { title: 'Identité', component: IdentiteForm, refreshOnSave: false },
-  verification: { title: "Vérification d'identité", component: IdentityVerificationForm, refreshOnSave: false },
-  password: { title: 'Changer le mot de passe', component: PasswordForm, refreshOnSave: false },
-  'profil-professionnel': { title: 'Profil professionnel', component: ProfessionalProfileForm, refreshOnSave: true },
-  cv: { title: 'CV', component: CvForm, refreshOnSave: true },
-  langues: { title: 'Langues', component: LanguagesForm, refreshOnSave: true },
-  formation: { title: 'Formation', component: FormationForm, refreshOnSave: true },
-  certifications: { title: 'Certifications', component: CertificationsForm, refreshOnSave: true },
-  preferences: { title: 'Préférences', component: PreferencesForm, refreshOnSave: true },
-  coordonnees: { title: 'Coordonnées', component: ContactForm, refreshOnSave: true },
+const MODAL_CONFIG = computed<Record<ModalKey, { title: string; component: Component; refreshOnSave: boolean }>>(() => ({
+  identite: { title: t('profilPage.modalTitleIdentite'), component: IdentiteForm, refreshOnSave: false },
+  verification: { title: t('profilPage.modalTitleVerification'), component: IdentityVerificationForm, refreshOnSave: false },
+  password: { title: t('profilPage.modalTitlePassword'), component: PasswordForm, refreshOnSave: false },
+  'profil-professionnel': { title: t('profilPage.modalTitleProProfile'), component: ProfessionalProfileForm, refreshOnSave: true },
+  cv: { title: t('profilPage.modalTitleCv'), component: CvForm, refreshOnSave: true },
+  langues: { title: t('profilPage.modalTitleLangues'), component: LanguagesForm, refreshOnSave: true },
+  formation: { title: t('profilPage.modalTitleFormation'), component: FormationForm, refreshOnSave: true },
+  certifications: { title: t('profilPage.modalTitleCertifications'), component: CertificationsForm, refreshOnSave: true },
+  preferences: { title: t('profilPage.modalTitlePreferences'), component: PreferencesForm, refreshOnSave: true },
+  coordonnees: { title: t('profilPage.modalTitleCoordonnees'), component: ContactForm, refreshOnSave: true },
   // Export/effacement (#286) : ne modifie pas ProviderProfile, pas besoin de
   // rafraîchir les données du profil affichées ailleurs dans le hub.
-  donnees: { title: 'Mes données', component: DataPrivacyPanel, refreshOnSave: false },
+  donnees: { title: t('profilPage.modalTitleDonnees'), component: DataPrivacyPanel, refreshOnSave: false },
   // Calendrier autonome (#290) : ne modifie pas ProviderProfile, pas besoin
   // de rafraîchir les données du profil affichées ailleurs dans le hub.
-  disponibilite: { title: 'Disponibilité', component: AvailabilityCalendar, refreshOnSave: false },
-}
+  disponibilite: { title: t('profilPage.modalTitleDisponibilite'), component: AvailabilityCalendar, refreshOnSave: false },
+}))
 
 const activeModal = ref<ModalKey | null>(null)
 function openModal(key: ModalKey) {
@@ -124,13 +125,13 @@ function openModal(key: ModalKey) {
 const route = useRoute()
 onMounted(() => {
   const key = route.query.open
-  if (typeof key === 'string' && key in MODAL_CONFIG) openModal(key as ModalKey)
+  if (typeof key === 'string' && key in MODAL_CONFIG.value) openModal(key as ModalKey)
 })
 function closeModal() {
   activeModal.value = null
 }
 function onModalFormSaved() {
-  if (activeModal.value && MODAL_CONFIG[activeModal.value].refreshOnSave) refreshProvider()
+  if (activeModal.value && MODAL_CONFIG.value[activeModal.value].refreshOnSave) refreshProvider()
 }
 
 // Anneau de complétion et « prochaine section incomplète » (composable, voir
@@ -170,9 +171,9 @@ function completeProfile() {
 <template>
   <NuxtLayout :name="isProvider ? 'dashboard-prestataire' : 'blank'">
     <div class="mx-auto max-w-[880px] px-5 py-8">
-      <h1 class="text-[26px] font-extrabold text-dark">Votre profil.</h1>
+      <h1 class="text-[26px] font-extrabold text-dark">{{ t('profilPage.heading') }}</h1>
       <p class="mt-1 text-[13.5px] text-muted">
-        Toutes vos informations WorkTogo, en un seul endroit.
+        {{ t('profilPage.subtitle') }}
       </p>
 
       <div class="mt-5 flex flex-wrap items-center justify-between gap-5 rounded-card border border-hairline bg-surface p-6 shadow-card-sm">
@@ -184,10 +185,10 @@ function completeProfile() {
             <p class="text-[16.5px] font-bold text-dark">{{ fullName }}</p>
             <div class="mt-1.5 flex flex-wrap gap-1.5">
               <span v-if="isProvider" class="rounded-pill px-2.5 py-1 text-[11px] font-bold" :class="subscriptionActive ? 'bg-primary/12 text-primary' : 'bg-bg text-muted'">
-                {{ subscriptionActive ? 'Premium' : 'Non premium' }}
+                {{ subscriptionActive ? t('profilPage.premium') : t('profilPage.notPremium') }}
               </span>
               <span class="rounded-pill px-2.5 py-1 text-[11px] font-bold" :class="user?.verified ? 'bg-primary/12 text-primary' : 'bg-bg text-muted'">
-                {{ user?.verified ? 'Identité vérifiée' : 'Identité non vérifiée' }}
+                {{ user?.verified ? t('profilPage.identityVerified') : t('profilPage.identityNotVerified') }}
               </span>
             </div>
           </div>
@@ -195,18 +196,18 @@ function completeProfile() {
 
         <div class="flex items-center gap-4">
           <div class="text-right">
-            <p class="text-[11px] font-bold uppercase tracking-wide text-muted">Profil complet</p>
+            <p class="text-[11px] font-bold uppercase tracking-wide text-muted">{{ t('profilPage.profileCompleteLabel') }}</p>
             <p v-if="remainingCount > 0" class="text-[12.5px] text-muted">
-              Encore {{ remainingCount }} section{{ remainingCount > 1 ? 's' : '' }} à compléter
+              {{ t('profilPage.remainingSections', remainingCount) }}
             </p>
-            <p v-else class="text-[12.5px] font-semibold text-primary">Profil complet, bravo !</p>
+            <p v-else class="text-[12.5px] font-semibold text-primary">{{ t('profilPage.profileCompleteDone') }}</p>
             <button
               v-if="remainingCount > 0"
               type="button"
               class="press mt-2 inline-block rounded-field bg-primary px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-primary-hover"
               @click="completeProfile"
             >
-              Compléter mon profil
+              {{ t('profilPage.completeProfileCta') }}
             </button>
           </div>
 
@@ -219,39 +220,39 @@ function completeProfile() {
               :stroke-dashoffset="ringOffset"
             />
           </svg>
-          <span class="sr-only">{{ completionPercent }}% du profil complété</span>
+          <span class="sr-only">{{ t('profilPage.completionSr', { percent: completionPercent }) }}</span>
         </div>
       </div>
 
       <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <ProfileSectionCard
           icon="🪪"
-          title="Identité"
-          subtitle="Nom, pseudo, localisation"
+          :title="t('profilPage.sectionIdentiteTitle')"
+          :subtitle="t('profilPage.sectionIdentiteSubtitle')"
           interactive
           :complete="!!user?.username && !!user?.location"
           @click="openModal('identite')"
         />
         <ProfileSectionCard
           icon="🛡️"
-          title="Vérification"
-          subtitle="Carte d'identité et photo passeport"
+          :title="t('profilPage.sectionVerificationTitle')"
+          :subtitle="t('profilPage.sectionVerificationSubtitle')"
           interactive
           :complete="!!user?.verified"
           @click="openModal('verification')"
         />
         <ProfileSectionCard
           icon="🔒"
-          title="Mot de passe"
-          subtitle="Sécurité de votre compte"
+          :title="t('profilPage.sectionPasswordTitle')"
+          :subtitle="t('profilPage.sectionPasswordSubtitle')"
           interactive
           :complete="!!user?.passwordSet"
           @click="openModal('password')"
         />
         <ProfileSectionCard
           icon="🔐"
-          title="Mes données"
-          subtitle="Télécharger ou supprimer mes données"
+          :title="t('profilPage.sectionDonneesTitle')"
+          :subtitle="t('profilPage.sectionDonneesSubtitle')"
           interactive
           @click="openModal('donnees')"
         />
@@ -259,91 +260,91 @@ function completeProfile() {
         <template v-if="isProvider">
           <ProfileSectionCard
             icon="💼"
-            title="Profil professionnel"
-            subtitle="Secteur, description, photo"
+            :title="t('profilPage.sectionProProfileTitle')"
+            :subtitle="t('profilPage.sectionProProfileSubtitle')"
             interactive
             :complete="professionalProfileComplete"
             @click="openModal('profil-professionnel')"
           />
           <ProfileSectionCard
             icon="📄"
-            title="CV"
-            subtitle="Votre CV principal"
+            :title="t('profilPage.sectionCvTitle')"
+            :subtitle="t('profilPage.sectionCvSubtitle')"
             interactive
             :complete="cvComplete"
             @click="openModal('cv')"
           />
           <ProfileSectionCard
             icon="🧩"
-            title="Compétences"
-            subtitle="Bientôt disponible"
+            :title="t('profilPage.sectionSkillsTitle')"
+            :subtitle="t('profilPage.sectionSkillsSubtitle')"
           />
           <ProfileSectionCard
             icon="🗣️"
-            title="Langues"
-            subtitle="Langues que vous maîtrisez"
+            :title="t('profilPage.sectionLanguesTitle')"
+            :subtitle="t('profilPage.sectionLanguesSubtitle')"
             interactive
             :complete="languagesComplete"
             @click="openModal('langues')"
           />
           <ProfileSectionCard
             icon="🎓"
-            title="Formation"
-            subtitle="Diplômes et formations suivies"
+            :title="t('profilPage.sectionFormationTitle')"
+            :subtitle="t('profilPage.sectionFormationSubtitle')"
             interactive
             :complete="formationComplete"
             @click="openModal('formation')"
           />
           <ProfileSectionCard
             icon="📜"
-            title="Certifications"
-            subtitle="Faites certifier vos aptitudes"
+            :title="t('profilPage.sectionCertificationsTitle')"
+            :subtitle="t('profilPage.sectionCertificationsSubtitle')"
             interactive
             :complete="certificationsComplete"
             @click="openModal('certifications')"
           />
           <ProfileSectionCard
             icon="⚙️"
-            title="Préférences"
-            subtitle="Tarifs, mobilité, disponibilité"
+            :title="t('profilPage.sectionPreferencesTitle')"
+            :subtitle="t('profilPage.sectionPreferencesSubtitle')"
             interactive
             :complete="preferencesComplete"
             @click="openModal('preferences')"
           />
           <ProfileSectionCard
             icon="☎️"
-            title="Coordonnées"
-            subtitle="WhatsApp, site web, réseaux"
+            :title="t('profilPage.sectionCoordonneesTitle')"
+            :subtitle="t('profilPage.sectionCoordonneesSubtitle')"
             interactive
             :complete="coordonneesComplete"
             @click="openModal('coordonnees')"
           />
           <ProfileSectionCard
             icon="📅"
-            title="Disponibilité"
-            subtitle="Périodes où vous n'êtes pas disponible"
+            :title="t('profilPage.sectionDisponibiliteTitle')"
+            :subtitle="t('profilPage.sectionDisponibiliteSubtitle')"
             interactive
             @click="openModal('disponibilite')"
           />
           <ProfileSectionCard
             icon="💳"
-            title="Abonnement"
-            subtitle="Formule et mode de paiement"
+            :title="t('profilPage.sectionAbonnementTitle')"
+            :subtitle="t('profilPage.sectionAbonnementSubtitle')"
             to="/abonnement"
             :complete="subscriptionActive"
           />
           <ProfileSectionCard
             icon="⭐"
-            title="Avis reçus"
-            subtitle="Retours de vos clients"
+            :title="t('profilPage.sectionAvisTitle')"
+            :subtitle="t('profilPage.sectionAvisSubtitle')"
           />
         </template>
 
         <ProfileSectionCard
           v-else
           icon="👛"
-          title="Mon solde"
-          subtitle="Recharge et historique des paiements"
+          :title="t('profilPage.sectionSoldeTitle')"
+          :subtitle="t('profilPage.sectionSoldeSubtitle')"
           to="/solde"
         />
       </div>

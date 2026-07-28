@@ -38,6 +38,8 @@ const props = withDefaults(
   { complete: false, to: undefined, interactive: false },
 )
 
+const { t } = useI18n({ useScope: 'global' })
+
 const tag = computed<Component | string>(() => (props.to ? NuxtLink : props.interactive ? 'button' : 'div'))
 const showBadge = computed(() => !!props.to || props.interactive)
 </script>
@@ -61,7 +63,7 @@ const showBadge = computed(() => !!props.to || props.interactive)
         class="shrink-0 rounded-pill px-2.5 py-1 text-[11px] font-bold"
         :class="complete ? 'bg-primary/12 text-primary' : 'bg-error/10 text-error'"
       >
-        {{ complete ? 'Complété' : 'À faire' }}
+        {{ complete ? t('profileSectionCard.complete') : t('profileSectionCard.incomplete') }}
       </span>
     </div>
   </component>

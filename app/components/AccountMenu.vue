@@ -8,6 +8,7 @@ import type { PublicUser } from '~~/server/utils/userStore'
  */
 
 const props = defineProps<{ user: PublicUser }>()
+const { t } = useI18n({ useScope: 'global' })
 const { clear: clearSession } = useSession()
 const { open: openChoiceModal } = useChoiceModal()
 
@@ -17,7 +18,7 @@ const confirming = ref<'logout' | 'payment' | 'switch-account' | null>(null)
 const notice = ref('')
 const isLoggingOut = ref(false)
 
-const roleLabel = computed(() => (props.user.role === 'prestataire' ? 'Prestataire' : 'Chercheur'))
+const roleLabel = computed(() => (props.user.role === 'prestataire' ? t('accountMenu.roleProvider') : t('accountMenu.roleClient')))
 const initial = computed(() => props.user.contact.replace(/^\+?228/, '').trim().charAt(0).toUpperCase() || '?')
 const mySpacePath = computed(() => (props.user.role === 'prestataire' ? '/prestataire' : '/dashboard/client'))
 
@@ -28,7 +29,7 @@ const mySpacePath = computed(() => (props.user.role === 'prestataire' ? '/presta
 // une inscription (pas encore de compte, voir ChoiceModal.vue), plutôt que
 // de deviner une réponse que l'app ne peut pas connaître.
 const otherRole = computed(() => (props.user.role === 'prestataire' ? 'client' : 'prestataire'))
-const otherRoleLabel = computed(() => (otherRole.value === 'prestataire' ? 'prestataire' : 'chercheur'))
+const otherRoleLabel = computed(() => (otherRole.value === 'prestataire' ? t('accountMenu.otherRoleProvider') : t('accountMenu.otherRoleClient')))
 
 function toggleMenu() {
   isOpen.value = !isOpen.value
@@ -45,7 +46,7 @@ function closeMenu() {
 }
 
 function showComingSoon(feature: string) {
-  notice.value = `${feature} : fonctionnalité à venir.`
+  notice.value = t('accountMenu.comingSoon', { feature })
 }
 
 function askConfirm(action: 'logout' | 'payment' | 'switch-account') {
@@ -75,7 +76,7 @@ async function confirmLogout() {
 
 function confirmPaymentChange() {
   confirming.value = null
-  showComingSoon('Changer le mode de paiement')
+  showComingSoon(t('accountMenu.changePaymentMethod'))
 }
 
 function switchAccountHasAccount() {
@@ -142,7 +143,7 @@ onUnmounted(() => {
         class="press block w-full rounded-field px-3 py-2.5 text-left text-[13.5px] font-semibold text-dark hover:bg-bg"
         @click="closeMenu"
       >
-        Mon espace
+        {{ t('accountMenu.mySpace') }}
       </NuxtLink>
       <NuxtLink
         to="/profil"
@@ -150,16 +151,16 @@ onUnmounted(() => {
         class="press block w-full rounded-field px-3 py-2.5 text-left text-[13.5px] text-dark hover:bg-bg"
         @click="closeMenu"
       >
-        Modifier mon profil
+        {{ t('accountMenu.editProfile') }}
       </NuxtLink>
       <div v-if="confirming === 'switch-account'" class="rounded-field bg-bg p-3">
-        <p class="mb-2 text-[12.5px] text-dark">Avez-vous déjà un compte {{ otherRoleLabel }} ?</p>
+        <p class="mb-2 text-[12.5px] text-dark">{{ t('accountMenu.switchAccountQuestion', { role: otherRoleLabel }) }}</p>
         <div class="flex gap-2">
           <button type="button" class="press flex-1 rounded-field bg-primary py-1.5 text-[12.5px] font-semibold text-white" @click="switchAccountHasAccount">
-            Oui
+            {{ t('accountMenu.yes') }}
           </button>
           <button type="button" class="press flex-1 rounded-field border border-hairline bg-white py-1.5 text-[12.5px] font-semibold text-muted" @click="switchAccountNoAccount">
-            Non
+            {{ t('accountMenu.no') }}
           </button>
         </div>
       </div>
@@ -170,7 +171,7 @@ onUnmounted(() => {
         class="press block w-full rounded-field px-3 py-2.5 text-left text-[13.5px] text-dark hover:bg-bg"
         @click="askConfirm('switch-account')"
       >
-        Changer de compte
+        {{ t('accountMenu.switchAccount') }}
       </button>
       <NuxtLink
         to="/mot-de-passe"
@@ -178,7 +179,7 @@ onUnmounted(() => {
         class="press block w-full rounded-field px-3 py-2.5 text-left text-[13.5px] text-dark hover:bg-bg"
         @click="closeMenu"
       >
-        Changer le mot de passe
+        {{ t('accountMenu.changePassword') }}
       </NuxtLink>
       <NuxtLink
         to="/messages"
@@ -186,18 +187,18 @@ onUnmounted(() => {
         class="press block w-full rounded-field px-3 py-2.5 text-left text-[13.5px] text-dark hover:bg-bg"
         @click="closeMenu"
       >
-        Mes messages
+        {{ t('accountMenu.myMessages') }}
       </NuxtLink>
 
       <template v-if="user.role === 'prestataire'">
         <div v-if="confirming === 'payment'" class="rounded-field bg-bg p-3">
-          <p class="mb-2 text-[12.5px] text-dark">Confirmer le changement de mode de paiement ?</p>
+          <p class="mb-2 text-[12.5px] text-dark">{{ t('accountMenu.confirmPaymentChangeQuestion') }}</p>
           <div class="flex gap-2">
             <button type="button" class="press flex-1 rounded-field bg-primary py-1.5 text-[12.5px] font-semibold text-white" @click="confirmPaymentChange">
-              Confirmer
+              {{ t('accountMenu.confirm') }}
             </button>
             <button type="button" class="press flex-1 rounded-field border border-hairline bg-white py-1.5 text-[12.5px] font-semibold text-muted" @click="cancelConfirm">
-              Annuler
+              {{ t('accountMenu.cancel') }}
             </button>
           </div>
         </div>
@@ -208,7 +209,7 @@ onUnmounted(() => {
           class="press block w-full rounded-field px-3 py-2.5 text-left text-[13.5px] text-dark hover:bg-bg"
           @click="askConfirm('payment')"
         >
-          Changer le mode de paiement
+          {{ t('accountMenu.changePaymentMethod') }}
         </button>
       </template>
 
@@ -216,9 +217,9 @@ onUnmounted(() => {
         type="button"
         role="menuitem"
         class="press block w-full rounded-field px-3 py-2.5 text-left text-[13.5px] text-dark hover:bg-bg"
-        @click="showComingSoon('Assistance')"
+        @click="showComingSoon(t('accountMenu.support'))"
       >
-        Assistance
+        {{ t('accountMenu.support') }}
       </button>
 
       <p v-if="notice" class="px-3 py-1.5 text-[11.5px] text-muted">{{ notice }}</p>
@@ -226,7 +227,7 @@ onUnmounted(() => {
       <div class="my-1 h-px bg-hairline" />
 
       <div v-if="confirming === 'logout'" class="rounded-field bg-bg p-3">
-        <p class="mb-2 text-[12.5px] text-dark">Confirmer la déconnexion ?</p>
+        <p class="mb-2 text-[12.5px] text-dark">{{ t('accountMenu.confirmLogoutQuestion') }}</p>
         <div class="flex gap-2">
           <button
             type="button"
@@ -234,10 +235,10 @@ onUnmounted(() => {
             :disabled="isLoggingOut"
             @click="confirmLogout"
           >
-            {{ isLoggingOut ? 'Déconnexion…' : 'Confirmer' }}
+            {{ isLoggingOut ? t('accountMenu.loggingOut') : t('accountMenu.confirm') }}
           </button>
           <button type="button" class="press flex-1 rounded-field border border-hairline bg-white py-1.5 text-[12.5px] font-semibold text-muted" @click="cancelConfirm">
-            Annuler
+            {{ t('accountMenu.cancel') }}
           </button>
         </div>
       </div>
@@ -248,7 +249,7 @@ onUnmounted(() => {
         class="press block w-full rounded-field px-3 py-2.5 text-left text-[13.5px] font-semibold text-error hover:bg-error/10"
         @click="askConfirm('logout')"
       >
-        Se déconnecter
+        {{ t('accountMenu.logout') }}
       </button>
     </div>
   </div>

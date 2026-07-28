@@ -9,13 +9,15 @@ import type { CertificationEntry, ProviderProfile } from '~~/server/utils/provid
  */
 const emit = defineEmits<{ saved: [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
 
-const STATUS_LABEL: Record<CertificationEntry['status'], string> = {
-  en_attente: 'En attente de vérification',
-  verifiee: 'Vérifiée',
-}
+const STATUS_LABEL = computed<Record<CertificationEntry['status'], string>>(() => ({
+  en_attente: t('certificationsForm.statusPending'),
+  verifiee: t('certificationsForm.statusVerified'),
+}))
 const STATUS_STYLE: Record<CertificationEntry['status'], string> = {
   en_attente: 'bg-primary/12 text-primary',
   verifiee: 'bg-primary text-white',
@@ -46,17 +48,17 @@ async function onFileSelected(event: Event) {
 
   error.value = ''
   if (!newTitle.value.trim()) {
-    error.value = "Indiquez d'abord l'intitulé du diplôme."
+    error.value = t('certificationsForm.errorTitleRequired')
     input.value = ''
     return
   }
   if (!ACCEPTED_TYPES.includes(file.type)) {
-    error.value = 'Formats acceptés : PDF, JPEG ou PNG.'
+    error.value = t('certificationsForm.errorFormat')
     input.value = ''
     return
   }
   if (file.size > MAX_FILE_SIZE) {
-    error.value = 'Chaque fichier doit faire 5 Mo maximum.'
+    error.value = t('certificationsForm.errorSize')
     input.value = ''
     return
   }
@@ -88,7 +90,7 @@ async function submit() {
     success.value = true
     emit('saved')
   } catch (fetchError) {
-    error.value = apiErrorMessage(fetchError, "L'enregistrement a échoué. Réessayez.")
+    error.value = apiErrorMessage(fetchError, t('certificationsForm.errorSaveFailed'))
   } finally {
     isSubmitting.value = false
   }
@@ -114,30 +116,30 @@ async function submit() {
           class="press shrink-0 text-[12px] font-semibold text-error"
           @click="removeCertification(cert.id)"
         >
-          Retirer
+          {{ t('certificationsForm.remove') }}
         </button>
       </div>
     </div>
 
-    <label for="cert-title" class="mb-1.5 block text-[13px] font-semibold text-dark">Intitulé du diplôme</label>
+    <label for="cert-title" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('certificationsForm.titleLabel') }}</label>
     <input
       id="cert-title"
       v-model="newTitle"
       type="text"
-      placeholder="Ex. CAP Plomberie"
+      :placeholder="t('certificationsForm.titlePlaceholder')"
       class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
     >
 
-    <label for="cert-file" class="mb-1.5 block text-[13px] font-semibold text-dark">Fichier du diplôme</label>
+    <label for="cert-file" class="mb-1.5 block text-[13px] font-semibold text-dark">{{ t('certificationsForm.fileLabel') }}</label>
     <label
       for="cert-file"
       class="press mb-3.5 flex h-[46px] w-full cursor-pointer items-center rounded-field border-[1.5px] border-dashed border-hairline px-3.5 text-[13.5px] text-muted hover:border-primary/40"
     >
-      Choisir un fichier (PDF, JPEG ou PNG, 5 Mo max)
+      {{ t('certificationsForm.chooseFile') }}
     </label>
     <input id="cert-file" type="file" accept="application/pdf,image/jpeg,image/png" class="sr-only" @change="onFileSelected">
 
-    <p v-if="success" class="my-1 text-[12.5px] font-semibold text-primary">Certifications mises à jour.</p>
+    <p v-if="success" class="my-1 text-[12.5px] font-semibold text-primary">{{ t('certificationsForm.success') }}</p>
     <p v-if="error" class="my-1 text-[12.5px] text-error">{{ error }}</p>
 
     <button
@@ -146,7 +148,7 @@ async function submit() {
       :disabled="isSubmitting"
       @click="submit"
     >
-      {{ isSubmitting ? 'Enregistrement…' : 'Enregistrer' }}
+      {{ isSubmitting ? t('certificationsForm.saving') : t('certificationsForm.save') }}
     </button>
   </div>
 </template>

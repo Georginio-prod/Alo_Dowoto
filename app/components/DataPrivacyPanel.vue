@@ -6,6 +6,7 @@
  * droits. Cette fenêtre les rend directement actionnables depuis le hub
  * `/profil`.
  */
+const { t } = useI18n({ useScope: 'global' })
 const { clear: clearSession } = useSession()
 
 const isExporting = ref(false)
@@ -25,20 +26,20 @@ async function exportData() {
     link.click()
     URL.revokeObjectURL(url)
   } catch (fetchError) {
-    exportError.value = apiErrorMessage(fetchError, "L'export a échoué. Réessayez.")
+    exportError.value = apiErrorMessage(fetchError, t('dataPrivacyPanel.errorExportFailed'))
   } finally {
     isExporting.value = false
   }
 }
 
-const CONFIRM_PHRASE = 'SUPPRIMER'
+const CONFIRM_PHRASE = computed(() => t('dataPrivacyPanel.confirmPhrase'))
 const confirmInput = ref('')
 const showDeleteConfirm = ref(false)
 const isDeleting = ref(false)
 const deleteError = ref('')
 
 async function deleteAccount() {
-  if (isDeleting.value || confirmInput.value !== CONFIRM_PHRASE) return
+  if (isDeleting.value || confirmInput.value !== CONFIRM_PHRASE.value) return
   isDeleting.value = true
   deleteError.value = ''
   try {
@@ -46,7 +47,7 @@ async function deleteAccount() {
     clearSession()
     await navigateTo('/')
   } catch (fetchError) {
-    deleteError.value = apiErrorMessage(fetchError, 'La suppression a échoué. Réessayez.')
+    deleteError.value = apiErrorMessage(fetchError, t('dataPrivacyPanel.errorDeleteFailed'))
   } finally {
     isDeleting.value = false
   }
@@ -56,9 +57,9 @@ async function deleteAccount() {
 <template>
   <div>
     <div class="mb-5">
-      <h3 class="mb-1.5 text-[13.5px] font-bold text-dark">Télécharger mes données</h3>
+      <h3 class="mb-1.5 text-[13.5px] font-bold text-dark">{{ t('dataPrivacyPanel.exportHeading') }}</h3>
       <p class="mb-2.5 text-[12.5px] leading-relaxed text-muted">
-        Recevez une copie de vos données WorkTogo (profil, abonnement, solde) au format JSON.
+        {{ t('dataPrivacyPanel.exportDescription') }}
       </p>
       <button
         type="button"
@@ -66,16 +67,15 @@ async function deleteAccount() {
         :disabled="isExporting"
         @click="exportData"
       >
-        {{ isExporting ? 'Préparation…' : 'Télécharger mes données' }}
+        {{ isExporting ? t('dataPrivacyPanel.exporting') : t('dataPrivacyPanel.exportCta') }}
       </button>
       <p v-if="exportError" class="mt-2 text-[12.5px] text-error">{{ exportError }}</p>
     </div>
 
     <div class="border-t border-hairline pt-4">
-      <h3 class="mb-1.5 text-[13.5px] font-bold text-error">Supprimer mon compte</h3>
+      <h3 class="mb-1.5 text-[13.5px] font-bold text-error">{{ t('dataPrivacyPanel.deleteHeading') }}</h3>
       <p class="mb-2.5 text-[12.5px] leading-relaxed text-muted">
-        Vos données identifiantes (nom, contact, localisation, pièces d'identité) seront effacées définitivement.
-        Cette action est irréversible.
+        {{ t('dataPrivacyPanel.deleteDescription') }}
       </p>
 
       <button
@@ -84,12 +84,14 @@ async function deleteAccount() {
         class="press rounded-field border border-error px-4 py-2 text-[13px] font-semibold text-error"
         @click="showDeleteConfirm = true"
       >
-        Supprimer mon compte
+        {{ t('dataPrivacyPanel.deleteCta') }}
       </button>
 
       <div v-else class="space-y-2">
         <label for="delete-confirm" class="block text-[12.5px] text-muted">
-          Tapez <strong>{{ CONFIRM_PHRASE }}</strong> pour confirmer.
+          <i18n-t keypath="dataPrivacyPanel.confirmPhraseLabel" tag="span">
+            <template #phrase><strong>{{ CONFIRM_PHRASE }}</strong></template>
+          </i18n-t>
         </label>
         <input
           id="delete-confirm"
@@ -104,10 +106,10 @@ async function deleteAccount() {
             :disabled="confirmInput !== CONFIRM_PHRASE || isDeleting"
             @click="deleteAccount"
           >
-            {{ isDeleting ? 'Suppression…' : 'Confirmer la suppression' }}
+            {{ isDeleting ? t('dataPrivacyPanel.deleting') : t('dataPrivacyPanel.confirmSubmit') }}
           </button>
           <button type="button" class="press text-[12.5px] text-muted" @click="showDeleteConfirm = false; confirmInput = ''">
-            Annuler
+            {{ t('dataPrivacyPanel.cancel') }}
           </button>
         </div>
         <p v-if="deleteError" class="text-[12.5px] text-error">{{ deleteError }}</p>
