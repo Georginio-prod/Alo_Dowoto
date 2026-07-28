@@ -11,68 +11,66 @@ import {
 } from '../companyInfo'
 import { LAST_UPDATED, type LegalPage } from './types'
 
-export const MENTIONS_LEGALES: LegalPage = {
-  slug: 'mentions-legales',
-  title: 'Mentions légales',
-  intro: 'Informations relatives à l\'édition, la publication et l\'hébergement de la plateforme WorkTogo, conformément aux exigences applicables aux services de communication en ligne.',
-  updatedAt: LAST_UPDATED,
-  sections: [
-    {
-      heading: 'Éditeur du site',
-      body: [
-        `Le site et l'application WorkTogo sont édités par ${COMPANY_NAME}.`,
-      ],
-      list: [
-        `Forme juridique : ${LEGAL_FORM}`,
-        `Siège social : ${REGISTERED_ADDRESS}`,
-        `Registre du Commerce et du Crédit Mobilier (RCCM) : ${REGISTRATION_NUMBER}`,
-        `Numéro d'Identifiant Fiscal Unique (NIF) : ${TAX_ID}`,
-        `Email : ${SUPPORT_EMAIL}`,
-        `Téléphone : ${SUPPORT_PHONE}`,
-      ],
-    },
-    {
-      heading: 'Directeur de la publication',
-      body: [
-        `La direction de la publication est assurée par ${PUBLICATION_DIRECTOR}.`,
-      ],
-    },
-    {
-      heading: 'Hébergement',
-      body: [
-        `Le site est hébergé par ${HOSTING_PROVIDER}.`,
-      ],
-    },
-    {
-      heading: 'Propriété intellectuelle',
-      body: [
-        'La structure du site, son design, ses textes, logos, icônes et l\'ensemble des éléments qui le composent sont la propriété de WorkTogo ou de ses partenaires, et sont protégés par le droit de la propriété intellectuelle.',
-        'Toute reproduction, représentation, modification ou extraction, totale ou partielle, sans autorisation écrite préalable, est interdite. Les profils et contenus publiés par les prestataires restent leur propriété ; ils accordent à WorkTogo une licence limitée à l\'affichage sur la plateforme, dans le cadre de la mise en relation.',
-      ],
-    },
-    {
-      heading: 'Liens hypertextes',
-      body: [
-        'WorkTogo peut contenir des liens vers des sites tiers (réseaux sociaux, ressources d\'aide). WorkTogo n\'exerce aucun contrôle sur ces sites et décline toute responsabilité quant à leur contenu ou leurs pratiques.',
-      ],
-    },
-    {
-      heading: 'Données personnelles et cookies',
-      body: [
-        'Le traitement des données personnelles et l\'utilisation des cookies sur WorkTogo sont détaillés dans la Politique de confidentialité et la page Gestion des cookies, accessibles depuis le pied de page.',
-      ],
-    },
-    {
-      heading: 'Droit applicable et juridiction compétente',
-      body: [
-        'Les présentes mentions légales sont soumises au droit togolais. Tout litige relatif à leur interprétation ou leur exécution relève, à défaut de résolution amiable, de la compétence des juridictions togolaises.',
-      ],
-    },
-    {
-      heading: 'Nous contacter',
-      body: [
-        `Pour toute question relative aux présentes mentions légales : ${SUPPORT_EMAIL} ou ${SUPPORT_PHONE}.`,
-      ],
-    },
-  ],
+/**
+ * Contenu piloté par les clés `mentionsLegalesPage.*` (#i18n), même principe
+ * que app/data/legalPages/aPropos.ts — `getMentionsLegales` prend le `t`
+ * réactif de useI18n en paramètre plutôt que du texte français en dur.
+ *
+ * Les champs « [à compléter] » de companyInfo.ts (LEGAL_FORM,
+ * REGISTRATION_NUMBER, etc.) sont des placeholders explicites (voir la
+ * documentation de ce fichier) : traduits eux aussi via `toBeCompleted`
+ * plutôt que reproduits tels quels, pour rester cohérents en anglais.
+ */
+export function getMentionsLegales(t: (key: string, params?: Record<string, unknown>) => string): LegalPage {
+  const toBeCompleted = t('mentionsLegalesPage.toBeCompleted')
+  const displayValue = (raw: string) => (raw === '[à compléter]' ? toBeCompleted : raw)
+
+  return {
+    slug: 'mentions-legales',
+    title: t('mentionsLegalesPage.title'),
+    intro: t('mentionsLegalesPage.intro'),
+    updatedAt: LAST_UPDATED,
+    sections: [
+      {
+        heading: t('mentionsLegalesPage.s1Heading'),
+        body: [t('mentionsLegalesPage.s1Body1', { company: COMPANY_NAME })],
+        list: [
+          t('mentionsLegalesPage.s1List1', { value: displayValue(LEGAL_FORM) }),
+          t('mentionsLegalesPage.s1List2', { value: displayValue(REGISTERED_ADDRESS) }),
+          t('mentionsLegalesPage.s1List3', { value: displayValue(REGISTRATION_NUMBER) }),
+          t('mentionsLegalesPage.s1List4', { value: displayValue(TAX_ID) }),
+          t('mentionsLegalesPage.s1List5', { value: SUPPORT_EMAIL }),
+          t('mentionsLegalesPage.s1List6', { value: SUPPORT_PHONE }),
+        ],
+      },
+      {
+        heading: t('mentionsLegalesPage.s2Heading'),
+        body: [t('mentionsLegalesPage.s2Body1', { value: displayValue(PUBLICATION_DIRECTOR) })],
+      },
+      {
+        heading: t('mentionsLegalesPage.s3Heading'),
+        body: [t('mentionsLegalesPage.s3Body1', { value: displayValue(HOSTING_PROVIDER) })],
+      },
+      {
+        heading: t('mentionsLegalesPage.s4Heading'),
+        body: [t('mentionsLegalesPage.s4Body1'), t('mentionsLegalesPage.s4Body2')],
+      },
+      {
+        heading: t('mentionsLegalesPage.s5Heading'),
+        body: [t('mentionsLegalesPage.s5Body1')],
+      },
+      {
+        heading: t('mentionsLegalesPage.s6Heading'),
+        body: [t('mentionsLegalesPage.s6Body1')],
+      },
+      {
+        heading: t('mentionsLegalesPage.s7Heading'),
+        body: [t('mentionsLegalesPage.s7Body1')],
+      },
+      {
+        heading: t('mentionsLegalesPage.s8Heading'),
+        body: [t('mentionsLegalesPage.s8Body1', { email: SUPPORT_EMAIL, phone: SUPPORT_PHONE })],
+      },
+    ],
+  }
 }
