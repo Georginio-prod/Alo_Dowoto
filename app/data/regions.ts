@@ -142,6 +142,15 @@ export function listQuartiers(regionSlug: string = DEFAULT_REGION_SLUG): Quartie
   return getRegionBySlug(regionSlug)?.prefectures.flatMap((prefecture) => prefecture.quartiers) ?? []
 }
 
+/**
+ * Tous les quartiers de toutes les régions confondues — pour une validation
+ * (liste blanche de slugs) qui reste correcte le jour où une autre région
+ * que la Région Maritime sera peuplée, sans modification des appelants.
+ */
+export function listAllQuartiers(): Quartier[] {
+  return REGIONS.flatMap((region) => region.prefectures.flatMap((prefecture) => prefecture.quartiers))
+}
+
 export function findQuartierBySlug(slug: string, regionSlug: string = DEFAULT_REGION_SLUG): Quartier | undefined {
   return listQuartiers(regionSlug).find((quartier) => quartier.slug === slug)
 }

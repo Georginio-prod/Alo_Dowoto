@@ -1,8 +1,8 @@
 import { SECTORS } from '~~/app/data/sectors'
-import { listQuartiers } from '~~/app/data/regions'
+import { listAllQuartiers } from '~~/app/data/regions'
 import type { ProviderSortOption } from '~~/server/utils/providerDirectory'
 
-const VALID_QUARTIER_SLUGS = new Set(listQuartiers().map((quartier) => quartier.slug))
+const VALID_QUARTIER_SLUGS = new Set(listAllQuartiers().map((quartier) => quartier.slug))
 
 const VALID_SECTOR_SLUGS = new Set(SECTORS.map((sector) => sector.slug))
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/

@@ -27,8 +27,11 @@ const sector = ref(existing?.sector ?? '')
 const city = ref(existing?.city ?? '')
 const latitude = ref<number | undefined>(existing?.latitude)
 const longitude = ref<number | undefined>(existing?.longitude)
-const isLocating = ref(false)
-const locationError = ref('')
+const quartier = ref(existing?.quartier ?? '')
+const adresse = ref(existing?.adresse ?? '')
+const pointsDeRepere = ref(existing?.pointsDeRepere ?? '')
+const rayonInterventionKm = ref<number | undefined>(existing?.rayonInterventionKm)
+const positionApproximative = ref(existing?.positionApproximative ?? true)
 const payoutMethod = ref<PayoutMethod | null>(existing?.payoutMethod ?? null)
 const description = ref(existing?.description ?? '')
 const photoUrl = ref<string | null>(existing?.photoUrl ?? null)
@@ -36,6 +39,7 @@ const photoFileName = ref('')
 const error = ref('')
 const success = ref(false)
 const isSubmitting = ref(false)
+
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -67,38 +71,6 @@ async function onPhotoSelected(event: Event) {
   photoFileName.value = file.name
 }
 
-// Coordonnées réelles de la zone d'intervention (#263) : facultatif, permet
-// à ce prestataire d'apparaître trié par distance dans « Prestataires près
-// de vous » plutôt que par simple correspondance de ville. Jamais saisi
-// manuellement — uniquement via la géolocalisation du navigateur.
-function useCurrentPosition() {
-  if (isLocating.value) return
-  if (!('geolocation' in navigator)) {
-    locationError.value = "La géolocalisation n'est pas disponible sur cet appareil."
-    return
-  }
-  isLocating.value = true
-  locationError.value = ''
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      latitude.value = position.coords.latitude
-      longitude.value = position.coords.longitude
-      isLocating.value = false
-    },
-    (geoError) => {
-      // Sans `timeout` explicite, la valeur par défaut est Infinity : sur un
-      // appareil où le service de localisation est lent ou désactivé (courant
-      // sous Windows), l'appel ne déclenchait ni succès ni erreur et restait
-      // bloqué indéfiniment sur « Localisation… » sans le moindre retour.
-      locationError.value = geoError.code === geoError.TIMEOUT
-        ? 'La localisation a pris trop de temps. Vérifiez que le service de localisation est activé, puis réessayez.'
-        : "Localisation refusée ou indisponible. Autorisez l'accès à votre position puis réessayez."
-      isLocating.value = false
-    },
-    { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 },
-  )
-}
-
 async function submit() {
   if (isSubmitting.value) return
   error.value = ''
@@ -118,6 +90,11 @@ async function submit() {
         city: city.value.trim(),
         latitude: latitude.value,
         longitude: longitude.value,
+        quartier: quartier.value || undefined,
+        adresse: adresse.value.trim() || undefined,
+        pointsDeRepere: pointsDeRepere.value.trim() || undefined,
+        rayonInterventionKm: rayonInterventionKm.value,
+        positionApproximative: positionApproximative.value,
         payoutMethod: payoutMethod.value,
         description: description.value.trim() || undefined,
         photoUrl: photoUrl.value ?? undefined,
@@ -154,27 +131,16 @@ async function submit() {
       <option v-for="s in SECTORS" :key="s.slug" :value="s.slug">{{ s.emoji }} {{ s.name }}</option>
     </select>
 
-    <label for="pp-city" class="mb-1.5 block text-[13px] font-semibold text-dark">Localisation / zone d'intervention</label>
-    <input
-      id="pp-city"
-      v-model="city"
-      type="text"
-      placeholder="Ex. Lomé, Kara, Kpalimé…"
-      class="mb-1.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
-    >
-    <button
-      type="button"
-      class="press mb-1.5 inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-primary underline disabled:cursor-not-allowed disabled:opacity-60"
-      :disabled="isLocating"
-      @click="useCurrentPosition"
-    >
-      <span v-if="isLocating" class="size-3 shrink-0 animate-spin rounded-full border-[1.5px] border-primary/30 border-t-primary" aria-hidden="true" />
-      {{ isLocating ? 'Localisation…' : latitude !== undefined ? '📍 Position enregistrée — mettre à jour' : '📍 Utiliser ma position actuelle' }}
-    </button>
-    <p class="mb-3.5 text-[11.5px] text-muted">
-      Facultatif : permet d'apparaître trié par distance réelle dans « Prestataires près de vous ».
-    </p>
-    <p v-if="locationError" class="mb-3.5 text-[12.5px] text-error">{{ locationError }}</p>
+    <ProviderLocationFields
+      v-model:city="city"
+      v-model:latitude="latitude"
+      v-model:longitude="longitude"
+      v-model:quartier="quartier"
+      v-model:adresse="adresse"
+      v-model:points-de-repere="pointsDeRepere"
+      v-model:rayon-intervention-km="rayonInterventionKm"
+      v-model:position-approximative="positionApproximative"
+    />
 
     <label for="pp-description" class="mb-1.5 block text-[13px] font-semibold text-dark">Description</label>
     <textarea

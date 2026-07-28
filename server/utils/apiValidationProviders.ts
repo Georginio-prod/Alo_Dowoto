@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { SECTORS } from '~~/app/data/sectors'
+import { listAllQuartiers } from '~~/app/data/regions'
 import { isValidCoordinatePair, requiredTrimmed } from '~~/server/utils/apiValidation'
 import { MOBILITY_OPTIONS, PAYOUT_METHODS } from '~~/server/utils/providerStore'
 import type { Mobility, PayoutMethod } from '~~/server/utils/providerStore'
@@ -18,9 +19,11 @@ export const addAvailabilitySchema = z.object({
 })
 
 const VALID_SECTOR_SLUGS = SECTORS.map((sector) => sector.slug)
+const VALID_QUARTIER_SLUGS = listAllQuartiers().map((quartier) => quartier.slug)
 const MAX_LANGUAGES = 12
 const MAX_FORMATIONS = 15
 const MAX_CERTIFICATIONS = 15
+const MAX_RAYON_INTERVENTION_KM = 200
 
 /**
  * Le handler ne vérifiait jusqu'ici que `title` à l'exécution, mais le type
@@ -56,6 +59,14 @@ export const patchProviderSchema = z.object({
   city: z.string().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  quartier: z.enum(VALID_QUARTIER_SLUGS as [string, ...string[]], { error: 'Quartier invalide.' }).optional(),
+  adresse: z.string().optional(),
+  pointsDeRepere: z.string().optional(),
+  rayonInterventionKm: z
+    .number({ error: "Rayon d'intervention invalide." })
+    .refine((v) => v > 0 && v <= MAX_RAYON_INTERVENTION_KM, "Rayon d'intervention invalide.")
+    .optional(),
+  positionApproximative: z.boolean().optional(),
   payoutMethod: z.enum(PAYOUT_METHODS as [PayoutMethod, ...PayoutMethod[]], { error: 'Le mode de rémunération WorkTogo est obligatoire.' }).optional(),
   photoUrl: z.string().optional(),
   description: z.string().optional(),

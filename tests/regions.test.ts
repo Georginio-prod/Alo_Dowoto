@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_REGION_SLUG, findQuartierBySlug, getRegionBySlug, listQuartiers, REGIONS } from '~~/app/data/regions'
+import { DEFAULT_REGION_SLUG, findQuartierBySlug, getRegionBySlug, listAllQuartiers, listQuartiers, REGIONS } from '~~/app/data/regions'
 
 describe('regions (#geoloc, découpage géographique en donnée de configuration)', () => {
   it('expose la Région Maritime avec des bornes cohérentes (sud < nord, ouest < est)', () => {
@@ -52,5 +52,11 @@ describe('regions (#geoloc, découpage géographique en donnée de configuration
   it('n’a pas de slug de quartier dupliqué au sein d’une même région (cohérence des données)', () => {
     const slugs = listQuartiers().map((quartier) => quartier.slug)
     expect(new Set(slugs).size).toBe(slugs.length)
+  })
+
+  it('listAllQuartiers couvre au moins toutes les régions peuplées (aujourd’hui : la Région Maritime)', () => {
+    const all = listAllQuartiers().map((quartier) => quartier.slug)
+    const maritime = listQuartiers('maritime').map((quartier) => quartier.slug)
+    expect(maritime.every((slug) => all.includes(slug))).toBe(true)
   })
 })
