@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const { t, locale, locales } = useI18n({ useScope: 'global' })
+
 const { conversations, pending, ensure } = useConversations()
 await ensure()
 
@@ -16,11 +18,13 @@ const filteredConversations = computed(() => {
 })
 
 function formatTime(timestamp: number): string {
+  const languageTag = (locales.value as Array<{ code: string, language?: string }>)
+    .find((l) => l.code === locale.value)?.language ?? 'fr-FR'
   const date = new Date(timestamp)
   const isToday = date.toDateString() === new Date().toDateString()
   return isToday
-    ? date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-    : date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
+    ? date.toLocaleTimeString(languageTag, { hour: '2-digit', minute: '2-digit' })
+    : date.toLocaleDateString(languageTag, { day: '2-digit', month: '2-digit' })
 }
 </script>
 
@@ -38,22 +42,22 @@ function formatTime(timestamp: number): string {
         <input
           v-model="query"
           type="text"
-          placeholder="Rechercher une conversation"
-          aria-label="Rechercher une conversation"
+          :placeholder="t('conversationList.searchPlaceholder')"
+          :aria-label="t('conversationList.searchPlaceholder')"
           class="min-w-0 flex-1 border-none bg-transparent text-[13.5px] text-ink outline-none placeholder:text-muted"
         >
       </div>
     </div>
 
     <div class="flex-1 overflow-y-auto">
-      <p v-if="pending" class="p-4 text-[13px] text-muted">Chargement…</p>
+      <p v-if="pending" class="p-4 text-[13px] text-muted">{{ t('conversationList.loading') }}</p>
 
       <p v-else-if="conversations.length === 0" class="p-4 text-[13px] leading-relaxed text-muted">
-        Aucune conversation pour l'instant. Contactez un prestataire depuis ses résultats de recherche pour démarrer.
+        {{ t('conversationList.emptyState') }}
       </p>
 
       <p v-else-if="filteredConversations.length === 0" class="p-4 text-[13px] text-muted">
-        Aucune conversation ne correspond à « {{ query }} ».
+        {{ t('conversationList.noMatch', { query }) }}
       </p>
 
       <ul v-else class="space-y-1 p-2">
@@ -91,7 +95,7 @@ function formatTime(timestamp: number): string {
                 class="truncate text-[12.5px]"
                 :class="conversation.unreadCount > 0 ? 'font-semibold text-dark' : 'text-muted'"
               >
-                {{ conversation.lastMessage?.body ?? 'Écrivez le premier message.' }}
+                {{ conversation.lastMessage?.body ?? t('conversationList.writeFirstMessage') }}
               </p>
             </div>
           </NuxtLink>

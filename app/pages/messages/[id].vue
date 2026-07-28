@@ -13,6 +13,7 @@ interface MessagesResponse {
 
 definePageMeta({ layout: 'messages', middleware: 'auth' })
 
+const { t } = useI18n({ useScope: 'global' })
 const route = useRoute()
 const conversationId = computed(() => String(route.params.id))
 
@@ -70,8 +71,8 @@ async function handlePayEscrowOrder() {
   } catch (fetchError) {
     payError.value =
       (fetchError as { statusCode?: number }).statusCode === 402
-        ? 'Solde insuffisant. Rechargez votre portefeuille WorkTogo puis réessayez.'
-        : "Le paiement n'a pas pu être effectué. Réessayez."
+        ? t('messageThreadPage.errorInsufficientBalance')
+        : t('messageThreadPage.errorPaymentFailed')
   } finally {
     isPaying.value = false
   }
@@ -162,7 +163,7 @@ async function submitReview() {
     if ((fetchError as { statusCode?: number }).statusCode === 409) {
       reviewJustSubmitted.value = true
     } else {
-      reviewError.value = "L'avis n'a pas pu être publié. Réessayez."
+      reviewError.value = t('messageThreadPage.errorReviewFailed')
     }
   } finally {
     isSubmittingReview.value = false
@@ -175,7 +176,7 @@ async function submitReview() {
     <header class="relative flex shrink-0 items-center gap-3 overflow-hidden border-b border-hairline bg-surface px-4 py-3">
       <div class="pointer-events-none absolute inset-0 bg-gradient-to-r from-primary/[0.06] via-transparent to-transparent" />
 
-      <NuxtLink to="/messages" class="press z-10 text-lg text-muted sm:hidden" aria-label="Retour aux messages">←</NuxtLink>
+      <NuxtLink to="/messages" class="press z-10 text-lg text-muted sm:hidden" :aria-label="t('messageThreadPage.backAria')">←</NuxtLink>
 
       <template v-if="conversation">
         <ConversationAvatar :name="conversation.otherPartyName" :seed="conversation.id" size="sm" ring class="z-10" />
@@ -189,13 +190,13 @@ async function submitReview() {
     </header>
 
     <div class="flex min-h-0 flex-1 flex-col px-4 py-4">
-      <p v-if="pending" class="text-[13px] text-muted">Chargement…</p>
+      <p v-if="pending" class="text-[13px] text-muted">{{ t('messageThreadPage.loading') }}</p>
 
       <ResultsEmptyState
         v-else-if="error"
-        title="Conversation introuvable"
-        description="Cette conversation n'existe pas ou vous n'y avez pas accès."
-        action-label="Retour à mes messages"
+        :title="t('messageThreadPage.notFoundTitle')"
+        :description="t('messageThreadPage.notFoundDescription')"
+        :action-label="t('messageThreadPage.backToMessages')"
         @action="navigateTo('/messages')"
       />
 
@@ -209,10 +210,9 @@ async function submitReview() {
       />
 
       <div v-else-if="showPaymentPrompt" class="rounded-card border border-hairline bg-surface p-5">
-        <p class="text-[14.5px] font-semibold text-dark">Paiement sécurisé requis</p>
+        <p class="text-[14.5px] font-semibold text-dark">{{ t('messageThreadPage.paymentRequiredTitle') }}</p>
         <p class="mt-1 text-[13px] text-muted">
-          Votre demande ne sera transmise à {{ conversation?.otherPartyName }} qu'une fois le paiement confirmé.
-          Les fonds restent en séquestre WorkTogo jusqu'à la fin de la prestation.
+          {{ t('messageThreadPage.paymentRequiredText', { name: conversation?.otherPartyName }) }}
         </p>
         <p class="mt-3 text-[18px] font-bold text-dark">{{ escrowOrder?.amount.toLocaleString('fr-FR') }} F CFA</p>
         <button
@@ -221,15 +221,15 @@ async function submitReview() {
           :disabled="isPaying"
           @click="handlePayEscrowOrder"
         >
-          {{ isPaying ? 'Paiement…' : 'Payer et transmettre ma demande' }}
+          {{ isPaying ? t('messageThreadPage.paying') : t('messageThreadPage.payCta') }}
         </button>
         <p v-if="payError" class="mt-2 text-[12.5px] text-error">{{ payError }}</p>
       </div>
 
       <div v-else-if="showAwaitingPaymentNotice" class="rounded-card border border-hairline bg-surface p-5 text-center">
-        <p class="text-[14.5px] font-semibold text-dark">En attente du paiement du chercheur</p>
+        <p class="text-[14.5px] font-semibold text-dark">{{ t('messageThreadPage.awaitingPaymentTitle') }}</p>
         <p class="mt-1 text-[13px] text-muted">
-          Le détail de cette demande vous sera transmis dès que le paiement sera confirmé côté chercheur.
+          {{ t('messageThreadPage.awaitingPaymentText') }}
         </p>
       </div>
 
@@ -277,15 +277,15 @@ async function submitReview() {
           <div class="pointer-events-none absolute -right-8 -top-10 size-32 rounded-full bg-star/10 blur-2xl" />
 
           <p v-if="alreadyReviewed" class="flex items-center gap-2 text-[13px] font-semibold text-dark">
-            <span class="text-star">★</span> Merci, votre avis sur cette collaboration a déjà été publié.
+            <span class="text-star">★</span> {{ t('messageThreadPage.alreadyReviewed') }}
           </p>
 
           <template v-else>
             <p class="mb-3 text-[13.5px] font-semibold text-dark">
-              Comment s'est passée votre collaboration avec {{ conversation.otherPartyName }} ?
+              {{ t('messageThreadPage.reviewPrompt', { name: conversation.otherPartyName }) }}
             </p>
 
-            <div class="mb-3 flex gap-1.5" role="radiogroup" aria-label="Note de la collaboration">
+            <div class="mb-3 flex gap-1.5" role="radiogroup" :aria-label="t('messageThreadPage.reviewRatingAriaLabel')">
               <button
                 v-for="n in 5"
                 :key="n"
@@ -293,7 +293,7 @@ async function submitReview() {
                 class="press text-[26px] leading-none transition-transform hover:scale-110"
                 :class="n <= (reviewHoverRating || reviewRating) ? 'text-star' : 'text-hairline'"
                 :aria-pressed="n <= reviewRating"
-                :aria-label="`${n} étoile(s)`"
+                :aria-label="t('messageThreadPage.starAriaLabel', { n })"
                 @mouseenter="reviewHoverRating = n"
                 @mouseleave="reviewHoverRating = 0"
                 @click="setReviewRating(n)"
@@ -305,8 +305,8 @@ async function submitReview() {
             <textarea
               v-model="reviewComment"
               rows="2"
-              placeholder="Commentaire (optionnel)"
-              aria-label="Commentaire sur la collaboration"
+              :placeholder="t('messageThreadPage.reviewCommentPlaceholder')"
+              :aria-label="t('messageThreadPage.reviewCommentAria')"
               class="mb-3 w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13.5px] text-ink outline-none focus:border-primary"
             />
 
@@ -316,7 +316,7 @@ async function submitReview() {
               :disabled="reviewRating < 1 || isSubmittingReview"
               @click="submitReview"
             >
-              {{ isSubmittingReview ? 'Publication…' : 'Publier' }}
+              {{ isSubmittingReview ? t('messageThreadPage.publishing') : t('messageThreadPage.publish') }}
             </button>
             <p v-if="reviewError" class="mt-2 text-[12.5px] text-error">{{ reviewError }}</p>
           </template>

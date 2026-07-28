@@ -10,6 +10,8 @@
 const props = defineProps<{ conversationId: string }>()
 const emit = defineEmits<{ sent: [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const draft = ref('')
 const isSending = ref(false)
 const sendError = ref('')
@@ -37,7 +39,7 @@ async function sendMessage() {
     if (composerEl.value) composerEl.value.style.height = 'auto'
     emit('sent')
   } catch {
-    sendError.value = "Le message n'a pas pu être envoyé. Réessayez."
+    sendError.value = t('messageComposer.errorSendFailed')
   } finally {
     isSending.value = false
   }
@@ -61,8 +63,8 @@ defineExpose({ focusWithText })
           ref="composerEl"
           v-model="draft"
           rows="1"
-          placeholder="Écrivez votre message…"
-          aria-label="Votre message"
+          :placeholder="t('messageComposer.placeholder')"
+          :aria-label="t('messageComposer.inputAria')"
           class="max-h-[120px] min-h-[24px] w-full resize-none border-none bg-transparent py-1 text-[14.5px] text-ink outline-none placeholder:text-muted"
           @input="autoGrow"
           @keydown.enter.exact.prevent="sendMessage"
@@ -70,7 +72,7 @@ defineExpose({ focusWithText })
       </div>
       <button
         type="submit"
-        aria-label="Envoyer le message"
+        :aria-label="t('messageComposer.sendAria')"
         class="press flex size-[46px] shrink-0 items-center justify-center rounded-full bg-primary text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40"
         :disabled="!draft.trim() || isSending"
       >

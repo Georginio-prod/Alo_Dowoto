@@ -715,5 +715,116 @@
   },
   "resultsSkeleton": {
     "loadingAriaLabel": "Chargement des résultats"
+  },
+  "messagesIndex": {
+    "heading": "Vos messages",
+    "description": "Sélectionnez une conversation à gauche pour l'afficher, ou contactez un prestataire depuis ses résultats de recherche pour en démarrer une nouvelle."
+  },
+  "messageThreadPage": {
+    "backAria": "Retour aux messages",
+    "loading": "Chargement…",
+    "notFoundTitle": "Conversation introuvable",
+    "notFoundDescription": "Cette conversation n'existe pas ou vous n'y avez pas accès.",
+    "backToMessages": "Retour à mes messages",
+    "paymentRequiredTitle": "Paiement sécurisé requis",
+    "paymentRequiredText": "Votre demande ne sera transmise à {name} qu'une fois le paiement confirmé. Les fonds restent en séquestre WorkTogo jusqu'à la fin de la prestation.",
+    "paying": "Paiement…",
+    "payCta": "Payer et transmettre ma demande",
+    "errorInsufficientBalance": "Solde insuffisant. Rechargez votre portefeuille WorkTogo puis réessayez.",
+    "errorPaymentFailed": "Le paiement n'a pas pu être effectué. Réessayez.",
+    "awaitingPaymentTitle": "En attente du paiement du chercheur",
+    "awaitingPaymentText": "Le détail de cette demande vous sera transmis dès que le paiement sera confirmé côté chercheur.",
+    "alreadyReviewed": "Merci, votre avis sur cette collaboration a déjà été publié.",
+    "reviewPrompt": "Comment s'est passée votre collaboration avec {name} ?",
+    "reviewRatingAriaLabel": "Note de la collaboration",
+    "starAriaLabel": "{n} étoile(s)",
+    "reviewCommentPlaceholder": "Commentaire (optionnel)",
+    "reviewCommentAria": "Commentaire sur la collaboration",
+    "publishing": "Publication…",
+    "publish": "Publier",
+    "errorReviewFailed": "L'avis n'a pas pu être publié. Réessayez."
+  },
+  "conversationList": {
+    "searchPlaceholder": "Rechercher une conversation",
+    "loading": "Chargement…",
+    "emptyState": "Aucune conversation pour l'instant. Contactez un prestataire depuis ses résultats de recherche pour démarrer.",
+    "noMatch": "Aucune conversation ne correspond à « {query} ».",
+    "writeFirstMessage": "Écrivez le premier message."
+  },
+  "messageBubble": {
+    "errorConfirmFailed": "La confirmation n'a pas pu être effectuée. Réessayez.",
+    "confirming": "Confirmation…",
+    "confirmOrderCta": "Confirmer la prise en charge",
+    "geoUnavailable": "La géolocalisation n'est pas disponible sur cet appareil.",
+    "sendingLocation": "Envoi…",
+    "shareLocationCta": "Partager ma localisation",
+    "errorShareLocationFailed": "Le partage de localisation a échoué. Réessayez.",
+    "errorLocationDenied": "Localisation refusée ou indisponible. Autorisez l'accès à votre position puis réessayez.",
+    "viewOnMap": "Voir sur la carte →",
+    "confirmRescheduleCta": "Confirmer le nouveau créneau",
+    "rescheduleConfirmed": "✓ Créneau confirmé"
+  },
+  "messageComposer": {
+    "placeholder": "Écrivez votre message…",
+    "inputAria": "Votre message",
+    "sendAria": "Envoyer le message",
+    "errorSendFailed": "Le message n'a pas pu être envoyé. Réessayez."
+  },
+  "messageThread": {
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "emptyHeading": "Aucun message pour l'instant",
+    "emptyDescription": "Écrivez le premier message à {name} pour démarrer la conversation.",
+    "suggestion1Client": "Bonjour, êtes-vous disponible cette semaine ?",
+    "suggestion2Client": "Pouvez-vous me donner un tarif indicatif ?",
+    "suggestion3Client": "Quel est le délai habituel ?",
+    "suggestion1Provider": "Bonjour, merci pour votre confiance !",
+    "suggestion2Provider": "Je peux intervenir rapidement.",
+    "suggestion3Provider": "Avez-vous des précisions à ajouter ?"
+  },
+  "rebookPrompt": {
+    "promptText": "Une nouvelle mission pour {name} ?",
+    "rebookCta": "Reprendre ce prestataire",
+    "newRequestTitle": "Nouvelle demande à {name}",
+    "descriptionPlaceholder": "Décrivez votre nouveau besoin",
+    "descriptionAria": "Description de la nouvelle demande",
+    "sending": "Envoi…",
+    "sendCta": "Envoyer la demande",
+    "cancel": "Annuler",
+    "errorSendFailed": "La demande n'a pas pu être envoyée. Réessayez."
+  },
+  "firstContactForm": {
+    "heading": "Décrivez votre besoin à {name}",
+    "subtitle": "Cette étape ne s'affiche qu'une fois : {name} recevra votre message dès l'envoi.",
+    "needLabel": "Votre besoin",
+    "needPlaceholder": "Décrivez précisément ce dont vous avez besoin…",
+    "optional": "(optionnel)",
+    "selectPlaceholder": "Sélectionnez…",
+    "contactLabel": "Vos coordonnées",
+    "contactPlaceholder": "Téléphone ou email",
+    "urgencyLabel": "Urgence / délai souhaité",
+    "urgencyPlaceholder": "Ex. dès que possible, sous 48h, la semaine prochaine…",
+    "errorSendFailed": "La demande n'a pas pu être envoyée. Réessayez.",
+    "sending": "Envoi…",
+    "sendCta": "Envoyer la demande"
+  },
+  "firstContactSectorFields": {
+    "addressPlaceholder": "Quartier, ville…",
+    "btpInterventionTypeLabel": "Type d'intervention",
+    "btpInterventionTypeDevis": "Devis / diagnostic",
+    "btpInterventionTypeReparation": "Réparation / dépannage",
+    "btpInterventionTypeInstallation": "Installation neuve",
+    "btpAddressLabel": "Adresse d'intervention",
+    "menageFrequencyLabel": "Fréquence souhaitée",
+    "menageFrequencyPonctuelle": "Ponctuelle",
+    "menageFrequencyHebdomadaire": "Hebdomadaire",
+    "menageFrequencyMensuelle": "Mensuelle",
+    "menageAddressLabel": "Adresse du domicile",
+    "transportPickupLabel": "Adresse de départ",
+    "transportDropoffLabel": "Adresse d'arrivée",
+    "evenementDateLabel": "Date de l'événement",
+    "evenementDatePlaceholder": "jj/mm/aaaa",
+    "evenementGuestCountLabel": "Nombre d'invités estimé",
+    "evenementGuestCountPlaceholder": "Ex. 50"
   }
 }

@@ -19,8 +19,12 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ changed: [] }>()
 
+const { t, locale, locales } = useI18n({ useScope: 'global' })
+
 function formatTime(timestamp: number): string {
-  return new Date(timestamp).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+  const languageTag = (locales.value as Array<{ code: string, language?: string }>)
+    .find((l) => l.code === locale.value)?.language ?? 'fr-FR'
+  return new Date(timestamp).toLocaleString(languageTag, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
 const isConfirmingOrder = ref(false)
@@ -34,7 +38,7 @@ async function confirmOrder() {
     await $fetch(`/api/conversations/${props.conversationId}/confirm-order`, { method: 'POST' })
     emit('changed')
   } catch {
-    confirmOrderError.value = "La confirmation n'a pas pu être effectuée. Réessayez."
+    confirmOrderError.value = t('messageBubble.errorConfirmFailed')
   } finally {
     isConfirmingOrder.value = false
   }
@@ -48,7 +52,7 @@ const shareLocationError = ref('')
 async function shareLocation() {
   if (isSharingLocation.value) return
   if (!('geolocation' in navigator)) {
-    shareLocationError.value = "La géolocalisation n'est pas disponible sur cet appareil."
+    shareLocationError.value = t('messageBubble.geoUnavailable')
     return
   }
   isSharingLocation.value = true
@@ -62,13 +66,13 @@ async function shareLocation() {
         })
         emit('changed')
       } catch {
-        shareLocationError.value = 'Le partage de localisation a échoué. Réessayez.'
+        shareLocationError.value = t('messageBubble.errorShareLocationFailed')
       } finally {
         isSharingLocation.value = false
       }
     },
     () => {
-      shareLocationError.value = "Localisation refusée ou indisponible. Autorisez l'accès à votre position puis réessayez."
+      shareLocationError.value = t('messageBubble.errorLocationDenied')
       isSharingLocation.value = false
     },
   )
@@ -92,7 +96,7 @@ async function confirmReschedule() {
     await $fetch(`/api/conversations/${props.conversationId}/confirm-reschedule`, { method: 'POST' })
     emit('changed')
   } catch {
-    confirmRescheduleError.value = "La confirmation n'a pas pu être effectuée. Réessayez."
+    confirmRescheduleError.value = t('messageBubble.errorConfirmFailed')
   } finally {
     isConfirmingReschedule.value = false
   }
@@ -119,7 +123,7 @@ async function confirmReschedule() {
         :disabled="isConfirmingOrder"
         @click="confirmOrder"
       >
-        {{ isConfirmingOrder ? 'Confirmation…' : 'Confirmer la prise en charge' }}
+        {{ isConfirmingOrder ? t('messageBubble.confirming') : t('messageBubble.confirmOrderCta') }}
       </button>
       <p v-if="confirmOrderError" class="mt-1.5 text-[11.5px] text-error">{{ confirmOrderError }}</p>
 
@@ -130,7 +134,7 @@ async function confirmReschedule() {
         :disabled="isSharingLocation"
         @click="shareLocation"
       >
-        {{ isSharingLocation ? 'Envoi…' : 'Partager ma localisation' }}
+        {{ isSharingLocation ? t('messageBubble.sendingLocation') : t('messageBubble.shareLocationCta') }}
       </button>
       <p v-if="shareLocationError" class="mt-1.5 text-[11.5px] text-error">{{ shareLocationError }}</p>
     </div>
@@ -152,7 +156,7 @@ async function confirmReschedule() {
         rel="noopener"
         class="press mt-1 block text-[12.5px] font-semibold underline"
       >
-        Voir sur la carte →
+        {{ t('messageBubble.viewOnMap') }}
       </a>
 
       <template v-if="message.kind === 'reschedule_request' && !message.resolvedAt && isViewerClient">
@@ -162,12 +166,12 @@ async function confirmReschedule() {
           :disabled="isConfirmingReschedule"
           @click="confirmReschedule"
         >
-          {{ isConfirmingReschedule ? 'Confirmation…' : 'Confirmer le nouveau créneau' }}
+          {{ isConfirmingReschedule ? t('messageBubble.confirming') : t('messageBubble.confirmRescheduleCta') }}
         </button>
         <p v-if="confirmRescheduleError" class="mt-1.5 text-[11.5px] text-error">{{ confirmRescheduleError }}</p>
       </template>
       <p v-else-if="message.kind === 'reschedule_request' && message.resolvedAt" class="mt-1 text-[11.5px] opacity-70">
-        ✓ Créneau confirmé
+        {{ t('messageBubble.rescheduleConfirmed') }}
       </p>
 
       <p class="mt-1 text-[10.5px] opacity-70">{{ formatTime(message.createdAt) }}</p>

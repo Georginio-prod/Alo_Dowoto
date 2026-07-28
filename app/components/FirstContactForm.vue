@@ -13,13 +13,15 @@ import { getSectorFields } from '~/data/firstContactSectorFields'
 const props = defineProps<{ conversationId: string; prefillContact: string; providerName: string; sectorSlug: string | null }>()
 const emit = defineEmits<{ submitted: [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const description = ref('')
 const contact = ref(props.prefillContact)
 const urgency = ref('')
 const submitError = ref('')
 const isSubmitting = ref(false)
 
-const sectorFields = computed(() => getSectorFields(props.sectorSlug))
+const sectorFields = computed(() => getSectorFields(props.sectorSlug, t))
 const sectorAnswers = ref<Record<string, string>>({})
 
 const isValid = computed(() => {
@@ -48,7 +50,7 @@ async function submit() {
     })
     emit('submitted')
   } catch (error) {
-    submitError.value = apiErrorMessage(error, 'La demande n\'a pas pu être envoyée. Réessayez.')
+    submitError.value = apiErrorMessage(error, t('firstContactForm.errorSendFailed'))
   } finally {
     isSubmitting.value = false
   }
@@ -57,20 +59,20 @@ async function submit() {
 
 <template>
   <div class="rounded-card border border-hairline bg-surface p-5">
-    <h2 class="mb-1 text-[15px] font-bold text-dark">Décrivez votre besoin à {{ providerName }}</h2>
+    <h2 class="mb-1 text-[15px] font-bold text-dark">{{ t('firstContactForm.heading', { name: providerName }) }}</h2>
     <p class="mb-4 text-[13px] leading-relaxed text-muted">
-      Cette étape ne s'affiche qu'une fois : {{ providerName }} recevra votre message dès l'envoi.
+      {{ t('firstContactForm.subtitle', { name: providerName }) }}
     </p>
 
     <label for="first-contact-description" class="mb-1.5 block text-[13px] font-semibold text-dark">
-      Votre besoin <span class="text-error">*</span>
+      {{ t('firstContactForm.needLabel') }} <span class="text-error">*</span>
     </label>
     <textarea
       id="first-contact-description"
       v-model="description"
       rows="4"
       required
-      placeholder="Décrivez précisément ce dont vous avez besoin…"
+      :placeholder="t('firstContactForm.needPlaceholder')"
       aria-required="true"
       class="mb-3.5 w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13.5px] text-ink outline-none focus:border-primary"
     />
@@ -78,7 +80,7 @@ async function submit() {
     <template v-for="field in sectorFields" :key="field.key">
       <label :for="`first-contact-sector-${field.key}`" class="mb-1.5 block text-[13px] font-semibold text-dark">
         {{ field.label }} <span v-if="field.required" class="text-error">*</span>
-        <span v-else class="font-normal text-muted">(optionnel)</span>
+        <span v-else class="font-normal text-muted">{{ t('firstContactForm.optional') }}</span>
       </label>
       <select
         v-if="field.type === 'select'"
@@ -87,7 +89,7 @@ async function submit() {
         :required="field.required"
         class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
       >
-        <option value="" disabled>Sélectionnez…</option>
+        <option value="" disabled>{{ t('firstContactForm.selectPlaceholder') }}</option>
         <option v-for="option in field.options" :key="option.value" :value="option.value">{{ option.label }}</option>
       </select>
       <input
@@ -102,26 +104,26 @@ async function submit() {
     </template>
 
     <label for="first-contact-contact" class="mb-1.5 block text-[13px] font-semibold text-dark">
-      Vos coordonnées <span class="text-error">*</span>
+      {{ t('firstContactForm.contactLabel') }} <span class="text-error">*</span>
     </label>
     <input
       id="first-contact-contact"
       v-model="contact"
       type="text"
       required
-      placeholder="Téléphone ou email"
+      :placeholder="t('firstContactForm.contactPlaceholder')"
       aria-required="true"
       class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
     >
 
     <label for="first-contact-urgency" class="mb-1.5 block text-[13px] font-semibold text-dark">
-      Urgence / délai souhaité <span class="font-normal text-muted">(optionnel)</span>
+      {{ t('firstContactForm.urgencyLabel') }} <span class="font-normal text-muted">{{ t('firstContactForm.optional') }}</span>
     </label>
     <input
       id="first-contact-urgency"
       v-model="urgency"
       type="text"
-      placeholder="Ex. dès que possible, sous 48h, la semaine prochaine…"
+      :placeholder="t('firstContactForm.urgencyPlaceholder')"
       class="mb-3.5 h-[46px] w-full rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
     >
 
@@ -133,7 +135,7 @@ async function submit() {
       :disabled="!isValid || isSubmitting"
       @click="submit"
     >
-      {{ isSubmitting ? 'Envoi…' : 'Envoyer la demande' }}
+      {{ isSubmitting ? t('firstContactForm.sending') : t('firstContactForm.sendCta') }}
     </button>
   </div>
 </template>
