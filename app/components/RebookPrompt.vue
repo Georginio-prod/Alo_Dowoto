@@ -13,6 +13,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{ changed: [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const showForm = ref(false)
 const description = ref('')
 const isSubmitting = ref(false)
@@ -30,7 +32,7 @@ async function handleSubmit() {
     showForm.value = false
     emit('changed')
   } catch {
-    error.value = "La demande n'a pas pu être envoyée. Réessayez."
+    error.value = t('rebookPrompt.errorSendFailed')
   } finally {
     isSubmitting.value = false
   }
@@ -52,24 +54,24 @@ async function handleSubmit() {
             />
           </svg>
         </span>
-        <p class="text-[13px] text-dark">Une nouvelle mission pour {{ providerName }} ?</p>
+        <p class="text-[13px] text-dark">{{ t('rebookPrompt.promptText', { name: providerName }) }}</p>
       </div>
       <button
         type="button"
         class="press shrink-0 rounded-field bg-primary px-4 py-2 text-[13px] font-semibold text-white hover:bg-primary-hover"
         @click="showForm = true"
       >
-        Reprendre ce prestataire
+        {{ t('rebookPrompt.rebookCta') }}
       </button>
     </div>
 
     <template v-else>
-      <p class="mb-2 text-[13px] font-semibold text-dark">Nouvelle demande à {{ providerName }}</p>
+      <p class="mb-2 text-[13px] font-semibold text-dark">{{ t('rebookPrompt.newRequestTitle', { name: providerName }) }}</p>
       <textarea
         v-model="description"
         rows="2"
-        placeholder="Décrivez votre nouveau besoin"
-        aria-label="Description de la nouvelle demande"
+        :placeholder="t('rebookPrompt.descriptionPlaceholder')"
+        :aria-label="t('rebookPrompt.descriptionAria')"
         class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
       />
       <div class="mt-2 flex gap-2">
@@ -79,9 +81,9 @@ async function handleSubmit() {
           :disabled="!description.trim() || isSubmitting"
           @click="handleSubmit"
         >
-          {{ isSubmitting ? 'Envoi…' : 'Envoyer la demande' }}
+          {{ isSubmitting ? t('rebookPrompt.sending') : t('rebookPrompt.sendCta') }}
         </button>
-        <button type="button" class="press text-[12.5px] text-muted" @click="showForm = false">Annuler</button>
+        <button type="button" class="press text-[12.5px] text-muted" @click="showForm = false">{{ t('rebookPrompt.cancel') }}</button>
       </div>
       <p v-if="error" class="mt-2 text-[12.5px] text-error">{{ error }}</p>
     </template>

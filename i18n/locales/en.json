@@ -715,5 +715,116 @@
   },
   "resultsSkeleton": {
     "loadingAriaLabel": "Loading results"
+  },
+  "messagesIndex": {
+    "heading": "Your messages",
+    "description": "Select a conversation on the left to view it, or contact a provider from their search results to start a new one."
+  },
+  "messageThreadPage": {
+    "backAria": "Back to messages",
+    "loading": "Loading…",
+    "notFoundTitle": "Conversation not found",
+    "notFoundDescription": "This conversation doesn't exist or you don't have access to it.",
+    "backToMessages": "Back to my messages",
+    "paymentRequiredTitle": "Secure payment required",
+    "paymentRequiredText": "Your request won't be sent to {name} until payment is confirmed. Funds stay held in WorkTogo escrow until the service is complete.",
+    "paying": "Paying…",
+    "payCta": "Pay and send my request",
+    "errorInsufficientBalance": "Insufficient balance. Top up your WorkTogo wallet and try again.",
+    "errorPaymentFailed": "The payment could not be completed. Please try again.",
+    "awaitingPaymentTitle": "Awaiting payment from the client",
+    "awaitingPaymentText": "The details of this request will be sent to you once payment is confirmed on the client's side.",
+    "alreadyReviewed": "Thank you, your review of this collaboration has already been published.",
+    "reviewPrompt": "How did your collaboration with {name} go?",
+    "reviewRatingAriaLabel": "Collaboration rating",
+    "starAriaLabel": "{n} star(s)",
+    "reviewCommentPlaceholder": "Comment (optional)",
+    "reviewCommentAria": "Comment on the collaboration",
+    "publishing": "Publishing…",
+    "publish": "Publish",
+    "errorReviewFailed": "The review could not be published. Please try again."
+  },
+  "conversationList": {
+    "searchPlaceholder": "Search a conversation",
+    "loading": "Loading…",
+    "emptyState": "No conversations yet. Contact a provider from their search results to get started.",
+    "noMatch": "No conversation matches \"{query}\".",
+    "writeFirstMessage": "Write the first message."
+  },
+  "messageBubble": {
+    "errorConfirmFailed": "The confirmation could not be completed. Please try again.",
+    "confirming": "Confirming…",
+    "confirmOrderCta": "Confirm taking the job",
+    "geoUnavailable": "Geolocation isn't available on this device.",
+    "sendingLocation": "Sending…",
+    "shareLocationCta": "Share my location",
+    "errorShareLocationFailed": "Sharing your location failed. Please try again.",
+    "errorLocationDenied": "Location denied or unavailable. Allow access to your location and try again.",
+    "viewOnMap": "View on map →",
+    "confirmRescheduleCta": "Confirm new time slot",
+    "rescheduleConfirmed": "✓ Time slot confirmed"
+  },
+  "messageComposer": {
+    "placeholder": "Write your message…",
+    "inputAria": "Your message",
+    "sendAria": "Send message",
+    "errorSendFailed": "The message could not be sent. Please try again."
+  },
+  "messageThread": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "emptyHeading": "No messages yet",
+    "emptyDescription": "Write the first message to {name} to start the conversation.",
+    "suggestion1Client": "Hi, are you available this week?",
+    "suggestion2Client": "Could you give me an estimated rate?",
+    "suggestion3Client": "What's the usual turnaround time?",
+    "suggestion1Provider": "Hi, thanks for your trust!",
+    "suggestion2Provider": "I can get started quickly.",
+    "suggestion3Provider": "Do you have any details to add?"
+  },
+  "rebookPrompt": {
+    "promptText": "A new job for {name}?",
+    "rebookCta": "Rebook this provider",
+    "newRequestTitle": "New request to {name}",
+    "descriptionPlaceholder": "Describe your new need",
+    "descriptionAria": "Description of the new request",
+    "sending": "Sending…",
+    "sendCta": "Send request",
+    "cancel": "Cancel",
+    "errorSendFailed": "The request could not be sent. Please try again."
+  },
+  "firstContactForm": {
+    "heading": "Describe your need to {name}",
+    "subtitle": "This step only appears once: {name} will receive your message as soon as you send it.",
+    "needLabel": "Your need",
+    "needPlaceholder": "Describe precisely what you need…",
+    "optional": "(optional)",
+    "selectPlaceholder": "Select…",
+    "contactLabel": "Your contact details",
+    "contactPlaceholder": "Phone or email",
+    "urgencyLabel": "Urgency / desired timeframe",
+    "urgencyPlaceholder": "E.g. as soon as possible, within 48h, next week…",
+    "errorSendFailed": "The request could not be sent. Please try again.",
+    "sending": "Sending…",
+    "sendCta": "Send request"
+  },
+  "firstContactSectorFields": {
+    "addressPlaceholder": "Neighborhood, city…",
+    "btpInterventionTypeLabel": "Type of intervention",
+    "btpInterventionTypeDevis": "Quote / diagnostic",
+    "btpInterventionTypeReparation": "Repair / troubleshooting",
+    "btpInterventionTypeInstallation": "New installation",
+    "btpAddressLabel": "Service address",
+    "menageFrequencyLabel": "Desired frequency",
+    "menageFrequencyPonctuelle": "One-time",
+    "menageFrequencyHebdomadaire": "Weekly",
+    "menageFrequencyMensuelle": "Monthly",
+    "menageAddressLabel": "Home address",
+    "transportPickupLabel": "Pickup address",
+    "transportDropoffLabel": "Drop-off address",
+    "evenementDateLabel": "Event date",
+    "evenementDatePlaceholder": "dd/mm/yyyy",
+    "evenementGuestCountLabel": "Estimated number of guests",
+    "evenementGuestCountPlaceholder": "E.g. 50"
   }
 }

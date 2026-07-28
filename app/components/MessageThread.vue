@@ -21,6 +21,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{ changed: []; 'suggestion-picked': [text: string] }>()
 
+const { t, locale, locales } = useI18n({ useScope: 'global' })
+
 const messageListEl = ref<HTMLElement | null>(null)
 function scrollToBottom() {
   if (messageListEl.value) messageListEl.value.scrollTop = messageListEl.value.scrollHeight
@@ -42,9 +44,11 @@ function dayLabel(timestamp: number): string {
   const today = new Date()
   const yesterday = new Date(today)
   yesterday.setDate(yesterday.getDate() - 1)
-  if (date.toDateString() === today.toDateString()) return "Aujourd'hui"
-  if (date.toDateString() === yesterday.toDateString()) return 'Hier'
-  return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+  if (date.toDateString() === today.toDateString()) return t('messageThread.today')
+  if (date.toDateString() === yesterday.toDateString()) return t('messageThread.yesterday')
+  const languageTag = (locales.value as Array<{ code: string, language?: string }>)
+    .find((l) => l.code === locale.value)?.language ?? 'fr-FR'
+  return date.toLocaleDateString(languageTag, { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
 const messageGroups = computed(() => {
@@ -64,14 +68,14 @@ const messageGroups = computed(() => {
 const messageSuggestions = computed(() =>
   props.isViewerClient
     ? [
-        'Bonjour, êtes-vous disponible cette semaine ?',
-        'Pouvez-vous me donner un tarif indicatif ?',
-        'Quel est le délai habituel ?',
+        t('messageThread.suggestion1Client'),
+        t('messageThread.suggestion2Client'),
+        t('messageThread.suggestion3Client'),
       ]
     : [
-        'Bonjour, merci pour votre confiance !',
-        'Je peux intervenir rapidement.',
-        'Avez-vous des précisions à ajouter ?',
+        t('messageThread.suggestion1Provider'),
+        t('messageThread.suggestion2Provider'),
+        t('messageThread.suggestion3Provider'),
       ],
 )
 </script>
@@ -96,9 +100,9 @@ const messageSuggestions = computed(() =>
           />
         </svg>
       </div>
-      <p class="text-[13.5px] font-semibold text-dark">Aucun message pour l'instant</p>
+      <p class="text-[13.5px] font-semibold text-dark">{{ t('messageThread.emptyHeading') }}</p>
       <p class="max-w-[240px] text-[12.5px] text-muted">
-        Écrivez le premier message à {{ conversation?.otherPartyName }} pour démarrer la conversation.
+        {{ t('messageThread.emptyDescription', { name: conversation?.otherPartyName }) }}
       </p>
       <div class="mt-1 flex flex-wrap justify-center gap-1.5">
         <button

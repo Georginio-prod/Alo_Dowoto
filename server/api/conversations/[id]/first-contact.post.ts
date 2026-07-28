@@ -1,4 +1,4 @@
-import { getSectorFields } from '~~/app/data/firstContactSectorFields'
+import { getSectorFieldsFr } from '~~/app/data/firstContactSectorFields'
 
 /**
  * Formulaire obligatoire de première prise de contact (#129), affiché côté
@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
   // app/data/firstContactSectorFields.ts. Revalidés ici car le client ne
   // fait pas foi (requis, anti-contournement sur les champs texte).
   const providerSector = getProviderById(conversation.providerId)?.sector ?? null
-  const sectorFields = getSectorFields(providerSector)
+  const sectorFields = getSectorFieldsFr(providerSector)
   const sectorAnswerLines: string[] = []
   for (const field of sectorFields) {
     const value = sectorAnswers[field.key]?.trim()
