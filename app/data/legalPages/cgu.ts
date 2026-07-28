@@ -122,13 +122,28 @@ export const CGU: LegalPage = {
       ],
     },
     {
-      heading: '16. Modification des CGU',
+      heading: '16. Géolocalisation',
+      body: [
+        'WorkTogo propose une recherche de prestataires par proximité géographique, centrée sur Lomé et la Région Maritime. Cette fonctionnalité repose sur une position que l\'utilisateur transmet volontairement (autorisation de géolocalisation de son navigateur) ou renseigne manuellement (quartier, ville) ; elle n\'est jamais activée sans action explicite de l\'utilisateur et n\'est jamais requise pour utiliser le reste du service.',
+        'Un prestataire reste libre de choisir le niveau de précision de la position affichée publiquement sur sa fiche (quartier ou position précise) et peut supprimer à tout moment la position enregistrée sur son compte, chercheur comme prestataire, comme décrit dans la Politique de confidentialité.',
+      ],
+    },
+    {
+      heading: '17. Assistant conversationnel (IA)',
+      body: [
+        'WorkTogo met à disposition un assistant conversationnel automatisé, destiné à répondre aux questions sur le fonctionnement de la plateforme et à orienter l\'utilisateur vers de vrais prestataires inscrits. Il s\'agit d\'un outil d\'intelligence artificielle, qui ne se substitue pas au support humain, accessible à tout moment.',
+        'Les recommandations de l\'assistant s\'appuient exclusivement sur des données réelles de la plateforme (profils effectivement inscrits) ; elles ne constituent en rien un engagement contractuel de WorkTogo ni une garantie de disponibilité, de compétence ou de tarif du prestataire recommandé, qui restent régis par les articles 4 et suivants des présentes CGU.',
+        'En cas d\'indisponibilité de l\'assistant, l\'utilisateur conserve un accès complet à la recherche classique et à la messagerie.',
+      ],
+    },
+    {
+      heading: '18. Modification des CGU',
       body: [
         'WorkTogo peut modifier les présentes CGU pour tenir compte d\'évolutions du service ou de la réglementation. Les utilisateurs sont informés de toute modification substantielle ; la poursuite de l\'utilisation du service après entrée en vigueur des modifications vaut acceptation.',
       ],
     },
     {
-      heading: '17. Droit applicable et règlement des litiges',
+      heading: '19. Droit applicable et règlement des litiges',
       body: [
         'Les présentes CGU sont soumises au droit togolais. En cas de litige, les parties s\'efforcent de trouver une solution amiable avant toute action contentieuse ; à défaut, les juridictions togolaises compétentes seront seules saisies.',
       ],

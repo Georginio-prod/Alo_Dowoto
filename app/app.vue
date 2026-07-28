@@ -59,5 +59,7 @@ useHead(() => ({
     <FavoritesMessagingBar />
     <!-- Bouton de bascule de thème, présent sur toutes les pages. -->
     <ThemeSwitcher />
+    <!-- Assistant IA (#geoloc), accessible depuis toutes les interfaces. -->
+    <AssistantWidget />
   </div>
 </template>

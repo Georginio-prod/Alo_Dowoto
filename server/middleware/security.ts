@@ -48,7 +48,13 @@ export default defineEventHandler((event) => {
     "font-src 'self'",
     // Sentry (#262) : DSN vide par défaut (inactif), autorisé par avance pour
     // ne pas nécessiter de redéploiement le jour où NUXT_PUBLIC_SENTRY_DSN est renseigné.
-    "connect-src 'self' https://*.sentry.io",
+    // Nominatim (#geoloc, AuthContactStep.vue et LocationRadiusPicker.vue) :
+    // géocodage inverse/direct restreint au Togo, appelé depuis le navigateur.
+    // Sans cette entrée, ces appels étaient déjà bloqués en production
+    // (échec silencieux, sans régression visible côté utilisateur — voir le
+    // commentaire de useMyLocation dans AuthContactStep.vue) ; corrigé ici en
+    // même temps que ce chantier en ajoute un second usage.
+    "connect-src 'self' https://*.sentry.io https://nominatim.openstreetmap.org",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

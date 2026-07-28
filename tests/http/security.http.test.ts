@@ -61,6 +61,8 @@ describe('en-têtes de sécurité (#354)', () => {
     expect(csp).toContain("style-src 'self' 'unsafe-inline'")
     expect(csp).toContain("object-src 'none'")
     expect(csp).toContain("frame-ancestors 'none'")
+    // Nominatim (#geoloc) : géocodage appelé depuis le navigateur (AuthContactStep.vue, LocationRadiusPicker.vue).
+    expect(csp).toContain('https://nominatim.openstreetmap.org')
     expect(response.headers.get('strict-transport-security')).toBe('max-age=31536000; includeSubDomains')
   })
 

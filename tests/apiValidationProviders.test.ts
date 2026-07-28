@@ -85,3 +85,32 @@ describe('patchProviderSchema (validation PATCH /api/providers/me)', () => {
     expect(firstError(patchProviderSchema, { certifications: [{ id: 'c1', title: 'Certif', fileUrl: '', fileName: 'f.pdf', status: 'en_attente' }] })).toBe('Liste de certifications invalide.')
   })
 })
+
+describe('patchProviderSchema — champs géolocalisation (#geoloc)', () => {
+  it('accepte un quartier valide de la Région Maritime', () => {
+    expect(patchProviderSchema.safeParse({ quartier: 'be' }).success).toBe(true)
+  })
+
+  it('rejette un quartier inconnu', () => {
+    expect(firstError(patchProviderSchema, { quartier: 'quartier-inexistant' })).toBe('Quartier invalide.')
+  })
+
+  it('accepte adresse et points de repère en texte libre', () => {
+    const result = patchProviderSchema.safeParse({ adresse: 'Non renseignée', pointsDeRepere: 'Près du grand marché' })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejette un rayon d’intervention négatif, nul ou hors plage', () => {
+    expect(firstError(patchProviderSchema, { rayonInterventionKm: 0 })).toBe("Rayon d'intervention invalide.")
+    expect(firstError(patchProviderSchema, { rayonInterventionKm: -5 })).toBe("Rayon d'intervention invalide.")
+    expect(firstError(patchProviderSchema, { rayonInterventionKm: 500 })).toBe("Rayon d'intervention invalide.")
+  })
+
+  it('accepte un rayon d’intervention dans la plage valide', () => {
+    expect(patchProviderSchema.safeParse({ rayonInterventionKm: 15 }).success).toBe(true)
+  })
+
+  it('accepte le réglage de position approximative', () => {
+    expect(patchProviderSchema.safeParse({ positionApproximative: false }).success).toBe(true)
+  })
+})

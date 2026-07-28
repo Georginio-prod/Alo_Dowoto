@@ -1,4 +1,5 @@
 import { SECTORS } from '~~/app/data/sectors'
+import { DEFAULT_RADIUS_KM, RADIUS_SLIDER_OPTIONS_KM } from '~~/app/data/searchRadius'
 import { isValidCoordinatePair } from '~~/server/utils/apiValidation'
 import { boundingBoxAround, fuzzCoordinate, haversineDistanceKm, isWithinBoundingBox } from '~~/server/utils/geo'
 import { isProviderAvailableOn, todayIsoDate } from '~~/server/utils/providerAvailabilityStore'
@@ -246,12 +247,6 @@ export function searchProviders(filters: ProviderSearchFilters): ProviderSearchR
     .sort((a, b) => b.score - a.score)
     .map((entry) => entry.provider)
 }
-
-/** Paliers du curseur de rayon (#geoloc, 1.3) — aussi utilisés comme paliers d'élargissement automatique. */
-export const RADIUS_SLIDER_OPTIONS_KM = [1, 2, 5, 10, 20, 50]
-
-/** Rayon par défaut d'une recherche de proximité (#geoloc, 1.3) tant que l'utilisateur n'a pas ajusté le curseur. */
-export const DEFAULT_RADIUS_KM = 5
 
 export interface NearbySearchResult {
   results: ProviderSearchResult[]
