@@ -12,6 +12,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{ changed: [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const showForm = ref(false)
 const proposedDateTime = ref('')
 const note = ref('')
@@ -35,7 +37,7 @@ async function handleSubmit() {
     showForm.value = false
     emit('changed')
   } catch {
-    error.value = "La proposition n'a pas pu être envoyée. Réessayez."
+    error.value = t('reschedulePrompt.errorSendFailed')
   } finally {
     isProposing.value = false
   }
@@ -50,21 +52,21 @@ async function handleSubmit() {
       class="press text-[12.5px] font-semibold text-primary underline"
       @click="showForm = true"
     >
-      Proposer un nouveau créneau
+      {{ t('reschedulePrompt.proposeCta') }}
     </button>
 
     <div v-else class="space-y-2">
       <input
         v-model="proposedDateTime"
         type="datetime-local"
-        aria-label="Nouveau créneau proposé"
+        :aria-label="t('reschedulePrompt.dateTimeAria')"
         class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
       >
       <textarea
         v-model="note"
         rows="2"
-        placeholder="Précision (optionnel)"
-        aria-label="Précision sur le nouveau créneau"
+        :placeholder="t('reschedulePrompt.notePlaceholder')"
+        :aria-label="t('reschedulePrompt.noteAria')"
         class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
       />
       <div class="flex gap-2">
@@ -74,10 +76,10 @@ async function handleSubmit() {
           :disabled="!proposedDateTime || isProposing"
           @click="handleSubmit"
         >
-          {{ isProposing ? 'Envoi…' : 'Envoyer la proposition' }}
+          {{ isProposing ? t('reschedulePrompt.sending') : t('reschedulePrompt.sendCta') }}
         </button>
         <button type="button" class="press text-[12.5px] text-muted" @click="showForm = false">
-          Annuler
+          {{ t('reschedulePrompt.cancel') }}
         </button>
       </div>
       <p v-if="error" class="text-[12.5px] text-error">{{ error }}</p>

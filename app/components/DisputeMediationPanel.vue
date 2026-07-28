@@ -17,6 +17,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{ changed: [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const disputeResponseDraft = ref('')
 const isRespondingToDispute = ref(false)
 const respondToDisputeError = ref('')
@@ -33,7 +35,7 @@ async function handleRespondToDispute() {
     disputeResponseDraft.value = ''
     emit('changed')
   } catch {
-    respondToDisputeError.value = "La réponse n'a pas pu être envoyée. Réessayez."
+    respondToDisputeError.value = t('disputeMediationPanel.errorResponseFailed')
   } finally {
     isRespondingToDispute.value = false
   }
@@ -53,7 +55,7 @@ async function handleConfirmDisputeResolution(confirmed: boolean) {
     })
     emit('changed')
   } catch {
-    confirmDisputeResolutionError.value = "Votre confirmation n'a pas pu être envoyée. Réessayez."
+    confirmDisputeResolutionError.value = t('disputeMediationPanel.errorConfirmFailed')
   } finally {
     isConfirmingDisputeResolution.value = false
   }
@@ -63,23 +65,22 @@ async function handleConfirmDisputeResolution(confirmed: boolean) {
 <template>
   <div>
     <p class="text-[13px] text-dark">
-      Litige ouvert : les fonds restent gelés en séquestre en attendant l'arbitrage de l'équipe de médiation
-      WorkTogo.
+      {{ t('disputeMediationPanel.frozenText') }}
     </p>
     <p v-if="escrowOrder.disputeEvidence" class="mt-1 text-[12px] text-muted">
-      Preuves fournies : {{ escrowOrder.disputeEvidence }}
+      {{ t('disputeMediationPanel.evidenceProvidedText', { evidence: escrowOrder.disputeEvidence }) }}
     </p>
 
     <p v-if="escrowOrder.disputeResponse" class="mt-2 text-[13px] text-dark">
-      Réponse du prestataire : {{ escrowOrder.disputeResponse }}
+      {{ t('disputeMediationPanel.providerResponseText', { response: escrowOrder.disputeResponse }) }}
     </p>
     <p v-else-if="isViewerClient" class="mt-1 text-[12px] text-muted">
-      En attente de la réponse du prestataire.
+      {{ t('disputeMediationPanel.awaitingResponseText') }}
     </p>
 
     <div v-if="isViewerClient && escrowOrder.disputeResponse" class="mt-3 space-y-2 border-t border-hairline pt-3">
-      <p class="text-[12.5px] font-semibold text-dark">Le prestataire indique que la prestation est terminée</p>
-      <p class="text-[12px] text-muted">Confirmez-vous que le travail a bien été réalisé ?</p>
+      <p class="text-[12.5px] font-semibold text-dark">{{ t('disputeMediationPanel.providerDoneHeading') }}</p>
+      <p class="text-[12px] text-muted">{{ t('disputeMediationPanel.confirmQuestion') }}</p>
       <div class="flex gap-2">
         <button
           type="button"
@@ -87,7 +88,7 @@ async function handleConfirmDisputeResolution(confirmed: boolean) {
           :disabled="isConfirmingDisputeResolution"
           @click="handleConfirmDisputeResolution(true)"
         >
-          Oui, c'est fait
+          {{ t('disputeMediationPanel.confirmYes') }}
         </button>
         <button
           type="button"
@@ -95,19 +96,19 @@ async function handleConfirmDisputeResolution(confirmed: boolean) {
           :disabled="isConfirmingDisputeResolution"
           @click="handleConfirmDisputeResolution(false)"
         >
-          Non, ce n'est pas fait
+          {{ t('disputeMediationPanel.confirmNo') }}
         </button>
       </div>
       <p v-if="confirmDisputeResolutionError" class="text-[12.5px] text-error">{{ confirmDisputeResolutionError }}</p>
     </div>
 
     <div v-if="isViewerProvider && !escrowOrder.disputeResponse" class="mt-3 space-y-2 border-t border-hairline pt-3">
-      <p class="text-[12.5px] font-semibold text-dark">Répondre au litige (en médiation)</p>
+      <p class="text-[12.5px] font-semibold text-dark">{{ t('disputeMediationPanel.respondHeading') }}</p>
       <textarea
         v-model="disputeResponseDraft"
         rows="2"
-        placeholder="Votre version des faits, en réponse au litige (obligatoire)"
-        aria-label="Réponse au litige"
+        :placeholder="t('disputeMediationPanel.responsePlaceholder')"
+        :aria-label="t('disputeMediationPanel.responseAria')"
         class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
       />
       <button
@@ -116,7 +117,7 @@ async function handleConfirmDisputeResolution(confirmed: boolean) {
         :disabled="!disputeResponseDraft.trim() || isRespondingToDispute"
         @click="handleRespondToDispute"
       >
-        {{ isRespondingToDispute ? 'Envoi…' : 'Envoyer ma réponse' }}
+        {{ isRespondingToDispute ? t('disputeMediationPanel.sending') : t('disputeMediationPanel.sendResponseCta') }}
       </button>
       <p v-if="respondToDisputeError" class="text-[12.5px] text-error">{{ respondToDisputeError }}</p>
     </div>

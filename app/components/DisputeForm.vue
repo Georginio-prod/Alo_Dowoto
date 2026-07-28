@@ -11,6 +11,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{ submitted: []; cancel: [] }>()
 
+const { t } = useI18n({ useScope: 'global' })
+
 const reason = ref('')
 const evidence = ref('')
 const isSubmitting = ref(false)
@@ -27,7 +29,7 @@ async function handleSubmit() {
     })
     emit('submitted')
   } catch {
-    error.value = "Le litige n'a pas pu être ouvert. Réessayez."
+    error.value = t('disputeForm.errorOpenFailed')
   } finally {
     isSubmitting.value = false
   }
@@ -39,15 +41,15 @@ async function handleSubmit() {
     <textarea
       v-model="reason"
       rows="2"
-      placeholder="Motif du litige (obligatoire)"
-      aria-label="Motif du litige"
+      :placeholder="t('disputeForm.reasonPlaceholder')"
+      :aria-label="t('disputeForm.reasonAria')"
       class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
     />
     <textarea
       v-model="evidence"
       rows="2"
-      placeholder="Preuves à l'appui : description détaillée, liens vers des photos (optionnel)"
-      aria-label="Preuves à l'appui du litige"
+      :placeholder="t('disputeForm.evidencePlaceholder')"
+      :aria-label="t('disputeForm.evidenceAria')"
       class="w-full rounded-field border-[1.5px] border-hairline px-3.5 py-2.5 text-[13px] text-ink outline-none focus:border-primary"
     />
     <div class="flex gap-2">
@@ -57,10 +59,10 @@ async function handleSubmit() {
         :disabled="!reason.trim() || isSubmitting"
         @click="handleSubmit"
       >
-        {{ isSubmitting ? 'Envoi…' : 'Confirmer le litige' }}
+        {{ isSubmitting ? t('disputeForm.sending') : t('disputeForm.confirmCta') }}
       </button>
       <button type="button" class="press text-[12.5px] text-muted" @click="emit('cancel')">
-        Retour
+        {{ t('disputeForm.back') }}
       </button>
     </div>
     <p v-if="error" class="text-[12.5px] text-error">{{ error }}</p>
