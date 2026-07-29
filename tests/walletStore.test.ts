@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { describe, expect, it, vi } from 'vitest'
-import { debitWalletForPenalty, MIN_WITHDRAWAL_AMOUNT, creditWallet, debitWallet, getBalance, listMovements, requestWithdrawal } from '~~/server/utils/walletStore'
+import { debitWalletForPenalty, MIN_WITHDRAWAL_AMOUNT, creditWallet, debitWallet, getBalance, getMovementById, listMovements, requestWithdrawal } from '~~/server/utils/walletStore'
 
 /** Chaque test utilise un identifiant unique — isolation dans la base de test partagée (#342). */
 function userId(): string {
@@ -79,6 +79,17 @@ describe('walletStore (#192 modèle de données du solde & traçabilité)', () =
 
     expect(await getBalance(client)).toBe(recomputed)
     expect(await getBalance(provider)).toBe(5400)
+  })
+
+  it('getMovementById retrouve un mouvement précis (#363, reçu PDF)', async () => {
+    const user = userId()
+    const created = await creditWallet({ walletUserId: user, type: 'recharge', amount: 5000, reference: 'REF-1' })
+
+    expect(await getMovementById(created.id)).toMatchObject({ id: created.id, amount: 5000 })
+  })
+
+  it('getMovementById renvoie null pour un identifiant inconnu', async () => {
+    expect(await getMovementById(randomUUID())).toBeNull()
   })
 
   it('listMovements trie du plus récent au plus ancien', async () => {

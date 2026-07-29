@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { conflict } from '~~/server/utils/apiError'
-import { createPayment, getPayment, resolvePayment } from '~~/server/utils/paymentStore'
+import { createPayment, getPayment, listConfirmedPaymentsByUser, resolvePayment } from '~~/server/utils/paymentStore'
 import { createPendingSubscription } from '~~/server/utils/subscriptionStore'
 import { findOrCreateUser, type NewUserProfile } from '~~/server/utils/userStore'
 
@@ -82,5 +82,29 @@ describe('paymentStore (#32/#34 paiements Mobile Money)', () => {
 
   it('resolvePayment renvoie null pour un identifiant inconnu', async () => {
     expect(await resolvePayment(randomUUID(), 'confirmed')).toBeNull()
+  })
+})
+
+describe('listConfirmedPaymentsByUser (#363, historique des reçus PDF)', () => {
+  it('ne renvoie que les paiements confirmés de cet utilisateur, du plus récent au plus ancien', async () => {
+    const { user } = await findOrCreateUser(`+228${Date.now()}${counter += 1}`, 'prestataire', PROFILE)
+    const subscription = await createPendingSubscription(user.id, 'mensuel')
+
+    const pending = await createPayment({ userId: user.id, subscriptionId: subscription.id, provider: 'flooz', phone: '+22890000000', amount: 2500 })
+    const confirmed1 = await createPayment({ userId: user.id, subscriptionId: subscription.id, provider: 'flooz', phone: '+22890000000', amount: 2500 })
+    const confirmed2 = await createPayment({ userId: user.id, subscriptionId: subscription.id, provider: 'flooz', phone: '+22890000000', amount: 2500 })
+    await resolvePayment(confirmed1.id, 'confirmed', 'OP-1')
+    await resolvePayment(confirmed2.id, 'confirmed', 'OP-2')
+    await resolvePayment(pending.id, 'failed')
+
+    const payments = await listConfirmedPaymentsByUser(user.id)
+
+    expect(payments.map((p) => p.id).sort()).toEqual([confirmed1.id, confirmed2.id].sort())
+    expect(payments.every((p) => p.status === 'confirmed')).toBe(true)
+  })
+
+  it('renvoie un tableau vide pour un utilisateur sans paiement confirmé', async () => {
+    const { user } = await findOrCreateUser(`+228${Date.now()}${counter += 1}`, 'prestataire', PROFILE)
+    expect(await listConfirmedPaymentsByUser(user.id)).toEqual([])
   })
 })

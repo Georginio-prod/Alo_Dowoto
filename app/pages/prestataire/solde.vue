@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { PayoutMethod, ProviderProfile } from '~~/server/utils/providerStore'
+import type { Payment } from '~~/server/utils/paymentStore'
+import type { PlanSlug } from '~/data/plans'
 
 /**
  * « Solde » prestataire (#hub-profil-prestataire) : solde disponible, moyen
@@ -30,6 +32,20 @@ const languageTag = computed(() =>
 )
 const formattedBalance = computed(() => (balance.value === null ? '…' : `${balance.value.toLocaleString(languageTag.value)} F CFA`))
 const formattedMinWithdrawal = computed(() => (minWithdrawal.value === null ? '…' : `${minWithdrawal.value.toLocaleString(languageTag.value)} F CFA`))
+
+// Historique des paiements d'abonnement (#363) : reçus PDF téléchargeables,
+// même principe que les mouvements de portefeuille ci-dessous.
+const { data: paymentsData } = await useFetch<{ payments: Payment[]; plan: PlanSlug | null }>('/api/payments/me')
+const payments = computed(() => paymentsData.value?.payments ?? [])
+const plan = computed(() => paymentsData.value?.plan ?? null)
+
+function formatPaymentDate(payment: Payment): string {
+  return new Date(payment.resolvedAt ?? payment.createdAt).toLocaleDateString(languageTag.value, { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function paymentReceiptUrl(paymentId: string): string {
+  return `/api/payments/${paymentId}/receipt?locale=${locale.value}`
+}
 
 const payoutError = ref('')
 const payoutSuccess = ref(false)
@@ -154,5 +170,35 @@ async function submitWithdrawal() {
     </div>
 
     <WalletMovementList :movements="movements" />
+
+    <div class="mt-5 rounded-card border border-hairline bg-surface p-5">
+      <p class="mb-4 text-[14.5px] font-bold text-dark">{{ t('prestataireSolde.paymentsHeading') }}</p>
+
+      <p v-if="payments.length === 0" class="text-center text-[13px] text-muted">{{ t('prestataireSolde.noPayments') }}</p>
+
+      <ul v-else class="space-y-2">
+        <li
+          v-for="payment in payments"
+          :key="payment.id"
+          class="flex items-center justify-between gap-3 rounded-field border border-hairline px-3.5 py-2.5"
+        >
+          <div class="min-w-0">
+            <p class="truncate text-[13px] font-semibold text-dark">{{ plan ? t(`plans.${plan}.name`) : t('prestataireSolde.paymentsHeading') }}</p>
+            <p class="text-[11.5px] text-muted">{{ formatPaymentDate(payment) }}</p>
+          </div>
+          <div class="flex shrink-0 items-center gap-2.5">
+            <p class="text-[13.5px] font-bold text-dark">{{ payment.amount.toLocaleString(languageTag) }} F CFA</p>
+            <a
+              :href="paymentReceiptUrl(payment.id)"
+              :aria-label="t('walletMovementList.downloadReceiptAria')"
+              :title="t('walletMovementList.downloadReceiptAria')"
+              class="press rounded-field border border-hairline bg-white p-1.5 text-muted hover:border-primary/40 hover:text-primary"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+            </a>
+          </div>
+        </li>
+      </ul>
+    </div>
   </div>
 </template>

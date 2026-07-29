@@ -129,6 +129,12 @@ export async function listMovements(userId: string): Promise<WalletMovement[]> {
   return rows.map(toMovement)
 }
 
+/** Un mouvement précis (#363, génération de reçu PDF) — `null` si inexistant. */
+export async function getMovementById(id: string): Promise<WalletMovement | null> {
+  const row = await prisma.walletMovement.findUnique({ where: { id } })
+  return row ? toMovement(row) : null
+}
+
 /** Solde courant, toujours recalculé à partir du journal (jamais mis en cache). */
 export async function getBalance(userId: string): Promise<number> {
   const rows = await prisma.walletMovement.findMany({

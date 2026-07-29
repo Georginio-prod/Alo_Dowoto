@@ -1176,7 +1176,9 @@
     "withdrawSuccess": "Demande de retrait envoyée.",
     "errorWithdrawFailed": "La demande de retrait a échoué. Réessayez.",
     "withdrawing": "Envoi…",
-    "withdrawCta": "Demander le retrait"
+    "withdrawCta": "Demander le retrait",
+    "paymentsHeading": "Historique des paiements d'abonnement",
+    "noPayments": "Aucun paiement pour le moment."
   },
   "dashboardClient": {
     "restartDemo": "↺ Recommencer la démo",
@@ -1241,7 +1243,8 @@
     "last7Days": "7 derniers jours",
     "last30Days": "30 derniers jours",
     "noMovements": "Aucun mouvement.",
-    "referencePrefix": "Réf."
+    "referencePrefix": "Réf.",
+    "downloadReceiptAria": "Télécharger le reçu PDF"
   },
   "escrowStatusPanel": {
     "errorActionFailed": "Cette action n'a pas pu être effectuée. Réessayez.",
