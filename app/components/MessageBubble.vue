@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Message } from '~~/server/utils/conversationStore'
+import { resolveMessageLines } from '~/utils/messageTranslation'
 
 /**
  * Une bulle du fil de discussion (#hub-messages-automatiques) : message
@@ -21,10 +22,17 @@ const emit = defineEmits<{ changed: [] }>()
 
 const { t, locale, locales } = useI18n({ useScope: 'global' })
 
+const languageTag = computed(() =>
+  (locales.value as Array<{ code: string, language?: string }>).find((l) => l.code === locale.value)?.language ?? 'fr-FR',
+)
+
 function formatTime(timestamp: number): string {
-  const languageTag = (locales.value as Array<{ code: string, language?: string }>)
-    .find((l) => l.code === locale.value)?.language ?? 'fr-FR'
-  return new Date(timestamp).toLocaleString(languageTag, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+  return new Date(timestamp).toLocaleString(languageTag.value, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+}
+
+/** Un message libre (`translationKey` nul) reste `body` tel quel ; un message généré est retraduit selon la locale du lecteur (#i18n). */
+function messageLines(message: Message): string[] {
+  return resolveMessageLines(message, t, languageTag.value)
 }
 
 const isConfirmingOrder = ref(false)
@@ -113,7 +121,7 @@ async function confirmReschedule() {
       class="animate-[wt-fade_0.25s_ease] max-w-[85%] rounded-2xl border border-dashed border-primary/30 bg-primary/5 px-4 py-3 text-center text-[13px] text-dark"
     >
       <div class="mx-auto mb-1.5 flex size-7 items-center justify-center rounded-full bg-primary/15 text-[13px]">🔔</div>
-      <p>{{ message.body }}</p>
+      <p v-for="(line, i) in messageLines(message)" :key="i">{{ line }}</p>
       <p class="mt-1 text-[10.5px] text-muted">{{ formatTime(message.createdAt) }}</p>
 
       <button
@@ -148,7 +156,7 @@ async function confirmReschedule() {
           : 'rounded-bl-md border border-hairline bg-surface text-dark'
       "
     >
-      <p>{{ message.body }}</p>
+      <p v-for="(line, i) in messageLines(message)" :key="i">{{ line }}</p>
       <a
         v-if="message.kind === 'location_shared' && message.location"
         :href="locationMapUrl"

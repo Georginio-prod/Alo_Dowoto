@@ -27,6 +27,7 @@ export default defineEventHandler(async (event) => {
   const message = await addMessage(conversation.id, user.id, user.role, '📍 Localisation partagée avec le prestataire.', {
     kind: 'location_shared',
     location: { lat, lng },
+    translation: { key: 'systemMessages.locationShared' },
   })
 
   setResponseStatus(event, 201)

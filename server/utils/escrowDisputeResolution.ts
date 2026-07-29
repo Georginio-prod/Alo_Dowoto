@@ -26,7 +26,11 @@ export const PROVIDER_DISPUTE_PENALTY_RATE = 0.15
 /** Délai laissé au chercheur pour confirmer après la réponse du prestataire : passé ce délai, le litige se résout automatiquement en défaveur du prestataire. */
 export const DISPUTE_RESOLUTION_CONFIRMATION_DELAY_MS = 48 * 60 * 60 * 1000
 
-async function resolveDisputeAgainstProvider(order: EscrowOrder, outcomeMessage: string): Promise<EscrowOrder> {
+async function resolveDisputeAgainstProvider(
+  order: EscrowOrder,
+  outcomeMessage: string,
+  translationKey: 'systemMessages.disputeResolvedTimeout' | 'systemMessages.disputeResolvedNotDone',
+): Promise<EscrowOrder> {
   await creditWallet({ walletUserId: order.clientId, type: 'escrow_refund', amount: order.amount, reference: order.id, counterpartyUserId: order.providerId })
 
   const penalty = await debitWalletForPenalty({
@@ -42,7 +46,12 @@ async function resolveDisputeAgainstProvider(order: EscrowOrder, outcomeMessage:
   const now = Date.now()
   const cancelReason = `Litige résolu en défaveur du prestataire : ${outcomeMessage}`
   await prisma.escrowOrder.update({ where: { id: order.id }, data: { status: 'refunded', cancelledAt: new Date(now), cancelReason } })
-  await addSystemMessage(order.conversationId, `${outcomeMessage} Remboursement intégral effectué au chercheur, et une pénalité a été appliquée au prestataire.`)
+  await addSystemMessage(
+    order.conversationId,
+    `${outcomeMessage} Remboursement intégral effectué au chercheur, et une pénalité a été appliquée au prestataire.`,
+    'text',
+    { key: translationKey },
+  )
 
   return { ...order, status: 'refunded', cancelledAt: now, cancelReason }
 }
@@ -57,7 +66,11 @@ async function resolveDisputeAgainstProvider(order: EscrowOrder, outcomeMessage:
 export async function applyDisputeResolutionTimeoutIfExpired(order: EscrowOrder): Promise<EscrowOrder> {
   if (order.status !== 'disputed' || order.disputeResponse === null || order.disputeRespondedAt === null) return order
   if (Date.now() - order.disputeRespondedAt < DISPUTE_RESOLUTION_CONFIRMATION_DELAY_MS) return order
-  return resolveDisputeAgainstProvider(order, "Le chercheur n'a pas confirmé dans le délai imparti après la réponse du prestataire.")
+  return resolveDisputeAgainstProvider(
+    order,
+    "Le chercheur n'a pas confirmé dans le délai imparti après la réponse du prestataire.",
+    'systemMessages.disputeResolvedTimeout',
+  )
 }
 
 export type ConfirmDisputeResolutionResult =
@@ -77,6 +90,10 @@ export async function confirmDisputeResolution(conversationId: string, confirmed
 
   const updated = confirmed
     ? await releaseOrderFunds(order)
-    : await resolveDisputeAgainstProvider(order, "Le chercheur a confirmé que la prestation n'est pas terminée.")
+    : await resolveDisputeAgainstProvider(
+        order,
+        "Le chercheur a confirmé que la prestation n'est pas terminée.",
+        'systemMessages.disputeResolvedNotDone',
+      )
   return { ok: true, order: updated }
 }

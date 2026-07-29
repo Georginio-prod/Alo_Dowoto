@@ -1657,5 +1657,29 @@
     "joinedOn": "Inscrit le {date}",
     "statusRewarded": "Bonus versé",
     "statusPending": "En attente du premier paiement"
+  },
+  "systemMessages": {
+    "contactRevealed": "Prestation validée : voici les coordonnées du chercheur pour la suite — {contact}",
+    "noResponseNoAlternative": "Le prestataire n'a pas répondu à temps et aucune alternative n'est disponible pour le moment. Vous pouvez annuler cette commande ou réessayer plus tard.",
+    "reassignedNoResponse": "Le prestataire n'a pas répondu à temps. Remboursement intégral effectué, et votre demande a été transmise automatiquement à {providerName}.",
+    "autoReassignedAwaitingPayment": "Cette demande vous a été transmise automatiquement suite à l'absence de réponse d'un autre prestataire. Réglez le paiement pour la confirmer.",
+    "tacitValidationWarning": "Le prestataire a marqué la prestation comme terminée. Vous avez jusqu'au {deadline} pour confirmer la réception ou signaler un problème ; passé ce délai, le paiement sera automatiquement libéré au prestataire.",
+    "disputeResolvedTimeout": "Le chercheur n'a pas confirmé dans le délai imparti après la réponse du prestataire. Remboursement intégral effectué au chercheur, et une pénalité a été appliquée au prestataire.",
+    "disputeResolvedNotDone": "Le chercheur a confirmé que la prestation n'est pas terminée. Remboursement intégral effectué au chercheur, et une pénalité a été appliquée au prestataire.",
+    "recurringDebited": "Prélèvement automatique de {amount} F CFA effectué pour votre service récurrent ({frequency}).",
+    "recurringDebitFailed": "Le prélèvement automatique de votre service récurrent a échoué (solde insuffisant). Rechargez votre portefeuille puis relancez le service récurrent.",
+    "frequency": {
+      "hebdomadaire": "hebdomadaire",
+      "mensuelle": "mensuelle"
+    },
+    "rescheduleConfirmedByClient": "Le chercheur a confirmé le nouveau créneau proposé.",
+    "orderConfirmedByProvider": "Le prestataire a confirmé la prise en charge de la commande.",
+    "locationRequestPrompt": "Le chercheur peut partager sa localisation avec le prestataire pour faciliter l'intervention.",
+    "paymentConfirmationPrompt": "Nouvelle demande transmise et payée par le chercheur. Confirmez-vous la prise en charge de cette commande ?",
+    "rescheduleProposed": "Nouveau créneau proposé : {date}.",
+    "rebookRequest": "Nouvelle demande (reprise) : {description}",
+    "locationShared": "📍 Localisation partagée avec le prestataire.",
+    "contactLine": "Contact : {contact}",
+    "urgencyLine": "Urgence / délai souhaité : {text}"
   }
 }

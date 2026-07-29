@@ -205,7 +205,8 @@ export async function releaseOrderFunds(order: EscrowOrder): Promise<EscrowOrder
   // la prestation intégralement validée et payée.
   const contact = await getClientContact(order.conversationId)
   if (contact) {
-    await addSystemMessage(order.conversationId, `Prestation validée : voici les coordonnées du chercheur pour la suite — ${contact}`)
+    const body = `Prestation validée : voici les coordonnées du chercheur pour la suite — ${contact}`
+    await addSystemMessage(order.conversationId, body, 'text', { key: 'systemMessages.contactRevealed', params: { contact } })
   }
   return updated
 }
@@ -254,10 +255,8 @@ async function applyAutoReassignmentIfExpired(order: EscrowOrder): Promise<Escro
 
   const nextProvider = findNextAvailableProvider(order.providerId)
   if (!nextProvider) {
-    await addSystemMessage(
-      order.conversationId,
-      "Le prestataire n'a pas répondu à temps et aucune alternative n'est disponible pour le moment. Vous pouvez annuler cette commande ou réessayer plus tard.",
-    )
+    const body = "Le prestataire n'a pas répondu à temps et aucune alternative n'est disponible pour le moment. Vous pouvez annuler cette commande ou réessayer plus tard."
+    await addSystemMessage(order.conversationId, body, 'text', { key: 'systemMessages.noResponseNoAlternative' })
     return order
   }
 
@@ -268,10 +267,11 @@ async function applyAutoReassignmentIfExpired(order: EscrowOrder): Promise<Escro
     cancelReason: "Réattribution automatique : le prestataire n'a pas confirmé la prise en charge à temps.",
   })
   await resolveMessage(order.conversationId, pendingConfirmation.id)
-  await addSystemMessage(
-    order.conversationId,
-    `Le prestataire n'a pas répondu à temps. Remboursement intégral effectué, et votre demande a été transmise automatiquement à ${nextProvider.displayName}.`,
-  )
+  const reassignBody = `Le prestataire n'a pas répondu à temps. Remboursement intégral effectué, et votre demande a été transmise automatiquement à ${nextProvider.displayName}.`
+  await addSystemMessage(order.conversationId, reassignBody, 'text', {
+    key: 'systemMessages.reassignedNoResponse',
+    params: { providerName: nextProvider.displayName },
+  })
 
   const newConversation = await findOrCreateConversation(order.clientId, nextProvider.id)
   const clientContact = await getClientContact(order.conversationId)
@@ -280,10 +280,8 @@ async function applyAutoReassignmentIfExpired(order: EscrowOrder): Promise<Escro
 
   const newAmount = resolveProviderRate(nextProvider.id) ?? order.amount
   await createEscrowOrder({ conversationId: newConversation.id, clientId: order.clientId, providerId: nextProvider.id, amount: newAmount })
-  await addSystemMessage(
-    newConversation.id,
-    "Cette demande vous a été transmise automatiquement suite à l'absence de réponse d'un autre prestataire. Réglez le paiement pour la confirmer.",
-  )
+  const awaitingBody = "Cette demande vous a été transmise automatiquement suite à l'absence de réponse d'un autre prestataire. Réglez le paiement pour la confirmer."
+  await addSystemMessage(newConversation.id, awaitingBody, 'text', { key: 'systemMessages.autoReassignedAwaitingPayment' })
   return updated
 }
 
@@ -365,11 +363,12 @@ export async function markEscrowOrderDelivered(conversationId: string): Promise<
   const deliveredAt = Date.now()
   const order = await updateOrder(row.id, { status: 'delivered', deliveredAt: new Date(deliveredAt) })
 
-  // Notifie le chercheur du délai de validation tacite (#273).
-  await addSystemMessage(
-    conversationId,
-    `Le prestataire a marqué la prestation comme terminée. Vous avez jusqu'au ${formatTacitValidationDeadline(deliveredAt)} pour confirmer la réception ou signaler un problème ; passé ce délai, le paiement sera automatiquement libéré au prestataire.`,
-  )
+  // Notifie le chercheur du délai de validation tacite (#273). `deadline`
+  // (#i18n) : horodatage brut transmis en paramètre, formaté selon la locale
+  // de chaque lecteur côté client plutôt que figé en 'fr-FR' dans le texte.
+  const deadline = deliveredAt + TACIT_VALIDATION_DELAY_MS
+  const warningBody = `Le prestataire a marqué la prestation comme terminée. Vous avez jusqu'au ${formatTacitValidationDeadline(deliveredAt)} pour confirmer la réception ou signaler un problème ; passé ce délai, le paiement sera automatiquement libéré au prestataire.`
+  await addSystemMessage(conversationId, warningBody, 'text', { key: 'systemMessages.tacitValidationWarning', params: { deadline } })
 
   return { ok: true, order }
 }

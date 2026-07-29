@@ -44,6 +44,12 @@ export default defineEventHandler(async (event) => {
   const providerSector = getProviderById(conversation.providerId)?.sector ?? null
   const sectorFields = getSectorFieldsFr(providerSector)
   const sectorAnswerLines: string[] = []
+  // `sectorAnswerParams` (#i18n) : valeurs brutes (clé de champ + valeur),
+  // pour que MessageBubble.vue puisse retraduire chaque libellé/option selon
+  // la locale du lecteur via app/data/firstContactSectorFields.ts — plutôt
+  // que les libellés déjà résolus en français de `sectorAnswerLines`
+  // ci-dessous, conservés seulement comme repli dans `body`.
+  const sectorAnswerParams: { key: string; value: string }[] = []
   for (const field of sectorFields) {
     const value = sectorAnswers[field.key]?.trim()
     if (!value) {
@@ -59,6 +65,7 @@ export default defineEventHandler(async (event) => {
     }
     const label = field.type === 'select' ? (field.options?.find((option) => option.value === value)?.label ?? value) : value
     sectorAnswerLines.push(`${field.label} : ${label}`)
+    sectorAnswerParams.push({ key: field.key, value })
   }
 
   // Limite de demandes non payées simultanées (#280) : en plus du quota
@@ -100,7 +107,18 @@ export default defineEventHandler(async (event) => {
   const messageLines = [description, ...sectorAnswerLines, `Contact : ${maskContact(contact)}`]
   if (urgency) messageLines.push(`Urgence / délai souhaité : ${urgency}`)
 
-  const message = await addMessage(conversation.id, user.id, user.role, messageLines.join('\n\n'))
+  const message = await addMessage(conversation.id, user.id, user.role, messageLines.join('\n\n'), {
+    translation: {
+      key: 'systemMessages.firstContact',
+      params: {
+        description,
+        urgency: urgency ?? null,
+        contact: maskContact(contact),
+        sectorSlug: providerSector,
+        sectorAnswers: sectorAnswerParams,
+      },
+    },
+  })
   await markFirstContactDone(conversation.id)
   await setClientContact(conversation.id, contact)
   const order = await createEscrowOrder({ conversationId: conversation.id, clientId: user.id, providerId: conversation.providerId, amount })

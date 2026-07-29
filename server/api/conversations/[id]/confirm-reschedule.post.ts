@@ -18,7 +18,12 @@ export default defineEventHandler(async (event) => {
   }
 
   await resolveMessage(conversation.id, pending.id)
-  const confirmation = await addSystemMessage(conversation.id, 'Le chercheur a confirmé le nouveau créneau proposé.')
+  const confirmation = await addSystemMessage(
+    conversation.id,
+    'Le chercheur a confirmé le nouveau créneau proposé.',
+    'text',
+    { key: 'systemMessages.rescheduleConfirmedByClient' },
+  )
 
   setResponseStatus(event, 201)
   return { confirmation }

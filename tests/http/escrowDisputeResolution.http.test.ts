@@ -2,7 +2,7 @@
 //
 // Voir escrowRoutes.http.test.ts pour l'explication du choix d'environnement.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { findOrCreateConversation } from '~~/server/utils/conversationStore'
+import { findOrCreateConversation, getMessages } from '~~/server/utils/conversationStore'
 import { PROVIDER_DISPUTE_PENALTY_RATE } from '~~/server/utils/escrowDisputeResolution'
 import { createEscrowOrder, type EscrowOrder } from '~~/server/utils/escrowOrderStore'
 import { creditWallet, getBalance } from '~~/server/utils/walletStore'
@@ -95,6 +95,10 @@ describe('POST /conversations/:id/confirm-dispute-resolution (#274)', () => {
     expect(status).toBe(200)
     expect((json as { order: EscrowOrder }).order.status).toBe('refunded')
     expect(await getBalance(provider.user.id)).toBe(10000 - Math.round(5000 * PROVIDER_DISPUTE_PENALTY_RATE))
+
+    // #i18n : le message doit être retraduisible à l'affichage, pas figé en français.
+    const notification = (await getMessages(conversation.id)).at(-1)
+    expect(notification?.translationKey).toBe('systemMessages.disputeResolvedNotDone')
   })
 
   it('refus d’autorisation : le prestataire ne peut pas confirmer à la place du chercheur', async () => {
