@@ -256,6 +256,11 @@ function completeProfile() {
           interactive
           @click="openModal('donnees')"
         />
+        <ProfileSectionCard
+          icon="🎁" to="/parrainage"
+          :title="t('profilPage.sectionParrainageTitle')"
+          :subtitle="t('profilPage.sectionParrainageSubtitle')"
+        />
 
         <template v-if="isProvider">
           <ProfileSectionCard

@@ -19,6 +19,7 @@ const TYPE_LABELS = computed<Record<WalletMovementType, string>>(() => ({
   cancellation_compensation: t('walletMovementList.typeCancellationCompensation'),
   dispute_penalty: t('walletMovementList.typeDisputePenalty'),
   dispute_compensation: t('walletMovementList.typeDisputeCompensation'),
+  referral_bonus: t('walletMovementList.typeReferralBonus'),
 }))
 
 const typeFilter = ref<'all' | WalletMovementType>('all')

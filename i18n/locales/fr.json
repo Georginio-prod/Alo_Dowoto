@@ -882,7 +882,9 @@
     "sectionAvisTitle": "Avis reçus",
     "sectionAvisSubtitle": "Retours de vos clients",
     "sectionSoldeTitle": "Mon solde",
-    "sectionSoldeSubtitle": "Recharge et historique des paiements"
+    "sectionSoldeSubtitle": "Recharge et historique des paiements",
+    "sectionParrainageTitle": "Parrainage",
+    "sectionParrainageSubtitle": "Invitez vos proches et gagnez des bonus"
   },
   "profilIdentite": {
     "back": "← Retour au profil",
@@ -1244,7 +1246,8 @@
     "last30Days": "30 derniers jours",
     "noMovements": "Aucun mouvement.",
     "referencePrefix": "Réf.",
-    "downloadReceiptAria": "Télécharger le reçu PDF"
+    "downloadReceiptAria": "Télécharger le reçu PDF",
+    "typeReferralBonus": "Bonus de parrainage"
   },
   "escrowStatusPanel": {
     "errorActionFailed": "Cette action n'a pas pu être effectuée. Réessayez.",
@@ -1640,5 +1643,19 @@
     "northernLabel": "Northern Lights",
     "ariaLabel": "Thème : {label}. Cliquer pour changer de thème.",
     "titleAttr": "Thème : {label} — cliquer pour changer"
+  },
+  "parrainagePage": {
+    "heading": "Programme de parrainage",
+    "subtitle": "Invitez vos proches : vous recevez chacun {amount} dès leur premier paiement.",
+    "codeLabel": "Votre code de parrainage",
+    "linkLabel": "Lien à partager",
+    "copyCta": "Copier",
+    "copied": "Copié !",
+    "trackingHeading": "Suivi de vos parrainages",
+    "noReferrals": "Aucun parrainage pour le moment.",
+    "unknownName": "Compte supprimé",
+    "joinedOn": "Inscrit le {date}",
+    "statusRewarded": "Bonus versé",
+    "statusPending": "En attente du premier paiement"
   }
 }

@@ -17,13 +17,18 @@ export default defineEventHandler(async (event) => {
   // par rapport à la ville en texte libre (obligatoire, voir `location`).
   const hasValidCoords = isValidCoordinatePair(body.latitude, body.longitude)
 
-  const { user, created } = await findOrCreateUser(contact, body.role, {
-    username: body.username ?? '',
-    firstName: body.firstName ?? '',
-    lastName: body.lastName ?? '',
-    location: body.location ?? '',
-    ...(hasValidCoords ? { latitude: body.latitude, longitude: body.longitude } : {}),
-  })
+  const { user, created } = await findOrCreateUser(
+    contact,
+    body.role,
+    {
+      username: body.username ?? '',
+      firstName: body.firstName ?? '',
+      lastName: body.lastName ?? '',
+      location: body.location ?? '',
+      ...(hasValidCoords ? { latitude: body.latitude, longitude: body.longitude } : {}),
+    },
+    body.referralCode,
+  )
 
   // Compte existant déjà finalisé : le mot de passe créé à l'inscription
   // (#125) est systématiquement redemandé et vérifié (#126). Un compte

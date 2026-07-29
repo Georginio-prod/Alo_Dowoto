@@ -34,6 +34,9 @@ import { prisma } from '~~/server/utils/prisma'
  *   confirmation) — voir escrowDisputeResolution.ts.
  * - `dispute_compensation` : contrepartie de `dispute_penalty`, versée au
  *   chercheur en plus du remboursement intégral du séquestre.
+ * - `referral_bonus` : bonus de parrainage (#365), crédité au parrain ET au
+ *   filleul au premier paiement réel de ce dernier (jamais à l'inscription,
+ *   décision produit anti-fraude) — voir server/utils/referralStore.ts.
  */
 export type WalletMovementType =
   | 'recharge'
@@ -45,6 +48,7 @@ export type WalletMovementType =
   | 'cancellation_compensation'
   | 'dispute_penalty'
   | 'dispute_compensation'
+  | 'referral_bonus'
 
 /** Identifiant conventionnel du portefeuille interne WorkTogo (commissions). */
 export const PLATFORM_WALLET_USER_ID = 'worktogo-platform'
@@ -78,6 +82,7 @@ const MOVEMENT_SIGN: Record<WalletMovementType, 1 | -1> = {
   cancellation_compensation: 1,
   dispute_penalty: -1,
   dispute_compensation: 1,
+  referral_bonus: 1,
 }
 
 export interface RecordMovementInput {

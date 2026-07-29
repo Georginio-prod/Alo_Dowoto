@@ -329,6 +329,13 @@ export async function payEscrowOrder(conversationId: string): Promise<PayEscrowO
   if (!movement) return { ok: false, error: 'insufficient_funds' }
 
   const order = await updateOrder(row.id, { status: 'in_escrow', paidAt: new Date(Date.now()) })
+
+  // Premier paiement réel du filleul (#365, programme de parrainage) : ce
+  // paiement en séquestre peut être ce tout premier paiement. Sans effet si
+  // le client n'a pas été parrainé, ou si son parrainage a déjà été
+  // récompensé (idempotent, voir referralStore.ts).
+  await rewardReferralIfPending(row.clientId)
+
   return { ok: true, order }
 }
 

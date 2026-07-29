@@ -48,6 +48,11 @@ export default defineEventHandler(async (event) => {
     if (subscription && plan) {
       await activateSubscription(subscription.id, plan.durationDays)
     }
+    // Premier paiement réel du filleul (#365, programme de parrainage) : ce
+    // paiement d'abonnement confirmé peut être ce tout premier paiement.
+    // Sans effet si l'utilisateur n'a pas été parrainé, ou si son
+    // parrainage a déjà été récompensé (idempotent, voir referralStore.ts).
+    await rewardReferralIfPending(resolved.userId)
   }
 
   return { payment: resolved }

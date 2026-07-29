@@ -63,11 +63,18 @@ function toUser(row: PrismaUser): User {
  * obligatoire à la création : le nom d'utilisateur, le prénom, le nom et la
  * localisation sont collectés dès la première page d'inscription, pour les
  * deux types de compte.
+ *
+ * `referredByCode` (#365, programme de parrainage) : code de parrainage
+ * saisi à l'inscription, ignoré silencieusement s'il est absent ou invalide
+ * (un code erroné ne doit jamais bloquer une inscription) — la logique de
+ * résolution/liaison vit dans referralStore.ts, pas ici, pour garder ce
+ * store concentré sur les comptes.
  */
 export async function findOrCreateUser(
   contact: string,
   role: Role | undefined,
   profile?: NewUserProfile,
+  referredByCode?: string,
 ): Promise<{ user: User; created: boolean }> {
   const existing = await prisma.user.findUnique({ where: { contact } })
   if (existing) return { user: toUser(existing), created: false }
@@ -94,7 +101,14 @@ export async function findOrCreateUser(
       longitude: profile.longitude ?? null,
     },
   })
-  return { user: toUser(row), created: true }
+  const user = toUser(row)
+
+  if (referredByCode) {
+    const referrerId = await findUserIdByReferralCode(referredByCode)
+    if (referrerId) await createReferral(referrerId, user.id)
+  }
+
+  return { user, created: true }
 }
 
 /** Retrouve un utilisateur par id (ex. utilisé par la messagerie, #59). */
