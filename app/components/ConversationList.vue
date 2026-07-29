@@ -1,8 +1,20 @@
 <script setup lang="ts">
+import { resolveMessagePreview } from '~/utils/messageTranslation'
+
 const { t, locale, locales } = useI18n({ useScope: 'global' })
+
+const languageTag = computed(() =>
+  (locales.value as Array<{ code: string, language?: string }>).find((l) => l.code === locale.value)?.language ?? 'fr-FR',
+)
 
 const { conversations, pending, ensure } = useConversations()
 await ensure()
+
+/** Repli français si le dernier message n'existe pas encore (fil jamais commencé) — même clé que ConversationSummary. */
+function lastMessagePreview(lastMessage: { body: string; translationKey: string | null; translationParams: Record<string, unknown> | null } | null): string {
+  if (!lastMessage) return t('conversationList.writeFirstMessage')
+  return resolveMessagePreview(lastMessage, t, languageTag.value)
+}
 
 const route = useRoute()
 const query = ref('')
@@ -95,7 +107,7 @@ function formatTime(timestamp: number): string {
                 class="truncate text-[12.5px]"
                 :class="conversation.unreadCount > 0 ? 'font-semibold text-dark' : 'text-muted'"
               >
-                {{ conversation.lastMessage?.body ?? t('conversationList.writeFirstMessage') }}
+                {{ lastMessagePreview(conversation.lastMessage) }}
               </p>
             </div>
           </NuxtLink>

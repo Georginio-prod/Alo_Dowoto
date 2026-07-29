@@ -250,3 +250,49 @@ describe('conversationStore — messages automatiques WorkTogo (#hub-messages-au
     expect(message.location).toEqual({ lat: 6.1319, lng: 1.2228 })
   })
 })
+
+describe('conversationStore — traduction des messages générés à l’affichage (#i18n)', () => {
+  it('un message libre (sans `translation`) n’a pas de clé de traduction', async () => {
+    const conversation = await findOrCreateConversation('client-50', 'p50')
+    const message = await addMessage(conversation.id, 'client-50', 'client', 'Bonjour, êtes-vous disponible ?')
+
+    expect(message.translationKey).toBeNull()
+    expect(message.translationParams).toBeNull()
+  })
+
+  it('addSystemMessage persiste la clé de traduction et ses paramètres, relus tels quels', async () => {
+    const conversation = await findOrCreateConversation('client-51', 'p51')
+    const message = await addSystemMessage(
+      conversation.id,
+      'Le prestataire a confirmé la prise en charge de la commande.',
+      'text',
+      { key: 'systemMessages.orderConfirmedByProvider' },
+    )
+
+    expect(message.translationKey).toBe('systemMessages.orderConfirmedByProvider')
+    expect(message.translationParams).toEqual({})
+
+    const [reloaded] = await getMessages(conversation.id)
+    expect(reloaded?.translationKey).toBe('systemMessages.orderConfirmedByProvider')
+  })
+
+  it('addMessage persiste des paramètres d’interpolation arbitraires (texte libre inclus)', async () => {
+    const conversation = await findOrCreateConversation('client-52', 'p52')
+    const message = await addMessage(conversation.id, 'client-52', 'client', 'Nouvelle demande (reprise) : Nettoyage complet', {
+      translation: { key: 'systemMessages.rebookRequest', params: { description: 'Nettoyage complet' } },
+    })
+
+    expect(message.translationKey).toBe('systemMessages.rebookRequest')
+    expect(message.translationParams).toEqual({ description: 'Nettoyage complet' })
+  })
+
+  it('ConversationSummary.lastMessage porte aussi la clé de traduction (aperçu barre latérale)', async () => {
+    const conversation = await findOrCreateConversation('client-53', 'p53')
+    await addSystemMessage(conversation.id, 'Le chercheur a confirmé le nouveau créneau proposé.', 'text', {
+      key: 'systemMessages.rescheduleConfirmedByClient',
+    })
+
+    const summary = await toConversationSummary(conversation, 'client-53')
+    expect(summary.lastMessage?.translationKey).toBe('systemMessages.rescheduleConfirmedByClient')
+  })
+})

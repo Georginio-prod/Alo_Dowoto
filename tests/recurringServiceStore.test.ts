@@ -127,6 +127,9 @@ describe('getRecurringServiceByConversationId — déclenchement du prélèvemen
 
     const notification = (await getMessages(conversation.id)).at(-1)
     expect(notification?.body).toContain('Prélèvement automatique')
+    // #i18n : le message doit être retraduisible à l'affichage, pas figé en français.
+    expect(notification?.translationKey).toBe('systemMessages.recurringDebited')
+    expect(notification?.translationParams).toEqual({ amount: 5000, frequency: 'hebdomadaire' })
   })
 
   it('ne prélève qu’une seule fois tant que la prochaine échéance (avancée après le 1er prélèvement) n’est pas atteinte', async () => {
@@ -163,6 +166,7 @@ describe('getRecurringServiceByConversationId — déclenchement du prélèvemen
     expect(service?.status).toBe('payment_failed')
     const notification = (await getMessages(conversation.id)).at(-1)
     expect(notification?.body).toContain('échoué')
+    expect(notification?.translationKey).toBe('systemMessages.recurringDebitFailed')
   })
 
   it('n’empile pas une nouvelle commande tant que le cycle précédent n’est pas terminal (in_escrow/delivered/disputed)', async () => {

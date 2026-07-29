@@ -30,6 +30,7 @@ export default defineEventHandler(async (event) => {
     conversation.id,
     'Nouvelle demande transmise et payée par le chercheur. Confirmez-vous la prise en charge de cette commande ?',
     'order_confirmation',
+    { key: 'systemMessages.paymentConfirmationPrompt' },
   )
 
   return { order: result.order }

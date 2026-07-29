@@ -20,11 +20,17 @@ export default defineEventHandler(async (event) => {
   }
 
   await resolveMessage(conversation.id, pending.id)
-  const confirmation = await addSystemMessage(conversation.id, 'Le prestataire a confirmé la prise en charge de la commande.')
+  const confirmation = await addSystemMessage(
+    conversation.id,
+    'Le prestataire a confirmé la prise en charge de la commande.',
+    'text',
+    { key: 'systemMessages.orderConfirmedByProvider' },
+  )
   const locationRequest = await addSystemMessage(
     conversation.id,
     'Le chercheur peut partager sa localisation avec le prestataire pour faciliter l\'intervention.',
     'location_request',
+    { key: 'systemMessages.locationRequestPrompt' },
   )
 
   setResponseStatus(event, 201)

@@ -1657,5 +1657,29 @@
     "joinedOn": "Joined on {date}",
     "statusRewarded": "Bonus paid",
     "statusPending": "Awaiting first payment"
+  },
+  "systemMessages": {
+    "contactRevealed": "Service confirmed: here are the client's contact details for next steps — {contact}",
+    "noResponseNoAlternative": "The provider didn't respond in time and no alternative is available right now. You can cancel this order or try again later.",
+    "reassignedNoResponse": "The provider didn't respond in time. You've been fully refunded, and your request was automatically forwarded to {providerName}.",
+    "autoReassignedAwaitingPayment": "This request was automatically forwarded to you because another provider didn't respond. Complete payment to confirm it.",
+    "tacitValidationWarning": "The provider marked the service as completed. You have until {deadline} to confirm receipt or report an issue; after that, payment will be automatically released to the provider.",
+    "disputeResolvedTimeout": "The client didn't confirm in time after the provider's response. The client has been fully refunded, and a penalty was applied to the provider.",
+    "disputeResolvedNotDone": "The client confirmed that the service was not completed. The client has been fully refunded, and a penalty was applied to the provider.",
+    "recurringDebited": "Automatic charge of {amount} F CFA made for your recurring service ({frequency}).",
+    "recurringDebitFailed": "The automatic charge for your recurring service failed (insufficient balance). Top up your wallet then restart the recurring service.",
+    "frequency": {
+      "hebdomadaire": "weekly",
+      "mensuelle": "monthly"
+    },
+    "rescheduleConfirmedByClient": "The client confirmed the new proposed time slot.",
+    "orderConfirmedByProvider": "The provider confirmed they will take on the order.",
+    "locationRequestPrompt": "The client can share their location with the provider to make the visit easier.",
+    "paymentConfirmationPrompt": "New request submitted and paid by the client. Do you confirm you will take on this order?",
+    "rescheduleProposed": "New time slot proposed: {date}.",
+    "rebookRequest": "New request (rebooking): {description}",
+    "locationShared": "📍 Location shared with the provider.",
+    "contactLine": "Contact: {contact}",
+    "urgencyLine": "Urgency / desired timeframe: {text}"
   }
 }

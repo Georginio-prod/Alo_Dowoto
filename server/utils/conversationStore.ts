@@ -71,6 +71,7 @@ export interface Message {
   conversationId: string
   senderId: string
   senderRole: MessageSenderRole
+  /** Rendu tel quel pour un message libre (jamais traduit) ; repli français si `translationKey` ne résout pas côté client. */
   body: string
   kind: MessageKind
   /** Coordonnées transmises pour un message `location_shared`, sinon `null`. */
@@ -80,6 +81,21 @@ export interface Message {
   /** Horodatage de la réponse à un message actionnable (`order_confirmation`/`location_request`/`reschedule_request`), sinon `null`. */
   resolvedAt: number | null
   createdAt: number
+  /**
+   * Clé i18n (#i18n) pour un message généré par WorkTogo ou par un modèle
+   * (confirmation, notification de séquestre, reprogrammation…) — `null` pour
+   * un message libre tapé par un utilisateur (`messages.post.ts`), jamais
+   * traduit. Voir app/components/MessageBubble.vue pour le rendu par lecteur.
+   */
+  translationKey: string | null
+  /** Paramètres d'interpolation, significatifs seulement si `translationKey` est non nul. */
+  translationParams: Record<string, unknown> | null
+}
+
+/** Ce qu'un appelant fournit pour qu'un message soit traduit à l'affichage plutôt que figé en français. */
+export interface MessageTranslation {
+  key: string
+  params?: Record<string, unknown>
 }
 
 /** Émetteur conventionnel des messages automatiques WorkTogo (pas un vrai compte, voir `addSystemMessage`). */
@@ -98,7 +114,7 @@ export interface ConversationSummary extends Conversation {
    * l'annuaire de démo.
    */
   sectorSlug: string | null
-  lastMessage: { body: string; createdAt: number } | null
+  lastMessage: { body: string; createdAt: number; translationKey: string | null; translationParams: Record<string, unknown> | null } | null
   /** L'utilisateur qui consulte a-t-il déjà noté cette collaboration (#60/#61) ? */
   alreadyReviewed: boolean
   /** Messages de l'autre partie reçus depuis la dernière visite du fil par ce viewer (#225). */
@@ -131,6 +147,20 @@ function toMessage(row: PrismaMessage): Message {
     proposedAt: row.proposedAt?.getTime() ?? null,
     resolvedAt: row.resolvedAt?.getTime() ?? null,
     createdAt: row.createdAt.getTime(),
+    translationKey: row.translationKey,
+    // Un JSON malformé ne doit jamais faire planter l'affichage du fil : on
+    // retombe silencieusement sur `body` (voir MessageBubble.vue) — ne
+    // devrait jamais arriver en pratique, `translationParams` n'étant écrit
+    // que par addMessage/addSystemMessage ci-dessous.
+    translationParams: row.translationParams ? safeJsonParse(row.translationParams) : null,
+  }
+}
+
+function safeJsonParse(raw: string): Record<string, unknown> | null {
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return null
   }
 }
 
@@ -217,7 +247,13 @@ export async function addMessage(
   senderId: string,
   senderRole: MessageSenderRole,
   body: string,
-  options?: { kind?: MessageKind; location?: { lat: number; lng: number }; proposedAt?: number },
+  options?: {
+    kind?: MessageKind
+    location?: { lat: number; lng: number }
+    proposedAt?: number
+    /** Rend ce message traduisible à l'affichage (#i18n) — omis pour un message libre tapé par un utilisateur. */
+    translation?: MessageTranslation
+  },
 ): Promise<Message> {
   const row = await prisma.message.create({
     data: {
@@ -229,6 +265,8 @@ export async function addMessage(
       locationLat: options?.location?.lat ?? null,
       locationLng: options?.location?.lng ?? null,
       proposedAt: options?.proposedAt !== undefined ? new Date(options.proposedAt) : null,
+      translationKey: options?.translation?.key ?? null,
+      translationParams: options?.translation ? JSON.stringify(options.translation.params ?? {}) : null,
     },
   })
   return toMessage(row)
@@ -238,9 +276,19 @@ export async function addMessage(
  * Poste un message automatique WorkTogo (#hub-messages-automatiques) —
  * confirmation de prise en charge, demande de partage de localisation…
  * Jamais envoyé par un vrai utilisateur, voir `WORKTOGO_SYSTEM_SENDER_ID`.
+ *
+ * `translation` (#i18n) : `body` reste un repli français (utilisé si la clé
+ * ne résout pas côté client, ou par tout code qui lit `body` directement) ;
+ * quand fourni, MessageBubble.vue affiche la version traduite selon la
+ * langue de chaque lecteur plutôt que ce texte figé.
  */
-export async function addSystemMessage(conversationId: string, body: string, kind: MessageKind = 'text'): Promise<Message> {
-  return addMessage(conversationId, WORKTOGO_SYSTEM_SENDER_ID, 'system', body, { kind })
+export async function addSystemMessage(
+  conversationId: string,
+  body: string,
+  kind: MessageKind = 'text',
+  translation?: MessageTranslation,
+): Promise<Message> {
+  return addMessage(conversationId, WORKTOGO_SYSTEM_SENDER_ID, 'system', body, { kind, translation })
 }
 
 /** Dernier message actionnable non résolu d'un type donné, pour valider une action côté client (confirmer/partager) sans état supplémentaire. */
@@ -303,7 +351,9 @@ export async function toConversationSummary(conversation: Conversation, viewerId
     otherPartyName,
     otherPartySector,
     sectorSlug,
-    lastMessage: last ? { body: last.body, createdAt: last.createdAt } : null,
+    lastMessage: last
+      ? { body: last.body, createdAt: last.createdAt, translationKey: last.translationKey, translationParams: last.translationParams }
+      : null,
     alreadyReviewed: hasReviewed(conversation.id, viewerId),
     unreadCount,
   }

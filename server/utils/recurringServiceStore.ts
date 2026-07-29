@@ -123,12 +123,16 @@ async function applyDueChargeIfNeeded(service: RecurringService): Promise<void> 
     await addSystemMessage(
       service.conversationId,
       `Prélèvement automatique de ${service.amount.toLocaleString('fr-FR')} F CFA effectué pour votre service récurrent (${service.frequency}).`,
+      'text',
+      { key: 'systemMessages.recurringDebited', params: { amount: service.amount, frequency: service.frequency } },
     )
   } else {
     service.status = 'payment_failed'
     await addSystemMessage(
       service.conversationId,
       'Le prélèvement automatique de votre service récurrent a échoué (solde insuffisant). Rechargez votre portefeuille puis relancez le service récurrent.',
+      'text',
+      { key: 'systemMessages.recurringDebitFailed' },
     )
   }
 }

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { describe, expect, it, vi } from 'vitest'
-import { findOrCreateConversation } from '~~/server/utils/conversationStore'
+import { findOrCreateConversation, getMessages, setClientContact } from '~~/server/utils/conversationStore'
 import { recordEscrowOrderCheckIn, recordEscrowOrderCheckOut } from '~~/server/utils/escrowInterventionProof'
 import {
   cancelEscrowOrder,
@@ -133,6 +133,19 @@ describe('escrowOrderStore — double validation et libération (#195)', () => {
       expect(commission?.type).toBe('commission')
       expect(commission?.amount).toBe(expectedCommission)
     }
+  })
+
+  it('confirmEscrowOrderReceipt poste un message de révélation du contact traduisible (#i18n)', async () => {
+    const conversationId = (await findOrCreateConversation(id(), id())).id
+    const client = id()
+    const provider = id()
+    await setClientContact(conversationId, '+228 90 12 34 56')
+    await payAndDeliver(conversationId, client, provider, 5000)
+
+    await confirmEscrowOrderReceipt(conversationId)
+
+    const revealMessage = (await getMessages(conversationId)).find((m) => m.translationKey === 'systemMessages.contactRevealed')
+    expect(revealMessage?.translationParams).toEqual({ contact: '+228 90 12 34 56' })
   })
 
   it('confirmEscrowOrderReceipt échoue tant que la prestation n’est pas marquée terminée', async () => {
