@@ -14,8 +14,16 @@ const route = useRoute()
 // `mode=login` force l'onglet Connexion même quand `role` est fourni dans
 // l'URL (ex. « Changer de compte » → « J'ai déjà un compte prestataire »,
 // voir AccountMenu.vue) — sans ça, la présence de `role` seule bascule
-// toujours sur Inscription.
-const activeTab = ref<Tab>(route.query.mode === 'login' ? 'login' : route.query.role ? 'signup' : 'login')
+// toujours sur Inscription. `ref` (#365, lien de parrainage) bascule sur
+// Inscription au même titre que `role` : un lien de parrainage n'a de sens
+// que pour créer un compte.
+const activeTab = ref<Tab>(route.query.mode === 'login' ? 'login' : (route.query.role || route.query.ref) ? 'signup' : 'login')
+
+// Code de parrainage porté par le lien partagé (#365, /parrainage) : lu une
+// seule fois au chargement de la page, transmis tel quel à l'étape mot de
+// passe (seul endroit qui appelle réellement POST /api/auth/session) — le
+// serveur ignore silencieusement un code absent ou invalide.
+const referralCode = computed(() => (typeof route.query.ref === 'string' ? route.query.ref : undefined))
 const role = ref<Role>(route.query.role === 'prestataire' ? 'prestataire' : 'client')
 const step = ref<Step>('contact')
 
@@ -243,6 +251,7 @@ function onPayoutSaved() {
           :contact-value="contactValue"
           :role="role"
           :profile="signupProfile"
+          :referral-code="referralCode"
           @signup-success="onSignupPasswordSuccess"
           @login-success="onLoginSuccess"
         />

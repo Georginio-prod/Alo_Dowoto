@@ -882,7 +882,9 @@
     "sectionAvisTitle": "Reviews received",
     "sectionAvisSubtitle": "Feedback from your clients",
     "sectionSoldeTitle": "My balance",
-    "sectionSoldeSubtitle": "Top-ups and payment history"
+    "sectionSoldeSubtitle": "Top-ups and payment history",
+    "sectionParrainageTitle": "Referrals",
+    "sectionParrainageSubtitle": "Invite friends and earn bonuses"
   },
   "profilIdentite": {
     "back": "← Back to profile",
@@ -1244,7 +1246,8 @@
     "last30Days": "Last 30 days",
     "noMovements": "No movements.",
     "referencePrefix": "Ref.",
-    "downloadReceiptAria": "Download PDF receipt"
+    "downloadReceiptAria": "Download PDF receipt",
+    "typeReferralBonus": "Referral bonus"
   },
   "escrowStatusPanel": {
     "errorActionFailed": "This action could not be completed. Please try again.",
@@ -1640,5 +1643,19 @@
     "northernLabel": "Northern Lights",
     "ariaLabel": "Theme: {label}. Click to change theme.",
     "titleAttr": "Theme: {label} — click to change"
+  },
+  "parrainagePage": {
+    "heading": "Referral program",
+    "subtitle": "Invite your friends: you each get {amount} once they make their first payment.",
+    "codeLabel": "Your referral code",
+    "linkLabel": "Link to share",
+    "copyCta": "Copy",
+    "copied": "Copied!",
+    "trackingHeading": "Your referrals",
+    "noReferrals": "No referrals yet.",
+    "unknownName": "Deleted account",
+    "joinedOn": "Joined on {date}",
+    "statusRewarded": "Bonus paid",
+    "statusPending": "Awaiting first payment"
   }
 }

@@ -15,6 +15,8 @@ const props = defineProps<{
   role: 'client' | 'prestataire'
   /** Collecté à la première page (#username/prénom/nom/localisation), requis à la création du compte. */
   profile?: SignupProfile
+  /** Porté par le lien de parrainage partagé (#365, /parrainage) — voir app/pages/auth.vue. */
+  referralCode?: string
 }>()
 
 const emit = defineEmits<{
@@ -84,6 +86,7 @@ async function submitSignupPassword() {
         location: props.profile?.location,
         latitude: props.profile?.latitude,
         longitude: props.profile?.longitude,
+        referralCode: props.referralCode,
       },
     })
     await $fetch('/api/auth/password', {

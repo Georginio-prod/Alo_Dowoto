@@ -12,6 +12,7 @@ import {
   toPublicUser,
   type NewUserProfile,
 } from '~~/server/utils/userStore'
+import { getOrCreateReferralCode, listReferralsByReferrer } from '~~/server/utils/referralStore'
 
 const TEST_PROFILE: NewUserProfile = {
   username: 'marie90',
@@ -137,6 +138,31 @@ describe('userStore — droit à l’effacement, anonymisation du compte (#286)'
 
     await anonymizeUser(first.id)
     await expect(anonymizeUser(second.id)).resolves.not.toThrow()
+  })
+})
+
+describe('userStore — code de parrainage saisi à l\'inscription (#365)', () => {
+  it('lie le filleul à son parrain quand un code valide est fourni', async () => {
+    const { user: referrer } = await findOrCreateUser('+22891112270', 'client', TEST_PROFILE)
+    const code = await getOrCreateReferralCode(referrer.id)
+
+    const { user: referred } = await findOrCreateUser('+22891112271', 'client', TEST_PROFILE, code)
+
+    const referrals = await listReferralsByReferrer(referrer.id)
+    expect(referrals).toHaveLength(1)
+    expect(referrals[0]?.referredId).toBe(referred.id)
+    expect(referrals[0]?.status).toBe('pending')
+  })
+
+  it('ignore silencieusement un code de parrainage invalide (n\'échoue jamais l\'inscription)', async () => {
+    await expect(
+      findOrCreateUser('+22891112272', 'client', TEST_PROFILE, 'CODEINCONNU'),
+    ).resolves.not.toThrow()
+  })
+
+  it('ignore un code de parrainage quand aucun n\'est fourni (compte normal)', async () => {
+    const { user } = await findOrCreateUser('+22891112273', 'client', TEST_PROFILE)
+    expect(await listReferralsByReferrer(user.id)).toEqual([])
   })
 })
 

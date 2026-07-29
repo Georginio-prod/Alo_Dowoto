@@ -59,4 +59,6 @@ export const createSessionSchema = z.object({
   location: z.string().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  /** Code de parrainage saisi à l'inscription (#365) — optionnel, ignoré s'il est invalide. */
+  referralCode: z.string().optional(),
 })

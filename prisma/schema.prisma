@@ -58,6 +58,17 @@ enum WalletMovementType {
   /// Contrepartie (crédit) de dispute_penalty : versée au chercheur en plus
   /// du remboursement intégral du séquestre.
   dispute_compensation
+  /// Bonus de parrainage (#365), crédité au parrain ET au filleul au premier
+  /// paiement réel du filleul — jamais à l'inscription (anti-fraude).
+  referral_bonus
+}
+
+/// Statut d'un parrainage — voir server/utils/referralStore.ts (#365).
+enum ReferralStatus {
+  /// Filleul inscrit, mais n'a encore fait aucun paiement réel.
+  pending
+  /// Bonus crédité aux deux comptes (parrain + filleul) — état terminal.
+  rewarded
 }
 
 /// Cycle de vie d'une commande en séquestre — voir server/utils/escrowOrderStore.ts (#194-#197).
@@ -100,11 +111,36 @@ model User {
   latitude  Float?
   longitude Float?
 
-  sessions        Session[]
-  providerProfile ProviderProfile?
-  subscriptions   Subscription[]
-  payments        Payment[]
-  reviewsWritten  Review[]         @relation("ReviewAuthor")
+  /// Code de parrainage (#365) — `null` pour les comptes créés avant cette
+  /// fonctionnalité, générés à la volée au premier accès (voir
+  /// server/utils/referralStore.ts:getOrCreateReferralCode) plutôt que par
+  /// une migration de données rétroactive.
+  referralCode String? @unique
+
+  sessions          Session[]
+  providerProfile   ProviderProfile?
+  subscriptions     Subscription[]
+  payments          Payment[]
+  reviewsWritten    Review[]         @relation("ReviewAuthor")
+  referralsMade     Referral[]       @relation("ReferralsMade")
+  referralReceived  Referral?        @relation("ReferralReceived")
+}
+
+/// Parrainage (#365) : un filleul n'a jamais qu'un seul parrain
+/// (`referredId` unique), un parrain peut avoir plusieurs filleuls.
+/// Récompense différée au premier paiement réel du filleul (décision
+/// produit anti-fraude) — voir server/utils/referralStore.ts.
+model Referral {
+  id         String         @id @default(uuid())
+  referrerId String
+  referrer   User           @relation("ReferralsMade", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredId String         @unique
+  referred   User           @relation("ReferralReceived", fields: [referredId], references: [id], onDelete: Cascade)
+  status     ReferralStatus @default(pending)
+  createdAt  DateTime       @default(now())
+  rewardedAt DateTime?
+
+  @@index([referrerId])
 }
 
 /// Session authentifiée (cookie wt_session) — voir server/utils/userStore.ts (#218).
