@@ -62,6 +62,15 @@ export async function getPayment(id: string): Promise<Payment | null> {
   return row ? toPayment(row) : null
 }
 
+/** Paiements confirmés d'un utilisateur, du plus récent au plus ancien (#363, historique téléchargeable). */
+export async function listConfirmedPaymentsByUser(userId: string): Promise<Payment[]> {
+  const rows = await prisma.payment.findMany({
+    where: { userId, status: 'confirmed' },
+    orderBy: { createdAt: 'desc' },
+  })
+  return rows.map(toPayment)
+}
+
 /**
  * Applique le résultat d'une confirmation opérateur (webhook réel en prod,
  * simulation en dev — voir server/api/payments/initiate.post.ts).
