@@ -20,4 +20,22 @@ describe('testimonialStore (page d’accueil — avis libres, persistance #357)'
     expect(added.role).toBe('prestataire')
     expect(added.rating).toBe(4)
   })
+
+  it('traduit les avis d\'exemple selon la locale demandée (#i18n)', async () => {
+    const fr = await listTestimonials('fr')
+    const en = await listTestimonials('en')
+
+    const seedFr = fr.find((testimonial) => testimonial.id === 'seed-6')
+    const seedEn = en.find((testimonial) => testimonial.id === 'seed-6')
+    expect(seedFr?.message).toContain('Application simple')
+    expect(seedEn?.message).toContain('Simple app')
+    expect(seedEn?.message).not.toBe(seedFr?.message)
+  })
+
+  it('ne traduit jamais une contribution réelle (texte libre soumis par l\'utilisateur)', async () => {
+    const added = await addTestimonial('Nova E.', 'client', 'Texte français jamais traduit.', 5)
+
+    const en = await listTestimonials('en')
+    expect(en.find((testimonial) => testimonial.id === added.id)?.message).toBe('Texte français jamais traduit.')
+  })
 })

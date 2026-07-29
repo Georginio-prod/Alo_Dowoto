@@ -3,7 +3,14 @@ import type { Testimonial } from '~~/server/utils/testimonialStore'
 
 const { t, locale, locales } = useI18n({ useScope: 'global' })
 
-const { data, refresh } = await useFetch<{ testimonials: Testimonial[] }>('/api/testimonials')
+// `watch: [locale]` : refait la requête au changement de langue
+// (LanguageSwitcher.vue) — nécessaire ici car les avis d'exemple sont
+// traduits côté serveur (testimonialStore.ts), pas via `t()` côté client
+// comme le reste de cette section.
+const { data, refresh } = await useFetch<{ testimonials: Testimonial[] }>('/api/testimonials', {
+  query: { locale },
+  watch: [locale],
+})
 const testimonials = computed(() => data.value?.testimonials ?? [])
 const visibleTestimonials = computed(() => testimonials.value.slice(0, 6))
 
