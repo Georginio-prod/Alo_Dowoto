@@ -20,6 +20,10 @@ export interface Sector {
   name: string
   emoji: string
   icon: SectorIcon
+  /** Texte alternatif de la photo bannière (categories/[slug].vue) — décrit la scène, pas le secteur. */
+  photoAlt: string
+  /** `object-position` CSS pour la photo bannière — corrige le recadrage `object-cover` quand le sujet n'est pas centré verticalement. */
+  photoPosition?: string
   color: string
   ink: string
   subSectors: SubSector[]
@@ -31,6 +35,8 @@ export const SECTORS: Sector[] = [
     name: 'Artisanat & BTP',
     emoji: '🔨',
     icon: 'hammer',
+    photoAlt: 'Électricien en intervention sur un tableau électrique, gants et casque de protection',
+    photoPosition: 'center 25%',
     color: '#D97706',
     ink: '#1A1A1A',
     subSectors: [
@@ -47,6 +53,8 @@ export const SECTORS: Sector[] = [
     name: 'Informatique & Digital',
     emoji: '💻',
     icon: 'laptop',
+    photoAlt: 'Développeur travaillant sur plusieurs écrans de code',
+    photoPosition: 'center 38%',
     color: '#2563EB',
     ink: '#FFFFFF',
     subSectors: [
@@ -62,6 +70,7 @@ export const SECTORS: Sector[] = [
     name: 'Ménage & Maison',
     emoji: '🧹',
     icon: 'sparkles',
+    photoAlt: 'Femme de ménage passant la serpillère dans un salon lumineux',
     color: '#14A800',
     ink: '#FFFFFF',
     subSectors: [
@@ -77,6 +86,8 @@ export const SECTORS: Sector[] = [
     name: 'Beauté & Bien-être',
     emoji: '💇',
     icon: 'scissors',
+    photoAlt: 'Coiffeuse rinçant les cheveux d\'une cliente au bac de lavage',
+    photoPosition: 'center 75%',
     color: '#DB2777',
     ink: '#FFFFFF',
     subSectors: [
@@ -92,6 +103,7 @@ export const SECTORS: Sector[] = [
     name: 'Événementiel',
     emoji: '🎉',
     icon: 'party-popper',
+    photoAlt: 'Table dressée avec un centre de table floral pour un événement',
     color: '#7C3AED',
     ink: '#FFFFFF',
     subSectors: [
@@ -107,6 +119,8 @@ export const SECTORS: Sector[] = [
     name: 'Éducation & Cours',
     emoji: '📚',
     icon: 'book-open',
+    photoAlt: 'Enseignante faisant la lecture à des enfants dans une bibliothèque',
+    photoPosition: 'center 22%',
     color: '#4F46E5',
     ink: '#FFFFFF',
     subSectors: [
@@ -122,6 +136,8 @@ export const SECTORS: Sector[] = [
     name: 'Transport & Livraison',
     emoji: '🚚',
     icon: 'truck',
+    photoAlt: 'Livreur transportant des colis en pleine rue',
+    photoPosition: 'center 20%',
     color: '#EA580C',
     ink: '#FFFFFF',
     subSectors: [
@@ -136,6 +152,7 @@ export const SECTORS: Sector[] = [
     name: 'Commerce',
     emoji: '🛍️',
     icon: 'shopping-bag',
+    photoAlt: 'Employés manipulant des cartons dans un entrepôt de stockage',
     color: '#0E7490',
     ink: '#FFFFFF',
     subSectors: [
@@ -150,6 +167,7 @@ export const SECTORS: Sector[] = [
     name: 'Industrie',
     emoji: '🏭',
     icon: 'factory',
+    photoAlt: 'Soudeur au travail avec masque de protection et projections d\'étincelles',
     color: '#57534E',
     ink: '#FFFFFF',
     subSectors: [
@@ -164,6 +182,7 @@ export const SECTORS: Sector[] = [
     name: 'Santé & Bien-être',
     emoji: '🩺',
     icon: 'stethoscope',
+    photoAlt: 'Soignante souriante auprès d\'une patiente âgée à domicile',
     color: '#DC2626',
     ink: '#FFFFFF',
     subSectors: [
