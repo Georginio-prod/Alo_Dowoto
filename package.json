@@ -25,6 +25,7 @@
     "@sentry/browser": "^10.67.0",
     "@sentry/node": "^10.67.0",
     "@tailwindcss/vite": "^4.3.2",
+    "@lucide/vue": "^1.27.0",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
     "nuxt": "^4.4.8",

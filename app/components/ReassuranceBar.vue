@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Gift, Lock, ShieldCheck, Star, type LucideIcon } from '@lucide/vue'
+
 /**
  * Bande de réassurance de la page d'accueil (pattern Upwork/Fiverr/Malt) :
  * lève les principaux freins à l'inscription et à la recherche en rendant
@@ -6,20 +8,23 @@
  * correspond à une fonctionnalité réelle de WorkTogo (vérification d'identité,
  * avis mutuels de fin de prestation, paiement bloquant en séquestre, gratuité
  * côté client) — aucune promesse qui ne soit pas tenue par le produit.
+ *
+ * Icônes Lucide (#visuals) à la place des emojis d'origine : rendu cohérent
+ * quel que soit l'OS/navigateur, et stylables dans le vert de marque.
  */
 const { t } = useI18n({ useScope: 'global' })
 
 interface TrustPoint {
-  icon: string
+  icon: LucideIcon
   title: string
   text: string
 }
 
 const points = computed<TrustPoint[]>(() => [
-  { icon: '🛡️', title: t('reassurance.point1Title'), text: t('reassurance.point1Text') },
-  { icon: '⭐', title: t('reassurance.point2Title'), text: t('reassurance.point2Text') },
-  { icon: '🔒', title: t('reassurance.point3Title'), text: t('reassurance.point3Text') },
-  { icon: '🆓', title: t('reassurance.point4Title'), text: t('reassurance.point4Text') },
+  { icon: ShieldCheck, title: t('reassurance.point1Title'), text: t('reassurance.point1Text') },
+  { icon: Star, title: t('reassurance.point2Title'), text: t('reassurance.point2Text') },
+  { icon: Lock, title: t('reassurance.point3Title'), text: t('reassurance.point3Text') },
+  { icon: Gift, title: t('reassurance.point4Title'), text: t('reassurance.point4Text') },
 ])
 </script>
 
@@ -33,8 +38,8 @@ const points = computed<TrustPoint[]>(() => [
         :style="{ '--reveal-delay': `${i * 70}ms` }"
         class="rounded-card border border-hairline bg-surface p-5 shadow-card-sm"
       >
-        <div class="mb-3 flex size-11 items-center justify-center rounded-[12px] bg-primary/10 text-xl">
-          {{ point.icon }}
+        <div class="mb-3 flex size-11 items-center justify-center rounded-[12px] bg-primary/10 text-primary">
+          <component :is="point.icon" :size="22" :stroke-width="2" aria-hidden="true" />
         </div>
         <h3 class="mb-1 text-[14.5px] font-bold text-dark">{{ point.title }}</h3>
         <p class="text-[13px] leading-relaxed text-muted">{{ point.text }}</p>

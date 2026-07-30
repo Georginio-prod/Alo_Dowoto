@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { SECTORS, type Sector } from '~/data/sectors'
+import { SECTOR_ICONS } from '~/utils/sectorIcons'
 
 /**
  * Menu déroulant des sous-secteurs au survol (#133) : uniquement sur les
@@ -95,10 +96,10 @@ onUnmounted(clearCloseTimer)
           @click="emit('select', sector)"
         >
           <div
-            class="flex h-11 w-11 items-center justify-center rounded-[12px] text-lg transition-transform duration-200 ease-out group-hover:scale-110"
+            class="flex h-11 w-11 items-center justify-center rounded-[12px] transition-transform duration-200 ease-out group-hover:scale-110"
             :style="{ background: sector.color, color: sector.ink }"
           >
-            {{ sector.emoji }}
+            <component :is="SECTOR_ICONS[sector.icon]" :size="22" :stroke-width="2" aria-hidden="true" />
           </div>
           <div class="flex w-full items-start justify-between gap-2">
             <div>

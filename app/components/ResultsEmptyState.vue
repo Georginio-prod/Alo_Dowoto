@@ -18,12 +18,15 @@ const resolvedActionLabel = computed(() => props.actionLabel ?? t('resultsEmptyS
 
 <template>
   <div class="flex flex-col items-center rounded-card border border-hairline bg-surface px-6 py-16 text-center">
-    <div class="mb-4 flex size-14 items-center justify-center rounded-full bg-bg">
-      <svg class="size-6 text-muted" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-        <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.6" />
-        <line x1="12.3" y1="12.3" x2="17" y2="17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-      </svg>
-    </div>
+    <img
+      src="/images/empty-state-illustration.svg"
+      :alt="t('resultsEmptyState.illustrationAlt')"
+      loading="lazy"
+      decoding="async"
+      width="220"
+      height="215"
+      class="mb-4 w-full max-w-[180px]"
+    >
     <p class="mb-1 text-[15px] font-bold text-dark">{{ resolvedTitle }}</p>
     <p class="mb-5 text-[13.5px] text-muted">{{ resolvedDescription }}</p>
     <button

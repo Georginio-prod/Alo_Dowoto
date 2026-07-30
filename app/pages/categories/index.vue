@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { SECTORS } from '~/data/sectors'
+import { SECTOR_ICONS } from '~/utils/sectorIcons'
 import type { SectorCount } from '~~/server/api/sectors/counts.get'
 
 const { t } = useI18n({ useScope: 'global' })
@@ -36,10 +37,10 @@ function providerCountLabel(slug: string) {
           class="lift press flex flex-col items-start gap-3 rounded-card border border-hairline bg-surface p-5 text-left shadow-card-sm"
         >
           <div
-            class="flex h-11 w-11 items-center justify-center rounded-[12px] text-lg"
+            class="flex h-11 w-11 items-center justify-center rounded-[12px]"
             :style="{ background: sector.color, color: sector.ink }"
           >
-            {{ sector.emoji }}
+            <component :is="SECTOR_ICONS[sector.icon]" :size="22" :stroke-width="2" aria-hidden="true" />
           </div>
           <div class="text-[15px] font-bold leading-tight text-dark">{{ sector.name }}</div>
           <div class="text-[13px] text-muted">

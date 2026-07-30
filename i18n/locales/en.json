@@ -127,6 +127,7 @@
   },
   "howItWorks": {
     "title": "How it works",
+    "stepAria": "Step {n}:",
     "step1Title": "Describe your need",
     "step1Text": "Search a sector or type directly what you're looking for.",
     "step2Title": "Compare providers",
@@ -242,7 +243,9 @@
     "missionBody2": "Help every independent provider grow their business by receiving qualified requests close to home.",
     "howHeading": "How it works",
     "howBody1": "A client describes their need or browses sectors, compares verified profiles, and contacts the provider of their choice directly.",
-    "howBody2": "Once the collaboration is complete, both parties can rate each other to strengthen trust on the platform."
+    "howBody2": "Once the collaboration is complete, both parties can rate each other to strengthen trust on the platform.",
+    "missionPhotoAlt": "Smiling portrait of a construction professional wearing a hard hat, one of the many trades represented on WorkTogo",
+    "howIllustrationAlt": "Illustration of a team collaborating on a shared project"
   },
   "aide": {
     "pageTitle": "Help Center — WorkTogo",
@@ -681,7 +684,8 @@
   "resultsEmptyState": {
     "defaultTitle": "No providers found",
     "defaultDescription": "Try broadening your search or resetting the filters.",
-    "defaultActionLabel": "Reset filters"
+    "defaultActionLabel": "Reset filters",
+    "illustrationAlt": "Illustration of a search with no results"
   },
   "resultsFilters": {
     "ratingAll": "All ratings",
