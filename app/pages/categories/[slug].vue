@@ -65,6 +65,20 @@ const results = computed(() => data.value?.results ?? [])
 
     <div class="mx-auto max-w-[1200px] px-5 py-6">
       <template v-if="sector">
+        <picture class="contents">
+          <source :srcset="`/images/sectors/sector-${sector.slug}.webp`" type="image/webp">
+          <img
+            :key="sector.slug"
+            v-reveal
+            :src="`/images/sectors/sector-${sector.slug}.jpg`"
+            :alt="sector.photoAlt"
+            :style="{ objectPosition: sector.photoPosition ?? 'center' }"
+            decoding="async"
+            width="1200"
+            height="500"
+            class="mb-5 h-44 w-full rounded-card object-cover shadow-card-sm sm:h-56"
+          >
+        </picture>
         <div class="mb-6 flex items-center gap-3.5">
           <div
             class="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px]"
