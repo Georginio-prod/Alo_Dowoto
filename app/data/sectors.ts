@@ -2,10 +2,24 @@ export interface SubSector {
   name: string
 }
 
+/** Nom d'icône Lucide (voir app/utils/sectorIcons.ts pour le composant réel). */
+export type SectorIcon =
+  | 'hammer'
+  | 'laptop'
+  | 'sparkles'
+  | 'scissors'
+  | 'party-popper'
+  | 'book-open'
+  | 'truck'
+  | 'shopping-bag'
+  | 'factory'
+  | 'stethoscope'
+
 export interface Sector {
   slug: string
   name: string
   emoji: string
+  icon: SectorIcon
   color: string
   ink: string
   subSectors: SubSector[]
@@ -16,6 +30,7 @@ export const SECTORS: Sector[] = [
     slug: 'btp',
     name: 'Artisanat & BTP',
     emoji: '🔨',
+    icon: 'hammer',
     color: '#D97706',
     ink: '#1A1A1A',
     subSectors: [
@@ -31,6 +46,7 @@ export const SECTORS: Sector[] = [
     slug: 'digital',
     name: 'Informatique & Digital',
     emoji: '💻',
+    icon: 'laptop',
     color: '#2563EB',
     ink: '#FFFFFF',
     subSectors: [
@@ -45,6 +61,7 @@ export const SECTORS: Sector[] = [
     slug: 'menage',
     name: 'Ménage & Maison',
     emoji: '🧹',
+    icon: 'sparkles',
     color: '#14A800',
     ink: '#FFFFFF',
     subSectors: [
@@ -59,6 +76,7 @@ export const SECTORS: Sector[] = [
     slug: 'beaute',
     name: 'Beauté & Bien-être',
     emoji: '💇',
+    icon: 'scissors',
     color: '#DB2777',
     ink: '#FFFFFF',
     subSectors: [
@@ -73,6 +91,7 @@ export const SECTORS: Sector[] = [
     slug: 'evenement',
     name: 'Événementiel',
     emoji: '🎉',
+    icon: 'party-popper',
     color: '#7C3AED',
     ink: '#FFFFFF',
     subSectors: [
@@ -87,6 +106,7 @@ export const SECTORS: Sector[] = [
     slug: 'education',
     name: 'Éducation & Cours',
     emoji: '📚',
+    icon: 'book-open',
     color: '#4F46E5',
     ink: '#FFFFFF',
     subSectors: [
@@ -101,6 +121,7 @@ export const SECTORS: Sector[] = [
     slug: 'transport',
     name: 'Transport & Livraison',
     emoji: '🚚',
+    icon: 'truck',
     color: '#EA580C',
     ink: '#FFFFFF',
     subSectors: [
@@ -114,6 +135,7 @@ export const SECTORS: Sector[] = [
     slug: 'commerce',
     name: 'Commerce',
     emoji: '🛍️',
+    icon: 'shopping-bag',
     color: '#0E7490',
     ink: '#FFFFFF',
     subSectors: [
@@ -127,6 +149,7 @@ export const SECTORS: Sector[] = [
     slug: 'industrie',
     name: 'Industrie',
     emoji: '🏭',
+    icon: 'factory',
     color: '#57534E',
     ink: '#FFFFFF',
     subSectors: [
@@ -140,6 +163,7 @@ export const SECTORS: Sector[] = [
     slug: 'sante',
     name: 'Santé & Bien-être',
     emoji: '🩺',
+    icon: 'stethoscope',
     color: '#DC2626',
     ink: '#FFFFFF',
     subSectors: [

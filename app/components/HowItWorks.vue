@@ -1,16 +1,22 @@
 <script setup lang="ts">
+import { MessageCircle, Search, Users, type LucideIcon } from '@lucide/vue'
+
 const { t } = useI18n({ useScope: 'global' })
 
 interface Step {
   n: number
+  icon: LucideIcon
   title: string
   text: string
 }
 
+// Une icône par étape (#visuals) : Search (décrire son besoin), Users
+// (comparer des profils de prestataires), MessageCircle (échanger/valider) —
+// vient compléter le repère numéroté existant, pas le remplacer.
 const steps = computed<Step[]>(() => [
-  { n: 1, title: t('howItWorks.step1Title'), text: t('howItWorks.step1Text') },
-  { n: 2, title: t('howItWorks.step2Title'), text: t('howItWorks.step2Text') },
-  { n: 3, title: t('howItWorks.step3Title'), text: t('howItWorks.step3Text') },
+  { n: 1, icon: Search, title: t('howItWorks.step1Title'), text: t('howItWorks.step1Text') },
+  { n: 2, icon: Users, title: t('howItWorks.step2Title'), text: t('howItWorks.step2Text') },
+  { n: 3, icon: MessageCircle, title: t('howItWorks.step3Title'), text: t('howItWorks.step3Text') },
 ])
 </script>
 
@@ -26,10 +32,19 @@ const steps = computed<Step[]>(() => [
           :style="{ '--reveal-delay': `${i * 80}ms` }"
           class="group px-3 text-center"
         >
-          <div class="mx-auto mb-3.5 flex size-[42px] items-center justify-center rounded-pill bg-primary text-[17px] font-bold text-white transition-transform duration-200 ease-out group-hover:scale-110">
-            {{ step.n }}
+          <div class="relative mx-auto mb-3.5 flex size-[42px] items-center justify-center rounded-pill bg-primary text-white transition-transform duration-200 ease-out group-hover:scale-110">
+            <component :is="step.icon" :size="20" :stroke-width="2.25" aria-hidden="true" />
+            <span
+              class="absolute -right-1 -top-1 flex size-[18px] items-center justify-center rounded-pill bg-dark text-[10px] font-bold text-white ring-2 ring-surface"
+              aria-hidden="true"
+            >
+              {{ step.n }}
+            </span>
           </div>
-          <div class="mb-1.5 text-[15.5px] font-semibold text-dark">{{ step.title }}</div>
+          <div class="mb-1.5 text-[15.5px] font-semibold text-dark">
+            <span class="sr-only">{{ t('howItWorks.stepAria', { n: step.n }) }}</span>
+            {{ step.title }}
+          </div>
           <p class="text-[13.5px] leading-relaxed text-muted">{{ step.text }}</p>
         </div>
       </div>

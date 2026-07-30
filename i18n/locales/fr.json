@@ -127,6 +127,7 @@
   },
   "howItWorks": {
     "title": "Comment ça marche",
+    "stepAria": "Étape {n} :",
     "step1Title": "Décrivez votre besoin",
     "step1Text": "Recherchez un secteur ou tapez directement ce que vous cherchez.",
     "step2Title": "Comparez les prestataires",
@@ -242,7 +243,9 @@
     "missionBody2": "Permettre à chaque prestataire indépendant de développer son activité en recevant des demandes qualifiées près de chez lui.",
     "howHeading": "Comment ça marche",
     "howBody1": "Un chercheur décrit son besoin ou parcourt les secteurs, compare les profils vérifiés et contacte directement le prestataire de son choix.",
-    "howBody2": "Une fois la collaboration terminée, les deux parties peuvent se noter mutuellement pour renforcer la confiance sur la plateforme."
+    "howBody2": "Une fois la collaboration terminée, les deux parties peuvent se noter mutuellement pour renforcer la confiance sur la plateforme.",
+    "missionPhotoAlt": "Portrait souriant d'un professionnel du bâtiment portant un casque de chantier, l'un des nombreux métiers représentés sur WorkTogo",
+    "howIllustrationAlt": "Illustration d'une équipe qui collabore autour d'un projet commun"
   },
   "aide": {
     "pageTitle": "Centre d'aide — WorkTogo",
@@ -681,7 +684,8 @@
   "resultsEmptyState": {
     "defaultTitle": "Aucun prestataire trouvé",
     "defaultDescription": "Essayez d'élargir votre recherche ou de réinitialiser les filtres.",
-    "defaultActionLabel": "Réinitialiser les filtres"
+    "defaultActionLabel": "Réinitialiser les filtres",
+    "illustrationAlt": "Illustration d'une recherche sans résultat"
   },
   "resultsFilters": {
     "ratingAll": "Toutes les notes",

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Sector } from '~/data/sectors'
+import { SECTOR_ICONS } from '~/utils/sectorIcons'
 
 const { t } = useI18n({ useScope: 'global' })
 
@@ -49,10 +50,10 @@ onUnmounted(() => {
         <div class="mb-4 flex items-center justify-between">
           <div class="flex items-center gap-2.5">
             <div
-              class="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] text-base font-bold"
+              class="flex h-[34px] w-[34px] items-center justify-center rounded-[9px]"
               :style="{ background: sector.color, color: sector.ink }"
             >
-              {{ sector.emoji }}
+              <component :is="SECTOR_ICONS[sector.icon]" :size="18" :stroke-width="2.25" aria-hidden="true" />
             </div>
             <div class="text-[17px] font-bold text-dark">{{ sector.name }}</div>
           </div>

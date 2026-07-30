@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { SECTORS } from '~/data/sectors'
+import { SECTOR_ICONS } from '~/utils/sectorIcons'
 import type { ProviderSearchResult } from '~~/server/utils/providerDirectory'
 
 interface SearchResponse {
@@ -66,10 +67,10 @@ const results = computed(() => data.value?.results ?? [])
       <template v-if="sector">
         <div class="mb-6 flex items-center gap-3.5">
           <div
-            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] text-xl"
+            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px]"
             :style="{ background: sector.color, color: sector.ink }"
           >
-            {{ sector.emoji }}
+            <component :is="SECTOR_ICONS[sector.icon]" :size="24" :stroke-width="2" aria-hidden="true" />
           </div>
           <div>
             <h1 class="text-xl font-extrabold text-dark">{{ sector.name }}</h1>

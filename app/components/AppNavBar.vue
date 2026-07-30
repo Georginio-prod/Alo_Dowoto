@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { SECTORS } from '~/data/sectors'
+import { SECTOR_ICONS } from '~/utils/sectorIcons'
 
 /**
  * Deuxième ligne de l'en-tête : menus déroulants "méga-menu" façon grandes
@@ -144,10 +145,10 @@ onUnmounted(() => {
                   @click="closeMenu"
                 >
                   <span
-                    class="flex size-8 shrink-0 items-center justify-center rounded-[9px] text-[15px] transition-transform duration-200 ease-out group-hover:scale-110"
+                    class="flex size-8 shrink-0 items-center justify-center rounded-[9px] transition-transform duration-200 ease-out group-hover:scale-110"
                     :style="{ background: sector.color, color: sector.ink }"
                   >
-                    {{ sector.emoji }}
+                    <component :is="SECTOR_ICONS[sector.icon]" :size="16" :stroke-width="2.25" aria-hidden="true" />
                   </span>
                   <span class="min-w-0">
                     <span class="block text-[13.5px] font-semibold text-dark">{{ sector.name }}</span>
