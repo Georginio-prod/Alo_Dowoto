@@ -4,7 +4,10 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   modules: ['@nuxt/eslint', '@nuxtjs/i18n'],
-  devtools: { enabled: true },
+  // Désactivé pour l'instance lancée par les tests de parcours (E2E=true, voir
+  // playwright.config.ts) : l'overlay des DevTools se superpose à la page et
+  // intercepte les clics, ce qui fait échouer des tests sans rapport.
+  devtools: { enabled: process.env.E2E !== 'true' },
   css: [
     // Police Poppins auto-hébergée (@fontsource) plutôt que servie depuis le
     // CDN Google — voir #341 : évite de transmettre l'IP des visiteurs à
@@ -37,6 +40,12 @@ export default defineNuxtConfig({
   // pas de préfixe d'URL (`no_prefix`) pour ne pas casser les routes déjà
   // référencées (sitemap, liens internes, #358).
   i18n: {
+    // Adresse publique du site, nécessaire pour que les balises SEO générées
+    // par useLocaleHead() (canonical, hreflang) soient absolues — sans elle,
+    // Nuxt journalise « I18n baseUrl is required to generate valid SEO tag
+    // links » à chaque rendu. Laissée vide hors production faute de domaine
+    // configuré : voir NUXT_PUBLIC_SITE_URL dans .env.example.
+    baseUrl: process.env.NUXT_PUBLIC_SITE_URL ?? '',
     defaultLocale: 'fr',
     locales: [
       { code: 'fr', language: 'fr-FR', name: 'Français', file: 'fr.json' },

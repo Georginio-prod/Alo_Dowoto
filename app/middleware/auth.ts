@@ -10,8 +10,19 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const { user, loaded, refresh } = useSession()
   if (!loaded.value) await refresh()
 
+  const authRole = typeof to.meta.authRole === 'string' ? to.meta.authRole : undefined
+
   if (!user.value) {
-    const authRole = typeof to.meta.authRole === 'string' ? to.meta.authRole : undefined
     return navigateTo({ path: '/auth', query: authRole ? { role: authRole } : {} })
+  }
+
+  // `authRole` était jusqu'ici seulement recopié dans l'URL de connexion :
+  // un compte chercheur pouvait ouvrir tout l'espace prestataire
+  // (/prestataire, /prestataire/solde…) et y voir des écrans vides ou en
+  // erreur, les API sous-jacentes exigeant elles le bon rôle. Les pages
+  // partagées (messagerie, profil) ne déclarent pas `authRole` et restent
+  // donc accessibles aux deux rôles.
+  if (authRole && user.value.role !== authRole) {
+    return navigateTo(user.value.role === 'prestataire' ? '/prestataire' : '/dashboard/client')
   }
 })

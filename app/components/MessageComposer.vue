@@ -38,8 +38,13 @@ async function sendMessage() {
     await nextTick()
     if (composerEl.value) composerEl.value.style.height = 'auto'
     emit('sent')
-  } catch {
-    sendError.value = t('messageComposer.errorSendFailed')
+  } catch (error) {
+    // Le serveur explique souvent *pourquoi* il refuse — en particulier
+    // l'anti-contournement (#265), qui rejette un message contenant un numéro
+    // ou un e-mail. Afficher « Le message n'a pas pu être envoyé. Réessayez. »
+    // à la place laissait l'utilisateur renvoyer indéfiniment le même texte
+    // sans jamais comprendre. Même traitement que FirstContactForm.
+    sendError.value = apiErrorMessage(error, t('messageComposer.errorSendFailed'))
   } finally {
     isSending.value = false
   }

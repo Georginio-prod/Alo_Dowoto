@@ -27,19 +27,40 @@ const searchTerm = computed(() => {
   return typeof q === 'string' ? q.trim() : ''
 })
 
-// Secteur dont dépend la liste de sous-secteurs de la sidebar (#40) : déduit
-// du terme recherché (nom de secteur ou de sous-secteur), avec un repli sur
-// « Ménage & Maison » (secteur de la maquette) si rien ne correspond.
-const activeSectorSlug = computed(() => {
+/**
+ * Traduction du texte recherché en filtres réellement envoyés au serveur.
+ *
+ * Avant, le terme ne servait qu'à *deviner* un secteur, avec un repli muet sur
+ * « Ménage & Maison » : chercher « développeur web » (pourtant proposé en
+ * exemple dans la barre de recherche) affichait des prestataires de ménage
+ * sous le titre « Résultats pour développeur web ». Désormais :
+ *  - terme égal à un sous-secteur → filtre exact sur ce sous-secteur ;
+ *  - terme correspondant à un secteur → filtre sur ce secteur ;
+ *  - terme libre → recherche plein texte (nom, sous-secteur, ville), déjà
+ *    prise en charge par /api/providers/search via `q` ;
+ *  - aucun terme → aucun filtre, on liste bien « tous les prestataires »
+ *    comme l'annonce l'en-tête.
+ */
+const searchSelection = computed(() => {
   const term = searchTerm.value.toLowerCase()
-  if (term) {
-    const bySubSector = SECTORS.find((s) => s.subSectors.some((sub) => sub.name.toLowerCase() === term))
-    if (bySubSector) return bySubSector.slug
-    const byName = SECTORS.find((s) => s.name.toLowerCase().includes(term))
-    if (byName) return byName.slug
+  if (!term) return { sector: undefined, subSector: undefined, freeText: undefined }
+
+  const bySubSector = SECTORS.find((s) => s.subSectors.some((sub) => sub.name.toLowerCase() === term))
+  if (bySubSector) {
+    const subSector = bySubSector.subSectors.find((sub) => sub.name.toLowerCase() === term)
+    return { sector: bySubSector.slug, subSector: subSector?.name, freeText: undefined }
   }
-  return 'menage'
+
+  const byName = SECTORS.find((s) => s.name.toLowerCase().includes(term))
+  if (byName) return { sector: byName.slug, subSector: undefined, freeText: undefined }
+
+  return { sector: undefined, subSector: undefined, freeText: searchTerm.value }
 })
+
+// Secteur dont dépend la liste de sous-secteurs de la sidebar (#40) : repli
+// sur « Ménage & Maison » (secteur de la maquette) quand la recherche ne
+// désigne aucun secteur — cette liste doit toujours proposer quelque chose.
+const activeSectorSlug = computed(() => searchSelection.value.sector ?? 'menage')
 const subSectorOptions = computed(
   () => SECTORS.find((s) => s.slug === activeSectorSlug.value)?.subSectors.map((sub) => sub.name) ?? [],
 )
@@ -75,14 +96,16 @@ const searcherPosition = computed(() =>
     : null,
 )
 
-// Le texte libre ne sert qu'à choisir le secteur affiché (ci-dessus) : une
-// fois ce secteur résolu, la requête utilise les filtres structurés plutôt
-// que de recombiner `q` (qui ne matcherait pas, par ex., les sous-secteurs
-// ne contenant pas le terme recherché).
+// Les filtres choisis dans la barre latérale l'emportent toujours sur ceux
+// déduits du texte recherché (voir `searchSelection`) : c'est le geste le plus
+// explicite de l'utilisateur.
 const { data, pending } = await useFetch<SearchResponse>('/api/providers/search', {
   query: computed(() => ({
-    secteur: activeSectorSlug.value,
-    sous_secteur: filterSubSectors.value.length ? filterSubSectors.value : undefined,
+    secteur: searchSelection.value.sector,
+    q: searchSelection.value.freeText,
+    sous_secteur: filterSubSectors.value.length
+      ? filterSubSectors.value
+      : searchSelection.value.subSector ? [searchSelection.value.subSector] : undefined,
     ville: filterCity.value || undefined,
     quartier: searchQuartier.value || undefined,
     note_min: filterRatingMin.value ?? undefined,
@@ -190,7 +213,10 @@ function restartDemo() {
           </p>
         </div>
 
-        <div class="flex items-center gap-2">
+        <!-- Quatre actions alignées mesurent ~420 px : sans `flex-wrap` la barre
+             débordait de 121 px sur un écran de 320 px et faisait défiler toute
+             la page latéralement. -->
+        <div class="flex flex-wrap items-center gap-2">
           <NuxtLink
             :to="{ path: '/demande', query: searchTerm ? { q: searchTerm } : {} }"
             class="press rounded-field bg-dark px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-dark-hover"
