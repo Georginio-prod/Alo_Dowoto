@@ -28,14 +28,24 @@ function onSearch() {
 
 <template>
   <header class="sticky top-0 z-20 border-b border-hairline bg-surface">
-    <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-6 py-3.5">
-      <NuxtLink to="/" class="shrink-0 text-xl font-extrabold tracking-tight text-dark">
+    <!--
+      Sur mobile, l'en-tête s'organise en deux bandes : le logo et les actions
+      de compte sur la première (`order-2` pour les actions), la recherche sur
+      toute la largeur en dessous (`order-3` + `basis-full`). Auparavant, la
+      barre de recherche gardait sa largeur minimale de 240 px au milieu de la
+      ligne et repoussait « Se connecter » / « Devenir prestataire » sur deux
+      lignes supplémentaires, soit un en-tête de quatre bandes qui occupait le
+      tiers supérieur de l'écran. À partir de `sm`, la disposition d'origine
+      (logo · recherche · actions) reprend.
+    -->
+    <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-2.5 px-5 py-3 sm:gap-4 sm:px-6 sm:py-3.5">
+      <NuxtLink to="/" class="order-1 shrink-0 text-xl font-extrabold tracking-tight text-dark">
         Work<span class="text-primary">Togo</span>
       </NuxtLink>
 
       <form
         role="search"
-        class="flex min-w-60 flex-1 basis-80 items-center gap-2 rounded-pill border border-black/10 bg-bg py-2 pl-[18px] pr-2"
+        class="order-3 flex w-full min-w-0 basis-full items-center gap-2 rounded-pill border border-black/10 bg-bg py-2 pl-[18px] pr-2 sm:order-2 sm:w-auto sm:min-w-60 sm:flex-1 sm:basis-80"
         @submit.prevent="onSearch"
       >
         <svg class="size-[18px] shrink-0 opacity-55" viewBox="0 0 18 18" aria-hidden="true">
@@ -57,7 +67,16 @@ function onSearch() {
         </button>
       </form>
 
-      <div class="ml-auto flex shrink-0 items-center gap-2.5">
+      <!-- `flex-wrap` + `min-w-0` (au lieu de `shrink-0`) : « Se connecter » et
+           « Devenir prestataire » mis côte à côte mesurent ~357 px, plus que la
+           largeur utile d'un écran de 320-375 px — le bloc débordait alors et
+           toute la page défilait horizontalement. -->
+      <!-- `flex-1 basis-0` sur mobile : sans base souple, le bloc d'actions est
+           placé à sa largeur maximale (~330 px), ne tient pas à côté du logo et
+           bascule en entier sur une ligne à lui. Avec une base nulle il reste
+           sur la ligne du logo et ce sont ses propres enfants qui se répartissent
+           sur deux lignes. -->
+      <div class="order-2 ml-auto flex min-w-0 flex-1 basis-0 flex-wrap items-center justify-end gap-x-2.5 gap-y-2 sm:order-3 sm:flex-none sm:basis-auto">
         <LanguageSwitcher />
         <WalletBalanceChip v-if="sessionUser?.role === 'client'" />
         <NotificationBell v-if="sessionUser" />

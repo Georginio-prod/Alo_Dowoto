@@ -81,9 +81,20 @@
       box-shadow 0.22s ease,
       border-color 0.22s ease;
   }
-  .lift:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-card-lg);
+  /* Réservé aux pointeurs qui survolent réellement : sur un écran tactile,
+     `:hover` reste « collé » après un tap (la carte restait soulevée jusqu'au
+     tap suivant). Le retour au doigt est assuré par `:active`, comme
+     `.card-hover` ci-dessous. Les utilitaires `hover:` de Tailwind v4 sont
+     déjà encapsulés de la même façon par le compilateur. */
+  @media (hover: hover) {
+    .lift:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-card-lg);
+    }
+  }
+  .lift:active {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-md);
   }
 
   /* Survol harmonisé — cartes tarifs (PricingTeaser) et témoignages
@@ -173,9 +184,13 @@
     width: max-content;
     animation: partners-scroll 42s linear infinite;
   }
-  /* Pause au survol (reste perpétuel autrement). */
-  .partners-marquee:hover .partners-track {
-    animation-play-state: paused;
+  /* Pause au survol (reste perpétuel autrement) — souris uniquement : sur
+     tactile, un simple tap laissait `:hover` actif et figeait le bandeau
+     définitivement. */
+  @media (hover: hover) {
+    .partners-marquee:hover .partners-track {
+      animation-play-state: paused;
+    }
   }
   /* Traité comme un logo/wordmark plutôt qu'un simple libellé texte :
      plus grand, en grisé, qui s'éclaircit individuellement au survol —
@@ -335,7 +350,8 @@
     transform: none !important;
     transition: none !important;
   }
-  .lift:hover { transform: none; }
+  .lift:hover,
+  .lift:active { transform: none; box-shadow: none; }
   .card-hover:hover,
   .card-hover:active { transform: none; box-shadow: none; }
   .hero-glow, .float-soft, .badge-glow, .partners-track { animation: none; }
