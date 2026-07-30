@@ -50,3 +50,5 @@ shadow.db
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+# Base SQLite jetable des tests de parcours (voir e2e/global-setup.ts)
+/e2e/.tmp/

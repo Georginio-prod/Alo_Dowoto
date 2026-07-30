@@ -1,79 +1,73 @@
-import { defineConfig, devices } from '@playwright/test';
+import { fileURLToPath } from 'node:url'
+import { defineConfig, devices } from '@playwright/test'
 
 /**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
+ * Tests de parcours (end-to-end) du site — voir e2e/.
+ *
+ * Contrairement aux tests Vitest (tests/**, unitaires + HTTP sur des routes
+ * isolées), ceux-ci démarrent une vraie instance Nuxt et pilotent un vrai
+ * navigateur : ils valident les parcours complets (inscription, recherche,
+ * messagerie…) tels qu'un visiteur les vit.
+ *
+ * Base de données : une base SQLite jetable, recréée à chaque exécution par
+ * e2e/global-setup.ts (même principe que tests/setup/prismaTestDb.ts) — les
+ * tests ne touchent jamais prisma/dev.db.
+ *
+ * OTP : `BREVO_API_KEY`/`TWILIO_*` sont volontairement vidés pour l'instance
+ * de test, ce qui fait retomber /api/auth/otp/send sur son mode développement
+ * (le code est renvoyé dans `devCode`) — l'inscription est donc jouable de
+ * bout en bout sans envoyer de vrai SMS ni de vrai email.
  */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
+const PORT = Number(process.env.E2E_PORT ?? 3101)
+const BASE_URL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${PORT}`
 
-/**
- * See https://playwright.dev/docs/test-configuration.
- */
+export const E2E_DATABASE_URL = `file:${fileURLToPath(new URL('./e2e/.tmp/e2e.db', import.meta.url))}`
+
 export default defineConfig({
   testDir: './e2e',
-  /* Run tests in files in parallel */
+  globalSetup: './e2e/global-setup.ts',
   fullyParallel: true,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+  reporter: process.env.CI ? [['html'], ['github']] : [['list'], ['html', { open: 'never' }]],
+  // Le premier rendu d'une page Nuxt en dev inclut sa compilation à la volée :
+  // 30 s (défaut) est trop court sur une machine froide.
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
   use: {
-    /* Base URL to use in actions like `await page.goto('')`. */
-    // baseURL: 'http://localhost:3000',
-
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
+    baseURL: BASE_URL,
     trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    locale: 'fr-FR',
   },
 
-  /* Configure projects for major browsers */
   projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'mobile', use: { ...devices['Pixel 5'] } },
   ],
 
-  /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://localhost:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
-});
+  webServer: {
+    command: 'npm run dev',
+    url: BASE_URL,
+    reuseExistingServer: !process.env.CI,
+    timeout: 180_000,
+    stdout: 'pipe',
+    stderr: 'pipe',
+    env: {
+      PORT: String(PORT),
+      HOST: '127.0.0.1',
+      // Coupe les DevTools Nuxt : leur overlay intercepte les clics (voir
+      // nuxt.config.ts).
+      E2E: 'true',
+      DATABASE_URL: E2E_DATABASE_URL,
+      // Pas d'envoi réel d'OTP depuis l'instance de test (voir en-tête).
+      BREVO_API_KEY: '',
+      BREVO_SMS_SENDER: '',
+      TWILIO_ACCOUNT_SID: '',
+      TWILIO_AUTH_TOKEN: '',
+      TWILIO_FROM: '',
+      EMAIL_FROM: '',
+    },
+  },
+})

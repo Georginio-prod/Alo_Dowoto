@@ -17,7 +17,7 @@ remboursement et gestion de litige.
 - **Langage :** TypeScript strict
 - **Style :** Tailwind CSS v4
 - **ORM / base :** [Prisma](https://www.prisma.io) (SQLite en développement) — voir [docs/database-schema.md](docs/database-schema.md)
-- **Tests :** [Vitest](https://vitest.dev) + @vue/test-utils
+- **Tests :** [Vitest](https://vitest.dev) + @vue/test-utils (unitaires) et [Playwright](https://playwright.dev) (parcours de bout en bout)
 - **Hébergement / CI :** Vercel + GitHub Actions — voir [docs/deployment.md](docs/deployment.md)
 
 ## Prérequis
@@ -56,6 +56,8 @@ pour la gestion des secrets en CI/CD et sur Vercel.
 | `npm run lint` / `lint:fix` | ESLint (strict, règle des 300 lignes) |
 | `npm run typecheck` | Vérification de types (`nuxt typecheck`) |
 | `npm test` / `test:watch` | Tests unitaires (Vitest) |
+| `npm run test:e2e` | Tests de parcours (Playwright) — démarre Nuxt et une base SQLite jetable |
+| `npm run test:e2e:ui` | Idem, en mode interactif (inspecteur Playwright) |
 | `npm run db:migrate` | Créer/appliquer une migration Prisma (dev) |
 | `npm run db:generate` | Régénérer le client Prisma |
 | `npm run db:studio` | Explorer la base (Prisma Studio) |
@@ -68,7 +70,8 @@ server/
   api/**             Routes API (1 route/fichier, convention <segment>.<méthode>.ts)
   utils/*Store.ts    Logique métier, isolée du HTTP
 prisma/              Schéma + migrations versionnées
-tests/               Tests Vitest
+tests/               Tests Vitest (unitaires + HTTP)
+e2e/                 Tests de parcours Playwright (vrai navigateur, vraie instance Nuxt)
 docs/                Architecture, schéma DB, déploiement, audits a11y & responsive
 ```
 
