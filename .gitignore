@@ -43,3 +43,10 @@ tests/setup/test.db-journal
 
 # Base éphémère de prisma migrate diff
 shadow.db
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
