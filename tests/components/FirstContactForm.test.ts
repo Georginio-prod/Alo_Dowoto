@@ -47,7 +47,11 @@ describe('FirstContactForm (#295 fiche préalable différenciée par métier)', 
     await wrapper.find('#first-contact-sector-pickupAddress').setValue('Bè, Lomé')
     await wrapper.find('#first-contact-sector-dropoffAddress').setValue('Agoè, Lomé')
 
-    await wrapper.find('button').trigger('click')
+    // Le formulaire s'envoie via `submit` (bouton `type="submit"`), pour que la
+    // touche Entrée / « Envoyer » du clavier mobile fonctionne aussi : c'est
+    // donc l'événement `submit` qu'il faut déclencher, pas un clic simulé
+    // (happy-dom ne déduit pas l'un de l'autre).
+    await wrapper.find('form').trigger('submit')
 
     expect(fetchMock).toHaveBeenCalledWith('/api/conversations/conv-1/first-contact', expect.objectContaining({
       method: 'POST',

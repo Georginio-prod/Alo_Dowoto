@@ -1,0 +1,42 @@
+name: Tests de parcours (Playwright)
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+jobs:
+  test:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    env:
+      # Prisma (prisma.config.ts) exige DATABASE_URL même pour `prisma
+      # generate`, qui ne fait que lire prisma/schema.prisma (aucune connexion
+      # réelle n'est ouverte) — même valeur factice que ci.yml. La base SQLite
+      # jetable réellement utilisée par les tests est gérée séparément par
+      # playwright.config.ts (globalSetup + webServer).
+      DATABASE_URL: 'file:./ci.db'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - name: Installer les dépendances
+        run: npm ci
+      # Le client Prisma doit correspondre au schéma : sans ça, l'instance Nuxt
+      # démarrée par Playwright échoue dès qu'une route touche aux modèles
+      # ajoutés récemment.
+      - name: Générer le client Prisma
+        run: npx prisma generate
+      - name: Installer les navigateurs Playwright
+        run: npx playwright install --with-deps chromium
+      # La base SQLite jetable et le serveur Nuxt sont pris en charge par
+      # playwright.config.ts (globalSetup + webServer).
+      - name: Lancer les tests de parcours
+        run: npx playwright test --project=chromium
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30

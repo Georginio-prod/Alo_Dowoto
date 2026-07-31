@@ -65,11 +65,14 @@ function formatDate(timestamp: number): string {
   <div class="rounded-card border border-hairline bg-surface p-5">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
       <p class="text-[14.5px] font-bold text-dark">{{ t('walletMovementList.heading') }}</p>
-      <div class="flex flex-wrap gap-2">
+      <!-- `min-w-0` sur les deux listes déroulantes : un `select` se dimensionne
+           sur son option la plus longue (« Compensation d'annulation »…) et
+           débordait de l'écran sur mobile (+70 px à 320 px de large). -->
+      <div class="flex min-w-0 flex-wrap gap-2">
         <select
           v-model="typeFilter"
           :aria-label="t('walletMovementList.typeFilterAria')"
-          class="h-9 rounded-field border border-hairline bg-white px-2.5 text-[12.5px] text-dark"
+          class="h-9 max-w-full min-w-0 rounded-field border border-hairline bg-white px-2.5 text-[12.5px] text-dark"
         >
           <option value="all">{{ t('walletMovementList.allTypes') }}</option>
           <option v-for="(label, type) in TYPE_LABELS" :key="type" :value="type">{{ label }}</option>
@@ -77,7 +80,7 @@ function formatDate(timestamp: number): string {
         <select
           v-model="periodFilter"
           :aria-label="t('walletMovementList.periodFilterAria')"
-          class="h-9 rounded-field border border-hairline bg-white px-2.5 text-[12.5px] text-dark"
+          class="h-9 max-w-full min-w-0 rounded-field border border-hairline bg-white px-2.5 text-[12.5px] text-dark"
         >
           <option value="all">{{ t('walletMovementList.allPeriods') }}</option>
           <option value="7d">{{ t('walletMovementList.last7Days') }}</option>

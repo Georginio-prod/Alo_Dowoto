@@ -154,7 +154,13 @@ function onPayoutSaved() {
       <NuxtLink to="/" class="press mb-2 inline-block py-2 text-sm text-muted">{{ t('auth.back') }}</NuxtLink>
 
       <div class="mb-[22px] text-center">
-        <div class="text-[22px] font-extrabold text-dark">Work<span class="text-primary">Togo</span></div>
+        <!-- Titre de niveau 1 de la page : la marque seule ne dit pas de quoi
+             parle l'écran, on ajoute donc un intitulé lisible par les lecteurs
+             d'écran (la page n'avait jusqu'ici aucun `h1`). -->
+        <h1 class="text-[22px] font-extrabold text-dark">
+          Work<span class="text-primary">Togo</span>
+          <span class="sr-only"> — {{ t('auth.pageTitle') }}</span>
+        </h1>
       </div>
 
       <FlowSteps v-if="activeTab === 'signup'" :steps="flowSteps" :current-index="flowStepIndex" />

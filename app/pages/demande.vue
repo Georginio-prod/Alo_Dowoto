@@ -102,7 +102,12 @@ async function submit() {
       <NuxtLink to="/" class="press mb-2 inline-block py-2 text-sm text-muted">{{ t('demande.back') }}</NuxtLink>
 
       <div class="mb-[22px] text-center">
-        <div class="text-[22px] font-extrabold text-dark">Work<span class="text-primary">Togo</span></div>
+        <!-- Même raison que sur /auth : la page n'avait aucun `h1`, la marque
+             seule ne décrivant pas l'écran. -->
+        <h1 class="text-[22px] font-extrabold text-dark">
+          Work<span class="text-primary">Togo</span>
+          <span class="sr-only"> — {{ t('demande.pageTitle') }}</span>
+        </h1>
         <p class="mt-1 text-[13.5px] text-muted">{{ t('demande.subtitle') }}</p>
       </div>
 
@@ -156,7 +161,7 @@ async function submit() {
             v-for="option in URGENCY_OPTIONS"
             :key="option.value"
             type="button"
-            class="press flex-1 rounded-field border-[1.5px] px-3 py-2.5 text-[13px] font-semibold"
+            class="press min-w-0 flex-1 rounded-field border-[1.5px] px-3 py-2.5 text-[13px] font-semibold"
             :class="urgency === option.value ? 'border-primary bg-primary/10 text-dark' : 'border-hairline bg-white text-muted'"
             @click="selectUrgency(option.value)"
           >

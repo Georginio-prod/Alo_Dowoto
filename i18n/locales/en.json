@@ -402,6 +402,7 @@
     "googleErrorState": "The Google security check failed. Please try again.",
     "googleErrorFailed": "Google sign-in failed. Please try again.",
     "googleErrorEmail": "Your Google email address isn't verified — use the regular form instead.",
+    "pageTitle": "Log in or sign up",
     "loginTab": "Log in",
     "signupTab": "Sign up",
     "loginCta": "Log in",
@@ -582,6 +583,7 @@
   },
   "demande": {
     "back": "← Back",
+    "pageTitle": "Post a request",
     "subtitle": "Describe what you need, we'll find the best profiles.",
     "urgencyImmediate": "Immediate",
     "urgencyWeek": "Within the week",

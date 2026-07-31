@@ -96,7 +96,7 @@ async function submit() {
         v-model="newLanguage"
         type="text"
         :placeholder="t('languagesForm.customPlaceholder')"
-        class="h-[46px] flex-1 rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
+        class="h-[46px] min-w-0 flex-1 rounded-field border-[1.5px] border-hairline px-3.5 text-[14.5px] text-ink outline-none focus:border-primary"
         @keydown.enter.prevent="addFromInput"
       >
       <button

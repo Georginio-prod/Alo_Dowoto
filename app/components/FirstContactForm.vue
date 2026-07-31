@@ -58,7 +58,11 @@ async function submit() {
 </script>
 
 <template>
-  <div class="rounded-card border border-hairline bg-surface p-5">
+  <!-- Vrai `<form>` (et bouton `submit`) plutôt qu'un `<div>` avec un bouton
+       inerte : la touche « Envoyer » du clavier mobile et la touche Entrée
+       déclenchent maintenant l'envoi, comme sur les autres formulaires du site
+       (/demande, /contact). -->
+  <form class="rounded-card border border-hairline bg-surface p-5" @submit.prevent="submit">
     <h2 class="mb-1 text-[15px] font-bold text-dark">{{ t('firstContactForm.heading', { name: providerName }) }}</h2>
     <p class="mb-4 text-[13px] leading-relaxed text-muted">
       {{ t('firstContactForm.subtitle', { name: providerName }) }}
@@ -130,12 +134,11 @@ async function submit() {
     <p v-if="submitError" class="mb-2 text-[12.5px] text-error">{{ submitError }}</p>
 
     <button
-      type="button"
+      type="submit"
       class="press w-full rounded-field bg-primary py-3 text-[14.5px] font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45"
       :disabled="!isValid || isSubmitting"
-      @click="submit"
     >
       {{ isSubmitting ? t('firstContactForm.sending') : t('firstContactForm.sendCta') }}
     </button>
-  </div>
+  </form>
 </template>

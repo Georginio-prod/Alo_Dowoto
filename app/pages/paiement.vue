@@ -177,8 +177,12 @@ async function submitPayment() {
         <p class="mb-5 text-[13.5px] leading-relaxed text-muted">
           {{ t('paiement.successText', { plan: planName }) }}
         </p>
+        <!-- `/dashboard` n'existe pas (les tableaux de bord sont
+             `/dashboard/client` et `/prestataire`) : ce lien renvoyait sur une
+             404. Le paiement d'abonnement ne concerne que les prestataires,
+             d'où `/prestataire`. -->
         <NuxtLink
-          to="/dashboard"
+          to="/prestataire"
           class="press block w-full rounded-field bg-primary py-3.5 text-[15px] font-semibold text-white hover:bg-primary-hover"
         >
           {{ t('paiement.completeProfileCta') }}

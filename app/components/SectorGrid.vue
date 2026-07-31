@@ -23,8 +23,24 @@ const hoveredSlug = ref<string | null>(null)
 const flipLeft = ref(false)
 let closeTimer: ReturnType<typeof setTimeout> | null = null
 
+// `min-width: 1024px` en plus du pointeur fin : le menu mesure 256 px de large
+// et s'ancre sur une carte de la grille, il dépassait donc le viewport (et
+// faisait défiler la page latéralement) sur tout écran étroit — y compris une
+// fenêtre de bureau réduite, où `hover: hover` reste vrai. Même seuil que la
+// barre de navigation déroulante de l'en-tête (`hidden lg:block`).
+const HOVER_MENU_MEDIA = '(hover: hover) and (pointer: fine) and (min-width: 1024px)'
+
 onMounted(() => {
-  supportsHover.value = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+  const query = window.matchMedia(HOVER_MENU_MEDIA)
+  supportsHover.value = query.matches
+  // Redimensionnement/rotation : le menu doit disparaître dès qu'on repasse
+  // sous le seuil, sinon il reste dans le DOM et refait déborder la page.
+  const onChange = (event: MediaQueryListEvent) => {
+    supportsHover.value = event.matches
+    if (!event.matches) hoveredSlug.value = null
+  }
+  query.addEventListener('change', onChange)
+  onUnmounted(() => query.removeEventListener('change', onChange))
 })
 
 function clearCloseTimer() {
@@ -115,6 +131,12 @@ onUnmounted(clearCloseTimer)
         </button>
 
         <!--
+          Menu réservé aux pointeurs qui survolent (`supportsHover`, résolu au
+          montage donc jamais rendu côté serveur) : sur tactile il n'était pas
+          seulement inutile, sa largeur fixe de 256 px ancrée sur la carte
+          dépassait le viewport et provoquait un défilement horizontal de toute
+          la page d'accueil (jusqu'à +104 px à 320 px de large).
+
           Conteneur ancré directement sous la carte (`top-full`, sans trou) :
           le retrait visuel de 8px est fourni par un « pont » transparent
           (`pt-2`) plutôt que par un décalage de position. Sans ce pont, le
@@ -124,6 +146,7 @@ onUnmounted(clearCloseTimer)
           restent tous descendants du même wrapper : aucun `mouseleave`.
         -->
         <div
+          v-if="supportsHover"
           class="absolute top-full z-20 w-64 pt-2 transition-all duration-250 ease-out"
           :class="[
             flipLeft ? 'right-0' : 'left-0',

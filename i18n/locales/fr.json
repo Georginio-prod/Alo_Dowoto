@@ -402,6 +402,7 @@
     "googleErrorState": "La vérification de sécurité Google a échoué. Réessayez.",
     "googleErrorFailed": "La connexion avec Google a échoué. Réessayez.",
     "googleErrorEmail": "Votre adresse email Google n'est pas vérifiée — utilisez le formulaire classique.",
+    "pageTitle": "Connexion ou inscription",
     "loginTab": "Connexion",
     "signupTab": "Inscription",
     "loginCta": "Se connecter",
@@ -582,6 +583,7 @@
   },
   "demande": {
     "back": "← Retour",
+    "pageTitle": "Publier une demande",
     "subtitle": "Décrivez votre besoin, nous trouvons les meilleurs profils.",
     "urgencyImmediate": "Immédiate",
     "urgencyWeek": "Sous la semaine",
