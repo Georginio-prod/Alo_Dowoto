@@ -8,6 +8,13 @@ jobs:
   test:
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    env:
+      # Prisma (prisma.config.ts) exige DATABASE_URL même pour `prisma
+      # generate`, qui ne fait que lire prisma/schema.prisma (aucune connexion
+      # réelle n'est ouverte) — même valeur factice que ci.yml. La base SQLite
+      # jetable réellement utilisée par les tests est gérée séparément par
+      # playwright.config.ts (globalSetup + webServer).
+      DATABASE_URL: 'file:./ci.db'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
