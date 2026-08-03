@@ -71,14 +71,14 @@ describe('anti-rejeu (#355)', () => {
     expect(isWebhookTimestampFresh(Date.now() + 6 * 60 * 1000)).toBe(false)
   })
 
-  it('un nonce inédit n’est pas signalé comme rejeu, un nonce déjà consommé si', () => {
+  it('un nonce inédit n’est pas signalé comme rejeu, un nonce déjà consommé si', async () => {
     const nonce = randomUUID()
-    expect(consumeWebhookNonce(nonce)).toBe(false)
-    expect(consumeWebhookNonce(nonce)).toBe(true)
+    expect(await consumeWebhookNonce(nonce)).toBe(false)
+    expect(await consumeWebhookNonce(nonce)).toBe(true)
   })
 
-  it('deux nonces distincts sont indépendants', () => {
-    expect(consumeWebhookNonce(randomUUID())).toBe(false)
-    expect(consumeWebhookNonce(randomUUID())).toBe(false)
+  it('deux nonces distincts sont indépendants', async () => {
+    expect(await consumeWebhookNonce(randomUUID())).toBe(false)
+    expect(await consumeWebhookNonce(randomUUID())).toBe(false)
   })
 })

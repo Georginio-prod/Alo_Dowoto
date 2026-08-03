@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
 
   // Anti-rejeu (#355) : un webhook trop ancien, ou dont le nonce a déjà servi
   // pendant que ce paiement était `pending`, est refusé.
-  if (!isWebhookTimestampFresh(body.timestamp) || consumeWebhookNonce(body.nonce)) {
+  if (!isWebhookTimestampFresh(body.timestamp) || await consumeWebhookNonce(body.nonce)) {
     unauthorized('Signature invalide.')
   }
 

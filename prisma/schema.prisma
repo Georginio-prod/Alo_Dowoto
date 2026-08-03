@@ -528,3 +528,34 @@ model Notification {
 
   @@index([userId, readAt])
 }
+
+/// Nonces de webhook déjà consommés (#355, audit M3). Persistés en base pour
+/// que l'anti-rejeu des paiements/recharges survive aux redémarrages et reste
+/// valable en multi-process (l'ancien registre en mémoire supposait un unique
+/// process PM2). Le `nonce` en clé primaire fait de la détection de rejeu une
+/// simple insertion : un doublon échoue sur la contrainte d'unicité. Les
+/// entrées expirées (au-delà de la fenêtre de fraîcheur) sont purgées à chaque
+/// consommation — voir server/utils/webhookSignature.ts.
+model WebhookNonce {
+  nonce     String   @id
+  /// Instant au-delà duquel le nonce peut être purgé (fin de la fenêtre anti-rejeu).
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
+/// Compteur de débit de l'assistant IA par fenêtre fixe (#geoloc 2.2, audit
+/// M4). Remplace le registre en mémoire pour que la limite soit partagée entre
+/// instances et survive aux déploiements. Une ligne par (clé, début de
+/// fenêtre) ; `count` est incrémenté atomiquement à chaque requête. Les
+/// fenêtres périmées sont purgées à la volée — voir server/utils/aiRateLimiter.ts.
+model AiRateWindow {
+  /// Utilisateur connecté (`userId`) ou visiteur anonyme (`anon:<ip>`).
+  key         String
+  /// Début de la fenêtre fixe (aligné sur `WINDOW_MS`).
+  windowStart DateTime
+  count       Int      @default(0)
+
+  @@id([key, windowStart])
+  @@index([windowStart])
+}
