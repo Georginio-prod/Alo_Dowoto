@@ -110,6 +110,16 @@ function sumBalance(rows: Pick<PrismaWalletMovement, 'amount' | 'type'>[]): numb
   return rows.reduce((total, m) => total + m.amount * MOVEMENT_SIGN[m.type as WalletMovementType], 0)
 }
 
+/**
+ * Client de base accepté par les fonctions du portefeuille : soit le singleton
+ * `prisma`, soit le client transactionnel `tx` fourni par un `prisma.$transaction`
+ * appelant. Permet de composer un mouvement de portefeuille et un changement de
+ * statut de commande séquestre dans une *seule* transaction atomique (#366,
+ * correctif audit C1) : le débit/crédit et le changement d'état réussissent ou
+ * échouent ensemble, plus jamais de double-débit / double-paiement sur panne.
+ */
+type WalletDb = Prisma.TransactionClient
+
 function buildMovementData(input: RecordMovementInput): Prisma.WalletMovementCreateInput {
   return {
     id: randomUUID(),
@@ -152,16 +162,31 @@ export async function getBalance(userId: string): Promise<number> {
 /**
  * Crédite le portefeuille (recharge, libération de séquestre, remboursement
  * ou commission plateforme). `amount` doit être strictement positif. Un crédit
- * est append-only et ne dépend d'aucune lecture préalable : pas de transaction.
+ * est append-only et ne dépend d'aucune lecture préalable : pas de transaction
+ * propre. `tx` (#366) permet d'écrire ce crédit dans la transaction d'une
+ * opération métier composite (ex. libération : crédit prestataire + crédit
+ * plateforme + passage `released`, tout ou rien).
  */
-export async function creditWallet(input: RecordMovementInput): Promise<WalletMovement> {
+export async function creditWallet(input: RecordMovementInput, tx?: WalletDb): Promise<WalletMovement> {
   if (input.type === 'escrow_debit') {
     throw new Error('creditWallet ne doit pas recevoir de mouvement escrow_debit (utiliser debitWallet).')
   }
   if (input.amount <= 0) {
     throw new Error('Le montant crédité doit être positif.')
   }
-  const row = await prisma.walletMovement.create({ data: buildMovementData(input) })
+  const db: WalletDb = tx ?? prisma
+  const row = await db.walletMovement.create({ data: buildMovementData(input) })
+  return toMovement(row)
+}
+
+/** Vérifie le solde puis journalise le débit sur le client `db` fourni (transactionnel ou non). */
+async function performDebit(db: WalletDb, input: RecordMovementInput): Promise<WalletMovement | null> {
+  const rows = await db.walletMovement.findMany({
+    where: { walletUserId: input.walletUserId },
+    select: { amount: true, type: true },
+  })
+  if (sumBalance(rows) < input.amount) return null
+  const row = await db.walletMovement.create({ data: buildMovementData(input) })
   return toMovement(row)
 }
 
@@ -172,20 +197,19 @@ export async function creditWallet(input: RecordMovementInput): Promise<WalletMo
  * l'écriture du mouvement sont encadrées par une transaction : contrairement
  * à l'ancienne `Map` mono-thread, deux débits concurrents ne peuvent plus
  * passer tous les deux la vérification et créer un découvert.
+ *
+ * `tx` (#366) : quand un appelant compose déjà ce débit avec un changement de
+ * statut de commande dans sa propre transaction, on réutilise ce client `tx`
+ * (Prisma n'imbrique pas les transactions interactives) pour que débit + statut
+ * soient atomiques.
  */
-export async function debitWallet(input: Omit<RecordMovementInput, 'type'>): Promise<WalletMovement | null> {
+export async function debitWallet(input: Omit<RecordMovementInput, 'type'>, tx?: WalletDb): Promise<WalletMovement | null> {
   if (input.amount <= 0) {
     throw new Error('Le montant débité doit être positif.')
   }
-  return prisma.$transaction(async (tx) => {
-    const rows = await tx.walletMovement.findMany({
-      where: { walletUserId: input.walletUserId },
-      select: { amount: true, type: true },
-    })
-    if (sumBalance(rows) < input.amount) return null
-    const row = await tx.walletMovement.create({ data: buildMovementData({ ...input, type: 'escrow_debit' }) })
-    return toMovement(row)
-  })
+  const movementInput: RecordMovementInput = { ...input, type: 'escrow_debit' }
+  if (tx) return performDebit(tx, movementInput)
+  return prisma.$transaction((client) => performDebit(client, movementInput))
 }
 
 /**
@@ -197,21 +221,23 @@ export async function debitWallet(input: Omit<RecordMovementInput, 'type'>): Pro
  * (jamais de découvert) et renvoyé pour que l'appelant sache si la pénalité
  * a été appliquée intégralement.
  */
-export async function debitWalletForPenalty(input: Omit<RecordMovementInput, 'type' | 'amount'> & { amount: number }): Promise<WalletMovement | null> {
+export async function debitWalletForPenalty(input: Omit<RecordMovementInput, 'type' | 'amount'> & { amount: number }, tx?: WalletDb): Promise<WalletMovement | null> {
   if (input.amount <= 0) {
     throw new Error('Le montant de la pénalité doit être positif.')
   }
-  return prisma.$transaction(async (tx) => {
-    const rows = await tx.walletMovement.findMany({
+  const applyPenalty = async (db: WalletDb): Promise<WalletMovement | null> => {
+    const rows = await db.walletMovement.findMany({
       where: { walletUserId: input.walletUserId },
       select: { amount: true, type: true },
     })
     const balance = sumBalance(rows)
     if (balance <= 0) return null
     const amount = Math.min(input.amount, balance)
-    const row = await tx.walletMovement.create({ data: buildMovementData({ ...input, type: 'dispute_penalty', amount }) })
+    const row = await db.walletMovement.create({ data: buildMovementData({ ...input, type: 'dispute_penalty', amount }) })
     return toMovement(row)
-  })
+  }
+  if (tx) return applyPenalty(tx)
+  return prisma.$transaction(applyPenalty)
 }
 
 /**

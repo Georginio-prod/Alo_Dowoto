@@ -1,20 +1,6 @@
 import type { EscrowOrder as PrismaEscrowOrder, Prisma } from '@prisma/client'
-import {
-  addSystemMessage,
-  findLatestUnresolvedMessage,
-  findOrCreateConversation,
-  getClientContact,
-  markFirstContactDone,
-  resolveMessage,
-  setClientContact,
-} from '~~/server/utils/conversationStore'
-import {
-  getEffectiveRating,
-  getProviderById,
-  type ProviderSearchResult,
-  resolveProviderRate,
-  searchProviders,
-} from '~~/server/utils/providerDirectory'
+import { addSystemMessage, getClientContact } from '~~/server/utils/conversationStore'
+import { applyAutoReassignmentIfExpired } from '~~/server/utils/escrowAutoReassignment'
 import { applyDisputeResolutionTimeoutIfExpired } from '~~/server/utils/escrowDisputeResolution'
 import { notifyDisputeUpdate } from '~~/server/utils/notificationStore'
 import { prisma } from '~~/server/utils/prisma'
@@ -117,8 +103,9 @@ function toOrder(row: PrismaEscrowOrder): EscrowOrder {
   }
 }
 
-async function updateOrder(id: string, data: Prisma.EscrowOrderUpdateInput): Promise<EscrowOrder> {
-  return toOrder(await prisma.escrowOrder.update({ where: { id }, data }))
+async function updateOrder(id: string, data: Prisma.EscrowOrderUpdateInput, tx?: Prisma.TransactionClient): Promise<EscrowOrder> {
+  const db = tx ?? prisma
+  return toOrder(await db.escrowOrder.update({ where: { id }, data }))
 }
 
 /** Accès direct (sans les vérifications paresseuses de `getEscrowOrderByConversationId`) pour les modules extraits de ce fichier, ex. `escrowClientCancellation.ts`. */
@@ -191,22 +178,36 @@ export async function releaseOrderFunds(order: EscrowOrder): Promise<EscrowOrder
   const commission = Math.round(order.amount * ESCROW_COMMISSION_RATE)
   const providerNet = order.amount - commission
 
-  if (providerNet > 0) {
-    await creditWallet({ walletUserId: order.providerId, type: 'escrow_release', amount: providerNet, reference: order.id, counterpartyUserId: order.clientId })
-  }
-  if (commission > 0) {
-    await creditWallet({ walletUserId: PLATFORM_WALLET_USER_ID, type: 'commission', amount: commission, reference: order.id, counterpartyUserId: order.providerId })
-  }
-
-  const updated = await updateOrder(order.id, { status: 'released', releasedAt: new Date(Date.now()) })
+  // Atomicité (#366, audit C1 cas 2) : crédit prestataire + crédit plateforme +
+  // passage `released` dans une seule transaction. La relecture du statut dans
+  // la transaction sert de garde d'idempotence : `applyTacitValidationIfExpired`
+  // peut ré-appeler cette fonction à la lecture d'une commande `delivered`
+  // expirée ; si un premier appel concurrent a déjà libéré, on ne re-crédite pas.
+  const { updated, released } = await prisma.$transaction(async (tx) => {
+    const fresh = await tx.escrowOrder.findUnique({ where: { id: order.id } })
+    if (!fresh || fresh.status === 'released' || fresh.status === 'refunded') {
+      return { updated: fresh ? toOrder(fresh) : order, released: false }
+    }
+    if (providerNet > 0) {
+      await creditWallet({ walletUserId: order.providerId, type: 'escrow_release', amount: providerNet, reference: order.id, counterpartyUserId: order.clientId }, tx)
+    }
+    if (commission > 0) {
+      await creditWallet({ walletUserId: PLATFORM_WALLET_USER_ID, type: 'commission', amount: commission, reference: order.id, counterpartyUserId: order.providerId }, tx)
+    }
+    const row = await updateOrder(order.id, { status: 'released', releasedAt: new Date(Date.now()) }, tx)
+    return { updated: row, released: true }
+  })
 
   // Validation finale (#264, anti-fuite) : les coordonnées réelles du chercheur,
   // masquées jusqu'ici dans le fil, ne sont révélées au prestataire qu'une fois
-  // la prestation intégralement validée et payée.
-  const contact = await getClientContact(order.conversationId)
-  if (contact) {
-    const body = `Prestation validée : voici les coordonnées du chercheur pour la suite — ${contact}`
-    await addSystemMessage(order.conversationId, body, 'text', { key: 'systemMessages.contactRevealed', params: { contact } })
+  // la prestation intégralement validée et payée. Émis hors transaction (message
+  // non monétaire) et une seule fois, quand la libération a réellement eu lieu.
+  if (released) {
+    const contact = await getClientContact(order.conversationId)
+    if (contact) {
+      const body = `Prestation validée : voici les coordonnées du chercheur pour la suite — ${contact}`
+      await addSystemMessage(order.conversationId, body, 'text', { key: 'systemMessages.contactRevealed', params: { contact } })
+    }
   }
   return updated
 }
@@ -218,71 +219,6 @@ async function applyTacitValidationIfExpired(order: EscrowOrder): Promise<Escrow
     return releaseOrderFunds(order)
   }
   return order
-}
-
-/**
- * Prochain prestataire disponible du même secteur/ville qu'un prestataire donné
- * (#289), classé par note effective décroissante. `null` si aucune alternative.
- */
-function findNextAvailableProvider(currentProviderId: string): ProviderSearchResult | null {
-  const current = getProviderById(currentProviderId)
-  if (!current) return null
-
-  const alternatives = searchProviders({ sector: current.sector, city: current.city }).filter(
-    (provider) => provider.id !== currentProviderId,
-  )
-  if (alternatives.length === 0) return null
-
-  const ranked = alternatives
-    .map((provider) => ({ provider, ...getEffectiveRating(provider.id) }))
-    .sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount)
-  return ranked[0]?.provider ?? null
-}
-
-/**
- * Réattribution automatique (#289) : si le prestataire n'a pas confirmé la prise
- * en charge dans le délai imparti après paiement, la commande en cours est
- * remboursée et une nouvelle demande est proposée au prestataire suivant, sur
- * une nouvelle conversation. Le chercheur garde la main : la nouvelle commande
- * reste `awaiting_payment`, à confirmer par un nouveau paiement.
- */
-async function applyAutoReassignmentIfExpired(order: EscrowOrder): Promise<EscrowOrder> {
-  if (order.status !== 'in_escrow' || order.paidAt === null) return order
-  if (Date.now() - order.paidAt < PROVIDER_RESPONSE_TIMEOUT_MS) return order
-
-  const pendingConfirmation = await findLatestUnresolvedMessage(order.conversationId, 'order_confirmation')
-  if (!pendingConfirmation) return order
-
-  const nextProvider = findNextAvailableProvider(order.providerId)
-  if (!nextProvider) {
-    const body = "Le prestataire n'a pas répondu à temps et aucune alternative n'est disponible pour le moment. Vous pouvez annuler cette commande ou réessayer plus tard."
-    await addSystemMessage(order.conversationId, body, 'text', { key: 'systemMessages.noResponseNoAlternative' })
-    return order
-  }
-
-  await creditWallet({ walletUserId: order.clientId, type: 'escrow_refund', amount: order.amount, reference: order.id, counterpartyUserId: order.providerId })
-  const updated = await updateOrder(order.id, {
-    status: 'refunded',
-    cancelledAt: new Date(Date.now()),
-    cancelReason: "Réattribution automatique : le prestataire n'a pas confirmé la prise en charge à temps.",
-  })
-  await resolveMessage(order.conversationId, pendingConfirmation.id)
-  const reassignBody = `Le prestataire n'a pas répondu à temps. Remboursement intégral effectué, et votre demande a été transmise automatiquement à ${nextProvider.displayName}.`
-  await addSystemMessage(order.conversationId, reassignBody, 'text', {
-    key: 'systemMessages.reassignedNoResponse',
-    params: { providerName: nextProvider.displayName },
-  })
-
-  const newConversation = await findOrCreateConversation(order.clientId, nextProvider.id)
-  const clientContact = await getClientContact(order.conversationId)
-  if (clientContact) await setClientContact(newConversation.id, clientContact)
-  await markFirstContactDone(newConversation.id)
-
-  const newAmount = resolveProviderRate(nextProvider.id) ?? order.amount
-  await createEscrowOrder({ conversationId: newConversation.id, clientId: order.clientId, providerId: nextProvider.id, amount: newAmount })
-  const awaitingBody = "Cette demande vous a été transmise automatiquement suite à l'absence de réponse d'un autre prestataire. Réglez le paiement pour la confirmer."
-  await addSystemMessage(newConversation.id, awaitingBody, 'text', { key: 'systemMessages.autoReassignedAwaitingPayment' })
-  return updated
 }
 
 export async function getEscrowOrderByConversationId(conversationId: string): Promise<EscrowOrder | null> {
@@ -323,18 +259,33 @@ export async function payEscrowOrder(conversationId: string): Promise<PayEscrowO
   if (!row) return { ok: false, error: 'not_found' }
   if (row.status !== 'awaiting_payment') return { ok: false, error: 'already_paid' }
 
-  const movement = await debitWallet({ walletUserId: row.clientId, amount: row.amount, reference: row.id, counterpartyUserId: row.providerId })
-  if (!movement) return { ok: false, error: 'insufficient_funds' }
+  // Atomicité (#366, audit C1 cas 1) : le débit du chercheur et le passage
+  // `in_escrow` sont dans une seule transaction. La relecture du statut *dans*
+  // la transaction est la vraie garde d'idempotence : si le process était mort
+  // entre débit et changement de statut, un réessai relit `in_escrow` et
+  // renvoie `already_paid` au lieu de re-débiter le chercheur.
+  const result = await prisma.$transaction(async (tx): Promise<
+    { kind: 'ok'; order: EscrowOrder } | { kind: 'already_paid' } | { kind: 'insufficient_funds' }
+  > => {
+    const fresh = await tx.escrowOrder.findUnique({ where: { id: row.id } })
+    if (!fresh || fresh.status !== 'awaiting_payment') return { kind: 'already_paid' }
+    const movement = await debitWallet({ walletUserId: fresh.clientId, amount: fresh.amount, reference: fresh.id, counterpartyUserId: fresh.providerId }, tx)
+    if (!movement) return { kind: 'insufficient_funds' }
+    const order = await updateOrder(fresh.id, { status: 'in_escrow', paidAt: new Date(Date.now()) }, tx)
+    return { kind: 'ok', order }
+  })
 
-  const order = await updateOrder(row.id, { status: 'in_escrow', paidAt: new Date(Date.now()) })
+  if (result.kind === 'already_paid') return { ok: false, error: 'already_paid' }
+  if (result.kind === 'insufficient_funds') return { ok: false, error: 'insufficient_funds' }
 
   // Premier paiement réel du filleul (#365, programme de parrainage) : ce
   // paiement en séquestre peut être ce tout premier paiement. Sans effet si
   // le client n'a pas été parrainé, ou si son parrainage a déjà été
-  // récompensé (idempotent, voir referralStore.ts).
+  // récompensé (idempotent, voir referralStore.ts). Hors transaction argent :
+  // effet secondaire non bloquant, ne doit pas faire échouer le paiement.
   await rewardReferralIfPending(row.clientId)
 
-  return { ok: true, order }
+  return { ok: true, order: result.order }
 }
 
 export type MarkDeliveredResult =
@@ -400,9 +351,16 @@ export async function cancelEscrowOrder(conversationId: string, reason: string):
   if (row.status !== 'in_escrow' && row.status !== 'delivered') return { ok: false, error: 'invalid_status' }
   if (!reason.trim()) return { ok: false, error: 'reason_required' }
 
-  await creditWallet({ walletUserId: row.clientId, type: 'escrow_refund', amount: row.amount, reference: row.id, counterpartyUserId: row.providerId })
-
-  const order = await updateOrder(row.id, { status: 'refunded', cancelledAt: new Date(Date.now()), cancelReason: reason.trim() })
+  // Atomicité (#366) : remboursement du chercheur + passage `refunded` tout ou
+  // rien. La relecture du statut dans la transaction empêche un double
+  // remboursement si deux annulations arrivent en concurrence.
+  const order = await prisma.$transaction(async (tx) => {
+    const fresh = await tx.escrowOrder.findUnique({ where: { id: row.id } })
+    if (!fresh || (fresh.status !== 'in_escrow' && fresh.status !== 'delivered')) return null
+    await creditWallet({ walletUserId: fresh.clientId, type: 'escrow_refund', amount: fresh.amount, reference: fresh.id, counterpartyUserId: fresh.providerId }, tx)
+    return updateOrder(fresh.id, { status: 'refunded', cancelledAt: new Date(Date.now()), cancelReason: reason.trim() }, tx)
+  })
+  if (!order) return { ok: false, error: 'invalid_status' }
   return { ok: true, order }
 }
 
