@@ -31,21 +31,38 @@ async function resolveDisputeAgainstProvider(
   outcomeMessage: string,
   translationKey: 'systemMessages.disputeResolvedTimeout' | 'systemMessages.disputeResolvedNotDone',
 ): Promise<EscrowOrder> {
-  await creditWallet({ walletUserId: order.clientId, type: 'escrow_refund', amount: order.amount, reference: order.id, counterpartyUserId: order.providerId })
-
-  const penalty = await debitWalletForPenalty({
-    walletUserId: order.providerId,
-    amount: Math.round(order.amount * PROVIDER_DISPUTE_PENALTY_RATE),
-    reference: order.id,
-    counterpartyUserId: order.clientId,
-  })
-  if (penalty && penalty.amount > 0) {
-    await creditWallet({ walletUserId: order.clientId, type: 'dispute_compensation', amount: penalty.amount, reference: order.id, counterpartyUserId: order.providerId })
-  }
-
   const now = Date.now()
   const cancelReason = `Litige résolu en défaveur du prestataire : ${outcomeMessage}`
-  await prisma.escrowOrder.update({ where: { id: order.id }, data: { status: 'refunded', cancelledAt: new Date(now), cancelReason } })
+
+  // Atomicité (#366, audit C1) : remboursement chercheur + pénalité prestataire
+  // + compensation chercheur + passage `refunded`, tout ou rien dans une seule
+  // transaction. La relecture du statut sert de garde d'idempotence : ce
+  // dénouement peut être déclenché par le timeout (à la lecture) *ou* par la
+  // confirmation explicite du chercheur ; le premier qui aboutit fige l'issue,
+  // le second ne re-débite/re-crédite personne.
+  const applied = await prisma.$transaction(async (tx) => {
+    const fresh = await tx.escrowOrder.findUnique({ where: { id: order.id } })
+    if (!fresh || fresh.status !== 'disputed') return false
+    await creditWallet({ walletUserId: order.clientId, type: 'escrow_refund', amount: order.amount, reference: order.id, counterpartyUserId: order.providerId }, tx)
+    const penalty = await debitWalletForPenalty({
+      walletUserId: order.providerId,
+      amount: Math.round(order.amount * PROVIDER_DISPUTE_PENALTY_RATE),
+      reference: order.id,
+      counterpartyUserId: order.clientId,
+    }, tx)
+    if (penalty && penalty.amount > 0) {
+      await creditWallet({ walletUserId: order.clientId, type: 'dispute_compensation', amount: penalty.amount, reference: order.id, counterpartyUserId: order.providerId }, tx)
+    }
+    await tx.escrowOrder.update({ where: { id: order.id }, data: { status: 'refunded', cancelledAt: new Date(now), cancelReason } })
+    return true
+  })
+  if (!applied) {
+    // Déjà dénoué par un chemin concurrent : on renvoie l'état effectif sans
+    // ré-émettre de message ni retoucher les portefeuilles.
+    const current = await getRawEscrowOrder(order.conversationId)
+    return current ?? { ...order, status: 'refunded', cancelledAt: now, cancelReason }
+  }
+
   await addSystemMessage(
     order.conversationId,
     `${outcomeMessage} Remboursement intégral effectué au chercheur, et une pénalité a été appliquée au prestataire.`,

@@ -39,24 +39,34 @@ export async function cancelEscrowOrderByClient(conversationId: string, reason: 
   const isWithinGracePeriod = order.paidAt !== null && Date.now() - order.paidAt < CLIENT_CANCELLATION_GRACE_PERIOD_MS
   const providerCompensation = isWithinGracePeriod ? 0 : Math.round(order.amount * CLIENT_LATE_CANCELLATION_PENALTY_RATE)
   const clientRefund = order.amount - providerCompensation
-
-  if (providerCompensation > 0) {
-    await creditWallet({
-      walletUserId: order.providerId,
-      type: 'cancellation_compensation',
-      amount: providerCompensation,
-      reference: order.id,
-      counterpartyUserId: order.clientId,
-    })
-  }
-  if (clientRefund > 0) {
-    await creditWallet({ walletUserId: order.clientId, type: 'escrow_refund', amount: clientRefund, reference: order.id, counterpartyUserId: order.providerId })
-  }
-
   const now = Date.now()
-  await prisma.escrowOrder.update({
-    where: { id: order.id },
-    data: { status: 'refunded', cancelledAt: new Date(now), cancelReason: reason.trim() },
+
+  // Atomicité (#366, audit C1) : compensation prestataire + remboursement
+  // chercheur + passage `refunded` dans une seule transaction, avec relecture
+  // idempotente du statut. Une panne entre deux crédits ne peut plus laisser un
+  // chercheur remboursé sans que la commande soit clôturée (ou l'inverse).
+  const applied = await prisma.$transaction(async (tx) => {
+    const fresh = await tx.escrowOrder.findUnique({ where: { id: order.id } })
+    if (!fresh || fresh.status !== 'in_escrow') return false
+    if (providerCompensation > 0) {
+      await creditWallet({
+        walletUserId: order.providerId,
+        type: 'cancellation_compensation',
+        amount: providerCompensation,
+        reference: order.id,
+        counterpartyUserId: order.clientId,
+      }, tx)
+    }
+    if (clientRefund > 0) {
+      await creditWallet({ walletUserId: order.clientId, type: 'escrow_refund', amount: clientRefund, reference: order.id, counterpartyUserId: order.providerId }, tx)
+    }
+    await tx.escrowOrder.update({
+      where: { id: order.id },
+      data: { status: 'refunded', cancelledAt: new Date(now), cancelReason: reason.trim() },
+    })
+    return true
   })
+  if (!applied) return { ok: false, error: 'invalid_status' }
+
   return { ok: true, order: { ...order, status: 'refunded', cancelledAt: now, cancelReason: reason.trim() }, providerCompensation }
 }
