@@ -33,18 +33,15 @@ export interface Verification {
 
 const verificationsByUserId = new Map<string, Verification>()
 
-const ACCEPTED_IMAGE_PREFIXES = ['data:image/jpeg;base64,', 'data:image/jpg;base64,', 'data:image/png;base64,']
-/** ~5 Mo par image d'origine une fois décodée (le base64 gonfle la taille d'environ 33 %). */
-const MAX_IMAGE_DATA_URL_LENGTH = 7_000_000
-
 /** Durée de conservation des images de pièce d'identité après vérification (#286) : 90 jours, cohérent avec la politique de confidentialité. */
 export const ID_DOCUMENT_RETENTION_MS = 90 * 24 * 60 * 60 * 1000
 
-export function isValidIdentityImage(value: unknown): value is string {
-  if (typeof value !== 'string') return false
-  if (value.length === 0 || value.length > MAX_IMAGE_DATA_URL_LENGTH) return false
-  return ACCEPTED_IMAGE_PREFIXES.some((prefix) => value.startsWith(prefix))
-}
+/**
+ * Une pièce d'identité valide est un data URI image accepté — même règle que
+ * les avatars, factorisée dans `imageDataUrl.ts` (F1). Alias conservé pour ne
+ * pas toucher aux appelants (apiValidationMisc, tests).
+ */
+export const isValidIdentityImage = isValidImageDataUrl
 
 /** Efface les images une fois le délai de conservation dépassé — le statut « Vérifié » (`isVerified`) n'est jamais affecté. */
 function applyRetentionPurgeIfExpired(verification: Verification): void {

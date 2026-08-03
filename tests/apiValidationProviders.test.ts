@@ -84,6 +84,18 @@ describe('patchProviderSchema (validation PATCH /api/providers/me)', () => {
   it('rejette une certification sans fileUrl', () => {
     expect(firstError(patchProviderSchema, { certifications: [{ id: 'c1', title: 'Certif', fileUrl: '', fileName: 'f.pdf', status: 'en_attente' }] })).toBe('Liste de certifications invalide.')
   })
+
+  it('accepte une photo de profil en data URI image (F1)', () => {
+    expect(patchProviderSchema.safeParse({ photoUrl: 'data:image/png;base64,AAAA' }).success).toBe(true)
+    expect(patchProviderSchema.safeParse({ photoUrl: 'data:image/jpeg;base64,/9j/4AAQ' }).success).toBe(true)
+  })
+
+  it('rejette une photo de profil qui est une URL externe ou un data URI non-image (F1, anti-pistage)', () => {
+    const msg = 'Photo de profil invalide (JPEG ou PNG, 5 Mo maximum).'
+    expect(firstError(patchProviderSchema, { photoUrl: 'https://tracker.example/pixel.png' })).toBe(msg)
+    expect(firstError(patchProviderSchema, { photoUrl: 'data:text/html;base64,PHNjcmlwdD4=' })).toBe(msg)
+    expect(firstError(patchProviderSchema, { photoUrl: 'javascript:alert(1)' })).toBe(msg)
+  })
 })
 
 describe('patchProviderSchema — champs géolocalisation (#geoloc)', () => {
