@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto'
+import { findPlan } from '~~/app/data/plans'
 import { prisma } from '~~/server/utils/prisma'
 import { creditWallet } from '~~/server/utils/walletStore'
 import { cancelEscrowOrder, releaseOrderFunds, getRawEscrowOrder } from '~~/server/utils/escrowOrderStore'
+import { resolvePayment } from '~~/server/utils/paymentStore'
+import { resolveRecharge } from '~~/server/utils/walletRechargeStore'
+import { activateSubscription, getSubscriptionById } from '~~/server/utils/subscriptionStore'
+import { rewardReferralIfPending } from '~~/server/utils/referralStore'
 
 /**
  * Actions financières déclenchées depuis /admin (#dashboard-admin, modules
@@ -30,6 +35,39 @@ export async function adminReleaseFunds(escrowOrderId: string): Promise<ReleaseF
   const order = await getRawEscrowOrder(row.conversationId)
   if (!order) return { ok: false, error: 'not_found' }
   await releaseOrderFunds(order)
+  return { ok: true }
+}
+
+export type RetryTransactionResult = { ok: true } | { ok: false, error: 'not_found' | 'not_failed' }
+
+/**
+ * Rejoue une transaction échouée (#dashboard-admin, module Paiements) — force
+ * la même résolution « succès » qu'un webhook opérateur réel, avec les mêmes
+ * effets de bord (activation d'abonnement, bonus de parrainage). `kind`
+ * distingue un paiement d'abonnement d'une recharge de portefeuille, deux
+ * tables distinctes.
+ */
+export async function adminRetryTransaction(kind: 'subscription_payment' | 'wallet_recharge', id: string): Promise<RetryTransactionResult> {
+  if (kind === 'subscription_payment') {
+    const payment = await prisma.payment.findUnique({ where: { id } })
+    if (!payment) return { ok: false, error: 'not_found' }
+    if (payment.status !== 'failed') return { ok: false, error: 'not_failed' }
+    await prisma.payment.update({ where: { id }, data: { status: 'pending' } })
+    const resolved = await resolvePayment(id, 'confirmed', payment.operatorRef ?? undefined)
+    if (resolved?.status === 'confirmed') {
+      const subscription = await getSubscriptionById(resolved.subscriptionId)
+      const plan = subscription ? findPlan(subscription.plan) : undefined
+      if (subscription && plan) await activateSubscription(subscription.id, plan.durationDays)
+      await rewardReferralIfPending(resolved.userId)
+    }
+    return { ok: true }
+  }
+
+  const recharge = await prisma.walletRecharge.findUnique({ where: { id } })
+  if (!recharge) return { ok: false, error: 'not_found' }
+  if (recharge.status !== 'failed') return { ok: false, error: 'not_failed' }
+  await prisma.walletRecharge.update({ where: { id }, data: { status: 'pending' } })
+  await resolveRecharge(id, 'confirmed', recharge.operatorRef ?? undefined)
   return { ok: true }
 }
 
