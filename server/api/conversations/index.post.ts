@@ -9,6 +9,12 @@ export default defineEventHandler(async (event) => {
   if (!isVerified(user.id)) {
     forbidden("Vérifiez votre identité avant de contacter un prestataire (carte d'identité + photo passeport).")
   }
+  // #dashboard-admin (module anti-désintermédiation) : un compte restreint par
+  // l'équipe WorkTogo ne peut plus initier de nouveau fil, mais garde l'accès
+  // à ses conversations déjà ouvertes (ne bloque pas une mission en cours).
+  if (user.messagingRestricted) {
+    forbidden('Votre messagerie est restreinte. Contactez le support WorkTogo pour plus de détails.')
+  }
 
   const { providerId } = await readSchemaBody(event, createConversationSchema)
 

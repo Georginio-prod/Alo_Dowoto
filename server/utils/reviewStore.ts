@@ -79,6 +79,31 @@ export function getReviewsForTarget(targetId: string): Review[] {
   return reviewsByTarget.get(targetId) ?? []
 }
 
+/**
+ * Tous les avis enregistrés, du plus récent au plus ancien (#dashboard-admin,
+ * module Avis & modération). Lecture directe du store en mémoire — voir
+ * docs/admin-dashboard.md pour la portée (données réelles mais volatiles,
+ * perdues au redémarrage du process).
+ */
+export function listAllReviews(): Review[] {
+  return [...reviewByConversationAndAuthor.values()].sort((a, b) => b.createdAt - a.createdAt)
+}
+
+/** Un avis précis par id (#dashboard-admin) — `null` si inexistant. */
+export function getReviewById(id: string): Review | null {
+  for (const review of reviewByConversationAndAuthor.values()) {
+    if (review.id === id) return review
+  }
+  return null
+}
+
+/** Avis rédigés par un auteur donné (#dashboard-admin, module Chercheurs — « avis laissés »). */
+export function listReviewsByAuthor(authorId: string): Review[] {
+  return [...reviewByConversationAndAuthor.values()]
+    .filter((review) => review.authorId === authorId)
+    .sort((a, b) => b.createdAt - a.createdAt)
+}
+
 /** Moyenne et nombre d'avis reçus par `targetId` (0/0 si aucun avis). */
 export function getAverageRating(targetId: string): { average: number, count: number } {
   const reviews = getReviewsForTarget(targetId)

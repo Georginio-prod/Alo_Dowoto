@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     conflict('Ce prestataire n\'a pas encore configuré de tarif fixe : demande impossible pour le moment.')
   }
 
-  const message = await addMessage(conversation.id, user.id, user.role, `Nouvelle demande (reprise) : ${description}`, {
+  const message = await addMessage(conversation.id, user.id, user.role as 'client' | 'prestataire', `Nouvelle demande (reprise) : ${description}`, {
     translation: { key: 'systemMessages.rebookRequest', params: { description } },
   })
   const order = await createEscrowOrder({ conversationId: conversation.id, clientId: user.id, providerId: conversation.providerId, amount })

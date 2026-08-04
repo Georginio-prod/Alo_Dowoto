@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
   // `date` (#i18n) : horodatage brut, formaté selon la locale de chaque
   // lecteur côté client — `note` (texte libre du prestataire, jamais
   // traduit) reste séparé pour être concaténé tel quel après le gabarit.
-  const message = await addMessage(conversation.id, user.id, user.role, text, {
+  const message = await addMessage(conversation.id, user.id, user.role as 'client' | 'prestataire', text, {
     kind: 'reschedule_request',
     proposedAt,
     translation: { key: 'systemMessages.rescheduleProposed', params: { date: proposedAt, note: note ?? null } },
