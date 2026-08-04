@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
   const { lat, lng } = await readSchemaBody(event, shareLocationSchema)
 
   await resolveMessage(conversation.id, pending.id)
-  const message = await addMessage(conversation.id, user.id, user.role, '📍 Localisation partagée avec le prestataire.', {
+  const message = await addMessage(conversation.id, user.id, user.role as 'client' | 'prestataire', '📍 Localisation partagée avec le prestataire.', {
     kind: 'location_shared',
     location: { lat, lng },
     translation: { key: 'systemMessages.locationShared' },

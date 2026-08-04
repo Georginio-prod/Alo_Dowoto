@@ -36,3 +36,18 @@ export async function requireClientRole(event: H3Event): Promise<User> {
   }
   return user
 }
+
+/**
+ * Exige un utilisateur connecté avec le rôle admin (#dashboard-admin) —
+ * vérification côté serveur de chaque route /api/admin/**, jamais seulement
+ * un masquage de bouton côté client. `getSessionUser` refuse déjà les
+ * sessions dont le compte est suspendu (voir userStore.ts), donc un admin
+ * suspendu échoue ici comme n'importe quel utilisateur suspendu.
+ */
+export async function requireAdminRole(event: H3Event): Promise<User> {
+  const user = await requireSessionUser(event)
+  if (user.role !== 'admin') {
+    forbidden('Réservé à l’équipe WorkTogo.')
+  }
+  return user
+}
