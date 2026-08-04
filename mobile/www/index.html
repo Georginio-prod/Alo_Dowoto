@@ -99,6 +99,10 @@
     // BASE_URL configurable au runtime, persistée localement (pas d'IP figée dans l'APK).
     var DEFAULT_HOST = '192.168.1.181:3000';
     var STORAGE_KEY = 'wt-base-host';
+    // Page d'accueil de l'app mobile : le dashboard unifié (fusion des espaces
+    // chercheur + prestataire, app/pages/dashboard/index.vue). Un utilisateur
+    // non connecté sera redirigé vers /auth par le middleware côté serveur.
+    var HOME_PATH = '/dashboard';
 
     function getHost() {
       try { return localStorage.getItem(STORAGE_KEY) || DEFAULT_HOST; } catch (e) { return DEFAULT_HOST; }
@@ -134,7 +138,7 @@
       document.getElementById('loading-url').textContent = url;
       probe(url).then(function (ok) {
         if (ok) {
-          window.location.replace(url);
+          window.location.replace(url + HOME_PATH);
         } else {
           document.getElementById('host').value = getHost();
           show('state-error');
