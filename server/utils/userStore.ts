@@ -358,6 +358,16 @@ export async function setAdminLevel(userId: string, adminLevel: string | null): 
   return toUser(row)
 }
 
+/**
+ * Promeut un compte existant (chercheur ou prestataire) au rôle admin
+ * (#dashboard-admin, module 12) — geste rare et sensible, réservé à un admin
+ * déjà connecté (voir requireAdminRole) et tracé (server/utils/auditLog.ts).
+ */
+export async function promoteToAdmin(userId: string, adminLevel: string): Promise<User> {
+  const row = await prisma.user.update({ where: { id: userId }, data: { role: 'admin', adminLevel } })
+  return toUser(row)
+}
+
 /** Vue publique d'un utilisateur : ne jamais exposer `passwordHash` au client. */
 export function toPublicUser(user: User): PublicUser {
   return {
