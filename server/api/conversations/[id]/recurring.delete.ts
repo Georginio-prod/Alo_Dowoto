@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
     notFound('Conversation introuvable.')
   }
 
-  const result = cancelRecurringService(conversation.id)
+  const result = await cancelRecurringService(conversation.id)
 
   if (!result.ok) {
     if (result.error === 'not_found') notFound('Aucun service récurrent pour cette conversation.')

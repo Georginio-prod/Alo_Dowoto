@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
   // Déclenche le prélèvement dû pour un service récurrent (#271), le cas
   // échéant — même principe de vérification paresseuse à la lecture que la
   // validation tacite ou la réattribution automatique (escrowOrderStore.ts).
-  const recurringService = getRecurringServiceByConversationId(conversation.id)
+  const recurringService = await getRecurringServiceByConversationId(conversation.id)
   const isViewerProvider = user.id === conversation.providerId
   if (isViewerProvider && order && order.status === 'awaiting_payment') {
     return {
