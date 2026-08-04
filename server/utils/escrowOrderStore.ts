@@ -423,3 +423,28 @@ export async function listDisputedOrders(): Promise<EscrowOrder[]> {
   const rows = await prisma.escrowOrder.findMany({ where: { status: 'disputed' } })
   return rows.map(toOrder)
 }
+
+export type AdminReassignResult = { ok: true, order: EscrowOrder } | { ok: false, error: 'not_found' | 'invalid_status' }
+
+/**
+ * Réassigne une commande bloquée à un autre prestataire (#dashboard-admin,
+ * module Missions) — réservé aux commandes pas encore livrées (`awaiting_payment`/
+ * `in_escrow`) : une fois `delivered`/`released`/`disputed`, la prestation a
+ * déjà eu lieu, la réassignation n'a plus de sens.
+ */
+export async function adminReassignOrder(orderId: string, newProviderId: string): Promise<AdminReassignResult> {
+  const row = await prisma.escrowOrder.findUnique({ where: { id: orderId } })
+  if (!row) return { ok: false, error: 'not_found' }
+  if (row.status !== 'awaiting_payment' && row.status !== 'in_escrow') return { ok: false, error: 'invalid_status' }
+  const updated = await updateOrder(orderId, { providerId: newProviderId })
+  return { ok: true, order: updated }
+}
+
+/** Force la validation (libération des fonds) d'une commande bloquée, quel que soit le délai tacite habituel (#dashboard-admin, module Missions). */
+export async function adminForceValidate(orderId: string): Promise<{ ok: true, order: EscrowOrder } | { ok: false, error: 'not_found' | 'invalid_status' }> {
+  const row = await prisma.escrowOrder.findUnique({ where: { id: orderId } })
+  if (!row) return { ok: false, error: 'not_found' }
+  if (row.status !== 'in_escrow' && row.status !== 'delivered') return { ok: false, error: 'invalid_status' }
+  const order = await releaseOrderFunds(toOrder(row))
+  return { ok: true, order }
+}
