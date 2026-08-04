@@ -1875,6 +1875,19 @@
       "retryCta": "Retry",
       "refundCta": "Refund"
     },
+    "disputes": {
+      "title": "Disputes & mediation",
+      "ageDays": "{days}d",
+      "clientVersion": "Client's version",
+      "providerVersion": "Provider's version",
+      "noResponseYet": "No response yet",
+      "favorClient": "Rule for the client",
+      "favorProvider": "Rule for the provider",
+      "split": "Split the amount",
+      "requestEvidence": "Request evidence",
+      "splitPercentLabel": "Provider's share (%)",
+      "reasonLabel": "Decision reason"
+    },
     "common": {
       "loading": "Loading…",
       "empty": "No results.",

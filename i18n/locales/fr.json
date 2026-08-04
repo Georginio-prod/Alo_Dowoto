@@ -1875,6 +1875,19 @@
       "retryCta": "Rejouer",
       "refundCta": "Rembourser"
     },
+    "disputes": {
+      "title": "Litiges & médiation",
+      "ageDays": "{days} j",
+      "clientVersion": "Version du chercheur",
+      "providerVersion": "Version du prestataire",
+      "noResponseYet": "Pas encore de réponse",
+      "favorClient": "Trancher pour le chercheur",
+      "favorProvider": "Trancher pour le prestataire",
+      "split": "Partager le montant",
+      "requestEvidence": "Demander une preuve",
+      "splitPercentLabel": "Part du prestataire (%)",
+      "reasonLabel": "Motif de la décision"
+    },
     "common": {
       "loading": "Chargement…",
       "empty": "Aucun résultat.",
