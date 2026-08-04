@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
     conflict('Ce prestataire n\'a pas encore configuré de tarif fixe : service récurrent impossible pour le moment.')
   }
 
-  const result = createRecurringService({
+  const result = await createRecurringService({
     conversationId: conversation.id,
     clientId: user.id,
     providerId: conversation.providerId,

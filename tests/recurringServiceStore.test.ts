@@ -16,7 +16,7 @@ function id(): string {
 describe('createRecurringService (#271 offres récurrentes natives)', () => {
   it('crée un service actif avec une première échéance immédiatement due', async () => {
     const conversation = await findOrCreateConversation(id(), id())
-    const result = createRecurringService({
+    const result = await createRecurringService({
       conversationId: conversation.id,
       clientId: conversation.clientId,
       providerId: conversation.providerId,
@@ -34,7 +34,7 @@ describe('createRecurringService (#271 offres récurrentes natives)', () => {
 
   it('refuse une création si un service récurrent est déjà actif pour cette conversation', async () => {
     const conversation = await findOrCreateConversation(id(), id())
-    createRecurringService({
+    await createRecurringService({
       conversationId: conversation.id,
       clientId: conversation.clientId,
       providerId: conversation.providerId,
@@ -42,7 +42,7 @@ describe('createRecurringService (#271 offres récurrentes natives)', () => {
       frequency: 'hebdomadaire',
     })
 
-    const second = createRecurringService({
+    const second = await createRecurringService({
       conversationId: conversation.id,
       clientId: conversation.clientId,
       providerId: conversation.providerId,
@@ -54,16 +54,16 @@ describe('createRecurringService (#271 offres récurrentes natives)', () => {
 
   it('permet de relancer un service récurrent après annulation', async () => {
     const conversation = await findOrCreateConversation(id(), id())
-    createRecurringService({
+    await createRecurringService({
       conversationId: conversation.id,
       clientId: conversation.clientId,
       providerId: conversation.providerId,
       amount: 5000,
       frequency: 'hebdomadaire',
     })
-    cancelRecurringService(conversation.id)
+    await cancelRecurringService(conversation.id)
 
-    const relaunched = createRecurringService({
+    const relaunched = await createRecurringService({
       conversationId: conversation.id,
       clientId: conversation.clientId,
       providerId: conversation.providerId,
@@ -77,7 +77,7 @@ describe('createRecurringService (#271 offres récurrentes natives)', () => {
 describe('cancelRecurringService', () => {
   it('annule un service actif', async () => {
     const conversation = await findOrCreateConversation(id(), id())
-    createRecurringService({
+    await createRecurringService({
       conversationId: conversation.id,
       clientId: conversation.clientId,
       providerId: conversation.providerId,
@@ -85,27 +85,27 @@ describe('cancelRecurringService', () => {
       frequency: 'hebdomadaire',
     })
 
-    const result = cancelRecurringService(conversation.id)
+    const result = await cancelRecurringService(conversation.id)
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.service.status).toBe('cancelled')
   })
 
-  it('renvoie not_found pour une conversation sans service récurrent', () => {
-    expect(cancelRecurringService(id())).toEqual({ ok: false, error: 'not_found' })
+  it('renvoie not_found pour une conversation sans service récurrent', async () => {
+    expect(await cancelRecurringService(id())).toEqual({ ok: false, error: 'not_found' })
   })
 
   it('refuse d’annuler un service déjà annulé', async () => {
     const conversation = await findOrCreateConversation(id(), id())
-    createRecurringService({
+    await createRecurringService({
       conversationId: conversation.id,
       clientId: conversation.clientId,
       providerId: conversation.providerId,
       amount: 5000,
       frequency: 'hebdomadaire',
     })
-    cancelRecurringService(conversation.id)
+    await cancelRecurringService(conversation.id)
 
-    expect(cancelRecurringService(conversation.id)).toEqual({ ok: false, error: 'invalid_status' })
+    expect(await cancelRecurringService(conversation.id)).toEqual({ ok: false, error: 'invalid_status' })
   })
 })
 
@@ -115,7 +115,7 @@ describe('getRecurringServiceByConversationId — déclenchement du prélèvemen
     const provider = id()
     const conversation = await findOrCreateConversation(client, provider)
     await creditWallet({ walletUserId: client, type: 'recharge', amount: 5000, reference: 'REF' })
-    createRecurringService({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000, frequency: 'hebdomadaire' })
+    await createRecurringService({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000, frequency: 'hebdomadaire' })
 
     const service = await getRecurringServiceByConversationId(conversation.id)
 
@@ -140,7 +140,7 @@ describe('getRecurringServiceByConversationId — déclenchement du prélèvemen
 
     const now = 1_000_000
     const spy = vi.spyOn(Date, 'now').mockImplementation(() => now)
-    createRecurringService({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000, frequency: 'hebdomadaire' })
+    await createRecurringService({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000, frequency: 'hebdomadaire' })
 
     await getRecurringServiceByConversationId(conversation.id) // 1ère échéance, due dès la création
     // Le cycle précédent (commande escrow) n'étant pas encore résolu (released/refunded),
@@ -159,7 +159,7 @@ describe('getRecurringServiceByConversationId — déclenchement du prélèvemen
     const provider = id()
     const conversation = await findOrCreateConversation(client, provider)
     // Pas de crédit de portefeuille : solde nul.
-    createRecurringService({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000, frequency: 'hebdomadaire' })
+    await createRecurringService({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000, frequency: 'hebdomadaire' })
 
     const service = await getRecurringServiceByConversationId(conversation.id)
 
@@ -178,7 +178,7 @@ describe('getRecurringServiceByConversationId — déclenchement du prélèvemen
     await createEscrowOrder({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000 })
     await payEscrowOrder(conversation.id)
 
-    createRecurringService({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000, frequency: 'hebdomadaire' })
+    await createRecurringService({ conversationId: conversation.id, clientId: client, providerId: provider, amount: 5000, frequency: 'hebdomadaire' })
     const service = await getRecurringServiceByConversationId(conversation.id)
 
     expect(service?.status).toBe('active')
