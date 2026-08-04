@@ -1,0 +1,14 @@
+# Dépendances et sorties de build — on ne versionne que la source du wrapper.
+node_modules/
+
+# Projet Android généré par `npx cap add android` (régénérable via cap sync).
+# Décommenter si tu préfères NE PAS versionner le natif :
+# android/
+
+# Sorties de build Android
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/release/
+*.apk

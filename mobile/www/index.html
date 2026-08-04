@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Work Togo</title>
+  <style>
+    /* Design system Work Togo (extrait de design-edo.html) */
+    :root {
+      --wt-green: #14A800;
+      --wt-green-dark: #0F2318;
+      --wt-muted: #5C626E;
+      --wt-bg: #F7F7F7;
+      --wt-border: #e5e7eb;
+      --wt-danger: #D64545;
+      --wt-white: #FFFFFF;
+      --wt-radius: 14px;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--wt-bg);
+      color: var(--wt-green-dark);
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px; min-height: 100dvh;
+    }
+    .card {
+      width: 100%; max-width: 380px; background: var(--wt-white);
+      border: 1px solid var(--wt-border); border-radius: var(--wt-radius);
+      padding: 28px 24px; box-shadow: 0 8px 30px rgba(15, 35, 24, .06);
+      text-align: center;
+    }
+    .logo {
+      width: 56px; height: 56px; margin: 0 auto 18px; border-radius: 16px;
+      background: var(--wt-green); color: #fff; font-weight: 800; font-size: 24px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    h1 { font-size: 20px; font-weight: 700; margin: 0 0 6px; }
+    p { font-size: 14px; line-height: 1.5; color: var(--wt-muted); margin: 0 0 18px; }
+    .state { display: none; }
+    .state.active { display: block; }
+    .spinner {
+      width: 34px; height: 34px; margin: 8px auto 0; border-radius: 50%;
+      border: 3px solid var(--wt-border); border-top-color: var(--wt-green);
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .field { text-align: left; margin: 0 0 14px; }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: var(--wt-green-dark); margin: 0 0 6px; }
+    .field input {
+      width: 100%; padding: 12px 14px; font-size: 15px; font-family: inherit;
+      border: 1px solid var(--wt-border); border-radius: 10px; color: var(--wt-green-dark);
+      outline: none;
+    }
+    .field input:focus { border-color: var(--wt-green); box-shadow: 0 0 0 3px rgba(20, 168, 0, .12); }
+    .btn {
+      width: 100%; padding: 13px 16px; font-size: 15px; font-weight: 700; font-family: inherit;
+      border: none; border-radius: 10px; cursor: pointer; margin-top: 8px;
+    }
+    .btn-primary { background: var(--wt-green); color: #fff; }
+    .btn-primary:active { background: #118c00; }
+    .btn-ghost { background: transparent; color: var(--wt-muted); font-weight: 600; }
+    .badge {
+      display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 10px;
+      border-radius: 999px; background: rgba(214, 69, 69, .1); color: var(--wt-danger);
+      margin-bottom: 14px;
+    }
+    .url-preview { font-size: 12px; color: var(--wt-muted); word-break: break-all; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">W</div>
+
+    <!-- État : connexion en cours -->
+    <div id="state-loading" class="state active">
+      <h1>Work Togo</h1>
+      <p>Connexion au serveur…</p>
+      <div class="spinner"></div>
+      <div class="url-preview" id="loading-url"></div>
+    </div>
+
+    <!-- État : serveur injoignable -->
+    <div id="state-error" class="state">
+      <span class="badge">Serveur injoignable</span>
+      <h1>Impossible de se connecter</h1>
+      <p>Vérifie que le serveur Work Togo tourne sur ton PC (<code>npm run dev</code>) et que le téléphone est sur le même Wi-Fi.</p>
+      <div class="field">
+        <label for="host">Adresse du serveur (IP:port)</label>
+        <input id="host" type="text" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="192.168.1.181:3000" />
+      </div>
+      <button class="btn btn-primary" id="btn-connect">Enregistrer et se connecter</button>
+      <button class="btn btn-ghost" id="btn-retry">Réessayer</button>
+    </div>
+  </div>
+
+  <script>
+    // BASE_URL configurable au runtime, persistée localement (pas d'IP figée dans l'APK).
+    var DEFAULT_HOST = '192.168.1.181:3000';
+    var STORAGE_KEY = 'wt-base-host';
+
+    function getHost() {
+      try { return localStorage.getItem(STORAGE_KEY) || DEFAULT_HOST; } catch (e) { return DEFAULT_HOST; }
+    }
+    function setHost(h) {
+      try { localStorage.setItem(STORAGE_KEY, h); } catch (e) {}
+    }
+    function baseUrl() {
+      var h = getHost().replace(/^https?:\/\//, '').replace(/\/+$/, '');
+      return 'http://' + h;
+    }
+    function show(id) {
+      var s = document.querySelectorAll('.state');
+      for (var i = 0; i < s.length; i++) s[i].classList.remove('active');
+      document.getElementById(id).classList.add('active');
+    }
+
+    // Sonde de disponibilité : fetch no-cors avec timeout. Une réponse (même
+    // opaque) prouve que le serveur répond → on peut naviguer vers le site.
+    function probe(url) {
+      return new Promise(function (resolve) {
+        var done = false;
+        var t = setTimeout(function () { if (!done) { done = true; resolve(false); } }, 4000);
+        fetch(url, { mode: 'no-cors', cache: 'no-store' })
+          .then(function () { if (!done) { done = true; clearTimeout(t); resolve(true); } })
+          .catch(function () { if (!done) { done = true; clearTimeout(t); resolve(false); } });
+      });
+    }
+
+    function attempt() {
+      show('state-loading');
+      var url = baseUrl();
+      document.getElementById('loading-url').textContent = url;
+      probe(url).then(function (ok) {
+        if (ok) {
+          window.location.replace(url);
+        } else {
+          document.getElementById('host').value = getHost();
+          show('state-error');
+        }
+      });
+    }
+
+    document.getElementById('btn-retry').addEventListener('click', attempt);
+    document.getElementById('btn-connect').addEventListener('click', function () {
+      var v = (document.getElementById('host').value || '').trim();
+      if (v) setHost(v);
+      attempt();
+    });
+
+    attempt();
+  </script>
+</body>
+</html>
