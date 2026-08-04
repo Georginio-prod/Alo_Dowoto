@@ -68,7 +68,10 @@ export const patchProviderSchema = z.object({
     .optional(),
   positionApproximative: z.boolean().optional(),
   payoutMethod: z.enum(PAYOUT_METHODS as [PayoutMethod, ...PayoutMethod[]], { error: 'Le mode de rémunération WorkTogo est obligatoire.' }).optional(),
-  photoUrl: z.string().optional(),
+  // La photo de profil est uploadée en data URI côté client (jamais une URL
+  // externe) : on n'accepte donc qu'un data URI image (F1), fermant le vecteur
+  // « URL de pistage tierce stockée puis rendue en <img src> » relevé à l'audit.
+  photoUrl: z.string().refine(isValidImageDataUrl, 'Photo de profil invalide (JPEG ou PNG, 5 Mo maximum).').optional(),
   description: z.string().optional(),
   rateFrom: z.number({ error: 'Tarif invalide.' }).refine((v) => v >= 0, 'Tarif invalide.').optional(),
   rateTo: z.number({ error: 'Tarif invalide.' }).refine((v) => v >= 0, 'Tarif invalide.').optional(),

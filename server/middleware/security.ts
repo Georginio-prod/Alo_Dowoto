@@ -29,11 +29,19 @@ import { randomBytes } from 'node:crypto'
  * websockets que la CSP de prod bloquerait sans bénéfice (aucun utilisateur
  * final ne charge le serveur de dev).
  */
-export default defineEventHandler((event) => {
-  const nonce = randomBytes(16).toString('base64')
-  event.context.cspNonce = nonce
+/**
+ * Sources d'images externes légitimes (F1). Les avatars de profil et les
+ * pièces de vérification sont des data URI (aucune URL externe, voir
+ * imageDataUrl.ts) ; la seule image tierce réellement chargée est la tuile de
+ * carte OpenStreetMap (Leaflet, #263 — PositionMapPicker/ProviderMap). On
+ * remplace donc le `https:` générique (qui autorisait n'importe quel hôte, d'où
+ * un vecteur de pistage/SSRF côté affichage) par cette allow-list explicite.
+ */
+export const TRUSTED_IMAGE_SRC = ["'self'", 'data:', 'https://*.tile.openstreetmap.org']
 
-  const productionCsp = [
+/** Construit la Content-Security-Policy de production pour un nonce de requête donné. */
+export function buildProductionCsp(nonce: string): string {
+  return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}'`,
     // Nuxt (SSR/hydratation) et de nombreux composants de cette app posent des
@@ -41,10 +49,9 @@ export default defineEventHandler((event) => {
     // les attributs `style=""` (seuls les blocs <style> peuvent en porter un).
     // Risque XSS bien moindre que script-src, compromis répandu.
     "style-src 'self' 'unsafe-inline'",
-    // Avatars/photos de profil : URL externes soumises par le prestataire
-    // (server/api/providers/me.patch.ts, pas de liste blanche de domaines) et
-    // pièces jointes de vérification en data URI (server/utils/verificationStore.ts).
-    "img-src 'self' https: data:",
+    // Avatars/photos de profil et pièces de vérification en data URI ; tuiles de
+    // carte OpenStreetMap. Voir TRUSTED_IMAGE_SRC.
+    `img-src ${TRUSTED_IMAGE_SRC.join(' ')}`,
     "font-src 'self'",
     // Sentry (#262) : DSN vide par défaut (inactif), autorisé par avance pour
     // ne pas nécessiter de redéploiement le jour où NUXT_PUBLIC_SENTRY_DSN est renseigné.
@@ -60,12 +67,17 @@ export default defineEventHandler((event) => {
     "form-action 'self'",
     "frame-ancestors 'none'",
   ].join('; ')
+}
+
+export default defineEventHandler((event) => {
+  const nonce = randomBytes(16).toString('base64')
+  event.context.cspNonce = nonce
 
   setResponseHeaders(event, {
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'X-Frame-Options': 'DENY',
-    'Content-Security-Policy': process.env.NODE_ENV === 'production' ? productionCsp : "frame-ancestors 'none'",
+    'Content-Security-Policy': process.env.NODE_ENV === 'production' ? buildProductionCsp(nonce) : "frame-ancestors 'none'",
     'Permissions-Policy': 'camera=(), microphone=(), payment=(), geolocation=(self)',
   })
 

@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
   const sessionUser = await getSessionUser(token)
   const rateLimitKey = sessionUser?.id ?? `anon:${getHeader(event, 'x-forwarded-for') ?? 'inconnu'}`
 
-  if (isRateLimited(rateLimitKey)) {
+  if (await isRateLimited(rateLimitKey)) {
     setResponseStatus(event, 429)
     return {
       degraded: false,

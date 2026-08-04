@@ -576,191 +576,33 @@ model Notification {
   @@index([userId, readAt])
 }
 
-// ---------------------------------------------------------------------------
-// Dashboard admin (#dashboard-admin) — modèles entièrement nouveaux, propriété
-// exclusive de l'espace /admin. Voir docs/admin-dashboard.md pour le détail des
-// modules et de ce qui est réellement branché vs isolé en attente de bascule.
-// ---------------------------------------------------------------------------
+/// Nonces de webhook déjà consommés (#355, audit M3). Persistés en base pour
+/// que l'anti-rejeu des paiements/recharges survive aux redémarrages et reste
+/// valable en multi-process (l'ancien registre en mémoire supposait un unique
+/// process PM2). Le `nonce` en clé primaire fait de la détection de rejeu une
+/// simple insertion : un doublon échoue sur la contrainte d'unicité. Les
+/// entrées expirées (au-delà de la fenêtre de fraîcheur) sont purgées à chaque
+/// consommation — voir server/utils/webhookSignature.ts.
+model WebhookNonce {
+  nonce     String   @id
+  /// Instant au-delà duquel le nonce peut être purgé (fin de la fenêtre anti-rejeu).
+  expiresAt DateTime
 
-/// Journal d'audit horodaté de toute action sensible effectuée depuis /admin
-/// (qui, quoi, quand, sur quelle ressource) — module Paramètres.
-model AuditLog {
-  id         String   @id @default(uuid())
-  actorId    String
-  actorLabel String
-  action     String
-  targetType String
-  targetId   String?
-  /// Détail libre (JSON sérialisé) : motif, montant, ancien/nouveau statut...
-  metadata   String?
-  createdAt  DateTime @default(now())
-
-  @@index([targetType, targetId])
-  @@index([createdAt])
+  @@index([expiresAt])
 }
 
-/// Décision admin sur une vérification d'identité (#dashboard-admin, module
-/// Prestataires/Chercheurs) — un refus révoque réellement le badge vérifié
-/// (voir server/utils/verificationStore.ts:deleteVerification), une validation
-/// trace la confirmation sans changer le comportement d'auto-certification
-/// existant. Historique conservé (plusieurs décisions possibles par utilisateur).
-model KycDecision {
-  id         String            @id @default(uuid())
-  userId     String
-  status     KycDecisionStatus
-  reason     String?
-  reviewedBy String
-  reviewedAt DateTime          @default(now())
+/// Compteur de débit de l'assistant IA par fenêtre fixe (#geoloc 2.2, audit
+/// M4). Remplace le registre en mémoire pour que la limite soit partagée entre
+/// instances et survive aux déploiements. Une ligne par (clé, début de
+/// fenêtre) ; `count` est incrémenté atomiquement à chaque requête. Les
+/// fenêtres périmées sont purgées à la volée — voir server/utils/aiRateLimiter.ts.
+model AiRateWindow {
+  /// Utilisateur connecté (`userId`) ou visiteur anonyme (`anon:<ip>`).
+  key         String
+  /// Début de la fenêtre fixe (aligné sur `WINDOW_MS`).
+  windowStart DateTime
+  count       Int      @default(0)
 
-  @@index([userId])
-}
-
-/// Note interne visible seulement par l'équipe WorkTogo (#dashboard-admin,
-/// modules Missions/Prestataires/Chercheurs) — jamais exposée aux utilisateurs.
-model AdminNote {
-  id          String   @id @default(uuid())
-  targetType  String
-  targetId    String
-  authorId    String
-  authorLabel String
-  body        String
-  createdAt   DateTime @default(now())
-
-  @@index([targetType, targetId])
-}
-
-/// Formule d'abonnement prestataire éditable depuis /admin (#dashboard-admin,
-/// module Abonnements & tarification) — table jusque-là inexistante : les
-/// formules réellement proposées au checkout restent app/data/plans.ts
-/// (PLANS, statique, lu de façon synchrone par server/api/subscriptions et par
-/// /abonnement). Ce modèle donne un vrai CRUD admin ; le rebranchement du
-/// checkout dessus est un chantier séparé (rendrait `findPlan` asynchrone,
-/// utilisé en synchrone à plusieurs endroits).
-model SubscriptionPlanConfig {
-  id             String   @id @default(uuid())
-  slug           String   @unique
-  name           String
-  priceAmount    Int
-  durationDays   Int
-  commissionRate Float    @default(0.10)
-  /// Avantages affichés, un par ligne (texte libre).
-  features       String
-  active         Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-/// Code promo (#dashboard-admin, module Abonnements & tarification) — pas encore
-/// consommé par le flux de paiement existant (server/api/payments), qui n'a
-/// aucune notion de remise ; CRUD admin réel en attendant le branchement.
-model Coupon {
-  id            String    @id @default(uuid())
-  code          String    @unique
-  discountType  String
-  discountValue Int
-  active        Boolean   @default(true)
-  expiresAt     DateTime?
-  usageLimit    Int?
-  usageCount    Int       @default(0)
-  createdAt     DateTime  @default(now())
-}
-
-/// Réglages généraux de la plateforme (#dashboard-admin, module Paramètres) —
-/// ligne unique (`id = 1`). Lus par le dashboard admin ; pas encore branchés
-/// sur les valeurs actuellement codées en dur ailleurs (ex. ESCROW_COMMISSION_RATE,
-/// TACIT_VALIDATION_DELAY_MS) — voir docs/admin-dashboard.md.
-model PlatformSettings {
-  id                       Int      @id @default(1)
-  geoRadiusKm              Int      @default(15)
-  autoValidationDelayHours Int      @default(72)
-  retractationDelayHours   Int      @default(24)
-  currency                 String   @default("XOF")
-  language                 String   @default("fr")
-  minAdvanceAmount         Int      @default(1000)
-  commissionRate           Float    @default(0.10)
-  updatedAt                DateTime @updatedAt
-}
-
-/// État de modération d'un avis (#dashboard-admin, module Avis) — clé sur
-/// `reviewId` (id du store en mémoire server/utils/reviewStore.ts, stable pour
-/// la durée de vie du process ; voir docs/admin-dashboard.md pour la portée).
-model ReviewModeration {
-  reviewId     String    @id
-  hidden       Boolean   @default(false)
-  hiddenReason String?
-  flagged      Boolean   @default(false)
-  flagReason   String?
-  restoredAt   DateTime?
-  updatedAt    DateTime  @updatedAt
-}
-
-/// Signalement anti-désintermédiation marqué comme faux positif par un admin
-/// (#dashboard-admin, module Anti-désintermédiation) — exclu du score de risque
-/// calculé à la volée à partir de ContournementAttempt.
-model RiskFalsePositive {
-  userId   String   @id
-  markedBy String
-  markedAt DateTime @default(now())
-  note     String?
-}
-
-/// Bloc de contenu éditable des pages publiques (accueil, FAQ, CGU) —
-/// (#dashboard-admin, module Catégories & contenu). CRUD admin réel ; les pages
-/// publiques concernées (app/data/legalPages, /faq) restent statiques pour
-/// l'instant — voir docs/admin-dashboard.md.
-model SiteContent {
-  key       String   @id
-  label     String
-  value     String
-  updatedAt DateTime @updatedAt
-}
-
-/// Question de fiche préalable propre à une catégorie de service
-/// (#dashboard-admin, module Catégories & contenu). CRUD admin réel ; le
-/// formulaire de première prise de contact (server/utils/requestStore.ts,
-/// conversationStore.ts) reste générique pour l'instant — voir
-/// docs/admin-dashboard.md.
-model PrealableQuestion {
-  id       String  @id @default(uuid())
-  sectorId String
-  sector   Sector  @relation(fields: [sectorId], references: [id], onDelete: Cascade)
-  label    String
-  order    Int     @default(0)
-  required Boolean @default(true)
-
-  @@index([sectorId])
-}
-
-/// Modèle de message automatique éditable (#dashboard-admin, module
-/// Notifications & campagnes) — ex. confirmation de paiement, rappel de
-/// validation, expiration d'abonnement. CRUD admin réel ; les messages
-/// système actuellement envoyés (ex. server/utils/escrowOrderStore.ts) restent
-/// des chaînes en dur — voir docs/admin-dashboard.md.
-model MessageTemplate {
-  key       String   @id
-  label     String
-  channel   String
-  subject   String?
-  body      String
-  updatedAt DateTime @updatedAt
-}
-
-/// Campagne de notification envoyée à un segment d'utilisateurs
-/// (#dashboard-admin, module Notifications & campagnes). Le canal `in_app`
-/// crée réellement des lignes Notification (server/utils/notificationStore.ts)
-/// pour chaque destinataire du segment ; `email`/`sms`/`push` et le taux
-/// d'ouverture sont enregistrés mais non délivrés (aucun fournisseur externe
-/// intégré dans ce lot) — voir docs/admin-dashboard.md.
-model NotificationCampaign {
-  id             String    @id @default(uuid())
-  segment        String
-  channel        String
-  subject        String?
-  body           String
-  scheduledAt    DateTime?
-  sentAt         DateTime?
-  recipientCount Int       @default(0)
-  openCount      Int       @default(0)
-  createdBy      String
-  createdAt      DateTime  @default(now())
+  @@id([key, windowStart])
+  @@index([windowStart])
 }
