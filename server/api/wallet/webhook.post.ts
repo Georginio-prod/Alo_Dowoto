@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
 
   // Anti-rejeu (#355) : une recharge trop ancienne, ou dont le nonce a déjà
   // servi pendant que cette recharge était `pending`, est refusée.
-  if (!isWebhookTimestampFresh(body.timestamp) || consumeWebhookNonce(body.nonce)) {
+  if (!isWebhookTimestampFresh(body.timestamp) || await consumeWebhookNonce(body.nonce)) {
     unauthorized('Signature invalide.')
   }
 
