@@ -1,6 +1,6 @@
 import { prisma } from '~~/server/utils/prisma'
 import { creditWallet } from '~~/server/utils/walletStore'
-import { releaseOrderFunds, getRawEscrowOrder, type EscrowOrder } from '~~/server/utils/escrowOrderStore'
+import { releaseOrderFunds, getRawEscrowOrder } from '~~/server/utils/escrowOrderStore'
 import { addSystemMessage } from '~~/server/utils/conversationStore'
 import { sendAdminMessage } from '~~/server/utils/adminMessaging'
 
@@ -92,5 +92,3 @@ export async function requestAdditionalEvidence(orderId: string): Promise<{ ok: 
   await Promise.all([sendAdminMessage(row.clientId, title, body), sendAdminMessage(row.providerId, title, body)])
   return { ok: true }
 }
-
-export type { EscrowOrder }

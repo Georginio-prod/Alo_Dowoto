@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Liste des chercheurs (#dashboard-admin, module 3). */
-definePageMeta({ layout: 'admin', middleware: 'auth' })
+definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
 interface ClientSummary {
   id: string

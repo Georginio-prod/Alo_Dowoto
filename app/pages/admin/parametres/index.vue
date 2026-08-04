@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Paramètres & administration (#dashboard-admin, module 12). */
-definePageMeta({ layout: 'admin', middleware: 'auth' })
+definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
 interface TeamMember { id: string, contact: string, firstName: string, lastName: string, username: string, adminLevel?: string }
 interface AuditEntry { id: string, actorLabel: string, action: string, targetType: string, targetId: string | null, createdAt: number }

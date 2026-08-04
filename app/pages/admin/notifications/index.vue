@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Notifications & campagnes (#dashboard-admin, module 11). */
-definePageMeta({ layout: 'admin', middleware: 'auth' })
+definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
 interface Campaign { id: string, segment: string, channel: string, subject: string | null, body: string, scheduledAt: string | null, sentAt: string | null, recipientCount: number, openCount: number, createdAt: string }
 interface Template { key: string, label: string, channel: string, subject: string | null, body: string }

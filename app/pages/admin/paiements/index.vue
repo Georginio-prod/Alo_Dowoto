@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Paiements & séquestre (#dashboard-admin, module 5). */
-definePageMeta({ layout: 'admin', middleware: 'auth' })
+definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
 interface MovementRow { id: string, kind: string, amount: number, status: string, method: string | null, userId: string, createdAt: number }
 interface BlockedAlert { orderId: string, amount: number, status: string, since: number }

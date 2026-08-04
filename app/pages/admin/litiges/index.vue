@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Litiges & médiation (#dashboard-admin, module 6). */
-definePageMeta({ layout: 'admin', middleware: 'auth' })
+definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
 interface Dispute { id: string, clientId: string, providerId: string, amount: number, disputedAt: number | null, disputeReason: string | null, disputeResponse: string | null }
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Anti-désintermédiation (#dashboard-admin, module 9). */
-definePageMeta({ layout: 'admin', middleware: 'auth' })
+definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
 interface Signal { userId: string, userName: string, attemptCount: number, lastAttemptAt: number, reasons: string[] }
 interface MissionDrop { providerId: string, providerName: string, recentCount: number, previousCount: number, dropPercent: number }

@@ -79,7 +79,7 @@ async function main() {
     upsertUser({ contact: '+22890000004', role: 'prestataire', firstName: 'Essi', lastName: 'Bakonde', username: 'essi.b', location: 'Sokodé', password: 'Password1!', status: 'suspended' }),
     upsertUser({ contact: '+22890000005', role: 'prestataire', firstName: 'Komi', lastName: 'Aziawo', username: 'komi.a', location: 'Lomé', password: 'Password1!' }),
   ])
-  const [providerA, providerB, providerRisky, providerSuspended, providerE] = providers
+  const [providerA, providerB, providerRisky, , providerE] = providers
 
   // --- Chercheurs ---
   const clients = await Promise.all([
@@ -176,11 +176,13 @@ async function main() {
     }
     if (status === 'released') {
       const commission = Math.round(amount * 0.1)
-      await prisma.walletMovement.upsert({ where: { id: `seed-release-${order.id}` }, create: { id: `seed-release-${order.id}`, walletUserId: provider.id, type: 'escrow_release', amount: amount - commission, reference: order.id, counterpartyUserId: client.id, createdAt: order.releasedAt! }, update: {} })
-      await prisma.walletMovement.upsert({ where: { id: `seed-commission-${order.id}` }, create: { id: `seed-commission-${order.id}`, walletUserId: 'worktogo-platform', type: 'commission', amount: commission, reference: order.id, counterpartyUserId: provider.id, createdAt: order.releasedAt! }, update: {} })
+      const releasedAt = order.releasedAt ?? createdAt
+      await prisma.walletMovement.upsert({ where: { id: `seed-release-${order.id}` }, create: { id: `seed-release-${order.id}`, walletUserId: provider.id, type: 'escrow_release', amount: amount - commission, reference: order.id, counterpartyUserId: client.id, createdAt: releasedAt }, update: {} })
+      await prisma.walletMovement.upsert({ where: { id: `seed-commission-${order.id}` }, create: { id: `seed-commission-${order.id}`, walletUserId: 'worktogo-platform', type: 'commission', amount: commission, reference: order.id, counterpartyUserId: provider.id, createdAt: releasedAt }, update: {} })
     }
     if (status === 'refunded') {
-      await prisma.walletMovement.upsert({ where: { id: `seed-refund-${order.id}` }, create: { id: `seed-refund-${order.id}`, walletUserId: client.id, type: 'escrow_refund', amount, reference: order.id, counterpartyUserId: provider.id, createdAt: order.cancelledAt! }, update: {} })
+      const cancelledAt = order.cancelledAt ?? createdAt
+      await prisma.walletMovement.upsert({ where: { id: `seed-refund-${order.id}` }, create: { id: `seed-refund-${order.id}`, walletUserId: client.id, type: 'escrow_refund', amount, reference: order.id, counterpartyUserId: provider.id, createdAt: cancelledAt }, update: {} })
     }
     return order
   }

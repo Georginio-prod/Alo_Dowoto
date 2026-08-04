@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Fiche détaillée d'un chercheur (#dashboard-admin, module 3). */
-definePageMeta({ layout: 'admin', middleware: 'auth' })
+definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
 interface ClientDetail {
   user: { id: string, contact: string, firstName: string, lastName: string, username: string, location: string, status: 'active' | 'suspended', riskFlag: boolean, riskNote?: string, createdAt: number }

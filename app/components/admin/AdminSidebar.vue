@@ -4,7 +4,7 @@
  * Repliée en tiroir sur mobile (`open`), toujours visible en colonne fixe à
  * partir de `lg` — même patron que app/layouts/dashboard-prestataire.vue.
  */
-const props = defineProps<{ open: boolean }>()
+defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 
 interface NavItem {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Avis & modération (#dashboard-admin, module 8). */
-definePageMeta({ layout: 'admin', middleware: 'auth' })
+definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
 interface ReviewRow {
   id: string

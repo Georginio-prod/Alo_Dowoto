@@ -1,5 +1,5 @@
 import { prisma } from '~~/server/utils/prisma'
-import { deleteVerification, getVerification } from '~~/server/utils/verificationStore'
+import { deleteVerification } from '~~/server/utils/verificationStore'
 
 /**
  * Décisions admin sur les vérifications d'identité (#dashboard-admin, modules
@@ -78,5 +78,3 @@ export async function listKycQueue(): Promise<KycQueueEntry[]> {
   }
   return entries
 }
-
-export { getVerification }

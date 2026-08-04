@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Liste des missions et fiches préalables (#dashboard-admin, module 4). */
-definePageMeta({ layout: 'admin', middleware: 'auth' })
+definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
 interface MissionSummary { id: string, status: string, amount: number, clientName: string, providerName: string, createdAt: number }
 interface DraftRequest { id: string, title: string, userId: string, createdAt: number }

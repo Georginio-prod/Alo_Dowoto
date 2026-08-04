@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Catégories de services & contenu (#dashboard-admin, module 10). */
-definePageMeta({ layout: 'admin', middleware: 'auth' })
+definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
 interface SubSector { id: string, name: string }
 interface Sector { id: string, slug: string, name: string, emoji: string, active: boolean, order: number, subSectors: SubSector[] }

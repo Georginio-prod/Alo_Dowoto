@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const csv = await exportMovementsCsv(filters)
-  await recordAuditLog({ actor: admin, action: 'payments.export', targetType: 'payments', metadata: filters })
+  await recordAuditLog({ actor: admin, action: 'payments.export', targetType: 'payments', metadata: { ...filters } })
 
   setResponseHeader(event, 'content-type', 'text/csv; charset=utf-8')
   setResponseHeader(event, 'content-disposition', 'attachment; filename="paiements.csv"')

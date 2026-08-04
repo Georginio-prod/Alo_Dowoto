@@ -18,6 +18,11 @@ const searchResults = ref<SearchResult[]>([])
 const searchOpen = ref(false)
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 
+/** Laisse le temps au `click` sur un résultat de se déclencher avant que le `blur` de l'input ne referme la liste. */
+function closeSearchSoon() {
+  setTimeout(() => { searchOpen.value = false }, 150)
+}
+
 watch(searchQuery, (value) => {
   if (searchTimer) clearTimeout(searchTimer)
   if (value.trim().length < 2) {
@@ -73,7 +78,7 @@ onMounted(() => {
         :aria-label="t('admin.header.searchPlaceholder')"
         class="w-full max-w-[420px] rounded-field border border-hairline bg-white px-3.5 py-2 text-[13px] text-dark"
         @focus="searchOpen = searchResults.length > 0"
-        @blur="() => setTimeout(() => (searchOpen = false), 150)"
+        @blur="closeSearchSoon"
       >
       <div
         v-if="searchOpen && searchResults.length > 0"

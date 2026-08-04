@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Vue d'ensemble du dashboard admin (#dashboard-admin, module 1). */
-definePageMeta({ layout: 'admin', middleware: 'auth' })
+definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
 interface OverviewResponse {
   kpis: {
@@ -20,7 +20,7 @@ interface OverviewResponse {
 }
 
 const { t } = useI18n({ useScope: 'global' })
-const { data, pending, error, refresh } = await useFetch<OverviewResponse>('/api/admin/overview')
+const { data, pending, error } = await useFetch<OverviewResponse>('/api/admin/overview')
 
 function money(amount: number): string {
   return `${amount.toLocaleString('fr-FR')} F CFA`

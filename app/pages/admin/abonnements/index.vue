@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Abonnements & tarification (#dashboard-admin, module 7). */
-definePageMeta({ layout: 'admin', middleware: 'auth' })
+definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
 interface Plan { id: string, slug: string, name: string, priceAmount: number, durationDays: number, commissionRate: number, features: string, active: boolean }
 interface Coupon { id: string, code: string, discountType: string, discountValue: number, active: boolean, usageCount: number, usageLimit: number | null }

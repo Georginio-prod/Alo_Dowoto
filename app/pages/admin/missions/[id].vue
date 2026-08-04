@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Fiche détaillée d'une mission (#dashboard-admin, module 4). */
-definePageMeta({ layout: 'admin', middleware: 'auth' })
+definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
 interface MissionDetail {
   id: string

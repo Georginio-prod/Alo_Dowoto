@@ -2,7 +2,7 @@
 import { SECTORS } from '~~/app/data/sectors'
 
 /** Liste des prestataires (#dashboard-admin, module 2). */
-definePageMeta({ layout: 'admin', middleware: 'auth' })
+definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
 interface ProviderSummary {
   id: string

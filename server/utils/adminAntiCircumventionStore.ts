@@ -40,11 +40,8 @@ export async function listContournementSignals(): Promise<ContournementSignal[]>
     return [user.id, [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.username || user.id.slice(0, 8)]
   }))
 
-  return userIds
-    .map((userId) => {
-      const entry = byUser.get(userId)!
-      return { userId, userName: nameById.get(userId) ?? userId.slice(0, 8), attemptCount: entry.count, lastAttemptAt: entry.last, reasons: [...entry.reasons] }
-    })
+  return [...byUser.entries()]
+    .map(([userId, entry]) => ({ userId, userName: nameById.get(userId) ?? userId.slice(0, 8), attemptCount: entry.count, lastAttemptAt: entry.last, reasons: [...entry.reasons] }))
     .sort((a, b) => b.attemptCount - a.attemptCount)
 }
 

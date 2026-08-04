@@ -175,7 +175,8 @@ export async function getRecentActivity(limit = 10): Promise<RecentActivityEntry
       id: `dispute-${d.id}`,
       kind: 'dispute',
       label: `Litige ouvert sur la commande ${d.id.slice(0, 8)}`,
-      timestamp: d.disputedAt!.getTime(),
+      // `disputedAt` est garanti non-null par le `where` de la requête ci-dessus, mais Prisma le type toujours nullable.
+      timestamp: d.disputedAt?.getTime() ?? 0,
     })),
     ...releases.map((r): RecentActivityEntry => ({
       id: `release-${r.id}`,
