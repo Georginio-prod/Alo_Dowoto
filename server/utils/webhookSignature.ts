@@ -1,4 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
+import { Prisma } from '@prisma/client'
+import { prisma } from '~~/server/utils/prisma'
 
 const DEV_WEBHOOK_SECRET = 'dev-webhook-secret'
 
@@ -39,27 +41,21 @@ export function isValidWebhookSignature(rawBody: string, signature: string | und
 }
 
 /**
- * Anti-rejeu (#355, audit M4) : un webhook signature valide capturé peut être
+ * Anti-rejeu (#355, audit M3) : un webhook signature valide capturé peut être
  * rejoué tant que le paiement/recharge visé reste `pending` (une fois résolu,
  * le rejeu est déjà sans effet — idempotence par statut dans
  * paymentStore/walletRechargeStore). `timestamp` et `nonce` font partie du
  * corps signé : la signature HMAC les couvre déjà, un attaquant ne peut ni
  * les falsifier ni les retirer sans invalider la signature.
  *
- * Le nonce est suivi en mémoire (un seul process PM2, voir
- * ecosystem.config.cjs) avec une expiration alignée sur la fenêtre de
- * fraîcheur : inutile de le retenir plus longtemps qu'un webhook ne peut de
- * toute façon plus être accepté comme frais.
+ * Le nonce est persisté en base (table `WebhookNonce`, #342/ADR 0013) et non
+ * plus en mémoire : l'anti-rejeu survit ainsi aux redémarrages et reste valable
+ * en multi-process (l'ancien registre en mémoire supposait un unique process
+ * PM2). L'expiration est alignée sur la fenêtre de fraîcheur — inutile de
+ * retenir un nonce plus longtemps qu'un webhook ne peut de toute façon plus
+ * être accepté comme frais.
  */
 const WEBHOOK_REPLAY_WINDOW_MS = 5 * 60 * 1000
-
-const consumedNonces = new Map<string, number>()
-
-function pruneExpiredNonces(now: number): void {
-  for (const [nonce, expiresAt] of consumedNonces) {
-    if (expiresAt <= now) consumedNonces.delete(nonce)
-  }
-}
 
 /** Un webhook daté hors de la fenêtre de fraîcheur (trop ancien, ou trop dans le futur — dérive d'horloge) est refusé. */
 export function isWebhookTimestampFresh(timestamp: number): boolean {
@@ -71,11 +67,23 @@ export function isWebhookTimestampFresh(timestamp: number): boolean {
  * que pour une résolution encore `pending` — un rejeu après résolution est
  * déjà inoffensif et ne doit pas passer par cette vérification (voir les
  * appelants dans server/api/payments/webhook.post.ts et wallet/webhook.post.ts).
+ *
+ * La détection de rejeu repose sur la contrainte d'unicité de la clé primaire :
+ * insérer un nonce déjà présent échoue (P2002) → c'est un rejeu. Atomique et
+ * sûr en multi-process, contrairement au check-then-set en mémoire.
  */
-export function consumeWebhookNonce(nonce: string): boolean {
+export async function consumeWebhookNonce(nonce: string): Promise<boolean> {
   const now = Date.now()
-  pruneExpiredNonces(now)
-  if (consumedNonces.has(nonce)) return true
-  consumedNonces.set(nonce, now + WEBHOOK_REPLAY_WINDOW_MS)
-  return false
+  // Purge des nonces périmés (housekeeping) : bornée par la fenêtre de rejeu,
+  // aucune tâche planifiée nécessaire.
+  await prisma.webhookNonce.deleteMany({ where: { expiresAt: { lte: new Date(now) } } })
+  try {
+    await prisma.webhookNonce.create({ data: { nonce, expiresAt: new Date(now + WEBHOOK_REPLAY_WINDOW_MS) } })
+    return false
+  } catch (error) {
+    // Violation de contrainte d'unicité = nonce déjà consommé (rejeu). Toute
+    // autre erreur est propagée (le webhook doit alors échouer franchement).
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return true
+    throw error
+  }
 }
