@@ -1888,6 +1888,38 @@
       "splitPercentLabel": "Provider's share (%)",
       "reasonLabel": "Decision reason"
     },
+    "plans": {
+      "title": "Subscriptions & pricing",
+      "globalSettingsTitle": "Global settings",
+      "commissionRate": "Commission rate (%)",
+      "minAdvance": "Minimum advance (F CFA)",
+      "plansTitle": "Plans",
+      "colName": "Name",
+      "colPrice": "Price",
+      "colDuration": "Duration (days)",
+      "disabled": "Disabled",
+      "disableCta": "Disable",
+      "enableCta": "Enable",
+      "slugPlaceholder": "slug",
+      "namePlaceholder": "Plan name",
+      "featuresPlaceholder": "Perks (free text)",
+      "couponsTitle": "Coupons",
+      "colCode": "Code",
+      "colDiscount": "Discount",
+      "colUsage": "Usage"
+    },
+    "reviews": {
+      "title": "Reviews & moderation",
+      "flaggedOnly": "Flagged only",
+      "autoFlagPhone": "Phone number detected",
+      "autoFlagOffPlatform": "Off-platform mention",
+      "autoFlagInsult": "Insult detected",
+      "hiddenBadge": "Hidden",
+      "noComment": "(no comment)",
+      "hideCta": "Hide",
+      "restoreCta": "Restore",
+      "contactAuthorCta": "Contact author"
+    },
     "common": {
       "loading": "Loading…",
       "empty": "No results.",

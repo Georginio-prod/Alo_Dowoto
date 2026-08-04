@@ -1888,6 +1888,38 @@
       "splitPercentLabel": "Part du prestataire (%)",
       "reasonLabel": "Motif de la décision"
     },
+    "plans": {
+      "title": "Abonnements & tarification",
+      "globalSettingsTitle": "Réglages globaux",
+      "commissionRate": "Taux de commission (%)",
+      "minAdvance": "Avance minimum (F CFA)",
+      "plansTitle": "Formules",
+      "colName": "Nom",
+      "colPrice": "Prix",
+      "colDuration": "Durée (jours)",
+      "disabled": "Désactivée",
+      "disableCta": "Désactiver",
+      "enableCta": "Activer",
+      "slugPlaceholder": "slug",
+      "namePlaceholder": "Nom de la formule",
+      "featuresPlaceholder": "Avantages (texte libre)",
+      "couponsTitle": "Codes promo",
+      "colCode": "Code",
+      "colDiscount": "Remise",
+      "colUsage": "Utilisations"
+    },
+    "reviews": {
+      "title": "Avis & modération",
+      "flaggedOnly": "Signalés uniquement",
+      "autoFlagPhone": "Numéro détecté",
+      "autoFlagOffPlatform": "Mention hors plateforme",
+      "autoFlagInsult": "Insulte détectée",
+      "hiddenBadge": "Masqué",
+      "noComment": "(sans commentaire)",
+      "hideCta": "Masquer",
+      "restoreCta": "Restaurer",
+      "contactAuthorCta": "Contacter l'auteur"
+    },
     "common": {
       "loading": "Chargement…",
       "empty": "Aucun résultat.",
