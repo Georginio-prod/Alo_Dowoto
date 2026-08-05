@@ -118,6 +118,38 @@ export async function getSubscriptionById(id: string): Promise<Subscription | nu
 }
 
 /**
+ * Prolonge manuellement l'abonnement d'un prestataire (#dashboard-admin,
+ * module Prestataires) : ajoute `extraDays` à `dateFin` si l'abonnement est
+ * déjà actif, sinon l'active à partir de maintenant — pour couvrir le geste
+ * commercial (« offrir un mois ») aussi bien qu'un abonnement expiré à
+ * relancer manuellement.
+ */
+export async function adminExtendSubscription(userId: string, extraDays: number): Promise<Subscription | null> {
+  const existing = await prisma.subscription.findFirst({ where: { userId } })
+  if (!existing) return null
+
+  const now = Date.now()
+  const base = existing.status === 'actif' && existing.dateFin && existing.dateFin.getTime() > now ? existing.dateFin.getTime() : now
+  const row = await prisma.subscription.update({
+    where: { id: existing.id },
+    data: {
+      status: 'actif',
+      dateDebut: existing.dateDebut ?? new Date(now),
+      dateFin: new Date(base + extraDays * 24 * 60 * 60 * 1000),
+    },
+  })
+  return toSubscription(row)
+}
+
+/** Annule manuellement l'abonnement d'un prestataire (#dashboard-admin, module Prestataires) : passe `expire` immédiatement. */
+export async function adminCancelSubscription(userId: string): Promise<Subscription | null> {
+  const existing = await prisma.subscription.findFirst({ where: { userId } })
+  if (!existing) return null
+  const row = await prisma.subscription.update({ where: { id: existing.id }, data: { status: 'expire', dateFin: new Date() } })
+  return toSubscription(row)
+}
+
+/**
  * Active un abonnement en attente après confirmation du paiement (#34).
  * Retourne `null` si l'abonnement n'existe pas.
  */

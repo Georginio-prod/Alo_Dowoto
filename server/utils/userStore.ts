@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { User as PrismaUser } from '@prisma/client'
+import type { Prisma, User as PrismaUser } from '@prisma/client'
 import { prisma } from '~~/server/utils/prisma'
 import { isVerified } from '~~/server/utils/verificationStore'
 
@@ -9,7 +9,10 @@ import { isVerified } from '~~/server/utils/verificationStore'
  * survivent aux redémarrages du serveur.
  */
 
-export type Role = 'client' | 'prestataire'
+export type Role = 'client' | 'prestataire' | 'admin'
+
+/** Statut de compte (#dashboard-admin) — voir `getSessionUser`, qui refuse la session d'un compte suspendu. */
+export type UserStatus = 'active' | 'suspended'
 
 export interface User {
   id: string
@@ -26,6 +29,17 @@ export interface User {
   /** Coordonnées GPS réelles, capturées en option via la géolocalisation du navigateur à l'inscription. */
   latitude?: number
   longitude?: number
+  /** #dashboard-admin — voir UserStatus. */
+  status: UserStatus
+  suspendedAt?: number
+  suspendedReason?: string
+  /** Compte à risque (#dashboard-admin), marqué manuellement par un admin. */
+  riskFlag: boolean
+  riskNote?: string
+  /** Messagerie restreinte (#dashboard-admin, anti-désintermédiation). */
+  messagingRestricted: boolean
+  /** Niveau d'accès équipe (#dashboard-admin) — significatif seulement si `role === 'admin'`. */
+  adminLevel?: string
 }
 
 export interface NewUserProfile {
@@ -41,7 +55,8 @@ const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000
 
 export const SESSION_COOKIE = 'wt_session'
 
-function toUser(row: PrismaUser): User {
+/** Exportée pour les vues admin (#dashboard-admin) qui reconstituent un `User` à partir d'une ligne Prisma déjà chargée (évite un aller-retour DB superflu). */
+export function toUser(row: PrismaUser): User {
   return {
     id: row.id,
     contact: row.contact,
@@ -54,6 +69,13 @@ function toUser(row: PrismaUser): User {
     location: row.location,
     ...(row.latitude !== null ? { latitude: row.latitude } : {}),
     ...(row.longitude !== null ? { longitude: row.longitude } : {}),
+    status: row.status as UserStatus,
+    ...(row.suspendedAt ? { suspendedAt: row.suspendedAt.getTime() } : {}),
+    ...(row.suspendedReason ? { suspendedReason: row.suspendedReason } : {}),
+    riskFlag: row.riskFlag,
+    ...(row.riskNote ? { riskNote: row.riskNote } : {}),
+    messagingRestricted: row.messagingRestricted,
+    ...(row.adminLevel ? { adminLevel: row.adminLevel } : {}),
   }
 }
 
@@ -185,6 +207,9 @@ export async function getSessionUser(token: string | undefined): Promise<User | 
     await prisma.session.delete({ where: { token } }).catch(() => {})
     return null
   }
+  // #dashboard-admin : un compte suspendu par un admin est traité comme non
+  // connecté — vérification serveur, pas un simple masquage côté client.
+  if (session.user.status === 'suspended') return null
   return toUser(session.user)
 }
 
@@ -248,6 +273,99 @@ export interface PublicUser {
   longitude?: number
   /** Identité vérifiée (carte d'identité + photo passeport, voir server/utils/verificationStore.ts). */
   verified: boolean
+}
+
+// ---------------------------------------------------------------------------
+// #dashboard-admin — gestion des comptes depuis /admin (modules Prestataires
+// et Chercheurs). Fonctions additives : aucune ne change le comportement des
+// fonctions ci-dessus, utilisées par le reste de l'application.
+// ---------------------------------------------------------------------------
+
+export interface AdminUserFilters {
+  role?: Role
+  status?: UserStatus
+  riskFlag?: boolean
+  query?: string
+}
+
+export interface AdminUserListResult {
+  users: User[]
+  total: number
+}
+
+/** Liste paginée des comptes pour les tableaux admin (Prestataires/Chercheurs), avec filtres et recherche. */
+export async function listUsersForAdmin(
+  filters: AdminUserFilters,
+  page: number,
+  pageSize: number,
+): Promise<AdminUserListResult> {
+  const where: Prisma.UserWhereInput = {
+    ...(filters.role ? { role: filters.role } : {}),
+    ...(filters.status ? { status: filters.status } : {}),
+    ...(filters.riskFlag !== undefined ? { riskFlag: filters.riskFlag } : {}),
+    ...(filters.query
+      ? {
+          OR: [
+            { username: { contains: filters.query } },
+            { firstName: { contains: filters.query } },
+            { lastName: { contains: filters.query } },
+            { contact: { contains: filters.query } },
+            { location: { contains: filters.query } },
+          ],
+        }
+      : {}),
+  }
+  const [rows, total] = await Promise.all([
+    prisma.user.findMany({ where, orderBy: { createdAt: 'desc' }, skip: (page - 1) * pageSize, take: pageSize }),
+    prisma.user.count({ where }),
+  ])
+  return { users: rows.map(toUser), total }
+}
+
+/** Compte suspendu (#dashboard-admin) : `getSessionUser` refusera désormais toute session existante de ce compte. */
+export async function suspendUser(userId: string, reason: string): Promise<User> {
+  const row = await prisma.user.update({
+    where: { id: userId },
+    data: { status: 'suspended', suspendedAt: new Date(), suspendedReason: reason },
+  })
+  await prisma.session.deleteMany({ where: { userId } })
+  return toUser(row)
+}
+
+export async function reactivateUser(userId: string): Promise<User> {
+  const row = await prisma.user.update({
+    where: { id: userId },
+    data: { status: 'active', suspendedAt: null, suspendedReason: null },
+  })
+  return toUser(row)
+}
+
+export async function setUserRiskFlag(userId: string, riskFlag: boolean, note?: string): Promise<User> {
+  const row = await prisma.user.update({
+    where: { id: userId },
+    data: { riskFlag, riskNote: note ?? null },
+  })
+  return toUser(row)
+}
+
+export async function setMessagingRestricted(userId: string, restricted: boolean): Promise<User> {
+  const row = await prisma.user.update({ where: { id: userId }, data: { messagingRestricted: restricted } })
+  return toUser(row)
+}
+
+export async function setAdminLevel(userId: string, adminLevel: string | null): Promise<User> {
+  const row = await prisma.user.update({ where: { id: userId }, data: { adminLevel } })
+  return toUser(row)
+}
+
+/**
+ * Promeut un compte existant (chercheur ou prestataire) au rôle admin
+ * (#dashboard-admin, module 12) — geste rare et sensible, réservé à un admin
+ * déjà connecté (voir requireAdminRole) et tracé (server/utils/auditLog.ts).
+ */
+export async function promoteToAdmin(userId: string, adminLevel: string): Promise<User> {
+  const row = await prisma.user.update({ where: { id: userId }, data: { role: 'admin', adminLevel } })
+  return toUser(row)
 }
 
 /** Vue publique d'un utilisateur : ne jamais exposer `passwordHash` au client. */

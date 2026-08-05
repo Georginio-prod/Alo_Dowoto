@@ -116,7 +116,11 @@ function onOtpVerified() {
   step.value = 'password'
 }
 
-function landingPathFor(userRole: Role): string {
+// `PublicUser['role']` (pas le `Role` local ci-dessus, réservé au choix de
+// compte à l'inscription) : un compte admin peut aussi se connecter depuis
+// cette page, seul formulaire de connexion de l'app (#dashboard-admin).
+function landingPathFor(userRole: PublicUser['role']): string {
+  if (userRole === 'admin') return '/admin'
   return userRole === 'prestataire' ? '/prestataire' : '/resultats'
 }
 
