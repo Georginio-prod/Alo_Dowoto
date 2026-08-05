@@ -8,6 +8,22 @@
   },
   "nav": {
     "ariaLabel": "Main navigation",
+    "tabs": {
+      "ariaLabel": "Main navigation",
+      "newBadge": "1 new | {count} new",
+      "client": {
+        "home": "Home",
+        "requests": "My requests",
+        "messages": "Messages",
+        "account": "Account"
+      },
+      "provider": {
+        "today": "Today",
+        "requests": "Requests",
+        "revenue": "Earnings",
+        "account": "Account"
+      }
+    },
     "find": {
       "menu": "Find a provider",
       "title": "Find the right provider",
