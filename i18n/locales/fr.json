@@ -8,6 +8,21 @@
   },
   "nav": {
     "ariaLabel": "Navigation principale",
+    "tabs": {
+      "ariaLabel": "Navigation principale",
+      "client": {
+        "home": "Accueil",
+        "requests": "Mes demandes",
+        "messages": "Messages",
+        "account": "Compte"
+      },
+      "provider": {
+        "today": "Aujourd'hui",
+        "requests": "Demandes",
+        "revenue": "Revenus",
+        "account": "Compte"
+      }
+    },
     "find": {
       "menu": "Trouver un prestataire",
       "title": "Trouvez le bon prestataire",
