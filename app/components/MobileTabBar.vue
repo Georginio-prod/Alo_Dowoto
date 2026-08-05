@@ -17,6 +17,23 @@ const { user } = useSession()
 const { t } = useI18n({ useScope: 'global' })
 const route = useRoute()
 
+/**
+ * Compteurs de badge par clé d'onglet (ex. `{ requests: 3 }`) — un pastille de
+ * notification s'affiche sur l'onglet correspondant. Sert au prestataire dont
+ * l'onglet « Demandes » est le gagne-pain : il doit être impossible à manquer.
+ */
+const props = defineProps<{ badges?: Record<string, number> }>()
+
+function badgeCount(tab: Tab): number {
+  const n = props.badges?.[tab.key] ?? 0
+  return Number.isFinite(n) && n > 0 ? n : 0
+}
+
+function tabAriaLabel(tab: Tab): string {
+  const n = badgeCount(tab)
+  return n > 0 ? `${tab.label}, ${t('nav.tabs.newBadge', n)}` : tab.label
+}
+
 type IconKey = 'home' | 'requests' | 'messages' | 'account' | 'today' | 'revenue'
 interface Tab {
   key: string
@@ -77,10 +94,18 @@ function isActive(tab: Tab): boolean {
           class="press flex min-h-[56px] flex-col items-center justify-center gap-1 px-1 py-2 text-xs font-semibold"
           :class="isActive(tab) ? 'text-primary' : 'text-muted'"
           :aria-current="isActive(tab) ? 'page' : undefined"
+          :aria-label="tabAriaLabel(tab)"
         >
-          <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path :d="ICON_PATHS[tab.icon]" />
-          </svg>
+          <span class="relative">
+            <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path :d="ICON_PATHS[tab.icon]" />
+            </svg>
+            <span
+              v-if="badgeCount(tab) > 0"
+              class="absolute -right-2.5 -top-1.5 min-w-[18px] rounded-pill bg-error px-1 text-center text-[11px] font-bold leading-[18px] text-white"
+              aria-hidden="true"
+            >{{ badgeCount(tab) > 9 ? '9+' : badgeCount(tab) }}</span>
+          </span>
           <span class="leading-none">{{ tab.label }}</span>
         </NuxtLink>
       </li>

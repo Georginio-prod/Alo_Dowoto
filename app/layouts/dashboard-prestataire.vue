@@ -50,6 +50,16 @@ const NAV_ITEMS = computed<NavItem[]>(() => [
 
 const route = useRoute()
 
+// Compteur de demandes reçues pour le badge de la barre d'onglets mobile
+// (#refonte-ux-mobile) : l'onglet « Demandes » est le gagne-pain du
+// prestataire, il doit être impossible à manquer. `lazy` pour ne pas bloquer
+// la navigation — le badge se remplit dès que la donnée arrive.
+const { data: receivedData } = useFetch<{ matches: unknown[] }>('/api/requests/received', {
+  lazy: true,
+  default: () => ({ matches: [] }),
+})
+const pendingRequestsCount = computed(() => receivedData.value?.matches?.length ?? 0)
+
 function isActive(item: NavItem): boolean {
   return item.to === route.path || !!item.activePaths?.includes(route.path)
 }
@@ -78,14 +88,16 @@ async function logout() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-bg text-ink">
+  <div class="min-h-screen bg-bg text-ink pb-[calc(56px+env(safe-area-inset-bottom))] lg:pb-0">
     <div class="mx-auto flex max-w-[1100px] flex-col gap-6 px-5 py-6 lg:flex-row lg:items-start">
       <aside class="w-full shrink-0 lg:w-[220px]">
         <NuxtLink to="/prestataire/accueil" class="mb-5 block text-[19px] font-extrabold text-dark">
           Work<span class="text-primary">Togo</span>
         </NuxtLink>
 
-        <nav class="flex flex-row gap-1.5 overflow-x-auto rounded-card border border-hairline bg-surface p-2 shadow-card-sm lg:flex-col lg:overflow-visible">
+        <!-- Nav en pastilles : masquée sur mobile (barre d'onglets basse à la
+             place, #refonte-ux-mobile), sidebar verticale sur desktop. -->
+        <nav class="hidden gap-1.5 overflow-x-auto rounded-card border border-hairline bg-surface p-2 shadow-card-sm lg:flex lg:flex-col lg:overflow-visible">
           <template v-for="item in NAV_ITEMS" :key="item.label">
             <NuxtLink
               v-if="item.to"
@@ -142,5 +154,7 @@ async function logout() {
         <slot />
       </main>
     </div>
+
+    <MobileTabBar :badges="{ requests: pendingRequestsCount }" />
   </div>
 </template>

@@ -43,9 +43,10 @@ Nouveau composant `app/components/MobileTabBar.vue` :
   (la nav desktop existante prend le relais), masquée pour les visiteurs non
   connectés. Dérive intégralement des tokens (`text-primary`, `bg-surface`,
   `border-hairline`) — zéro valeur en dur.
-- Câblée dans `layouts/default.vue`, qui réserve l'espace bas correspondant.
+- Câblée dans `layouts/default.vue` (chercheur/public) **et** `layouts/dashboard-prestataire.vue` (prestataire), qui réservent l'espace bas correspondant.
+- **Côté prestataire** : la nav en pastilles du haut (défilement horizontal, texte seul) est masquée sur mobile (`hidden lg:flex`) au profit de la barre basse — plus de double navigation ; elle reste la sidebar verticale sur desktop. L'onglet **Demandes** porte un **badge de notification** (nombre de demandes reçues, `/api/requests/received`), rouge, annoncé aux lecteurs d'écran (`aria-label` « Demandes, N nouvelles ») — « impossible à manquer », c'est son gagne-pain.
 
-Purement additive : aucun écran existant modifié, aucun comportement desktop changé.
+Purement additive/non-breaking : le desktop est inchangé dans les deux layouts.
 
 ## Avant / après — taps depuis l'écran d'accueil (mobile, chercheur connecté)
 
@@ -66,10 +67,8 @@ Purement additive : aucun écran existant modifié, aucun comportement desktop c
 
 ## Reste à faire (incréments suivants)
 
-- Barre d'onglets côté **prestataire** : sa nav existe déjà (pastilles texte en
-  haut, défilement horizontal dans `dashboard-prestataire.vue`) mais n'est pas
-  thumb-first ; la basculer en barre basse demande de retravailler cette nav
-  (hors périmètre non-breaking de ce lot).
-- Badge « Demandes » impossible à manquer côté prestataire (compteur temps réel).
+- Badge « Demandes » **temps réel** : le compteur actuel se charge à
+  l'affichage (`lazy`) ; le rafraîchissement live (polling/websocket) reste à
+  ajouter.
 - Refonte écran par écran (paiement-réassurance, suivi de mission en frise,
   onboarding 3 écrans) — étapes 3 à 6 du brief.

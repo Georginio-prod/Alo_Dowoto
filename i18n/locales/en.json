@@ -10,6 +10,7 @@
     "ariaLabel": "Main navigation",
     "tabs": {
       "ariaLabel": "Main navigation",
+      "newBadge": "1 new | {count} new",
       "client": {
         "home": "Home",
         "requests": "My requests",
