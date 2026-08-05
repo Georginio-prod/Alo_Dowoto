@@ -132,17 +132,28 @@
       });
     }
 
+    function go(url) { window.location.replace(url + HOME_PATH); }
+
     function attempt() {
       show('state-loading');
-      var url = baseUrl();
-      document.getElementById('loading-url').textContent = url;
-      probe(url).then(function (ok) {
-        if (ok) {
-          window.location.replace(url + HOME_PATH);
-        } else {
-          document.getElementById('host').value = getHost();
-          show('state-error');
-        }
+      // On tente d'abord http://localhost:3000 : si le téléphone est branché en
+      // USB avec `adb reverse tcp:3000 tcp:3000`, c'est un CONTEXTE SÉCURISÉ,
+      // donc la géolocalisation (et autres API sécurisées) fonctionnent. Sinon
+      // on retombe sur l'adresse configurée (IP LAN Wi-Fi), où l'app marche
+      // mais où la géoloc reste désactivée par le navigateur.
+      var preferred = 'http://localhost:3000';
+      var configured = baseUrl();
+      document.getElementById('loading-url').textContent = configured;
+      probe(preferred).then(function (okLocal) {
+        if (okLocal) { go(preferred); return; }
+        probe(configured).then(function (ok) {
+          if (ok) {
+            go(configured);
+          } else {
+            document.getElementById('host').value = getHost();
+            show('state-error');
+          }
+        });
       });
     }
 

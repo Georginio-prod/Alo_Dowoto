@@ -39,4 +39,10 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Géolocalisation (bouton « Utiliser ma position actuelle »). Ne
+         fonctionne que si la page est servie dans un contexte sécurisé :
+         https://… ou http://localhost (via `adb reverse`). Sur une IP LAN en
+         clair (http://192.168.x.x), le moteur WebView désactive l'API. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 </manifest>
