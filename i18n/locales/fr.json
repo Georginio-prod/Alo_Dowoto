@@ -1083,6 +1083,53 @@
     "providerSpaceLabel": "Espace prestataire",
     "backToProfile": "← Retour au profil"
   },
+  "tutorials": {
+    "title": "Comment ça marche",
+    "subtitle": "Des mini-tutoriels, à votre rythme.",
+    "progress": "{done} / {total} modules vus",
+    "searchPlaceholder": "Rechercher un tutoriel…",
+    "noResults": "Aucun tutoriel ne correspond.",
+    "durationSec": "~{sec} s",
+    "statusSeen": "Vu",
+    "statusNew": "À voir",
+    "faqHeading": "Questions fréquentes",
+    "contactSupport": "Contacter le support",
+    "seeProvider": "Voir les tutoriels prestataire",
+    "seeClient": "Voir les tutoriels chercheur",
+    "back": "Retour",
+    "client": {
+      "modules": {
+        "find": { "title": "Trouver un prestataire", "desc": "Choisir une catégorie et lire une fiche pro." },
+        "form": { "title": "Remplir la fiche préalable", "desc": "Courte, avec photos, estimation en direct." },
+        "plan": { "title": "Choisir sa formule", "desc": "Comparer les propositions ou définir votre besoin." },
+        "pay": { "title": "Payer l'avance en sécurité", "desc": "L'argent est bloqué, jamais versé d'avance." },
+        "track": { "title": "Suivre son intervention", "desc": "Les étapes, le chat, l'arrivée du prestataire." },
+        "revision": { "title": "Un ajustement de prix ?", "desc": "Quoi regarder, et le droit de refuser." },
+        "validate": { "title": "Valider et noter", "desc": "Vous validez, les fonds sont libérés." }
+      }
+    },
+    "provider": {
+      "modules": {
+        "profile": { "title": "Compléter mon profil", "desc": "Un profil complet est choisi bien plus souvent." },
+        "subscription": { "title": "Mon abonnement", "desc": "Ce qu'il ouvre, le renouveler, l'expiration." },
+        "request": { "title": "Recevoir une demande", "desc": "Lire la fiche, accepter ou refuser." },
+        "checkin": { "title": "Sur place : le check-in", "desc": "La géoloc d'arrivée protège les deux parties." },
+        "adjust": { "title": "Ajuster le prix", "desc": "Quand c'est légitime, photos à l'appui." },
+        "finish": { "title": "Terminer et être payé", "desc": "Déclarer la fin, la validation, le versement." },
+        "why": { "title": "Pourquoi passer par l'app", "desc": "Garanties, preuve, visibilité, protection." }
+      }
+    },
+    "faq": {
+      "q1": "L'argent est-il vraiment protégé ?",
+      "a1": "Oui : l'avance est bloquée et n'est versée au prestataire qu'après votre validation.",
+      "q2": "Puis-je refuser un ajustement de prix ?",
+      "a2": "Oui, sans perdre votre avance. Un refus n'est pas une annulation fautive.",
+      "q3": "Les tutoriels marchent-ils hors connexion ?",
+      "a3": "Oui, ils sont embarqués dans l'app et ne consomment pas de données.",
+      "q4": "Comment revoir un tutoriel ?",
+      "a4": "Depuis cette page, ou via l'icône d'aide en haut de chaque section."
+    }
+  },
   "coachmark": {
     "ariaLabel": "Visite guidée",
     "stepStatus": "{current}/{total}",

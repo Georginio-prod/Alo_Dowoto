@@ -1083,6 +1083,53 @@
     "providerSpaceLabel": "Provider space",
     "backToProfile": "← Back to profile"
   },
+  "tutorials": {
+    "title": "How it works",
+    "subtitle": "Short tutorials, at your own pace.",
+    "progress": "{done} / {total} modules seen",
+    "searchPlaceholder": "Search a tutorial…",
+    "noResults": "No tutorial matches.",
+    "durationSec": "~{sec}s",
+    "statusSeen": "Seen",
+    "statusNew": "To watch",
+    "faqHeading": "Frequently asked questions",
+    "contactSupport": "Contact support",
+    "seeProvider": "See provider tutorials",
+    "seeClient": "See seeker tutorials",
+    "back": "Back",
+    "client": {
+      "modules": {
+        "find": { "title": "Find a provider", "desc": "Pick a category and read a pro's profile." },
+        "form": { "title": "Fill the request form", "desc": "Short, with photos, live estimate." },
+        "plan": { "title": "Choose your plan", "desc": "Compare offers or define your own need." },
+        "pay": { "title": "Pay the deposit safely", "desc": "The money is locked, never paid upfront." },
+        "track": { "title": "Track your job", "desc": "The steps, the chat, the provider's arrival." },
+        "revision": { "title": "A price change?", "desc": "What to check, and your right to refuse." },
+        "validate": { "title": "Approve and rate", "desc": "You approve, the funds are released." }
+      }
+    },
+    "provider": {
+      "modules": {
+        "profile": { "title": "Complete my profile", "desc": "A complete profile is chosen far more often." },
+        "subscription": { "title": "My subscription", "desc": "What it unlocks, renewing, expiry." },
+        "request": { "title": "Receive a request", "desc": "Read the form, accept or decline." },
+        "checkin": { "title": "On site: check-in", "desc": "Arrival geolocation protects both parties." },
+        "adjust": { "title": "Adjust the price", "desc": "When it's fair, backed by photos." },
+        "finish": { "title": "Finish and get paid", "desc": "Declare the end, approval, payout." },
+        "why": { "title": "Why go through the app", "desc": "Guarantees, proof, visibility, protection." }
+      }
+    },
+    "faq": {
+      "q1": "Is the money really protected?",
+      "a1": "Yes: the deposit is locked and only paid to the provider after your approval.",
+      "q2": "Can I refuse a price change?",
+      "a2": "Yes, without losing your deposit. Refusing is not a fault cancellation.",
+      "q3": "Do tutorials work offline?",
+      "a3": "Yes, they're embedded in the app and use no data.",
+      "q4": "How do I replay a tutorial?",
+      "a4": "From this page, or via the help icon at the top of each section."
+    }
+  },
   "coachmark": {
     "ariaLabel": "Guided tour",
     "stepStatus": "{current}/{total}",
