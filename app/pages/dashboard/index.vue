@@ -37,7 +37,7 @@ const isProvider = computed(() => user.value?.role === 'prestataire')
          En-tête commun aux deux rôles : le solde n'est jamais à plus d'un
          geste côté chercheur (côté prestataire il vit dans la carte encre). -->
     <header class="mb-6 flex items-center justify-between gap-3">
-      <NuxtLink to="/" class="text-[19px] font-extrabold text-dark">
+      <NuxtLink to="/dashboard" class="text-[19px] font-extrabold text-dark">
         Work<span class="text-primary">Togo</span>
       </NuxtLink>
       <div class="flex items-center gap-1.5">

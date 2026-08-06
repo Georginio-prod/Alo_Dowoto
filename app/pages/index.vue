@@ -1,49 +1,27 @@
 <script setup lang="ts">
-import type { Sector } from '~/data/sectors'
-
-const { open: openChoiceModal } = useChoiceModal()
-const { user: sessionUser, ensure } = useSession()
+/**
+ * Racine `/` — dans l'APK mobile, la vitrine marketing publique (hero,
+ * secteurs, formules…) n'a pas lieu d'être : l'accueil de l'app est le
+ * dashboard unifié role-aware (`/dashboard`, cf. app/pages/dashboard/index.vue).
+ *
+ * On redirige donc `/` au lieu d'afficher la vitrine :
+ *   - prestataire → son espace (`/prestataire`, comportement inchangé) ;
+ *   - chercheur   → `/dashboard` (écran « Bonjour … de quoi avez-vous besoin ? ») ;
+ *   - visiteur non connecté → `/dashboard`, dont le middleware `auth` renvoie
+ *     vers `/auth` pour la connexion.
+ *
+ * (La vitrine reste le site web ; ceci ne concerne que le build APK, branche `apk`.)
+ */
+const { user, ensure } = useSession()
 await ensure()
 
-// Un prestataire connecté n'a pas d'usage pour la vitrine publique (recherche
-// de prestataires) : son "accueil" est son espace de gestion des demandes.
-if (sessionUser.value?.role === 'prestataire') {
+if (user.value?.role === 'prestataire') {
   await navigateTo('/prestataire')
-}
-
-const activeSector = ref<Sector | null>(null)
-
-function openSectorDrawer(sector: Sector) {
-  activeSector.value = sector
-}
-
-function closeSectorDrawer() {
-  activeSector.value = null
-}
-
-function onSelectSubSector(name: string) {
-  activeSector.value = null
-
-  // Déjà connecté en tant que chercheur : la modale de choix de compte n'a
-  // plus lieu d'être, on va directement aux résultats du sous-secteur
-  // (même destination que la modale via `/auth`, voir auth.vue#onSignupPasswordSuccess).
-  if (sessionUser.value?.role === 'client') {
-    navigateTo({ path: '/resultats', query: { q: name } })
-    return
-  }
-
-  openChoiceModal(name)
+} else {
+  await navigateTo('/dashboard')
 }
 </script>
 
 <template>
-  <div>
-    <HeroSection />
-    <SectorGrid @select="openSectorDrawer" @select-sub="(_sector, name) => onSelectSubSector(name)" />
-    <HowItWorks />
-    <ReassuranceBar />
-    <PricingTeaser />
-    <TestimonialsSection />
-    <SectorDrawer :sector="activeSector" @close="closeSectorDrawer" @select="onSelectSubSector" />
-  </div>
+  <div />
 </template>
