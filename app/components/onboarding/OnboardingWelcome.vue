@@ -16,6 +16,7 @@ const props = defineProps<{ role?: string }>()
 const emit = defineEmits<{ complete: []; postpone: [] }>()
 
 const { t, locale } = useI18n({ useScope: 'global' })
+const { track } = useAnalytics()
 
 type ScreenIcon = 'locate' | 'shield' | 'check'
 const base = computed(() => (props.role === 'prestataire' ? 'onboarding.provider' : 'onboarding.client'))
@@ -42,19 +43,30 @@ function narrateCurrent() {
 }
 function onToggleSpeech() {
   toggleSpeech()
+  track('tutorial_audio', { enabled: speechEnabled.value, where: 'welcome' })
   if (speechEnabled.value) narrateCurrent()
+}
+function onComplete() {
+  track('welcome_complete')
+  emit('complete')
+}
+function onPostpone() {
+  track('welcome_abandon', { step: step.value + 1 })
+  emit('postpone')
 }
 onMounted(() => {
   loadSpeech()
+  track('welcome_open')
   if (speechEnabled.value) narrateCurrent()
 })
 watch(step, () => {
+  track('welcome_step', { step: step.value + 1 })
   if (speechEnabled.value) narrateCurrent()
 })
 onBeforeUnmount(() => stopSpeech())
 
 function next() {
-  if (isLast.value) emit('complete')
+  if (isLast.value) onComplete()
   else step.value += 1
 }
 </script>
@@ -86,7 +98,7 @@ function next() {
       <button
         type="button"
         class="press rounded-pill px-4 py-2 text-sm font-semibold text-muted hover:text-dark"
-        @click="emit('postpone')"
+        @click="onPostpone"
       >
         {{ t('onboarding.skip') }}
       </button>
@@ -143,14 +155,14 @@ function next() {
         <button
           type="button"
           class="press mb-3 w-full rounded-pill bg-primary py-3.5 text-base font-bold text-white hover:bg-primary-hover"
-          @click="emit('complete')"
+          @click="onComplete"
         >
           {{ t('onboarding.startTutorial') }}
         </button>
         <button
           type="button"
           class="press w-full rounded-pill py-3 text-base font-semibold text-muted hover:text-dark"
-          @click="emit('postpone')"
+          @click="onPostpone"
         >
           {{ t('onboarding.later') }}
         </button>

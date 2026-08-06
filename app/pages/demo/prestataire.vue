@@ -12,6 +12,9 @@ definePageMeta({ layout: 'blank', middleware: 'auth' })
 
 const { t, locale } = useI18n({ useScope: 'global' })
 
+const { track } = useAnalytics()
+onMounted(() => track('sandbox_enter', { role: 'prestataire' }))
+
 const TOTAL_STEPS = 5
 const step = ref(0)
 

@@ -18,10 +18,11 @@ interface CoachStep {
   text: string
 }
 
-const props = defineProps<{ steps: CoachStep[] }>()
+const props = defineProps<{ steps: CoachStep[]; tourId?: string }>()
 const emit = defineEmits<{ finish: []; skip: [] }>()
 
 const { t, locale } = useI18n({ useScope: 'global' })
+const { track } = useAnalytics()
 
 const PAD = 12
 const index = ref(0)
@@ -41,7 +42,12 @@ function narrateCurrent() {
 }
 function onToggleSpeech() {
   toggleSpeech()
+  track('tutorial_audio', { enabled: speechEnabled.value, where: 'coachmark' })
   if (speechEnabled.value) narrateCurrent()
+}
+function onSkip() {
+  track('coachmark_abandon', { tourId: props.tourId, step: index.value + 1 })
+  emit('skip')
 }
 
 function findTarget(): HTMLElement | null {
@@ -107,6 +113,7 @@ const bubbleStyle = computed(() => {
 
 function next() {
   if (isLast.value) {
+    track('coachmark_complete', { tourId: props.tourId })
     emit('finish')
     return
   }
@@ -127,12 +134,14 @@ watch(index, () => {
   rect.ready = false
   focusStep()
   nextTick(() => nextBtn.value?.focus())
+  track('coachmark_step', { tourId: props.tourId, step: index.value + 1 })
   if (speechEnabled.value) narrateCurrent()
 })
 
 onMounted(() => {
   if (!import.meta.client) return
   loadSpeech()
+  track('coachmark_open', { tourId: props.tourId, steps: props.steps.length })
   focusStep()
   nextTick(() => nextBtn.value?.focus())
   if (speechEnabled.value) narrateCurrent()
@@ -196,7 +205,7 @@ onBeforeUnmount(() => {
             <button
               type="button"
               class="press rounded-pill px-3 py-2 text-sm font-semibold text-muted hover:text-dark"
-              @click="emit('skip')"
+              @click="onSkip"
             >
               {{ t('coachmark.skip') }}
             </button>

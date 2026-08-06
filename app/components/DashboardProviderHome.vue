@@ -278,6 +278,7 @@ onMounted(() => {
     <CoachmarkTour
       v-if="tourActive"
       :steps="providerTourSteps"
+      tour-id="dashboard-provider"
       @finish="endProviderTour"
       @skip="endProviderTour"
     />
