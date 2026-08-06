@@ -1083,6 +1083,27 @@
     "providerSpaceLabel": "Provider space",
     "backToProfile": "← Back to profile"
   },
+  "onboarding": {
+    "ariaLabel": "Welcome to WorkTogo",
+    "skip": "Skip",
+    "next": "Next",
+    "startTutorial": "Start the full tutorial",
+    "later": "Later",
+    "stepStatus": "Step {current} of {total}",
+    "bannerTitle": "See how it works",
+    "bannerDuration": "2 min",
+    "bannerDismiss": "Dismiss reminder",
+    "client": {
+      "s1": { "title": "Find a pro near you", "subtitle": "Verified providers, in every field." },
+      "s2": { "title": "Your money stays locked until the end", "subtitle": "It's kept safe, never paid upfront." },
+      "s3": { "title": "You approve, they get paid", "subtitle": "The provider is only paid after your approval." }
+    },
+    "provider": {
+      "s1": { "title": "Get requests near you", "subtitle": "Clients in your area, in your trade." },
+      "s2": { "title": "The client pays before you start", "subtitle": "The money is locked safely from the start." },
+      "s3": { "title": "You're paid as soon as it's approved", "subtitle": "Once the client approves, funds are released." }
+    }
+  },
   "mobileTabBar": {
     "ariaLabel": "Main navigation",
     "home": "Home",

@@ -1083,6 +1083,27 @@
     "providerSpaceLabel": "Espace prestataire",
     "backToProfile": "← Retour au profil"
   },
+  "onboarding": {
+    "ariaLabel": "Bienvenue sur WorkTogo",
+    "skip": "Passer",
+    "next": "Suivant",
+    "startTutorial": "Commencer le tutoriel complet",
+    "later": "Plus tard",
+    "stepStatus": "Étape {current} sur {total}",
+    "bannerTitle": "Découvrir comment ça marche",
+    "bannerDuration": "2 min",
+    "bannerDismiss": "Fermer le rappel",
+    "client": {
+      "s1": { "title": "Trouvez un pro près de chez vous", "subtitle": "Des prestataires vérifiés, dans tous les secteurs." },
+      "s2": { "title": "Votre argent reste bloqué jusqu'à la fin", "subtitle": "Il est mis en sécurité, jamais versé d'avance." },
+      "s3": { "title": "Vous validez, il est payé", "subtitle": "Le prestataire n'est payé qu'après votre accord." }
+    },
+    "provider": {
+      "s1": { "title": "Recevez des demandes près de vous", "subtitle": "Des clients de votre zone, dans votre métier." },
+      "s2": { "title": "Le client paie avant que vous commenciez", "subtitle": "L'argent est bloqué en sécurité dès le départ." },
+      "s3": { "title": "Vous êtes payé dès la validation", "subtitle": "Dès que le client valide, les fonds sont libérés." }
+    }
+  },
   "mobileTabBar": {
     "ariaLabel": "Navigation principale",
     "home": "Accueil",
