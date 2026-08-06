@@ -1183,6 +1183,14 @@
       "a4": "From this page, or via the help icon at the top of each section."
     }
   },
+  "checklist": {
+    "title": "Ready to start",
+    "progress": "{done}/{total}",
+    "welcome": "See how it works",
+    "tour": "Take the home tour",
+    "verify": "Verify my identity",
+    "request": "Send my first request"
+  },
   "speech": {
     "on": "Turn on read-aloud",
     "off": "Turn off read-aloud"
