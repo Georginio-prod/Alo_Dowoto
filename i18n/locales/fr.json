@@ -1183,6 +1183,11 @@
       "a4": "Depuis cette page, ou via l'icône d'aide en haut de chaque section."
     }
   },
+  "hint": {
+    "gotIt": "Compris",
+    "demande": "Répondez en quelques touches et ajoutez des photos : l'estimation se met à jour en bas de l'écran.",
+    "paiement": "Votre avance est bloquée en sécurité. Rien n'est versé au prestataire tant que vous n'avez pas validé."
+  },
   "checklist": {
     "title": "Prêt à démarrer",
     "progress": "{done}/{total}",

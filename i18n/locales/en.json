@@ -1183,6 +1183,11 @@
       "a4": "From this page, or via the help icon at the top of each section."
     }
   },
+  "hint": {
+    "gotIt": "Got it",
+    "demande": "Answer in a few taps and add photos: the estimate updates at the bottom of the screen.",
+    "paiement": "Your deposit is locked safely. Nothing is paid to the provider until you approve."
+  },
   "checklist": {
     "title": "Ready to start",
     "progress": "{done}/{total}",

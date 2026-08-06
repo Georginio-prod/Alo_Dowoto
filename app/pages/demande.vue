@@ -193,5 +193,7 @@ async function submit() {
         </button>
       </form>
     </div>
+
+    <ContextualHint hint-key="hint-demande" :text="t('hint.demande')" />
   </div>
 </template>
