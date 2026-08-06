@@ -25,6 +25,40 @@ const { user } = useSession()
 // Rôle connu dès le setup : le middleware `auth` a déjà résolu la session
 // (refresh) avant le rendu de la page.
 const isProvider = computed(() => user.value?.role === 'prestataire')
+
+// Accueil à l'inscription (#tutoriel-onboarding — Couche 1). Affiché au premier
+// passage sur l'accueil de l'app. Rendu uniquement côté client (après lecture
+// de localStorage) pour éviter tout décalage d'hydratation.
+const {
+  shouldShowWelcome,
+  shouldShowBanner,
+  load: loadOnboarding,
+  completeWelcome,
+  postponeWelcome,
+  engageBanner,
+  refuseBanner,
+} = useOnboarding()
+
+const onboardingReady = ref(false)
+onMounted(() => {
+  loadOnboarding()
+  onboardingReady.value = true
+})
+
+const canOnboard = computed(() => ['client', 'prestataire'].includes(user.value?.role ?? ''))
+const showWelcome = computed(() => onboardingReady.value && canOnboard.value && shouldShowWelcome.value)
+const showBanner = computed(() => onboardingReady.value && canOnboard.value && shouldShowBanner.value)
+
+// Le tutoriel complet (Couche 3, page dédiée) arrive dans un incrément suivant ;
+// on renvoie pour l'instant vers la page d'aide existante.
+function onWelcomeComplete() {
+  completeWelcome()
+  navigateTo('/aide')
+}
+function onBannerOpen() {
+  engageBanner()
+  navigateTo('/aide')
+}
 </script>
 
 <template>
@@ -46,9 +80,18 @@ const isProvider = computed(() => user.value?.role === 'prestataire')
       </div>
     </header>
 
+    <OnboardingBanner v-if="showBanner" @open="onBannerOpen" @dismiss="refuseBanner" />
+
     <DashboardProviderHome v-if="isProvider" />
     <DashboardSeekerHome v-else />
 
     <MobileTabBar :role="user?.role" />
+
+    <OnboardingWelcome
+      v-if="showWelcome"
+      :role="user?.role"
+      @complete="onWelcomeComplete"
+      @postpone="postponeWelcome"
+    />
   </div>
 </template>
