@@ -1192,6 +1192,52 @@
     "sectors": { "title": "Ou parcourez par métier", "text": "Choisissez une catégorie pour voir les pros proches." },
     "tabs": { "title": "Tout est ici, en bas", "text": "Accueil, messages, solde et profil, en un geste du pouce." }
   },
+  "providerTour": {
+    "help": "Revoir le tutoriel",
+    "summary": { "title": "Vos revenus et demandes", "text": "Solde, nombre de demandes et note, en un coup d'œil." },
+    "requests": { "title": "Vos nouvelles demandes", "text": "Elles arrivent ici — répondez vite pour être choisi." },
+    "tabs": { "title": "Tout est en bas", "text": "Agenda, demandes, revenus et profil, d'un pouce." }
+  },
+  "demoProvider": {
+    "banner": "Mode démonstration — aucune donnée réelle",
+    "exit": "Quitter la démo",
+    "stepOf": "Étape {current} sur {total}",
+    "request": {
+      "title": "Nouvelle demande",
+      "client": "Client",
+      "clientName": "Koffi A.",
+      "distance": "à 2,3 km",
+      "job": "Fuite d'eau sous l'évier",
+      "amountLabel": "Montant proposé",
+      "accept": "Accepter (démo)",
+      "refuse": "Refuser"
+    },
+    "checkin": {
+      "title": "Vous êtes sur place ?",
+      "subtitle": "Enregistrez votre arrivée : ça protège les deux parties.",
+      "cta": "Je suis arrivé (démo)"
+    },
+    "adjust": {
+      "title": "Le travail est plus important ?",
+      "subtitle": "Proposez un ajustement — le client devra l'accepter.",
+      "newAmount": "Nouveau montant",
+      "reasonLabel": "Motif",
+      "reason": "Dégât supplémentaire découvert",
+      "send": "Proposer l'ajustement (démo)",
+      "skip": "Le prix ne change pas"
+    },
+    "finish": {
+      "title": "Mission terminée ?",
+      "subtitle": "Déclarez la fin : le client valide, puis vous êtes payé.",
+      "cta": "Terminer la mission (démo)"
+    },
+    "done": {
+      "title": "Bravo, mission bouclée !",
+      "subtitle": "Le client valide, les fonds sont libérés sur votre solde.",
+      "realCta": "Voir mes demandes",
+      "backTutorials": "Revenir aux tutoriels"
+    }
+  },
   "onboarding": {
     "ariaLabel": "Bienvenue sur WorkTogo",
     "skip": "Passer",

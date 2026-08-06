@@ -70,8 +70,8 @@ function toggleRole() {
       </div>
     </div>
 
-    <!-- Bac à sable « Essayer sans risque » (chercheur). -->
-    <NuxtLink v-if="viewRole === 'client'" to="/demo/chercheur" class="press mb-5 flex items-center gap-3 rounded-card border border-primary/30 bg-primary/5 p-4">
+    <!-- Bac à sable « Essayer sans risque » (role-aware). -->
+    <NuxtLink :to="viewRole === 'prestataire' ? '/demo/prestataire' : '/demo/chercheur'" class="press mb-5 flex items-center gap-3 rounded-card border border-primary/30 bg-primary/5 p-4">
       <span class="grid size-11 shrink-0 place-items-center rounded-[12px] bg-primary/15 text-2xl" aria-hidden="true">🧪</span>
       <span class="min-w-0 flex-1">
         <span class="block text-[14.5px] font-bold text-dark">{{ t('demo.tryTitle') }}</span>

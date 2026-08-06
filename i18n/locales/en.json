@@ -1192,6 +1192,52 @@
     "sectors": { "title": "Or browse by trade", "text": "Pick a category to see nearby pros." },
     "tabs": { "title": "Everything's down here", "text": "Home, messages, wallet and profile, one thumb away." }
   },
+  "providerTour": {
+    "help": "Replay the tutorial",
+    "summary": { "title": "Your earnings and requests", "text": "Balance, request count and rating at a glance." },
+    "requests": { "title": "Your new requests", "text": "They land here — reply fast to get picked." },
+    "tabs": { "title": "Everything's down here", "text": "Agenda, requests, earnings and profile, one thumb away." }
+  },
+  "demoProvider": {
+    "banner": "Demo mode — no real data",
+    "exit": "Exit demo",
+    "stepOf": "Step {current} of {total}",
+    "request": {
+      "title": "New request",
+      "client": "Client",
+      "clientName": "Koffi A.",
+      "distance": "2.3 km away",
+      "job": "Water leak under the sink",
+      "amountLabel": "Proposed amount",
+      "accept": "Accept (demo)",
+      "refuse": "Decline"
+    },
+    "checkin": {
+      "title": "Are you on site?",
+      "subtitle": "Record your arrival: it protects both parties.",
+      "cta": "I've arrived (demo)"
+    },
+    "adjust": {
+      "title": "Is the job bigger than expected?",
+      "subtitle": "Propose an adjustment — the client must accept it.",
+      "newAmount": "New amount",
+      "reasonLabel": "Reason",
+      "reason": "Extra damage found",
+      "send": "Propose adjustment (demo)",
+      "skip": "Price stays the same"
+    },
+    "finish": {
+      "title": "Is the job done?",
+      "subtitle": "Declare the end: the client approves, then you get paid.",
+      "cta": "Finish the job (demo)"
+    },
+    "done": {
+      "title": "Well done, job complete!",
+      "subtitle": "The client approves, funds are released to your balance.",
+      "realCta": "See my requests",
+      "backTutorials": "Back to tutorials"
+    }
+  },
   "onboarding": {
     "ariaLabel": "Welcome to WorkTogo",
     "skip": "Skip",
