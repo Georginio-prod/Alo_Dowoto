@@ -93,6 +93,7 @@ onBeforeUnmount(() => {
   <nav
     v-if="tabs.length"
     ref="bar"
+    data-tour="app-tabs"
     class="fixed inset-x-0 bottom-0 z-40 border-t border-hairline bg-surface lg:hidden"
     style="padding-bottom: env(safe-area-inset-bottom);"
     :aria-label="t('mobileTabBar.ariaLabel')"

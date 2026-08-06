@@ -1083,6 +1083,19 @@
     "providerSpaceLabel": "Espace prestataire",
     "backToProfile": "← Retour au profil"
   },
+  "coachmark": {
+    "ariaLabel": "Visite guidée",
+    "stepStatus": "{current}/{total}",
+    "next": "Suivant",
+    "done": "Terminé",
+    "skip": "Passer"
+  },
+  "dashboardTour": {
+    "help": "Revoir le tutoriel",
+    "search": { "title": "Décrivez votre besoin", "text": "Tapez ce qu'il vous faut : plombier, ménage, coiffure…" },
+    "sectors": { "title": "Ou parcourez par métier", "text": "Choisissez une catégorie pour voir les pros proches." },
+    "tabs": { "title": "Tout est ici, en bas", "text": "Accueil, messages, solde et profil, en un geste du pouce." }
+  },
   "onboarding": {
     "ariaLabel": "Bienvenue sur WorkTogo",
     "skip": "Passer",

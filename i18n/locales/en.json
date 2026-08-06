@@ -1083,6 +1083,19 @@
     "providerSpaceLabel": "Provider space",
     "backToProfile": "← Back to profile"
   },
+  "coachmark": {
+    "ariaLabel": "Guided tour",
+    "stepStatus": "{current}/{total}",
+    "next": "Next",
+    "done": "Done",
+    "skip": "Skip"
+  },
+  "dashboardTour": {
+    "help": "Replay the tutorial",
+    "search": { "title": "Describe what you need", "text": "Type what you're after: plumber, cleaning, hairdressing…" },
+    "sectors": { "title": "Or browse by trade", "text": "Pick a category to see nearby pros." },
+    "tabs": { "title": "Everything's down here", "text": "Home, messages, wallet and profile, one thumb away." }
+  },
   "onboarding": {
     "ariaLabel": "Welcome to WorkTogo",
     "skip": "Skip",

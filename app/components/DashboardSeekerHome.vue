@@ -64,7 +64,7 @@ function sectorLabel(slug?: string) {
     </h1>
 
     <form class="mb-6" role="search" @submit.prevent="submitSearch">
-      <label class="flex items-center gap-2.5 rounded-pill border border-hairline bg-surface px-4 py-3 shadow-card-sm focus-within:border-primary">
+      <label data-tour="dash-search" class="flex items-center gap-2.5 rounded-pill border border-hairline bg-surface px-4 py-3 shadow-card-sm focus-within:border-primary">
         <span class="sr-only">{{ t('dashboardClient.searchServiceCta') }}</span>
         <svg class="size-[18px] shrink-0 text-muted" viewBox="0 0 18 18" fill="none" aria-hidden="true">
           <circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.5" />
@@ -80,7 +80,7 @@ function sectorLabel(slug?: string) {
       </label>
     </form>
 
-    <section class="mb-6">
+    <section data-tour="dash-sectors" class="mb-6">
       <div class="mb-3 flex items-baseline justify-between gap-2">
         <h2 class="text-[15px] font-bold text-dark">{{ t('sectorGrid.heading') }}</h2>
         <NuxtLink to="/categories" class="press link-underline text-[12.5px] font-semibold text-primary">
