@@ -261,6 +261,11 @@ function completeProfile() {
           :title="t('profilPage.sectionParrainageTitle')"
           :subtitle="t('profilPage.sectionParrainageSubtitle')"
         />
+        <ProfileSectionCard
+          icon="💡" to="/comment-ca-marche"
+          :title="t('tutorials.title')"
+          :subtitle="t('tutorials.subtitle')"
+        />
 
         <template v-if="isProvider">
           <ProfileSectionCard
