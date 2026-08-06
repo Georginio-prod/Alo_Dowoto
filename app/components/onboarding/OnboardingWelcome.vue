@@ -15,7 +15,7 @@
 const props = defineProps<{ role?: string }>()
 const emit = defineEmits<{ complete: []; postpone: [] }>()
 
-const { t } = useI18n({ useScope: 'global' })
+const { t, locale } = useI18n({ useScope: 'global' })
 
 type ScreenIcon = 'locate' | 'shield' | 'check'
 const base = computed(() => (props.role === 'prestataire' ? 'onboarding.provider' : 'onboarding.client'))
@@ -33,6 +33,26 @@ const isLast = computed(() => step.value === screens.value.length - 1)
 // Écran courant garanti défini (step reste borné à l'index des 3 écrans).
 const current = computed(() => screens.value[step.value] ?? screens.value[0]!)
 
+// Narration vocale (#tutoriel-onboarding — Partie F) : bouton haut-parleur avec
+// état mémorisé ; lecture automatique du contenu à chaque écran quand elle est active.
+const { enabled: speechEnabled, supported: speechSupported, load: loadSpeech, speak: speakText, stop: stopSpeech, toggle: toggleSpeech } = useSpeech()
+const speechLang = computed(() => (locale.value === 'en' ? 'en-US' : 'fr-FR'))
+function narrateCurrent() {
+  speakText(`${current.value.title}. ${current.value.subtitle}`, speechLang.value)
+}
+function onToggleSpeech() {
+  toggleSpeech()
+  if (speechEnabled.value) narrateCurrent()
+}
+onMounted(() => {
+  loadSpeech()
+  if (speechEnabled.value) narrateCurrent()
+})
+watch(step, () => {
+  if (speechEnabled.value) narrateCurrent()
+})
+onBeforeUnmount(() => stopSpeech())
+
 function next() {
   if (isLast.value) emit('complete')
   else step.value += 1
@@ -46,8 +66,23 @@ function next() {
     aria-modal="true"
     :aria-label="t('onboarding.ariaLabel')"
   >
-    <!-- Barre haute : « Passer » toujours visible, jamais grisé. -->
-    <div class="flex items-center justify-end px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
+    <!-- Barre haute : haut-parleur (si supporté) à gauche, « Passer » toujours visible à droite. -->
+    <div class="flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
+      <button
+        v-if="speechSupported"
+        type="button"
+        class="press grid size-10 place-items-center rounded-full text-muted hover:text-dark"
+        :aria-label="speechEnabled ? t('speech.off') : t('speech.on')"
+        :aria-pressed="speechEnabled"
+        @click="onToggleSpeech"
+      >
+        <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 9v6h4l5 4V5L8 9H4z" :fill="speechEnabled ? 'currentColor' : 'none'" :fill-opacity="speechEnabled ? '0.12' : '0'" />
+          <template v-if="speechEnabled"><path d="M16 8.5a4 4 0 0 1 0 7" /></template>
+          <template v-else><path d="M22 9l-4 6M18 9l4 6" /></template>
+        </svg>
+      </button>
+      <span v-else aria-hidden="true" />
       <button
         type="button"
         class="press rounded-pill px-4 py-2 text-sm font-semibold text-muted hover:text-dark"

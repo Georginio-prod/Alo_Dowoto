@@ -1179,6 +1179,10 @@
       "a4": "From this page, or via the help icon at the top of each section."
     }
   },
+  "speech": {
+    "on": "Turn on read-aloud",
+    "off": "Turn off read-aloud"
+  },
   "coachmark": {
     "ariaLabel": "Guided tour",
     "stepStatus": "{current}/{total}",

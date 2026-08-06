@@ -21,7 +21,7 @@ interface CoachStep {
 const props = defineProps<{ steps: CoachStep[] }>()
 const emit = defineEmits<{ finish: []; skip: [] }>()
 
-const { t } = useI18n({ useScope: 'global' })
+const { t, locale } = useI18n({ useScope: 'global' })
 
 const PAD = 12
 const index = ref(0)
@@ -32,6 +32,17 @@ const currentStep = computed(() => props.steps[index.value] ?? props.steps[0]!)
 const isLast = computed(() => index.value === props.steps.length - 1)
 
 const nextBtn = ref<HTMLButtonElement | null>(null)
+
+// Narration vocale (#tutoriel-onboarding — Partie F).
+const { enabled: speechEnabled, supported: speechSupported, load: loadSpeech, speak: speakText, stop: stopSpeech, toggle: toggleSpeech } = useSpeech()
+const speechLang = computed(() => (locale.value === 'en' ? 'en-US' : 'fr-FR'))
+function narrateCurrent() {
+  speakText(`${currentStep.value.title}. ${currentStep.value.text}`, speechLang.value)
+}
+function onToggleSpeech() {
+  toggleSpeech()
+  if (speechEnabled.value) narrateCurrent()
+}
 
 function findTarget(): HTMLElement | null {
   const step = props.steps[index.value]
@@ -116,12 +127,15 @@ watch(index, () => {
   rect.ready = false
   focusStep()
   nextTick(() => nextBtn.value?.focus())
+  if (speechEnabled.value) narrateCurrent()
 })
 
 onMounted(() => {
   if (!import.meta.client) return
+  loadSpeech()
   focusStep()
   nextTick(() => nextBtn.value?.focus())
+  if (speechEnabled.value) narrateCurrent()
   window.addEventListener('resize', onReposition, { passive: true })
   window.addEventListener('scroll', onReposition, { passive: true, capture: true })
   window.addEventListener('keydown', onKeydown)
@@ -129,6 +143,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   if (!import.meta.client) return
+  stopSpeech()
   cancelAnimationFrame(rafId)
   window.removeEventListener('resize', onReposition)
   window.removeEventListener('scroll', onReposition, { capture: true } as EventListenerOptions)
@@ -163,13 +178,29 @@ onBeforeUnmount(() => {
         <h3 class="text-base font-bold text-dark">{{ currentStep.title }}</h3>
         <p class="mt-1 text-sm leading-relaxed text-muted" aria-live="polite">{{ currentStep.text }}</p>
         <div class="mt-4 flex items-center justify-between gap-3">
-          <button
-            type="button"
-            class="press rounded-pill px-3 py-2 text-sm font-semibold text-muted hover:text-dark"
-            @click="emit('skip')"
-          >
-            {{ t('coachmark.skip') }}
-          </button>
+          <div class="flex items-center gap-1">
+            <button
+              v-if="speechSupported"
+              type="button"
+              class="press grid size-9 place-items-center rounded-full text-muted hover:text-dark"
+              :aria-label="speechEnabled ? t('speech.off') : t('speech.on')"
+              :aria-pressed="speechEnabled"
+              @click="onToggleSpeech"
+            >
+              <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 9v6h4l5 4V5L8 9H4z" :fill="speechEnabled ? 'currentColor' : 'none'" :fill-opacity="speechEnabled ? '0.12' : '0'" />
+                <template v-if="speechEnabled"><path d="M16 8.5a4 4 0 0 1 0 7" /></template>
+                <template v-else><path d="M22 9l-4 6M18 9l4 6" /></template>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="press rounded-pill px-3 py-2 text-sm font-semibold text-muted hover:text-dark"
+              @click="emit('skip')"
+            >
+              {{ t('coachmark.skip') }}
+            </button>
+          </div>
           <button
             ref="nextBtn"
             type="button"

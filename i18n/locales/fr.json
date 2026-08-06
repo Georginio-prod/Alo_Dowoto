@@ -1179,6 +1179,10 @@
       "a4": "Depuis cette page, ou via l'icône d'aide en haut de chaque section."
     }
   },
+  "speech": {
+    "on": "Activer la lecture à voix haute",
+    "off": "Couper la lecture à voix haute"
+  },
   "coachmark": {
     "ariaLabel": "Visite guidée",
     "stepStatus": "{current}/{total}",
