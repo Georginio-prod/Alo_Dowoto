@@ -95,7 +95,10 @@ function reset() {
 </script>
 
 <template>
-  <div class="fixed bottom-20 right-4 z-50">
+  <!-- `--tabbar-height` : publié par MobileTabBar tant qu'elle est montée, nul
+       ailleurs — la bulle se relève donc au-dessus de la barre d'onglets sans
+       que ce composant ait à connaître les pages qui l'affichent. -->
+  <div class="fixed bottom-[calc(5rem+var(--tabbar-height,0px))] right-4 z-50">
     <button
       type="button"
       class="press flex size-14 items-center justify-center rounded-full bg-primary text-white shadow-card-md hover:bg-primary-hover"

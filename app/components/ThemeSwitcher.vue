@@ -27,7 +27,7 @@ const currentLabel = computed(() => {
   -->
   <button
     type="button"
-    class="press fixed bottom-4 left-4 z-50 flex items-center gap-2 rounded-pill border border-hairline bg-surface px-3.5 py-2 text-[13px] font-semibold text-muted shadow-card-md hover:text-dark"
+    class="press fixed bottom-[calc(1rem+var(--tabbar-height,0px))] left-4 z-50 flex items-center gap-2 rounded-pill border border-hairline bg-surface px-3.5 py-2 text-[13px] font-semibold text-muted shadow-card-md hover:text-dark"
     :aria-label="t('themeSwitcher.ariaLabel', { label: currentLabel })"
     :title="t('themeSwitcher.titleAttr', { label: currentLabel })"
     @click="cycle"

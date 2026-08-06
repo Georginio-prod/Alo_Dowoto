@@ -1083,6 +1083,17 @@
     "providerSpaceLabel": "Espace prestataire",
     "backToProfile": "← Retour au profil"
   },
+  "mobileTabBar": {
+    "ariaLabel": "Navigation principale",
+    "home": "Accueil",
+    "search": "Recherche",
+    "messages": "Messages",
+    "wallet": "Solde",
+    "profile": "Profil",
+    "requests": "Demandes",
+    "agenda": "Agenda",
+    "earnings": "Revenus"
+  },
   "prestataireCertifications": {
     "heading": "Certifications",
     "subtitle": "Déposez vos diplômes et attestations pour faire certifier vos compétences."
@@ -1132,6 +1143,9 @@
     "subscriptionExpiredBanner": "Votre abonnement a expiré : renouvelez-le pour continuer à recevoir des demandes.",
     "subscriptionIncompleteBanner": "Votre profil n'est pas complet : choisissez une formule pour profiter de toutes les fonctionnalités.",
     "requestsReceivedLabel": "Demandes reçues ce mois",
+    "totalRequestsLabel": "Demandes reçues",
+    "quotaHeading": "Quota de demandes",
+    "upgradeCta": "Passer à l'annuel",
     "reviewsCount": "{count} avis | {count} avis",
     "balanceLabel": "Solde disponible",
     "sectorLabel": "Secteur d'activité",
@@ -1194,6 +1208,11 @@
     "greeting": "Bonjour {name}",
     "greetingFallback": "vous",
     "searchServiceCta": "Chercher un service",
+    "greetingQuestion": "de quoi avez-vous besoin ?",
+    "searchPlaceholder": "Plombier, ménage, coiffure…",
+    "sectorsSeeAll": "Tout voir →",
+    "resumeHeading": "Reprendre là où vous étiez",
+    "resumeInProgress": "En cours",
     "verifyBanner": "Vérifiez votre identité pour pouvoir publier votre première demande.",
     "requestsSent": "Demandes envoyées",
     "contactsThisMonth": "Contacts ce mois",

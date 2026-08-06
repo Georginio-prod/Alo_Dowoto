@@ -1083,6 +1083,17 @@
     "providerSpaceLabel": "Provider space",
     "backToProfile": "← Back to profile"
   },
+  "mobileTabBar": {
+    "ariaLabel": "Main navigation",
+    "home": "Home",
+    "search": "Search",
+    "messages": "Messages",
+    "wallet": "Wallet",
+    "profile": "Profile",
+    "requests": "Requests",
+    "agenda": "Agenda",
+    "earnings": "Earnings"
+  },
   "prestataireCertifications": {
     "heading": "Certifications",
     "subtitle": "Upload your diplomas and certificates to get your skills certified."
@@ -1132,6 +1143,9 @@
     "subscriptionExpiredBanner": "Your subscription has expired: renew it to keep receiving requests.",
     "subscriptionIncompleteBanner": "Your profile isn't complete: choose a plan to unlock all features.",
     "requestsReceivedLabel": "Requests received this month",
+    "totalRequestsLabel": "Requests received",
+    "quotaHeading": "Request quota",
+    "upgradeCta": "Upgrade to annual",
     "reviewsCount": "{count} review | {count} reviews",
     "balanceLabel": "Available balance",
     "sectorLabel": "Sector of activity",
@@ -1194,6 +1208,11 @@
     "greeting": "Hello {name}",
     "greetingFallback": "there",
     "searchServiceCta": "Search for a service",
+    "greetingQuestion": "what do you need?",
+    "searchPlaceholder": "Plumber, cleaning, hairdressing…",
+    "sectorsSeeAll": "See all →",
+    "resumeHeading": "Pick up where you left off",
+    "resumeInProgress": "In progress",
     "verifyBanner": "Verify your identity to be able to post your first request.",
     "requestsSent": "Requests sent",
     "contactsThisMonth": "Contacts this month",
