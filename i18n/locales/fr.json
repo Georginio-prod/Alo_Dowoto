@@ -1083,6 +1083,55 @@
     "providerSpaceLabel": "Espace prestataire",
     "backToProfile": "← Retour au profil"
   },
+  "demo": {
+    "banner": "Mode démonstration — aucun argent n'est débité",
+    "exit": "Quitter la démo",
+    "stepOf": "Étape {current} sur {total}",
+    "next": "Continuer",
+    "tryTitle": "Essayer sans risque",
+    "trySubtitle": "Une démo complète, sans dépenser un franc.",
+    "form": {
+      "title": "Décrivez le problème",
+      "subtitle": "Un exemple fictif, pour s'entraîner.",
+      "problemLabel": "Type de dépannage",
+      "leak": "Fuite d'eau",
+      "power": "Panne de courant",
+      "clean": "Ménage",
+      "urgencyLabel": "C'est urgent ?",
+      "urgent": "Urgent (< 24 h)",
+      "notUrgent": "Pas pressé",
+      "hoursLabel": "Durée estimée",
+      "hours": "{n} h",
+      "estimate": "Estimation",
+      "estimateNote": "Fourchette indicative — elle bouge selon vos réponses."
+    },
+    "plan": {
+      "title": "Choisissez une formule",
+      "essential": "Essentiel",
+      "recommended": "Recommandé",
+      "complete": "Complet",
+      "essentialDesc": "Traite le problème signalé.",
+      "recommendedDesc": "Intervention complète + petites fournitures.",
+      "completeDesc": "Complet + garantie étendue + passage de contrôle."
+    },
+    "pay": {
+      "title": "Paiement de l'avance",
+      "safe": "L'argent est bloqué en sécurité. Rien n'est débité tant que vous n'avez pas validé.",
+      "amount": "Avance à bloquer",
+      "cta": "Bloquer l'avance (démo)"
+    },
+    "validate": {
+      "title": "Le travail est terminé ?",
+      "subtitle": "Le prestataire a signalé la fin. À vous de valider pour le payer.",
+      "cta": "Je valide le travail (démo)"
+    },
+    "done": {
+      "title": "Bravo, vous avez tout compris !",
+      "subtitle": "Vous venez de faire une demande en toute sécurité — sans dépenser un franc.",
+      "realCta": "Faire une vraie demande",
+      "backTutorials": "Revenir aux tutoriels"
+    }
+  },
   "tutorials": {
     "title": "Comment ça marche",
     "subtitle": "Des mini-tutoriels, à votre rythme.",

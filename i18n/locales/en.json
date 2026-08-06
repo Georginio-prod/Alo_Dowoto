@@ -1083,6 +1083,55 @@
     "providerSpaceLabel": "Provider space",
     "backToProfile": "← Back to profile"
   },
+  "demo": {
+    "banner": "Demo mode — no money is charged",
+    "exit": "Exit demo",
+    "stepOf": "Step {current} of {total}",
+    "next": "Continue",
+    "tryTitle": "Try it risk-free",
+    "trySubtitle": "A full demo, without spending a franc.",
+    "form": {
+      "title": "Describe the problem",
+      "subtitle": "A fictional example, to practise.",
+      "problemLabel": "Type of job",
+      "leak": "Water leak",
+      "power": "Power outage",
+      "clean": "Cleaning",
+      "urgencyLabel": "Is it urgent?",
+      "urgent": "Urgent (< 24h)",
+      "notUrgent": "No rush",
+      "hoursLabel": "Estimated duration",
+      "hours": "{n}h",
+      "estimate": "Estimate",
+      "estimateNote": "Indicative range — it moves with your answers."
+    },
+    "plan": {
+      "title": "Choose a plan",
+      "essential": "Essential",
+      "recommended": "Recommended",
+      "complete": "Complete",
+      "essentialDesc": "Handles the reported problem.",
+      "recommendedDesc": "Full job + small supplies.",
+      "completeDesc": "Complete + extended warranty + check-up."
+    },
+    "pay": {
+      "title": "Pay the deposit",
+      "safe": "The money is locked safely. Nothing is charged until you approve.",
+      "amount": "Deposit to lock",
+      "cta": "Lock the deposit (demo)"
+    },
+    "validate": {
+      "title": "Is the work done?",
+      "subtitle": "The provider marked it finished. Approve to pay them.",
+      "cta": "I approve the work (demo)"
+    },
+    "done": {
+      "title": "Well done, you've got it!",
+      "subtitle": "You just made a request safely — without spending a franc.",
+      "realCta": "Make a real request",
+      "backTutorials": "Back to tutorials"
+    }
+  },
   "tutorials": {
     "title": "How it works",
     "subtitle": "Short tutorials, at your own pace.",

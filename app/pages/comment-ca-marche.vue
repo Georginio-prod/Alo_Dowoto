@@ -70,6 +70,16 @@ function toggleRole() {
       </div>
     </div>
 
+    <!-- Bac à sable « Essayer sans risque » (chercheur). -->
+    <NuxtLink v-if="viewRole === 'client'" to="/demo/chercheur" class="press mb-5 flex items-center gap-3 rounded-card border border-primary/30 bg-primary/5 p-4">
+      <span class="grid size-11 shrink-0 place-items-center rounded-[12px] bg-primary/15 text-2xl" aria-hidden="true">🧪</span>
+      <span class="min-w-0 flex-1">
+        <span class="block text-[14.5px] font-bold text-dark">{{ t('demo.tryTitle') }}</span>
+        <span class="mt-0.5 block text-[12.5px] text-muted">{{ t('demo.trySubtitle') }}</span>
+      </span>
+      <svg viewBox="0 0 24 24" class="size-5 shrink-0 text-primary" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+    </NuxtLink>
+
     <!-- Recherche. -->
     <label class="mb-5 flex items-center gap-2.5 rounded-pill border border-hairline bg-surface px-4 py-3 shadow-card-sm focus-within:border-primary">
       <span class="sr-only">{{ t('tutorials.searchPlaceholder') }}</span>
