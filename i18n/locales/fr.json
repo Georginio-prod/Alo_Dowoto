@@ -1146,6 +1146,10 @@
     "seeProvider": "Voir les tutoriels prestataire",
     "seeClient": "Voir les tutoriels chercheur",
     "back": "Retour",
+    "reset": "Réinitialiser les tutoriels",
+    "resetConfirm": "Tout revoir depuis le début ?",
+    "resetYes": "Oui, réinitialiser",
+    "resetCancel": "Annuler",
     "client": {
       "modules": {
         "find": { "title": "Trouver un prestataire", "desc": "Choisir une catégorie et lire une fiche pro." },

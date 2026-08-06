@@ -12,8 +12,23 @@ definePageMeta({ layout: 'blank', middleware: 'auth' })
 const { t } = useI18n({ useScope: 'global' })
 const { user } = useSession()
 const tutorials = useTutorials()
+const { reset: resetOnboarding } = useOnboarding()
+const { track } = useAnalytics()
 
-onMounted(() => tutorials.load())
+onMounted(() => {
+  tutorials.load()
+  track('tutorials_page_open', { role: user.value?.role })
+})
+
+// « Réinitialiser les tutoriels » (#tutoriel-onboarding — Partie G) : remet à
+// zéro la progression (local + serveur) et l'accueil de bienvenue, pour tout
+// revoir depuis le début. Confirmation en deux temps.
+const confirmingReset = ref(false)
+function doReset() {
+  tutorials.reset()
+  resetOnboarding()
+  confirmingReset.value = false
+}
 
 // Rôle affiché : le sien par défaut, basculable pour la curiosité.
 const viewRole = ref<'client' | 'prestataire'>(user.value?.role === 'prestataire' ? 'prestataire' : 'client')
@@ -136,5 +151,19 @@ function toggleRole() {
     <button type="button" class="press block w-full py-2 text-center text-sm font-semibold text-primary" @click="toggleRole">
       {{ viewRole === 'prestataire' ? t('tutorials.seeClient') : t('tutorials.seeProvider') }}
     </button>
+
+    <!-- Réinitialiser les tutoriels (confirmation en deux temps). -->
+    <div class="mt-4 border-t border-hairline pt-4">
+      <div v-if="confirmingReset">
+        <p class="mb-2 text-center text-[13px] text-dark">{{ t('tutorials.resetConfirm') }}</p>
+        <div class="flex items-center gap-2">
+          <button type="button" class="press flex-1 rounded-pill bg-error/10 py-2.5 text-sm font-semibold text-error" @click="doReset">{{ t('tutorials.resetYes') }}</button>
+          <button type="button" class="press flex-1 rounded-pill border border-hairline py-2.5 text-sm font-semibold text-muted" @click="confirmingReset = false">{{ t('tutorials.resetCancel') }}</button>
+        </div>
+      </div>
+      <button v-else type="button" class="press block w-full py-2 text-center text-sm font-semibold text-muted hover:text-dark" @click="confirmingReset = true">
+        {{ t('tutorials.reset') }}
+      </button>
+    </div>
   </div>
 </template>

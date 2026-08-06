@@ -1146,6 +1146,10 @@
     "seeProvider": "See provider tutorials",
     "seeClient": "See seeker tutorials",
     "back": "Back",
+    "reset": "Reset tutorials",
+    "resetConfirm": "See everything from scratch?",
+    "resetYes": "Yes, reset",
+    "resetCancel": "Cancel",
     "client": {
       "modules": {
         "find": { "title": "Find a provider", "desc": "Pick a category and read a pro's profile." },

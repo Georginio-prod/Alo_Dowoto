@@ -95,8 +95,13 @@ export function useTutorials() {
   }
 
   function reset() {
+    // Réautorise le démarrage automatique cette session (l'utilisateur veut revoir).
+    tourShownThisSession = false
     state.value = { seen: [] }
     persist()
+    if (import.meta.client) {
+      void $fetch('/api/tutorials/progress', { method: 'DELETE' }).catch(() => {})
+    }
   }
 
   return { state, load, hasSeen, markSeen, canAutoStart, noteAutoStarted, reset }
