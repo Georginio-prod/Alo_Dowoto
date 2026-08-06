@@ -559,3 +559,24 @@ model AiRateWindow {
   @@id([key, windowStart])
   @@index([windowStart])
 }
+
+/// Progression des tutoriels (#tutoriel-onboarding) — une ligne par section
+/// « vue » et par utilisateur. Sert la synchronisation inter-appareils : l'app
+/// reste local-first (localStorage pour l'hors ligne), et remonte/lit ici dès
+/// que le réseau est là, pour qu'un changement de téléphone ne relance pas
+/// tous les tutoriels. Clé sur `userId` (id de compte) sans relation dure, à
+/// l'image des autres stores adossés à un id de session.
+model TutorialProgress {
+  id        String   @id @default(uuid())
+  userId    String
+  sectionId String
+  /// `termine` / `passe` — statut de la section (par défaut vue = terminée).
+  status    String   @default("termine")
+  /// Nombre de consultations (incrémenté à chaque marquage).
+  views     Int      @default(1)
+  seenAt    DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, sectionId])
+  @@index([userId])
+}
