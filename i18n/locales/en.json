@@ -89,6 +89,34 @@
   "language": {
     "switchTo": "Switch to {name}"
   },
+  "onboarding": {
+    "logoAria": "WorkTogo — home",
+    "langPillAria": "Change language, currently French",
+    "welcome": {
+      "title": "A pro near you, in just a few minutes.",
+      "subtitle": "Choose how you'd like to start.",
+      "roleClient": "I'm looking for a pro",
+      "roleProvider": "I'm a provider",
+      "roleClientAria": "I'm looking for a pro — create a client account",
+      "roleProviderAria": "I'm a provider — create a provider account",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in"
+    },
+    "auth": {
+      "backAria": "Back to the welcome screen",
+      "tagSignup": "Sign up",
+      "tagLogin": "Sign in",
+      "change": "Change",
+      "consentIAccept": "I accept the",
+      "consentTerms": "terms of use",
+      "consentAnd": "and the",
+      "consentPrivacy": "privacy policy",
+      "consentRequired": "Please accept the terms to continue.",
+      "offline": "You're offline. The connection will resume as soon as your network is back.",
+      "help": "Need help?",
+      "successTitle": "Number verified"
+    }
+  },
   "common": {
     "included": "Included",
     "notIncluded": "Not included"

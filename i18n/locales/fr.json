@@ -89,6 +89,34 @@
   "language": {
     "switchTo": "Passer en {name}"
   },
+  "onboarding": {
+    "logoAria": "WorkTogo — accueil",
+    "langPillAria": "Changer de langue, actuellement français",
+    "welcome": {
+      "title": "Un pro près de chez vous, en quelques minutes.",
+      "subtitle": "Choisissez comment vous voulez commencer.",
+      "roleClient": "Je cherche un pro",
+      "roleProvider": "Je suis prestataire",
+      "roleClientAria": "Je cherche un pro — créer un compte client",
+      "roleProviderAria": "Je suis prestataire — créer un compte prestataire",
+      "haveAccount": "Vous avez déjà un compte ?",
+      "signIn": "Se connecter"
+    },
+    "auth": {
+      "backAria": "Revenir à l'écran d'accueil",
+      "tagSignup": "Inscription",
+      "tagLogin": "Connexion",
+      "change": "Changer",
+      "consentIAccept": "J'accepte les",
+      "consentTerms": "conditions d'utilisation",
+      "consentAnd": "et la",
+      "consentPrivacy": "politique de confidentialité",
+      "consentRequired": "Veuillez accepter les conditions pour continuer.",
+      "offline": "Vous êtes hors connexion. La connexion reprendra dès le retour du réseau.",
+      "help": "Besoin d'aide ?",
+      "successTitle": "Numéro vérifié"
+    }
+  },
   "common": {
     "included": "Inclus",
     "notIncluded": "Non inclus"
