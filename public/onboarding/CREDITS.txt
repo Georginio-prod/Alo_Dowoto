@@ -1,0 +1,25 @@
+Crédits des médias de l'écran d'accueil (app/pages/m/welcome.vue)
+================================================================
+
+welcome.webm
+  Titre    : « Video of A Tailor Sewing Cloth »
+  Auteur   : Ready Street
+  Source   : Wikimedia Commons
+             https://commons.wikimedia.org/wiki/File:Video_of_A_Tailor_Sewing_Cloth.webm
+  Licence  : Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0)
+             https://creativecommons.org/licenses/by-sa/4.0/
+  Format   : WebM (VP8/VP9), portrait 135x240, ~1,4 Mo, sans piste audio utile
+             (lecture muette). Affiché en `object-cover` pour remplir l'écran.
+  Attribution également publiée dans les mentions légales de l'app
+  (section « Crédits médias », clé i18n mentionsLegalesPage.s9*).
+
+welcome-poster.svg
+  Image d'attente de repli, créée pour WorkTogo (aucune licence tierce).
+
+Remplacement recommandé
+-----------------------
+Pour un rendu plus net, remplacer welcome.webm par un clip vertical HD
+(Pexels/Coverr/Mixkit). Pipeline de recompression dans le README de la PR.
+Si le nouveau clip n'exige pas d'attribution, retirer la section « Crédits
+médias » des mentions légales (mentionsLegalesPage.s9Heading / s9Body1,
+fr.json + en.json + app/data/legalPages/mentionsLegales.ts).

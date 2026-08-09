@@ -16,12 +16,16 @@
  */
 withDefaults(
   defineProps<{
-    /** Vidéo embarquée dans l'APK (fournie séparément — voir le rapport final). */
-    videoSrc?: string
+    /** Vidéo embarquée dans l'APK. WebM lu en priorité (VP8/VP9, natif sur le
+     *  WebView Android) ; un MP4 de même nom, s'il est fourni, sert de secours
+     *  pour les WebView plus anciens. */
+    webmSrc?: string
+    mp4Src?: string
     posterSrc?: string
   }>(),
   {
-    videoSrc: '/onboarding/welcome.mp4',
+    webmSrc: '/onboarding/welcome.webm',
+    mp4Src: '/onboarding/welcome.mp4',
     posterSrc: '/onboarding/welcome-poster.svg',
   },
 )
@@ -128,19 +132,22 @@ onUnmounted(() => {
       :class="{ 'ob-zoom': staticFallback }"
     >
 
-    <!-- Couche 2 : vidéo muette en boucle, apparaît en fondu de 400 ms. -->
+    <!-- Couche 2 : vidéo muette en boucle, apparaît en fondu de 400 ms.
+         `object-cover` : la vidéo remplit l'écran quel que soit son ratio. -->
     <video
       v-if="!staticFallback"
       ref="video"
       class="ob-video absolute inset-0 h-full w-full object-cover"
       :class="{ 'is-ready': videoReady }"
-      :src="videoSrc"
       muted
       loop
       autoplay
       playsinline
       preload="auto"
-    />
+    >
+      <source :src="webmSrc" type="video/webm">
+      <source :src="mp4Src" type="video/mp4">
+    </video>
 
     <!-- Couche 3a : dégradé sombre bas→haut, courbe douce (pas linéaire brut). -->
     <div class="ob-gradient absolute inset-0"/>
