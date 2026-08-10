@@ -18,8 +18,7 @@ import { SectorCard } from '@/components/SectorCard'
 import { useSessionStore } from '@/features/auth/store'
 import { useWallet } from '@/features/payments'
 import { useConversations } from '@/features/missions'
-import { escrowLabel, formatFcfa } from '@/features/pricing/utils'
-import type { EscrowStatus } from '@/features/pricing/types'
+import { formatFcfa } from '@/features/pricing/utils'
 
 /** Accueil client (design-edo §2.1). */
 export default function ChercheurHome() {
@@ -29,9 +28,7 @@ export default function ChercheurHome() {
   const wallet = useWallet()
   const conversations = useConversations()
 
-  const active = conversations.data?.conversations.find(
-    (c) => c.status === 'in_escrow' || c.status === 'delivered' || c.status === 'awaiting_payment',
-  )
+  const active = conversations.data?.conversations[0]
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }} edges={['top']}>
@@ -97,19 +94,20 @@ export default function ChercheurHome() {
             <Text variant="h2">Reprendre là où vous étiez</Text>
             <Card onPress={() => router.push(`/mission/${active.id}`)}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md }}>
-                <Avatar name={active.counterpartName} size={48} />
+                <Avatar name={active.otherPartyName} size={48} />
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text variant="bodyBold" numberOfLines={1}>
-                    {active.counterpartName || active.title || '—'}
+                    {active.otherPartyName || '—'}
                   </Text>
                   <Text variant="label" color="muted" numberOfLines={1}>
-                    {active.amount != null ? `Fonds bloqués · ${formatFcfa(active.amount)}` : t('mission.title')}
+                    {active.lastMessage?.body || active.otherPartySector || t('mission.title')}
                   </Text>
                 </View>
-                {(() => {
-                  const b = escrowLabel((active.status ?? 'in_escrow') as EscrowStatus)
-                  return <StatusBadge label={t(b.key)} tone={b.tone} />
-                })()}
+                {(active.unreadCount ?? 0) > 0 ? (
+                  <StatusBadge label={String(active.unreadCount)} tone="danger" />
+                ) : (
+                  <Icon name="chevron-right" size={18} color={theme.colors.muted} />
+                )}
               </View>
             </Card>
           </View>

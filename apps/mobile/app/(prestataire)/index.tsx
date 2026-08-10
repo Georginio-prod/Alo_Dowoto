@@ -43,7 +43,7 @@ export default function PrestataireToday() {
               return (
                 <Card key={c.id} onPress={() => router.push(`/mission/${c.id}`)}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Text variant="bodyBold">{c.counterpartName || '—'}</Text>
+                    <Text variant="bodyBold">{c.otherPartyName || '—'}</Text>
                     {c.amount != null ? <Text color="primary">{formatFcfa(c.amount)}</Text> : null}
                   </View>
                   <StatusBadge label={t(badge.key)} tone={badge.tone} glyph={badge.glyph} />

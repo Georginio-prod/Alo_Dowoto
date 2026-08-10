@@ -99,7 +99,7 @@ export default function Mission() {
                 <View style={{ padding: theme.spacing.lg, gap: 4 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Text variant="bodyBold" numberOfLines={1} style={{ flex: 1 }}>
-                      {c.counterpartName || c.title || '—'}
+                      {c.otherPartyName || '—'}
                     </Text>
                     <StatusBadge label={t(badge.key)} tone={badge.tone} glyph={badge.glyph} />
                   </View>

@@ -13,8 +13,18 @@ export const conversationSchema = z.object({
   id: z.string(),
   providerId: z.string().optional(),
   clientId: z.string().optional(),
-  counterpartName: z.string().optional().default(''),
-  title: z.string().optional().default(''),
+  // Champs réels de l'API (toConversationSummary) :
+  otherPartyName: z.string().optional().default('Utilisateur'),
+  otherPartySector: z.string().nullable().optional(),
+  sectorSlug: z.string().nullable().optional(),
+  lastMessage: z
+    .object({ body: z.string().optional().default(''), createdAt: z.union([z.string(), z.number()]).optional() })
+    .nullable()
+    .optional(),
+  unreadCount: z.number().optional().default(0),
+  firstContactDone: z.boolean().optional(),
+  createdAt: z.union([z.string(), z.number()]).optional(),
+  // Séquestre (présent sur le détail /[id], absent de la liste) :
   status: z
     .enum(['awaiting_payment', 'in_escrow', 'delivered', 'released', 'refunded', 'disputed'])
     .optional(),
@@ -23,7 +33,7 @@ export const conversationSchema = z.object({
   location: z.string().optional().default(''),
   latitude: z.number().nullable().optional(),
   longitude: z.number().nullable().optional(),
-  updatedAt: z.string().optional(),
+  updatedAt: z.union([z.string(), z.number()]).optional(),
 })
 export type Conversation = z.infer<typeof conversationSchema>
 
