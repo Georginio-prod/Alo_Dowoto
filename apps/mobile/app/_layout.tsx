@@ -4,7 +4,14 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { Stack, router } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
-import { useFonts, Poppins_400Regular, Poppins_700Bold } from '@expo-google-fonts/poppins'
+import {
+  useFonts,
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+  Poppins_800ExtraBold,
+} from '@expo-google-fonts/poppins'
 import '@/i18n'
 import { ThemeProvider } from '@/design-system'
 import { queryClient } from '@/services/queryClient'
@@ -26,7 +33,13 @@ export default function RootLayout() {
   // Police Poppins (parité web). On rend sans bloquer sur le chargement : le
   // repli système évite l'écran blanc sur réseau lent (les glyphes basculent
   // sur Poppins dès que la police est prête).
-  useFonts({ Poppins_400Regular, Poppins_700Bold })
+  useFonts({
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+    Poppins_800ExtraBold,
+  })
 
   useEffect(() => {
     initErrorTracking()

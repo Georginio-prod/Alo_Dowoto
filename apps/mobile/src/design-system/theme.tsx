@@ -6,6 +6,7 @@ import {
   radii,
   shadows,
   spacing,
+  tints,
   touchTarget,
   typography,
   motion,
@@ -18,6 +19,7 @@ export interface Theme {
   radii: typeof radii
   shadows: typeof shadows
   typography: typeof typography
+  tints: typeof tints
   touchTarget: typeof touchTarget
   motion: typeof motion
   isDark: boolean
@@ -36,6 +38,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       radii,
       shadows,
       typography,
+      tints,
       touchTarget,
       motion,
       isDark,

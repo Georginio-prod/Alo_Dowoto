@@ -44,7 +44,7 @@ export default function Register() {
       { method, value: trimmed },
       {
         onSuccess: () => router.push('/(auth)/verify'),
-        onError: () => setError(t('common.genericError')),
+        onError: (e) => setError(e instanceof Error ? e.message : t('common.genericError')),
       },
     )
   }

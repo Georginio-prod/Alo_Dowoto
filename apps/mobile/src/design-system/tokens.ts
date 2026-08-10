@@ -101,29 +101,49 @@ export const spacing = {
   '3xl': 48,
 } as const
 
-/** Rayons (main.css). */
+/** Rayons (design-edo.html : 16 / 12 / 10 / pilule). */
 export const radii = {
   field: 10,
+  tile: 12, // tuiles d'icône de secteur, petits blocs
   card: 16,
   pill: 999,
 } as const
 
 /**
- * Typographie assainie : 5 niveaux max, corps ≥ 16, interligne 1,5, deux
- * graisses. Famille Poppins (reprise du web).
+ * Teintes de statut (pastilles pleines type « En cours », « Vérifié »,
+ * « Litige ») : fond clair + texte foncé assorti — reprises du design system.
+ */
+export const tints = {
+  neutral: { bg: '#EEF0F2', fg: '#5C626E' },
+  success: { bg: '#E6F4E6', fg: '#0F7A00' },
+  warning: { bg: '#FBEFC9', fg: '#8A6400' },
+  danger: { bg: '#FBE3E3', fg: '#B22B2B' },
+  info: { bg: '#E7EEF9', fg: '#1D4ED8' },
+} as const
+
+/**
+ * Typographie — reprise du design system fourni (design-edo.html) :
+ * Titre écran 800/28, Titre de section 600/17, Corps 400/14,5, Poppins.
  */
 export const fontFamily = {
   regular: 'Poppins_400Regular',
+  medium: 'Poppins_500Medium',
+  semibold: 'Poppins_600SemiBold',
   bold: 'Poppins_700Bold',
+  extrabold: 'Poppins_800ExtraBold',
 } as const
 
 export const typography = {
-  h1: { fontSize: 24, lineHeight: 36, fontFamily: fontFamily.bold },
-  h2: { fontSize: 20, lineHeight: 30, fontFamily: fontFamily.bold },
-  body: { fontSize: 16, lineHeight: 24, fontFamily: fontFamily.regular },
-  bodyBold: { fontSize: 16, lineHeight: 24, fontFamily: fontFamily.bold },
-  label: { fontSize: 14, lineHeight: 21, fontFamily: fontFamily.regular },
-  caption: { fontSize: 12, lineHeight: 18, fontFamily: fontFamily.regular },
+  // Titre d'écran (« Vérifions votre numéro », « WorkTogo »)
+  h1: { fontSize: 28, lineHeight: 34, fontFamily: fontFamily.extrabold },
+  // Titre de section (« Secteurs », « Reprendre là où vous étiez »)
+  h2: { fontSize: 17, lineHeight: 24, fontFamily: fontFamily.semibold },
+  // Corps
+  body: { fontSize: 15, lineHeight: 22, fontFamily: fontFamily.regular },
+  bodyBold: { fontSize: 15, lineHeight: 22, fontFamily: fontFamily.semibold },
+  // Libellés / secondaire
+  label: { fontSize: 13, lineHeight: 19, fontFamily: fontFamily.regular },
+  caption: { fontSize: 12, lineHeight: 17, fontFamily: fontFamily.medium },
 } as const
 
 export type TypographyVariant = keyof typeof typography

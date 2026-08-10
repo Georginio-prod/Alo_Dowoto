@@ -38,7 +38,11 @@ export default function PrestataireProfil() {
         <MenuRow glyph="💰" label={t('earnings.title')} onPress={() => router.push('/revenus')} />
         <MenuRow glyph="⭐" label={t('subscription.title')} onPress={() => router.push('/abonnement')} />
         <MenuRow glyph="🛡️" label={t('profile.verification')} onPress={() => router.push('/verification')} />
-        <MenuRow glyph="👤" label={t('profile.public')} onPress={() => router.push('/prestataire/' + (user?.id ?? ''))} />
+        <MenuRow
+          glyph="👤"
+          label={t('profile.public')}
+          onPress={() => router.push({ pathname: '/prestataire/[id]', params: { id: user?.id ?? '' } })}
+        />
       </MenuGroup>
 
       <MenuGroup>

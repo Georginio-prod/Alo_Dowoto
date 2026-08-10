@@ -5,7 +5,7 @@ import { useTheme } from '../theme'
 import { palette } from '../tokens'
 import { Text } from './Text'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
+export type ButtonVariant = 'primary' | 'dark' | 'secondary' | 'ghost' | 'danger'
 
 export interface ButtonProps {
   label: string
@@ -86,6 +86,8 @@ function variantStyle(
   switch (variant) {
     case 'primary':
       return { backgroundColor: pressed ? c.primaryHover : c.primary }
+    case 'dark':
+      return { backgroundColor: pressed ? '#1A3A28' : c.dark }
     case 'secondary':
       return {
         backgroundColor: c.surface,
@@ -103,12 +105,13 @@ function variantStyle(
 function textColor(theme: ReturnType<typeof useTheme>, variant: ButtonVariant): string {
   const c = theme.colors
   if (variant === 'primary') return c.onPrimary
+  if (variant === 'dark') return palette.white
   if (variant === 'danger') return palette.white
   return c.ink
 }
 
 const styles = StyleSheet.create({
-  base: { paddingHorizontal: 24, paddingVertical: 12, justifyContent: 'center' },
+  base: { paddingHorizontal: 24, paddingVertical: 15, justifyContent: 'center' },
   fullWidth: { alignSelf: 'stretch' },
   content: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   disabled: { opacity: 0.5 },

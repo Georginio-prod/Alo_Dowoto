@@ -9,33 +9,36 @@ export interface StatusBadgeProps {
   label: string
   tone?: BadgeTone
   /** Symbole/icône devant le libellé — l'info n'est jamais portée par la
-   *  couleur seule (Phase 2). */
+   *  couleur seule (accessibilité). */
   glyph?: string
+  /** `filled` (défaut, design-edo) = pastille teintée pleine ; `outline` = contour. */
+  variant?: 'filled' | 'outline'
 }
 
-/** Badge de statut (missions escrow, vérification…). */
-export function StatusBadge({ label, tone = 'neutral', glyph }: StatusBadgeProps) {
+/**
+ * Pastille de statut (missions escrow, vérification…). Style « pastille pleine
+ * teintée » du design system (ex. « En cours » ambre, « Vérifié » vert).
+ */
+export function StatusBadge({ label, tone = 'neutral', glyph, variant = 'filled' }: StatusBadgeProps) {
   const theme = useTheme()
-  const color =
-    tone === 'success'
-      ? theme.colors.success
-      : tone === 'warning'
-        ? theme.colors.warning
-        : tone === 'danger'
-          ? theme.colors.error
-          : tone === 'info'
-            ? theme.colors.info
-            : theme.colors.muted
+  const tint = theme.tints[tone]
+
+  if (variant === 'outline') {
+    return (
+      <View style={[styles.badge, { borderWidth: 1, borderColor: tint.fg, borderRadius: theme.radii.pill }]}>
+        <Text variant="caption" style={{ color: tint.fg }}>
+          {glyph ? `${glyph} ${label}` : label}
+        </Text>
+      </View>
+    )
+  }
 
   return (
     <View
-      style={[
-        styles.badge,
-        { borderColor: color, borderRadius: theme.radii.pill },
-      ]}
+      style={[styles.badge, { backgroundColor: tint.bg, borderRadius: theme.radii.pill }]}
       accessibilityLabel={label}
     >
-      <Text variant="caption" style={{ color }}>
+      <Text variant="caption" style={{ color: tint.fg, fontFamily: theme.typography.bodyBold.fontFamily }}>
         {glyph ? `${glyph} ${label}` : label}
       </Text>
     </View>
@@ -43,10 +46,5 @@ export function StatusBadge({ label, tone = 'neutral', glyph }: StatusBadgeProps
 }
 
 const styles = StyleSheet.create({
-  badge: {
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
+  badge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5 },
 })

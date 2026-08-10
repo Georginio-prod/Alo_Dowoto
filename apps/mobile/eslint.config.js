@@ -14,4 +14,11 @@ module.exports = defineConfig([
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
+  {
+    // Fichiers de test / setup Jest : expose les globals jest.
+    files: ['**/*.test.ts', '**/*.test.tsx', 'jest.setup.js'],
+    languageOptions: {
+      globals: { jest: 'readonly', describe: 'readonly', it: 'readonly', expect: 'readonly', beforeEach: 'readonly', afterEach: 'readonly' },
+    },
+  },
 ])
