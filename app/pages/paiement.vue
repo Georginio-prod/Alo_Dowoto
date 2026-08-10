@@ -189,5 +189,7 @@ async function submitPayment() {
         </NuxtLink>
       </div>
     </div>
+
+    <ContextualHint hint-key="hint-paiement" :text="t('hint.paiement')" />
   </div>
 </template>

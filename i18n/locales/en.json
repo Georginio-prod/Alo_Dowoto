@@ -1111,6 +1111,203 @@
     "providerSpaceLabel": "Provider space",
     "backToProfile": "← Back to profile"
   },
+  "demo": {
+    "banner": "Demo mode — no money is charged",
+    "exit": "Exit demo",
+    "stepOf": "Step {current} of {total}",
+    "next": "Continue",
+    "tryTitle": "Try it risk-free",
+    "trySubtitle": "A full demo, without spending a franc.",
+    "form": {
+      "title": "Describe the problem",
+      "subtitle": "A fictional example, to practise.",
+      "problemLabel": "Type of job",
+      "leak": "Water leak",
+      "power": "Power outage",
+      "clean": "Cleaning",
+      "urgencyLabel": "Is it urgent?",
+      "urgent": "Urgent (< 24h)",
+      "notUrgent": "No rush",
+      "hoursLabel": "Estimated duration",
+      "hours": "{n}h",
+      "estimate": "Estimate",
+      "estimateNote": "Indicative range — it moves with your answers."
+    },
+    "plan": {
+      "title": "Choose a plan",
+      "essential": "Essential",
+      "recommended": "Recommended",
+      "complete": "Complete",
+      "essentialDesc": "Handles the reported problem.",
+      "recommendedDesc": "Full job + small supplies.",
+      "completeDesc": "Complete + extended warranty + check-up."
+    },
+    "pay": {
+      "title": "Pay the deposit",
+      "safe": "The money is locked safely. Nothing is charged until you approve.",
+      "amount": "Deposit to lock",
+      "cta": "Lock the deposit (demo)"
+    },
+    "validate": {
+      "title": "Is the work done?",
+      "subtitle": "The provider marked it finished. Approve to pay them.",
+      "cta": "I approve the work (demo)"
+    },
+    "done": {
+      "title": "Well done, you've got it!",
+      "subtitle": "You just made a request safely — without spending a franc.",
+      "realCta": "Make a real request",
+      "backTutorials": "Back to tutorials"
+    }
+  },
+  "tutorials": {
+    "title": "How it works",
+    "subtitle": "Short tutorials, at your own pace.",
+    "progress": "{done} / {total} modules seen",
+    "searchPlaceholder": "Search a tutorial…",
+    "noResults": "No tutorial matches.",
+    "durationSec": "~{sec}s",
+    "statusSeen": "Seen",
+    "statusNew": "To watch",
+    "faqHeading": "Frequently asked questions",
+    "contactSupport": "Contact support",
+    "seeProvider": "See provider tutorials",
+    "seeClient": "See seeker tutorials",
+    "back": "Back",
+    "reset": "Reset tutorials",
+    "resetConfirm": "See everything from scratch?",
+    "resetYes": "Yes, reset",
+    "resetCancel": "Cancel",
+    "client": {
+      "modules": {
+        "find": { "title": "Find a provider", "desc": "Pick a category and read a pro's profile." },
+        "form": { "title": "Fill the request form", "desc": "Short, with photos, live estimate." },
+        "plan": { "title": "Choose your plan", "desc": "Compare offers or define your own need." },
+        "pay": { "title": "Pay the deposit safely", "desc": "The money is locked, never paid upfront." },
+        "track": { "title": "Track your job", "desc": "The steps, the chat, the provider's arrival." },
+        "revision": { "title": "A price change?", "desc": "What to check, and your right to refuse." },
+        "validate": { "title": "Approve and rate", "desc": "You approve, the funds are released." }
+      }
+    },
+    "provider": {
+      "modules": {
+        "profile": { "title": "Complete my profile", "desc": "A complete profile is chosen far more often." },
+        "subscription": { "title": "My subscription", "desc": "What it unlocks, renewing, expiry." },
+        "request": { "title": "Receive a request", "desc": "Read the form, accept or decline." },
+        "checkin": { "title": "On site: check-in", "desc": "Arrival geolocation protects both parties." },
+        "adjust": { "title": "Adjust the price", "desc": "When it's fair, backed by photos." },
+        "finish": { "title": "Finish and get paid", "desc": "Declare the end, approval, payout." },
+        "why": { "title": "Why go through the app", "desc": "Guarantees, proof, visibility, protection." }
+      }
+    },
+    "faq": {
+      "q1": "Is the money really protected?",
+      "a1": "Yes: the deposit is locked and only paid to the provider after your approval.",
+      "q2": "Can I refuse a price change?",
+      "a2": "Yes, without losing your deposit. Refusing is not a fault cancellation.",
+      "q3": "Do tutorials work offline?",
+      "a3": "Yes, they're embedded in the app and use no data.",
+      "q4": "How do I replay a tutorial?",
+      "a4": "From this page, or via the help icon at the top of each section."
+    }
+  },
+  "hint": {
+    "gotIt": "Got it",
+    "demande": "Answer in a few taps and add photos: the estimate updates at the bottom of the screen.",
+    "paiement": "Your deposit is locked safely. Nothing is paid to the provider until you approve."
+  },
+  "checklist": {
+    "title": "Ready to start",
+    "progress": "{done}/{total}",
+    "welcome": "See how it works",
+    "tour": "Take the home tour",
+    "verify": "Verify my identity",
+    "request": "Send my first request"
+  },
+  "speech": {
+    "on": "Turn on read-aloud",
+    "off": "Turn off read-aloud"
+  },
+  "coachmark": {
+    "ariaLabel": "Guided tour",
+    "stepStatus": "{current}/{total}",
+    "next": "Next",
+    "done": "Done",
+    "skip": "Skip"
+  },
+  "dashboardTour": {
+    "help": "Replay the tutorial",
+    "search": { "title": "Describe what you need", "text": "Type what you're after: plumber, cleaning, hairdressing…" },
+    "sectors": { "title": "Or browse by trade", "text": "Pick a category to see nearby pros." },
+    "tabs": { "title": "Everything's down here", "text": "Home, messages, wallet and profile, one thumb away." }
+  },
+  "providerTour": {
+    "help": "Replay the tutorial",
+    "summary": { "title": "Your earnings and requests", "text": "Balance, request count and rating at a glance." },
+    "requests": { "title": "Your new requests", "text": "They land here — reply fast to get picked." },
+    "tabs": { "title": "Everything's down here", "text": "Agenda, requests, earnings and profile, one thumb away." }
+  },
+  "demoProvider": {
+    "banner": "Demo mode — no real data",
+    "exit": "Exit demo",
+    "stepOf": "Step {current} of {total}",
+    "request": {
+      "title": "New request",
+      "client": "Client",
+      "clientName": "Koffi A.",
+      "distance": "2.3 km away",
+      "job": "Water leak under the sink",
+      "amountLabel": "Proposed amount",
+      "accept": "Accept (demo)",
+      "refuse": "Decline"
+    },
+    "checkin": {
+      "title": "Are you on site?",
+      "subtitle": "Record your arrival: it protects both parties.",
+      "cta": "I've arrived (demo)"
+    },
+    "adjust": {
+      "title": "Is the job bigger than expected?",
+      "subtitle": "Propose an adjustment — the client must accept it.",
+      "newAmount": "New amount",
+      "reasonLabel": "Reason",
+      "reason": "Extra damage found",
+      "send": "Propose adjustment (demo)",
+      "skip": "Price stays the same"
+    },
+    "finish": {
+      "title": "Is the job done?",
+      "subtitle": "Declare the end: the client approves, then you get paid.",
+      "cta": "Finish the job (demo)"
+    },
+    "done": {
+      "title": "Well done, job complete!",
+      "subtitle": "The client approves, funds are released to your balance.",
+      "realCta": "See my requests",
+      "backTutorials": "Back to tutorials"
+    }
+  },
+  "onboarding": {
+    "ariaLabel": "Welcome to WorkTogo",
+    "skip": "Skip",
+    "next": "Next",
+    "startTutorial": "Start the full tutorial",
+    "later": "Later",
+    "stepStatus": "Step {current} of {total}",
+    "bannerTitle": "See how it works",
+    "bannerDuration": "2 min",
+    "bannerDismiss": "Dismiss reminder",
+    "client": {
+      "s1": { "title": "Find a pro near you", "subtitle": "Verified providers, in every field." },
+      "s2": { "title": "Your money stays locked until the end", "subtitle": "It's kept safe, never paid upfront." },
+      "s3": { "title": "You approve, they get paid", "subtitle": "The provider is only paid after your approval." }
+    },
+    "provider": {
+      "s1": { "title": "Get requests near you", "subtitle": "Clients in your area, in your trade." },
+      "s2": { "title": "The client pays before you start", "subtitle": "The money is locked safely from the start." },
+      "s3": { "title": "You're paid as soon as it's approved", "subtitle": "Once the client approves, funds are released." }
+    }
+  },
   "mobileTabBar": {
     "ariaLabel": "Main navigation",
     "home": "Home",
