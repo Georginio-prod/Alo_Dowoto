@@ -2,61 +2,85 @@ import React from 'react'
 import { View } from 'react-native'
 import { router } from 'expo-router'
 import { useTranslation } from 'react-i18next'
-import { Card, Screen, StatusBadge, Text, useTheme } from '@/design-system'
-import { useConversations } from '@/features/missions'
+import { Button, Card, Screen, StatusBadge, Text, useTheme } from '@/design-system'
 import { useReceivedRequests } from '@/features/requests/hooks'
-import { escrowLabel, formatFcfa } from '@/features/pricing/utils'
-import type { EscrowStatus } from '@/features/pricing/types'
+import { useSubscription } from '@/features/subscriptions'
+import { useWallet } from '@/features/payments'
+import { findPlan, formatFcfa } from '@/features/pricing/utils'
 import { useSessionStore } from '@/features/auth/store'
 import { QueryState } from '@/components/QueryState'
 
-/** « Aujourd'hui » prestataire : mission du jour + demandes en attente. */
+/** Tableau de bord prestataire (design-edo §6.1). */
 export default function PrestataireToday() {
   const { t } = useTranslation()
   const theme = useTheme()
   const user = useSessionStore((s) => s.user)
-  const conversations = useConversations()
   const received = useReceivedRequests()
+  const subscription = useSubscription()
+  const wallet = useWallet()
 
-  const active = conversations.data?.conversations.filter(
-    (c) => c.status === 'in_escrow' || c.status === 'delivered',
-  )
+  const sub = subscription.data?.subscription
+  const plan = sub?.slug ? findPlan(sub.slug) : undefined
+  const quota = plan?.requestsPerMonth ?? null
+  const receivedCount = received.data?.requests.length ?? 0
 
   return (
     <Screen>
-      <Text variant="h1">{t('home.hello', { name: user?.firstName || '👋' })}</Text>
+      {/* En-tête */}
+      <View style={{ gap: 2 }}>
+        <Text variant="h1">{`${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() || 'WorkTogo Pro'}</Text>
+        <Text variant="label" color="muted" style={{ textTransform: 'capitalize' }}>
+          {sub?.active && sub.slug ? `Formule ${sub.slug}` : t('subscription.none')}
+        </Text>
+      </View>
 
-      <Text variant="h2">{t('mission.today')}</Text>
-      <QueryState
-        isLoading={conversations.isLoading}
-        isError={conversations.isError}
-        data={active}
-        onRetry={() => conversations.refetch()}
-        isEmpty={(d) => d.length === 0}
-        emptyTitle={t('mission.none')}
-        emptyGlyph="📅"
-      >
-        {(list) => (
-          <View style={{ gap: theme.spacing.sm }}>
-            {list.map((c) => {
-              const badge = escrowLabel((c.status ?? 'in_escrow') as EscrowStatus)
-              return (
-                <Card key={c.id} onPress={() => router.push(`/mission/${c.id}`)}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Text variant="bodyBold">{c.otherPartyName || '—'}</Text>
-                    {c.amount != null ? <Text color="primary">{formatFcfa(c.amount)}</Text> : null}
-                  </View>
-                  <StatusBadge label={t(badge.key)} tone={badge.tone} glyph={badge.glyph} />
-                </Card>
-              )
-            })}
+      {/* Cartes stats (données réelles) */}
+      <View style={{ flexDirection: 'row', gap: theme.spacing.md }}>
+        <Card elevation="sm" style={{ flex: 1 }}>
+          <Text variant="label" color="muted">
+            {t('earnings.balance')}
+          </Text>
+          <Text variant="h2" color="primary">
+            {formatFcfa(wallet.data?.balance ?? 0)}
+          </Text>
+        </Card>
+        <Card elevation="sm" style={{ flex: 1 }}>
+          <Text variant="label" color="muted">
+            {t('requests.incoming')}
+          </Text>
+          <Text variant="h2">{receivedCount}</Text>
+        </Card>
+      </View>
+
+      {/* Quota de demandes */}
+      {quota != null ? (
+        <Card>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: theme.spacing.sm }}>
+            <Text variant="label" color="muted">
+              Quota de demandes
+            </Text>
+            <Text variant="label" style={{ fontFamily: theme.typography.bodyBold.fontFamily }}>
+              {Math.min(receivedCount, quota)} / {quota} ce mois
+            </Text>
           </View>
-        )}
-      </QueryState>
+          <View style={{ height: 6, borderRadius: 999, backgroundColor: theme.colors.hairline, overflow: 'hidden' }}>
+            <View
+              style={{
+                width: `${Math.min(100, (receivedCount / quota) * 100)}%`,
+                height: 6,
+                borderRadius: 999,
+                backgroundColor: theme.colors.primary,
+              }}
+            />
+          </View>
+          <View style={{ marginTop: theme.spacing.md }}>
+            <Button label="Voir les formules" variant="secondary" onPress={() => router.push('/abonnement')} />
+          </View>
+        </Card>
+      ) : null}
 
-      <Text variant="h2" style={{ marginTop: theme.spacing.md }}>
-        {t('requests.incoming')}
-      </Text>
+      {/* Nouvelles demandes */}
+      <Text variant="h2">{t('requests.incoming')}</Text>
       <QueryState
         isLoading={received.isLoading}
         isError={received.isError}
@@ -68,14 +92,36 @@ export default function PrestataireToday() {
       >
         {(list) => (
           <View style={{ gap: theme.spacing.sm }}>
-            {list.slice(0, 5).map((r) => (
-              <Card key={r.id} onPress={() => router.push(`/(prestataire)/demandes`)}>
-                <Text variant="bodyBold">{r.title}</Text>
-                {r.budgetMax != null ? (
-                  <Text variant="label" color="muted">
-                    {formatFcfa(r.budgetMax)}
+            {list.map((r) => (
+              <Card key={r.id}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                  <Text variant="bodyBold" style={{ flex: 1 }} numberOfLines={1}>
+                    {r.title}
+                  </Text>
+                  {r.budgetMax != null ? (
+                    <Text variant="bodyBold" color="primary">
+                      {formatFcfa(r.budgetMax)}
+                    </Text>
+                  ) : null}
+                </View>
+                {r.location ? (
+                  <Text variant="label" color="muted" numberOfLines={1}>
+                    {r.location}
                   </Text>
                 ) : null}
+                {r.urgency ? (
+                  <View style={{ marginTop: theme.spacing.xs }}>
+                    <StatusBadge label={t(`request.urgency${cap(r.urgency)}`)} tone="info" />
+                  </View>
+                ) : null}
+                <View style={{ flexDirection: 'row', gap: theme.spacing.sm, marginTop: theme.spacing.md }}>
+                  <View style={{ flex: 1 }}>
+                    <Button label={t('requests.detail')} variant="secondary" onPress={() => router.push('/(prestataire)/demandes')} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Button label={t('requests.accept')} haptic onPress={() => router.push('/(prestataire)/messages')} />
+                  </View>
+                </View>
               </Card>
             ))}
           </View>
@@ -83,4 +129,8 @@ export default function PrestataireToday() {
       </QueryState>
     </Screen>
   )
+}
+
+function cap(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1)
 }

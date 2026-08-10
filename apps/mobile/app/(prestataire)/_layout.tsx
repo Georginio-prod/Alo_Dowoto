@@ -40,6 +40,10 @@ export default function PrestataireLayout() {
         options={{ title: t('tabs.messages'), tabBarIcon: ({ color }) => <TabIcon name="message-circle" color={color} /> }}
       />
       <Tabs.Screen
+        name="revenus"
+        options={{ title: t('tabs.earnings'), tabBarIcon: ({ color }) => <TabIcon name="credit-card" color={color} /> }}
+      />
+      <Tabs.Screen
         name="profil"
         options={{ title: t('tabs.profile'), tabBarIcon: ({ color }) => <TabIcon name="user" color={color} /> }}
       />
