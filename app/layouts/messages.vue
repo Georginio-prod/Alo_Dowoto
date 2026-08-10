@@ -19,7 +19,10 @@ const isConversationOpen = computed(() => !!route.params.id)
 </script>
 
 <template>
-  <div class="flex h-screen flex-col bg-bg text-ink">
+  <!-- `pb-tabbar` : réserve la hauteur de la barre d'onglets globale pour que
+       le champ de saisie du fil ne passe pas dessous (#refonte-tabbar). Nul sur
+       desktop (≥ lg) où la barre est masquée. -->
+  <div class="flex h-screen flex-col bg-bg text-ink pb-tabbar">
     <div class="mx-auto flex w-full max-w-[1200px] shrink-0 items-center border-x border-b border-hairline bg-surface px-4 py-2.5">
       <NuxtLink to="/" class="press flex items-center gap-1.5 text-[13.5px] font-semibold text-muted hover:text-dark" :aria-label="t('messagesLayout.backAria')">
         {{ t('messagesLayout.back') }}

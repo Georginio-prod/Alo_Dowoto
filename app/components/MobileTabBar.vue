@@ -15,11 +15,21 @@
  *
  * Icône ET libellé (jamais d'icône seule), cibles ≥ 56 px, `aria-current` sur
  * l'onglet actif. Role-aware. Dérive des tokens (text-primary, bg-surface…).
+ *
+ * Montée une seule fois au niveau racine (app.vue) pour rester présente sur
+ * TOUTES les pages de l'app, quel que soit le layout — elle ne disparaît donc
+ * plus en navigant vers Messages, Solde, Profil… (#refonte-tabbar). Le rôle est
+ * dérivé de la session partagée si la prop `role` n'est pas fournie.
  */
 const props = defineProps<{ role?: string }>()
 
 const { t } = useI18n({ useScope: 'global' })
 const route = useRoute()
+const { user } = useSession()
+
+// Prop prioritaire (rétro-compat), sinon session partagée : permet le montage
+// global sans avoir à repasser le rôle depuis chaque page.
+const role = computed(() => props.role ?? user.value?.role)
 
 type IconKey = 'home' | 'search' | 'messages' | 'wallet' | 'profile' | 'requests' | 'agenda' | 'earnings'
 interface Tab {
@@ -58,8 +68,8 @@ const providerTabs = computed<Tab[]>(() => [
 ])
 
 const tabs = computed<Tab[]>(() => {
-  if (props.role === 'prestataire') return providerTabs.value
-  if (props.role === 'client') return clientTabs.value
+  if (role.value === 'prestataire') return providerTabs.value
+  if (role.value === 'client') return clientTabs.value
   return []
 })
 
@@ -82,6 +92,12 @@ onMounted(() => {
   nextTick(publishHeight)
   window.addEventListener('resize', publishHeight)
 })
+// Le rôle (donc la présence de la barre) peut se résoudre après le montage,
+// quand la session partagée arrive : republier la hauteur pour que les pages
+// qui la réservent (`--tabbar-height`) se recalent aussitôt la barre affichée.
+watch(() => tabs.value.length, () => {
+  if (import.meta.client) nextTick(publishHeight)
+})
 onBeforeUnmount(() => {
   if (!import.meta.client) return
   window.removeEventListener('resize', publishHeight)
@@ -94,22 +110,32 @@ onBeforeUnmount(() => {
     v-if="tabs.length"
     ref="bar"
     data-tour="app-tabs"
-    class="fixed inset-x-0 bottom-0 z-40 border-t border-hairline bg-surface lg:hidden"
+    class="fixed inset-x-0 bottom-0 z-40 rounded-t-2xl border-t border-hairline bg-surface shadow-[0_-6px_20px_rgba(15,35,24,0.07)] lg:hidden"
     style="padding-bottom: env(safe-area-inset-bottom);"
     :aria-label="t('mobileTabBar.ariaLabel')"
   >
-    <ul class="mx-auto flex max-w-md items-stretch">
+    <ul class="mx-auto flex max-w-md items-stretch px-1.5">
       <li v-for="tab in tabs" :key="tab.key" class="flex-1">
         <NuxtLink
           :to="tab.to"
-          class="press flex min-h-[56px] flex-col items-center justify-center gap-1 px-1 py-2 text-xs font-semibold"
-          :class="isActive(tab) ? 'text-primary' : 'text-muted'"
+          class="press group flex min-h-[60px] flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold"
           :aria-current="isActive(tab) ? 'page' : undefined"
         >
-          <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path :d="ICON_PATHS[tab.icon]" />
-          </svg>
-          <span class="leading-none">{{ tab.label }}</span>
+          <!-- Pastille active : l'icône s'inscrit dans un chip vert tendre
+               quand l'onglet est courant — repère visuel plus lisible qu'un
+               simple changement de couleur, transition douce. -->
+          <span
+            class="flex h-8 w-14 items-center justify-center rounded-full transition-colors duration-200"
+            :class="isActive(tab) ? 'bg-primary/12 text-primary' : 'text-muted group-hover:text-dark'"
+          >
+            <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path :d="ICON_PATHS[tab.icon]" />
+            </svg>
+          </span>
+          <span
+            class="leading-none transition-colors duration-200"
+            :class="isActive(tab) ? 'text-primary' : 'text-muted'"
+          >{{ tab.label }}</span>
         </NuxtLink>
       </li>
     </ul>

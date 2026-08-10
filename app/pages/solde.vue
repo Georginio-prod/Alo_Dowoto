@@ -17,7 +17,7 @@ const formattedBalance = computed(() => (balance.value === null ? '…' : `${bal
 </script>
 
 <template>
-  <div>
+  <div class="pb-tabbar">
     <header class="border-b border-hairline bg-surface">
       <div class="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-3 px-5 py-4">
         <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">

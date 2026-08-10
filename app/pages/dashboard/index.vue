@@ -131,7 +131,8 @@ watch(showWelcome, (visible) => {
     <DashboardProviderHome v-if="isProvider" />
     <DashboardSeekerHome v-else />
 
-    <MobileTabBar :role="user?.role" />
+    <!-- MobileTabBar est désormais montée globalement (app.vue) — plus besoin
+         de l'inclure ici. `pb-28` (racine) réserve toujours sa hauteur. -->
 
     <OnboardingWelcome
       v-if="showWelcome"

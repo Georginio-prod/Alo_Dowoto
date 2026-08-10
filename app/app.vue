@@ -3,6 +3,12 @@ import { COMPANY_NAME } from '~/data/companyInfo'
 
 const { locale } = useI18n({ useScope: 'global' })
 
+// Session résolue au niveau racine pour que la barre d'onglets globale
+// (MobileTabBar, montée ci-dessous) connaisse le rôle sur toutes les pages,
+// y compris publiques — `ensure()` ne refait pas la requête si déjà chargée.
+const { ensure } = useSession()
+onMounted(() => { ensure() })
+
 // `<html lang>` dynamique selon la langue active (#364) — remplace le
 // `lang="fr"` figé dans nuxt.config.ts (#343). `seo: false` : pas de liens
 // hreflang alternates, sans objet en stratégie `no_prefix` (même URL pour
@@ -55,6 +61,12 @@ useHead(() => ({
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
+    <!-- Barre d'onglets mobile persistante (#refonte-tabbar) : montée ici, au
+         niveau racine, elle reste présente sur toutes les pages de l'app quel
+         que soit leur layout — elle ne disparaît plus en ouvrant Messages,
+         Solde, Profil… Masquée sur desktop (≥ lg) et hors session via ses
+         propres gardes internes. -->
+    <MobileTabBar />
     <!-- Montée une seule fois au niveau racine pour apparaître sur toutes les pages (#225). -->
     <FavoritesMessagingBar />
     <!-- Bouton de bascule de thème, présent sur toutes les pages. -->
