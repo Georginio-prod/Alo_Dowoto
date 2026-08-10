@@ -6,7 +6,20 @@ import { Button, Input, Screen, ScreenHeader, Text } from '@/design-system'
 import { useSetPassword } from '@/features/auth/hooks'
 import { useSessionStore } from '@/features/auth/store'
 
-/** Écran — Création du mot de passe (#125). Session déjà ouverte. */
+/**
+ * Écran — Création du mot de passe (#125). Session déjà ouverte.
+ * Règles backend (checkPasswordStrength) : ≥ 8 caractères, une majuscule, un
+ * chiffre, un caractère spécial. Validées ici pour un retour immédiat.
+ */
+function weakReasons(pwd: string): string[] {
+  const r: string[] = []
+  if (pwd.length < 8) r.push('8 caractères')
+  if (!/[A-Z]/.test(pwd)) r.push('une majuscule')
+  if (!/\d/.test(pwd)) r.push('un chiffre')
+  if (!/[^A-Za-z0-9]/.test(pwd)) r.push('un caractère spécial')
+  return r
+}
+
 export default function Password() {
   const { t } = useTranslation()
   const setPassword = useSetPassword()
@@ -18,11 +31,15 @@ export default function Password() {
 
   const submit = () => {
     setError(undefined)
-    if (pwd.length < 6) {
-      setError('Minimum 6 caractères.')
+    const missing = weakReasons(pwd)
+    if (missing.length > 0) {
+      setError(`${t('auth.passwordWeak')}${missing.join(', ')}.`)
       return
     }
-    setPassword.mutate(pwd, { onSuccess: done, onError: () => setError(t('common.genericError')) })
+    setPassword.mutate(pwd, {
+      onSuccess: done,
+      onError: (e) => setError(e instanceof Error ? e.message : t('common.genericError')),
+    })
   }
 
   return (
@@ -38,6 +55,7 @@ export default function Password() {
           onChangeText={setPwd}
           secureTextEntry
           error={error}
+          hint={t('auth.passwordHint')}
         />
       </View>
     </Screen>

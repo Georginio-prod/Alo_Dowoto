@@ -60,7 +60,9 @@
     "invalidCode": "Code à 6 chiffres requis.",
     "username": "Nom d'utilisateur",
     "profileTitle": "Vos informations",
-    "profileRequired": "Prénom, nom, ville et nom d'utilisateur sont obligatoires."
+    "profileRequired": "Prénom, nom, ville et nom d'utilisateur sont obligatoires.",
+    "passwordHint": "8 caractères min., une majuscule, un chiffre et un caractère spécial.",
+    "passwordWeak": "Mot de passe trop faible : "
   },
   "home": {
     "hello": "Bonjour {{name}}",

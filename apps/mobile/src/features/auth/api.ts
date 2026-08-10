@@ -36,7 +36,12 @@ export function destroySession() {
 }
 
 export function setPassword(password: string) {
-  return request('/api/auth/password', { method: 'POST', body: { password } })
+  // confirmPassword requis par le backend (doit être égal) — un seul champ
+  // côté app, on renvoie donc la même valeur.
+  return request('/api/auth/password', {
+    method: 'POST',
+    body: { password, confirmPassword: password },
+  })
 }
 
 export async function updateProfile(patch: Partial<User>): Promise<User> {
