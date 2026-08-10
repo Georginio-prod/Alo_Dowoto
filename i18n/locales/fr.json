@@ -1111,6 +1111,203 @@
     "providerSpaceLabel": "Espace prestataire",
     "backToProfile": "← Retour au profil"
   },
+  "demo": {
+    "banner": "Mode démonstration — aucun argent n'est débité",
+    "exit": "Quitter la démo",
+    "stepOf": "Étape {current} sur {total}",
+    "next": "Continuer",
+    "tryTitle": "Essayer sans risque",
+    "trySubtitle": "Une démo complète, sans dépenser un franc.",
+    "form": {
+      "title": "Décrivez le problème",
+      "subtitle": "Un exemple fictif, pour s'entraîner.",
+      "problemLabel": "Type de dépannage",
+      "leak": "Fuite d'eau",
+      "power": "Panne de courant",
+      "clean": "Ménage",
+      "urgencyLabel": "C'est urgent ?",
+      "urgent": "Urgent (< 24 h)",
+      "notUrgent": "Pas pressé",
+      "hoursLabel": "Durée estimée",
+      "hours": "{n} h",
+      "estimate": "Estimation",
+      "estimateNote": "Fourchette indicative — elle bouge selon vos réponses."
+    },
+    "plan": {
+      "title": "Choisissez une formule",
+      "essential": "Essentiel",
+      "recommended": "Recommandé",
+      "complete": "Complet",
+      "essentialDesc": "Traite le problème signalé.",
+      "recommendedDesc": "Intervention complète + petites fournitures.",
+      "completeDesc": "Complet + garantie étendue + passage de contrôle."
+    },
+    "pay": {
+      "title": "Paiement de l'avance",
+      "safe": "L'argent est bloqué en sécurité. Rien n'est débité tant que vous n'avez pas validé.",
+      "amount": "Avance à bloquer",
+      "cta": "Bloquer l'avance (démo)"
+    },
+    "validate": {
+      "title": "Le travail est terminé ?",
+      "subtitle": "Le prestataire a signalé la fin. À vous de valider pour le payer.",
+      "cta": "Je valide le travail (démo)"
+    },
+    "done": {
+      "title": "Bravo, vous avez tout compris !",
+      "subtitle": "Vous venez de faire une demande en toute sécurité — sans dépenser un franc.",
+      "realCta": "Faire une vraie demande",
+      "backTutorials": "Revenir aux tutoriels"
+    }
+  },
+  "tutorials": {
+    "title": "Comment ça marche",
+    "subtitle": "Des mini-tutoriels, à votre rythme.",
+    "progress": "{done} / {total} modules vus",
+    "searchPlaceholder": "Rechercher un tutoriel…",
+    "noResults": "Aucun tutoriel ne correspond.",
+    "durationSec": "~{sec} s",
+    "statusSeen": "Vu",
+    "statusNew": "À voir",
+    "faqHeading": "Questions fréquentes",
+    "contactSupport": "Contacter le support",
+    "seeProvider": "Voir les tutoriels prestataire",
+    "seeClient": "Voir les tutoriels chercheur",
+    "back": "Retour",
+    "reset": "Réinitialiser les tutoriels",
+    "resetConfirm": "Tout revoir depuis le début ?",
+    "resetYes": "Oui, réinitialiser",
+    "resetCancel": "Annuler",
+    "client": {
+      "modules": {
+        "find": { "title": "Trouver un prestataire", "desc": "Choisir une catégorie et lire une fiche pro." },
+        "form": { "title": "Remplir la fiche préalable", "desc": "Courte, avec photos, estimation en direct." },
+        "plan": { "title": "Choisir sa formule", "desc": "Comparer les propositions ou définir votre besoin." },
+        "pay": { "title": "Payer l'avance en sécurité", "desc": "L'argent est bloqué, jamais versé d'avance." },
+        "track": { "title": "Suivre son intervention", "desc": "Les étapes, le chat, l'arrivée du prestataire." },
+        "revision": { "title": "Un ajustement de prix ?", "desc": "Quoi regarder, et le droit de refuser." },
+        "validate": { "title": "Valider et noter", "desc": "Vous validez, les fonds sont libérés." }
+      }
+    },
+    "provider": {
+      "modules": {
+        "profile": { "title": "Compléter mon profil", "desc": "Un profil complet est choisi bien plus souvent." },
+        "subscription": { "title": "Mon abonnement", "desc": "Ce qu'il ouvre, le renouveler, l'expiration." },
+        "request": { "title": "Recevoir une demande", "desc": "Lire la fiche, accepter ou refuser." },
+        "checkin": { "title": "Sur place : le check-in", "desc": "La géoloc d'arrivée protège les deux parties." },
+        "adjust": { "title": "Ajuster le prix", "desc": "Quand c'est légitime, photos à l'appui." },
+        "finish": { "title": "Terminer et être payé", "desc": "Déclarer la fin, la validation, le versement." },
+        "why": { "title": "Pourquoi passer par l'app", "desc": "Garanties, preuve, visibilité, protection." }
+      }
+    },
+    "faq": {
+      "q1": "L'argent est-il vraiment protégé ?",
+      "a1": "Oui : l'avance est bloquée et n'est versée au prestataire qu'après votre validation.",
+      "q2": "Puis-je refuser un ajustement de prix ?",
+      "a2": "Oui, sans perdre votre avance. Un refus n'est pas une annulation fautive.",
+      "q3": "Les tutoriels marchent-ils hors connexion ?",
+      "a3": "Oui, ils sont embarqués dans l'app et ne consomment pas de données.",
+      "q4": "Comment revoir un tutoriel ?",
+      "a4": "Depuis cette page, ou via l'icône d'aide en haut de chaque section."
+    }
+  },
+  "hint": {
+    "gotIt": "Compris",
+    "demande": "Répondez en quelques touches et ajoutez des photos : l'estimation se met à jour en bas de l'écran.",
+    "paiement": "Votre avance est bloquée en sécurité. Rien n'est versé au prestataire tant que vous n'avez pas validé."
+  },
+  "checklist": {
+    "title": "Prêt à démarrer",
+    "progress": "{done}/{total}",
+    "welcome": "Découvrir comment ça marche",
+    "tour": "Faire le tour de l'accueil",
+    "verify": "Vérifier mon identité",
+    "request": "Envoyer ma première demande"
+  },
+  "speech": {
+    "on": "Activer la lecture à voix haute",
+    "off": "Couper la lecture à voix haute"
+  },
+  "coachmark": {
+    "ariaLabel": "Visite guidée",
+    "stepStatus": "{current}/{total}",
+    "next": "Suivant",
+    "done": "Terminé",
+    "skip": "Passer"
+  },
+  "dashboardTour": {
+    "help": "Revoir le tutoriel",
+    "search": { "title": "Décrivez votre besoin", "text": "Tapez ce qu'il vous faut : plombier, ménage, coiffure…" },
+    "sectors": { "title": "Ou parcourez par métier", "text": "Choisissez une catégorie pour voir les pros proches." },
+    "tabs": { "title": "Tout est ici, en bas", "text": "Accueil, messages, solde et profil, en un geste du pouce." }
+  },
+  "providerTour": {
+    "help": "Revoir le tutoriel",
+    "summary": { "title": "Vos revenus et demandes", "text": "Solde, nombre de demandes et note, en un coup d'œil." },
+    "requests": { "title": "Vos nouvelles demandes", "text": "Elles arrivent ici — répondez vite pour être choisi." },
+    "tabs": { "title": "Tout est en bas", "text": "Agenda, demandes, revenus et profil, d'un pouce." }
+  },
+  "demoProvider": {
+    "banner": "Mode démonstration — aucune donnée réelle",
+    "exit": "Quitter la démo",
+    "stepOf": "Étape {current} sur {total}",
+    "request": {
+      "title": "Nouvelle demande",
+      "client": "Client",
+      "clientName": "Koffi A.",
+      "distance": "à 2,3 km",
+      "job": "Fuite d'eau sous l'évier",
+      "amountLabel": "Montant proposé",
+      "accept": "Accepter (démo)",
+      "refuse": "Refuser"
+    },
+    "checkin": {
+      "title": "Vous êtes sur place ?",
+      "subtitle": "Enregistrez votre arrivée : ça protège les deux parties.",
+      "cta": "Je suis arrivé (démo)"
+    },
+    "adjust": {
+      "title": "Le travail est plus important ?",
+      "subtitle": "Proposez un ajustement — le client devra l'accepter.",
+      "newAmount": "Nouveau montant",
+      "reasonLabel": "Motif",
+      "reason": "Dégât supplémentaire découvert",
+      "send": "Proposer l'ajustement (démo)",
+      "skip": "Le prix ne change pas"
+    },
+    "finish": {
+      "title": "Mission terminée ?",
+      "subtitle": "Déclarez la fin : le client valide, puis vous êtes payé.",
+      "cta": "Terminer la mission (démo)"
+    },
+    "done": {
+      "title": "Bravo, mission bouclée !",
+      "subtitle": "Le client valide, les fonds sont libérés sur votre solde.",
+      "realCta": "Voir mes demandes",
+      "backTutorials": "Revenir aux tutoriels"
+    }
+  },
+  "onboarding": {
+    "ariaLabel": "Bienvenue sur WorkTogo",
+    "skip": "Passer",
+    "next": "Suivant",
+    "startTutorial": "Commencer le tutoriel complet",
+    "later": "Plus tard",
+    "stepStatus": "Étape {current} sur {total}",
+    "bannerTitle": "Découvrir comment ça marche",
+    "bannerDuration": "2 min",
+    "bannerDismiss": "Fermer le rappel",
+    "client": {
+      "s1": { "title": "Trouvez un pro près de chez vous", "subtitle": "Des prestataires vérifiés, dans tous les secteurs." },
+      "s2": { "title": "Votre argent reste bloqué jusqu'à la fin", "subtitle": "Il est mis en sécurité, jamais versé d'avance." },
+      "s3": { "title": "Vous validez, il est payé", "subtitle": "Le prestataire n'est payé qu'après votre accord." }
+    },
+    "provider": {
+      "s1": { "title": "Recevez des demandes près de vous", "subtitle": "Des clients de votre zone, dans votre métier." },
+      "s2": { "title": "Le client paie avant que vous commenciez", "subtitle": "L'argent est bloqué en sécurité dès le départ." },
+      "s3": { "title": "Vous êtes payé dès la validation", "subtitle": "Dès que le client valide, les fonds sont libérés." }
+    }
+  },
   "mobileTabBar": {
     "ariaLabel": "Navigation principale",
     "home": "Accueil",

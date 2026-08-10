@@ -104,12 +104,39 @@ function sectorLabel(slug?: string) {
   if (!slug) return null
   return SECTORS.find((sector) => sector.slug === slug)?.name ?? slug
 }
+
+// Tutoriel contextuel de l'accueil prestataire (#tutoriel-onboarding — Couche 2).
+// Encapsulé ici (ce composant n'est monté que pour le prestataire) : démarrage
+// auto au 1er passage, une seule fois par section et par session, jamais deux
+// tutoriels contextuels dans la même session. Icône « Revoir » dans la carte.
+const tutorials = useTutorials()
+const PROV_SECTION = 'dashboard-provider'
+const tourActive = ref(false)
+const providerTourSteps = computed(() => [
+  { target: '[data-tour="prov-summary"]', title: t('providerTour.summary.title'), text: t('providerTour.summary.text') },
+  { target: '[data-tour="prov-requests"]', title: t('providerTour.requests.title'), text: t('providerTour.requests.text') },
+  { target: '[data-tour="app-tabs"]', title: t('providerTour.tabs.title'), text: t('providerTour.tabs.text') },
+])
+function replayProviderTour() {
+  tourActive.value = true
+}
+function endProviderTour() {
+  tutorials.markSeen(PROV_SECTION)
+  tourActive.value = false
+}
+onMounted(() => {
+  tutorials.load()
+  if (!tutorials.hasSeen(PROV_SECTION) && tutorials.canAutoStart()) {
+    tutorials.noteAutoStarted()
+    tourActive.value = true
+  }
+})
 </script>
 
 <template>
   <div>
     <!-- Carte encre : identité + indicateurs réunis en un seul bloc. -->
-    <div class="relative mb-4 overflow-hidden rounded-card border border-hairline bg-dark p-5 shadow-card-sm sm:p-6">
+    <div data-tour="prov-summary" class="relative mb-4 overflow-hidden rounded-card border border-hairline bg-dark p-5 shadow-card-sm sm:p-6">
       <div class="float-soft pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-primary/25 blur-3xl" aria-hidden="true" />
       <div class="relative flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -119,9 +146,22 @@ function sectorLabel(slug?: string) {
             <span v-if="user?.location">📍 {{ user.location }} · </span>{{ sectorName }}
           </p>
         </div>
-        <span class="shrink-0 rounded-pill px-3 py-1.5 text-[12.5px] font-bold" :class="BADGE_STYLES[subscriptionBadge.tone]">
-          {{ subscriptionBadge.label }}
-        </span>
+        <div class="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            class="press grid size-8 place-items-center rounded-full text-white/70 hover:bg-white/10 hover:text-white"
+            :aria-label="t('providerTour.help')"
+            @click="replayProviderTour"
+          >
+            <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1 .9-1 1.7M12 16.5h.01" />
+            </svg>
+          </button>
+          <span class="rounded-pill px-3 py-1.5 text-[12.5px] font-bold" :class="BADGE_STYLES[subscriptionBadge.tone]">
+            {{ subscriptionBadge.label }}
+          </span>
+        </div>
       </div>
 
       <div class="relative mt-5 grid grid-cols-3 gap-2.5">
@@ -159,7 +199,7 @@ function sectorLabel(slug?: string) {
       </div>
     </section>
 
-    <section class="mb-6">
+    <section data-tour="prov-requests" class="mb-6">
       <div class="mb-3 flex items-center justify-between gap-3">
         <h2 class="flex items-center gap-2 text-[15px] font-bold text-dark">
           {{ t('prestataireIndex.recentRequestsHeading') }}
@@ -234,5 +274,13 @@ function sectorLabel(slug?: string) {
       <p class="text-[13px] font-semibold text-dark">{{ subscriptionBannerText }}</p>
       <span class="shrink-0 font-bold text-primary">→</span>
     </NuxtLink>
+
+    <CoachmarkTour
+      v-if="tourActive"
+      :steps="providerTourSteps"
+      tour-id="dashboard-provider"
+      @finish="endProviderTour"
+      @skip="endProviderTour"
+    />
   </div>
 </template>

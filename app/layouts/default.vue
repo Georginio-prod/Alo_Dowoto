@@ -6,7 +6,7 @@ const { isOpen, searchTerm, close } = useChoiceModal()
   <div class="min-h-screen bg-bg text-ink">
     <AppHeader />
 
-    <main>
+    <main class="pb-tabbar">
       <slot />
     </main>
 

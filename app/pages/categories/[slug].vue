@@ -41,7 +41,7 @@ const results = computed(() => data.value?.results ?? [])
 </script>
 
 <template>
-  <div>
+  <div class="pb-tabbar">
     <header class="border-b border-hairline bg-surface">
       <div class="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3 px-5 py-4">
         <div class="flex flex-wrap items-center gap-3">

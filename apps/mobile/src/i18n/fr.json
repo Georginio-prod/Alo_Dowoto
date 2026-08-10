@@ -1,0 +1,221 @@
+{
+  "common": {
+    "appName": "WorkTogo",
+    "continue": "Continuer",
+    "back": "Retour",
+    "next": "Suivant",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "save": "Enregistrer",
+    "retry": "Réessayer",
+    "loading": "Chargement…",
+    "search": "Rechercher",
+    "offline": "Hors connexion — les données affichées peuvent être anciennes",
+    "genericError": "Une erreur est survenue. Réessayez.",
+    "pendingSync": "En attente d'envoi",
+    "seeAll": "Tout voir"
+  },
+  "tabs": {
+    "home": "Accueil",
+    "search": "Rechercher",
+    "missions": "Missions",
+    "messages": "Messages",
+    "profile": "Profil",
+    "today": "Aujourd'hui",
+    "requests": "Demandes",
+    "earnings": "Revenus"
+  },
+  "welcome": {
+    "title": "Bienvenue sur WorkTogo",
+    "subtitle": "La marketplace qui relie chercheurs et prestataires de confiance au Togo.",
+    "chooseRole": "Vous êtes…",
+    "roleClient": "Je cherche un prestataire",
+    "roleClientHint": "Trouvez un professionnel vérifié près de chez vous",
+    "roleProvider": "Je propose mes services",
+    "roleProviderHint": "Recevez des demandes et développez votre activité",
+    "login": "J'ai déjà un compte",
+    "attribution": "Vidéo : artisan tailleur — usage éditorial"
+  },
+  "auth": {
+    "loginTitle": "Connexion",
+    "registerTitle": "Inscription",
+    "method": "Méthode",
+    "sms": "SMS",
+    "email": "E-mail",
+    "phone": "Numéro de téléphone",
+    "emailLabel": "Adresse e-mail",
+    "sendCode": "Recevoir le code",
+    "codeTitle": "Vérification",
+    "codeSubtitle": "Entrez le code à 6 chiffres envoyé à {{contact}}.",
+    "code": "Code à 6 chiffres",
+    "verify": "Vérifier",
+    "resend": "Renvoyer le code",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "city": "Ville",
+    "password": "Mot de passe",
+    "passwordCreate": "Créez votre mot de passe",
+    "referral": "Code de parrainage (optionnel)",
+    "invalidPhone": "Numéro invalide.",
+    "invalidCode": "Code à 6 chiffres requis.",
+    "username": "Nom d'utilisateur",
+    "profileTitle": "Vos informations",
+    "profileRequired": "Prénom, nom, ville et nom d'utilisateur sont obligatoires.",
+    "passwordHint": "8 caractères min., une majuscule, un chiffre et un caractère spécial.",
+    "passwordWeak": "Mot de passe trop faible : "
+  },
+  "home": {
+    "hello": "Bonjour {{name}}",
+    "searchPlaceholder": "Quel service cherchez-vous ?",
+    "categories": "Catégories",
+    "featured": "Prestataires en avant",
+    "newRequest": "Publier une demande",
+    "myRequests": "Mes demandes",
+    "voiceSearch": "Recherche vocale"
+  },
+  "categories": {
+    "title": "Catégories",
+    "empty": "Aucune catégorie."
+  },
+  "results": {
+    "title": "Résultats",
+    "count": "{{count}} prestataire trouvé",
+    "count_plural": "{{count}} prestataires trouvés",
+    "empty": "Aucun prestataire ne correspond. Élargissez la zone ou modifiez la recherche.",
+    "distance": "à {{km}} km",
+    "dataSaver": "Mode économie de données"
+  },
+  "provider": {
+    "reviews": "{{count}} avis",
+    "rating": "Note",
+    "contact": "Contacter",
+    "requestQuote": "Envoyer une fiche préalable",
+    "verified": "Identité vérifiée",
+    "favorite": "Favori"
+  },
+  "request": {
+    "title": "Fiche préalable",
+    "step": "Étape {{current}} sur {{total}}",
+    "step1": "Votre besoin",
+    "step2": "Détails & budget",
+    "step3": "Récapitulatif",
+    "titleLabel": "Titre du besoin",
+    "descriptionLabel": "Décrivez votre besoin",
+    "skillsLabel": "Compétences recherchées",
+    "budgetLabel": "Budget maximum (FCFA)",
+    "urgencyLabel": "Quand ?",
+    "urgencyImmediate": "Au plus vite",
+    "urgencySemaine": "Cette semaine",
+    "urgencyFlexible": "Flexible",
+    "photoHint": "Ajoutez une photo du problème (optionnel)",
+    "addPhoto": "Photographier le besoin",
+    "estimate": "Estimation indicative",
+    "estimateRange": "Entre {{low}} et {{high}}",
+    "estimateNote": "Le montant final est convenu avec le prestataire.",
+    "submit": "Envoyer la fiche",
+    "sent": "Fiche envoyée !"
+  },
+  "formules": {
+    "title": "Nos formules",
+    "subtitle": "Choisissez la formule adaptée à votre activité.",
+    "perMonth": "/ mois équiv.",
+    "requestsPerMonth": "{{count}} demandes / mois",
+    "requestsUnlimited": "Demandes illimitées",
+    "popular": "Le plus populaire",
+    "choose": "Choisir cette formule",
+    "freeTrial": "{{days}} jours d'essai gratuit"
+  },
+  "payment": {
+    "title": "Paiement de l'avance",
+    "summary": "Récapitulatif",
+    "amount": "Montant de l'avance",
+    "method": "Moyen de paiement",
+    "mobileMoney": "Mobile Money",
+    "wallet": "Portefeuille WorkTogo",
+    "escrowNote": "Votre paiement est sécurisé et n'est versé au prestataire qu'après validation de la mission.",
+    "pay": "Payer {{amount}}",
+    "success": "Paiement accepté",
+    "successNote": "Votre avance est sous séquestre."
+  },
+  "mission": {
+    "title": "Suivi de mission",
+    "today": "Aujourd'hui",
+    "none": "Aucune mission en cours",
+    "checkIn": "Arrivée sur place",
+    "checkOut": "Départ",
+    "deliver": "Marquer comme terminée",
+    "receive": "Confirmer la réception",
+    "validate": "Valider la mission",
+    "review": "Laisser un avis",
+    "dispute": "Signaler un problème",
+    "reschedule": "Proposer un autre créneau",
+    "adjustPrice": "Ajuster le prix",
+    "trackArrival": "Suivre l'arrivée",
+    "eta": "Arrivée estimée dans {{min}} min",
+    "shareReceipt": "Partager le reçu",
+    "status": {
+      "awaitingPayment": "En attente de paiement",
+      "inEscrow": "Sous séquestre",
+      "delivered": "Livrée",
+      "released": "Payée au prestataire",
+      "refunded": "Remboursée",
+      "disputed": "Litige en cours"
+    }
+  },
+  "requests": {
+    "incoming": "Demandes entrantes",
+    "empty": "Aucune demande pour le moment. Complétez votre profil pour être trouvé.",
+    "accept": "Accepter",
+    "decline": "Refuser",
+    "detail": "Détail de la demande"
+  },
+  "earnings": {
+    "title": "Revenus",
+    "balance": "Solde disponible",
+    "withdraw": "Retirer",
+    "movements": "Mouvements",
+    "empty": "Aucun mouvement."
+  },
+  "subscription": {
+    "title": "Abonnement",
+    "current": "Formule actuelle",
+    "none": "Aucun abonnement actif",
+    "startTrial": "Démarrer l'essai gratuit",
+    "manage": "Gérer l'abonnement"
+  },
+  "wallet": {
+    "title": "Portefeuille",
+    "balance": "Solde",
+    "recharge": "Recharger",
+    "amount": "Montant"
+  },
+  "messages": {
+    "title": "Messages",
+    "empty": "Aucune conversation.",
+    "placeholder": "Écrire un message…",
+    "send": "Envoyer"
+  },
+  "profile": {
+    "title": "Profil",
+    "edit": "Modifier le profil",
+    "verification": "Vérification d'identité",
+    "verificationPending": "Vérification en cours",
+    "verificationVerified": "Identité vérifiée",
+    "referral": "Parrainage",
+    "settings": "Paramètres",
+    "help": "Aide",
+    "logout": "Se déconnecter",
+    "dataSaver": "Mode économie de données",
+    "language": "Langue",
+    "public": "Profil public"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "Aucune notification.",
+    "markRead": "Tout marquer comme lu"
+  },
+  "howItWorks": {
+    "title": "Comment ça marche",
+    "subtitle": "WorkTogo en 3 étapes."
+  }
+}

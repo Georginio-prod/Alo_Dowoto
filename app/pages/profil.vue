@@ -170,7 +170,7 @@ function completeProfile() {
 
 <template>
   <NuxtLayout :name="isProvider ? 'dashboard-prestataire' : 'blank'">
-    <div class="mx-auto max-w-[880px] px-5 py-8">
+    <div class="mx-auto max-w-[880px] px-5 py-8" :class="{ 'pb-tabbar': !isProvider }">
       <h1 class="text-[26px] font-extrabold text-dark">{{ t('profilPage.heading') }}</h1>
       <p class="mt-1 text-[13.5px] text-muted">
         {{ t('profilPage.subtitle') }}
@@ -260,6 +260,11 @@ function completeProfile() {
           icon="🎁" to="/parrainage"
           :title="t('profilPage.sectionParrainageTitle')"
           :subtitle="t('profilPage.sectionParrainageSubtitle')"
+        />
+        <ProfileSectionCard
+          icon="💡" to="/comment-ca-marche"
+          :title="t('tutorials.title')"
+          :subtitle="t('tutorials.subtitle')"
         />
 
         <template v-if="isProvider">

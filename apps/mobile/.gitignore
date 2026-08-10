@@ -1,0 +1,14 @@
+node_modules/
+.expo/
+dist/
+apk/*.apk
+web-build/
+*.log
+.env
+.env.local
+android/
+ios/
+*.orig.*
+.DS_Store
+coverage/
+expo-env.d.ts
