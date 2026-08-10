@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   CenterModal,
+  Icon,
   PriceRow,
   Screen,
   ScreenHeader,
@@ -46,6 +47,26 @@ export default function Paiement() {
       }
     >
       <ScreenHeader title={t('payment.title')} back />
+
+      {/* Bandeau séquestre rassurant (l'argent est bloqué, pas dépensé) */}
+      <Card padded={false} elevation="sm">
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.md,
+            backgroundColor: theme.tints.success.bg,
+            padding: theme.spacing.lg,
+            borderRadius: theme.radii.card,
+          }}
+        >
+          <Icon name="shield" size={22} color={theme.tints.success.fg} />
+          <Text variant="label" style={{ flex: 1, color: theme.tints.success.fg }}>
+            {t('payment.escrowNote')}
+          </Text>
+        </View>
+      </Card>
+
       <Card>
         <Text variant="label" color="muted">
           {t('payment.summary')}
@@ -53,9 +74,7 @@ export default function Paiement() {
         <PriceRow label={t('payment.amount')} value={formatFcfa(advance)} emphasis />
       </Card>
 
-      <Text variant="label" color="muted">
-        {t('payment.method')}
-      </Text>
+      <Text variant="h2">{t('payment.method')}</Text>
       <SegmentedControl
         segments={[
           { value: 'mobile_money', label: t('payment.mobileMoney') },
@@ -64,12 +83,6 @@ export default function Paiement() {
         value={method}
         onChange={(m) => setMethod(m)}
       />
-
-      <Card>
-        <Text variant="caption" color="muted">
-          🔒 {t('payment.escrowNote')}
-        </Text>
-      </Card>
 
       <CenterModal visible={success} onClose={() => router.replace('/(chercheur)/messages')} title={`✅ ${t('payment.success')}`}>
         <View style={{ gap: theme.spacing.md }}>

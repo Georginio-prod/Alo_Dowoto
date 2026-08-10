@@ -53,7 +53,7 @@ export default function Password() {
           label={t('auth.password')}
           value={pwd}
           onChangeText={setPwd}
-          secureTextEntry
+          secureToggle
           error={error}
           hint={t('auth.passwordHint')}
         />

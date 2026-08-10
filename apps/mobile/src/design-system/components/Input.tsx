@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native'
+import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native'
 import { useTheme } from '../theme'
 import { Text } from './Text'
 
@@ -7,15 +7,19 @@ export interface InputProps extends TextInputProps {
   label: string
   error?: string
   hint?: string
+  /** Ajoute un bouton « Afficher / Masquer » (mot de passe) — design-edo §1.4. */
+  secureToggle?: boolean
 }
 
 /**
  * Champ de saisie avec libellé et message d'erreur. L'erreur n'est jamais
- * portée par la seule couleur : bordure + texte explicite (Phase 2).
+ * portée par la seule couleur : bordure + texte explicite.
  */
-export function Input({ label, error, hint, style, ...rest }: InputProps) {
+export function Input({ label, error, hint, style, secureToggle, secureTextEntry, ...rest }: InputProps) {
   const theme = useTheme()
   const [focused, setFocused] = useState(false)
+  const [revealed, setRevealed] = useState(false)
+  const isSecure = secureToggle ? !revealed : secureTextEntry
 
   const borderColor = error
     ? theme.colors.error
@@ -25,10 +29,20 @@ export function Input({ label, error, hint, style, ...rest }: InputProps) {
 
   return (
     <View style={styles.wrap}>
-      <Text variant="label" color="muted" style={styles.label}>
-        {label}
-      </Text>
+      <View style={styles.labelRow}>
+        <Text variant="label" color="muted">
+          {label}
+        </Text>
+        {secureToggle ? (
+          <Pressable onPress={() => setRevealed((r) => !r)} hitSlop={8}>
+            <Text variant="label" color="primary">
+              {revealed ? 'Masquer' : 'Afficher'}
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
       <TextInput
+        secureTextEntry={isSecure}
         placeholderTextColor={theme.colors.muted}
         onFocus={(e) => {
           setFocused(true)
@@ -68,7 +82,7 @@ export function Input({ label, error, hint, style, ...rest }: InputProps) {
 
 const styles = StyleSheet.create({
   wrap: { gap: 4 },
-  label: { marginBottom: 2 },
+  labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
   input: { borderWidth: 1, paddingHorizontal: 12, paddingVertical: 12 },
   helper: { marginTop: 2 },
 })

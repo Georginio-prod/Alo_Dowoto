@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import {
   Button,
   Card,
+  Icon,
   Input,
   Screen,
   ScreenHeader,
@@ -67,21 +68,55 @@ export default function Mission() {
           const badge = escrowLabel(status)
           return (
             <View style={{ gap: theme.spacing.md }}>
-              <Card>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text variant="bodyBold">{c.counterpartName || c.title || '—'}</Text>
-                  <StatusBadge label={t(badge.key)} tone={badge.tone} glyph={badge.glyph} />
+              <Card padded={false} elevation="md">
+                {/* Bandeau séquestre teinté selon l'état */}
+                <View
+                  style={{
+                    backgroundColor: theme.tints[badge.tone].bg,
+                    padding: theme.spacing.lg,
+                    borderTopLeftRadius: theme.radii.card,
+                    borderTopRightRadius: theme.radii.card,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: theme.spacing.md,
+                  }}
+                >
+                  <Icon name="lock" size={20} color={theme.tints[badge.tone].fg} />
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      variant="bodyBold"
+                      style={{ color: theme.tints[badge.tone].fg }}
+                    >
+                      {status === 'in_escrow' && c.amount != null
+                        ? `Fonds bloqués · ${formatFcfa(c.amount)}`
+                        : t(badge.key)}
+                    </Text>
+                    <Text variant="caption" style={{ color: theme.tints[badge.tone].fg }}>
+                      {t('payment.escrowNote')}
+                    </Text>
+                  </View>
                 </View>
-                {c.amount != null ? (
-                  <Text variant="h2" color="primary">
-                    {formatFcfa(c.amount)}
-                  </Text>
-                ) : null}
-                {c.location ? (
-                  <Text variant="label" color="muted">
-                    📍 {c.location}
-                  </Text>
-                ) : null}
+                <View style={{ padding: theme.spacing.lg, gap: 4 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text variant="bodyBold" numberOfLines={1} style={{ flex: 1 }}>
+                      {c.counterpartName || c.title || '—'}
+                    </Text>
+                    <StatusBadge label={t(badge.key)} tone={badge.tone} glyph={badge.glyph} />
+                  </View>
+                  {c.amount != null ? (
+                    <Text variant="h1" color="primary" style={{ fontSize: 24 }}>
+                      {formatFcfa(c.amount)}
+                    </Text>
+                  ) : null}
+                  {c.location ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Icon name="map-pin" size={13} color={theme.colors.muted} />
+                      <Text variant="label" color="muted">
+                        {c.location}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
               </Card>
 
               <MissionActions id={id} status={status} role={role} />
