@@ -30,6 +30,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     package: 'com.worktogo.mobile',
     // minSdkVersion (Android 8.0 / API 26) est fixé via expo-build-properties
     // ci-dessous — ce n'est pas une clé directe du bloc `android`.
+    // Clé Google Maps optionnelle : la vue carte utilise les tuiles
+    // OpenStreetMap (UrlTile) et fonctionne SANS clé. Renseigner
+    // EXPO_PUBLIC_GMAPS_KEY améliore le fond de carte natif.
+    config: {
+      googleMaps: { apiKey: process.env.EXPO_PUBLIC_GMAPS_KEY ?? '' },
+    },
     adaptiveIcon: {
       foregroundImage: './assets/images/adaptive-icon.png',
       backgroundColor: '#14A800',

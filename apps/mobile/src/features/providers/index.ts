@@ -20,6 +20,8 @@ export const providerSchema = z.object({
   priceFrom: z.number().optional(),
   photoUrl: z.string().nullable().optional(),
   distanceKm: z.number().nullable().optional(),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
   featured: z.boolean().optional(),
 })
 export type Provider = z.infer<typeof providerSchema>

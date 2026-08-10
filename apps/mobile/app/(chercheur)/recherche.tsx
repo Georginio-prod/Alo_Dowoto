@@ -61,6 +61,10 @@ export default function Recherche() {
         <FilterChip icon="sliders" label="Filtres" onPress={() => setShowFilters(true)} />
         <FilterChip label="Vérifiés" active={verifiedOnly} onPress={() => { setVerifiedOnly((v) => !v); run() }} />
         <FilterChip label={`≤ ${maxDistance} km`} onPress={() => setShowFilters(true)} />
+        <FilterChip
+          label="Carte"
+          onPress={() => router.push({ pathname: '/carte', params: { sector: sector ?? '', q } })}
+        />
       </View>
 
       {/* Chips secteur */}
