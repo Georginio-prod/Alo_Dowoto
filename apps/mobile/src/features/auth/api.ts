@@ -3,11 +3,11 @@ import { sessionResponseSchema, userSchema, type RegisterPayload, type User } fr
 
 /** Appels bruts d'authentification. Contrat backend inchangé (MIGRATION.md §3). */
 
-export function sendOtp(method: 'sms' | 'email', value: string) {
+export function sendOtp(method: 'phone' | 'email', value: string) {
   return request('/api/auth/otp/send', { method: 'POST', body: { method, value }, anonymous: true })
 }
 
-export function verifyOtp(method: 'sms' | 'email', value: string, code: string) {
+export function verifyOtp(method: 'phone' | 'email', value: string, code: string) {
   return request('/api/auth/otp/verify', {
     method: 'POST',
     body: { method, value, code },

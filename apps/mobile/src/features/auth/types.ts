@@ -17,7 +17,7 @@ export type User = z.infer<typeof userSchema>
 
 export const sessionResponseSchema = z.object({ user: userSchema })
 
-export type ContactMethod = 'sms' | 'email'
+export type ContactMethod = 'phone' | 'email'
 export type Role = 'client' | 'prestataire'
 
 export interface RegisterPayload {

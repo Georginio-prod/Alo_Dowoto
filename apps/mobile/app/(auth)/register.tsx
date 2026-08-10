@@ -26,7 +26,7 @@ export default function Register() {
   const submit = () => {
     setError(undefined)
     const trimmed = value.trim()
-    if (method === 'sms' && trimmed.replace(/\D/g, '').length < 8) {
+    if (method === 'phone' && trimmed.replace(/\D/g, '').length < 8) {
       setError(t('auth.invalidPhone'))
       return
     }
@@ -55,20 +55,20 @@ export default function Register() {
       <View style={{ gap: theme.spacing.md }}>
         <SegmentedControl<ContactMethod>
           segments={[
-            { value: 'sms', label: t('auth.sms') },
+            { value: 'phone', label: t('auth.sms') },
             { value: 'email', label: t('auth.email') },
           ]}
           value={method}
           onChange={(m) => set({ method: m })}
         />
         <Input
-          label={method === 'sms' ? t('auth.phone') : t('auth.emailLabel')}
+          label={method === 'phone' ? t('auth.phone') : t('auth.emailLabel')}
           value={value}
           onChangeText={(v) => set({ value: v })}
-          keyboardType={method === 'sms' ? 'phone-pad' : 'email-address'}
+          keyboardType={method === 'phone' ? 'phone-pad' : 'email-address'}
           autoCapitalize="none"
           error={error}
-          placeholder={method === 'sms' ? '+228 90 00 00 00' : 'vous@exemple.tg'}
+          placeholder={method === 'phone' ? '+228 90 00 00 00' : 'vous@exemple.tg'}
         />
         <Input
           label={t('auth.referral')}

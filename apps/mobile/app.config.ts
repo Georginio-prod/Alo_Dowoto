@@ -48,7 +48,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-router',
     'expo-localization',
     'expo-secure-store',
-    ['expo-build-properties', { android: { minSdkVersion: 26 } }],
+    // usesCleartextTraffic : autorise l'app à joindre le backend en HTTP (dev
+    // sur IP LAN, ex. http://192.168.x.x:3000). Sinon Android 9+ bloque le
+    // trafic non chiffré. En production, le backend passe en HTTPS.
+    ['expo-build-properties', { android: { minSdkVersion: 26, usesCleartextTraffic: true } }],
     [
       'expo-location',
       {
@@ -64,7 +67,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ],
   experiments: { typedRoutes: true },
   extra: {
-    apiUrl: process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001',
+    apiUrl: process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000',
     sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? '',
     router: { origin: false },
     eas: { projectId: process.env.EAS_PROJECT_ID ?? '' },

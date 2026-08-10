@@ -29,13 +29,13 @@ export function useSession() {
 
 export function useSendOtp() {
   return useMutation({
-    mutationFn: (v: { method: 'sms' | 'email'; value: string }) => sendOtp(v.method, v.value),
+    mutationFn: (v: { method: 'phone' | 'email'; value: string }) => sendOtp(v.method, v.value),
   })
 }
 
 export function useVerifyOtp() {
   return useMutation({
-    mutationFn: (v: { method: 'sms' | 'email'; value: string; code: string }) =>
+    mutationFn: (v: { method: 'phone' | 'email'; value: string; code: string }) =>
       verifyOtp(v.method, v.value, v.code),
   })
 }

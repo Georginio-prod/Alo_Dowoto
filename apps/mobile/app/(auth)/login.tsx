@@ -20,7 +20,7 @@ import type { ContactMethod } from '@/features/auth/types'
 export default function Login() {
   const { t } = useTranslation()
   const theme = useTheme()
-  const [method, setMethod] = useState<ContactMethod>('sms')
+  const [method, setMethod] = useState<ContactMethod>('phone')
   const [value, setValue] = useState('')
   const [code, setCode] = useState('')
   const [password, setPassword] = useState('')
@@ -70,17 +70,17 @@ export default function Login() {
       <View style={{ gap: theme.spacing.md }}>
         <SegmentedControl<ContactMethod>
           segments={[
-            { value: 'sms', label: t('auth.sms') },
+            { value: 'phone', label: t('auth.sms') },
             { value: 'email', label: t('auth.email') },
           ]}
           value={method}
           onChange={setMethod}
         />
         <Input
-          label={method === 'sms' ? t('auth.phone') : t('auth.emailLabel')}
+          label={method === 'phone' ? t('auth.phone') : t('auth.emailLabel')}
           value={value}
           onChangeText={setValue}
-          keyboardType={method === 'sms' ? 'phone-pad' : 'email-address'}
+          keyboardType={method === 'phone' ? 'phone-pad' : 'email-address'}
           autoCapitalize="none"
           editable={!sent}
         />

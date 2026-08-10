@@ -20,7 +20,19 @@ if (Test-Path $jbr) { $env:JAVA_HOME = $jbr }
 $sdk = Join-Path $env:LOCALAPPDATA 'Android\Sdk'
 if (Test-Path $sdk) { $env:ANDROID_HOME = $sdk; $env:ANDROID_SDK_ROOT = $sdk }
 $env:NODE_ENV = 'production'   # requis par le bundling Expo
-Write-Host "JAVA_HOME=$env:JAVA_HOME`nANDROID_HOME=$env:ANDROID_HOME"
+
+# Charge les variables EXPO_PUBLIC_* de .env dans l'environnement du process,
+# pour qu'elles soient inlinées de façon fiable par Metro pendant le bundling
+# Gradle (le simple .env n'est pas toujours lu à cette étape).
+$envFile = Join-Path $root '.env'
+if (Test-Path $envFile) {
+  Get-Content $envFile | ForEach-Object {
+    if ($_ -match '^\s*(EXPO_PUBLIC_[A-Z0-9_]+)\s*=\s*(.+?)\s*$') {
+      [Environment]::SetEnvironmentVariable($matches[1], $matches[2], 'Process')
+    }
+  }
+}
+Write-Host "JAVA_HOME=$env:JAVA_HOME`nANDROID_HOME=$env:ANDROID_HOME`nEXPO_PUBLIC_API_URL=$env:EXPO_PUBLIC_API_URL"
 
 Set-Location $root
 if (-not (Test-Path 'node_modules')) { npm install }

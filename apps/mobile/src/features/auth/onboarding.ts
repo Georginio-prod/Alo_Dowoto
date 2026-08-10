@@ -16,7 +16,7 @@ interface OnboardingState {
 
 const initial = {
   role: 'client' as Role,
-  method: 'sms' as ContactMethod,
+  method: 'phone' as ContactMethod,
   value: '',
   referralCode: '',
   firstName: '',

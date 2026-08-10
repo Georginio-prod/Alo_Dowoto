@@ -13,8 +13,12 @@ import { secureStorage } from './storage'
  * React Native ne gère pas de cookie jar automatique.
  */
 
+// EXPO_PUBLIC_API_URL est inliné par Metro au bundling (mécanisme officiel
+// Expo, fiable y compris via le build Gradle) ; `extra.apiUrl` sert de repli.
 const API_URL: string =
-  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ?? 'http://localhost:3001'
+  process.env.EXPO_PUBLIC_API_URL ??
+  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ??
+  'http://localhost:3000'
 
 const TIMEOUT_MS = 15_000
 const MAX_RETRIES = 2 // uniquement erreurs réseau/5xx, jamais 4xx (Phase 3)
