@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react'
+import { ActivityIndicator, View } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -30,10 +31,11 @@ export { AppErrorBoundary as ErrorBoundary } from '@/components/AppErrorBoundary
 export default function RootLayout() {
   const setUser = useSessionStore((s) => s.setUser)
   const setLoaded = useSessionStore((s) => s.setLoaded)
-  // Police Poppins (parité web). On rend sans bloquer sur le chargement : le
-  // repli système évite l'écran blanc sur réseau lent (les glyphes basculent
-  // sur Poppins dès que la police est prête).
-  useFonts({
+  // Police Poppins : on ATTEND son chargement avant de rendre l'UI. Sur
+  // Android, un texte avec une fontFamily custom non encore chargée s'affiche
+  // vide (invisible) — d'où des écrans « vides ». On rend quand même en cas
+  // d'erreur (repli police système) pour ne jamais rester bloqué.
+  const [fontsLoaded, fontError] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
     Poppins_600SemiBold,
@@ -65,6 +67,16 @@ export default function RootLayout() {
       }
     })()
   }, [setLoaded, setUser])
+
+  // Tant que la police n'est pas prête (et sans erreur), on affiche un écran de
+  // chargement neutre — évite le texte invisible sur Android.
+  if (!fontsLoaded && !fontError) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F7F7F7' }}>
+        <ActivityIndicator color="#14A800" />
+      </View>
+    )
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
