@@ -2,23 +2,39 @@ import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
 import { request } from '@/services/http'
 
-/** Prestataire (résultats de recherche, profil public). */
+/**
+ * Prestataire — champs RÉELS de l'API (server/utils/providerDirectory.ts) :
+ * displayName, sector, subSector, city, verified, rating, reviewCount,
+ * priceFrom, photoUrl, quartier, distanceKm.
+ */
 export const providerSchema = z.object({
   id: z.string(),
-  name: z.string().optional().default(''),
-  firstName: z.string().optional().default(''),
-  lastName: z.string().optional().default(''),
+  displayName: z.string().optional().default(''),
   sector: z.string().optional(),
-  rating: z.number().optional(),
-  reviewsCount: z.number().optional(),
-  location: z.string().optional().default(''),
-  distanceKm: z.number().optional(),
-  avatarUrl: z.string().nullable().optional(),
+  subSector: z.string().optional(),
+  city: z.string().optional().default(''),
+  quartier: z.string().nullable().optional(),
   verified: z.boolean().optional(),
+  rating: z.number().optional(),
+  reviewCount: z.number().optional(),
+  priceFrom: z.number().optional(),
+  photoUrl: z.string().nullable().optional(),
+  distanceKm: z.number().nullable().optional(),
   featured: z.boolean().optional(),
-  pricePerHour: z.number().optional(),
 })
 export type Provider = z.infer<typeof providerSchema>
+
+/** Nom d'affichage sûr. */
+export function providerName(p: Provider): string {
+  return p.displayName || '—'
+}
+/** Ligne méta : sous-secteur · quartier/ville · distance. */
+export function providerMeta(p: Provider): string {
+  const place = [p.quartier, p.city].filter(Boolean).join(', ')
+  return [p.subSector, place, p.distanceKm != null ? `${p.distanceKm.toFixed(1)} km` : null]
+    .filter(Boolean)
+    .join(' · ')
+}
 
 const listSchema = z.object({ providers: z.array(providerSchema) })
 
