@@ -1,22 +1,25 @@
 import React from 'react'
 import { Pressable, View } from 'react-native'
-import { Text, useTheme } from '@/design-system'
+import { Icon, Text, useTheme, type IconName } from '@/design-system'
 
-/** Ligne de menu (paramètres, profil) — cible tactile ≥ 48dp. */
+/** Ligne de menu (design-edo §7.1) — icône au trait, cible ≥ 48dp. */
 export function MenuRow({
+  icon,
   glyph,
   label,
   onPress,
   danger,
   right,
 }: {
-  glyph: string
+  icon?: IconName
+  glyph?: string
   label: string
   onPress?: () => void
   danger?: boolean
   right?: React.ReactNode
 }) {
   const theme = useTheme()
+  const color = danger ? theme.colors.error : theme.colors.ink
   return (
     <Pressable
       accessibilityRole="button"
@@ -34,11 +37,15 @@ export function MenuRow({
         borderColor: theme.colors.hairline,
       }}
     >
-      <Text variant="body">{glyph}</Text>
-      <Text variant="body" style={{ flex: 1, color: danger ? theme.colors.error : theme.colors.ink }}>
+      {icon ? (
+        <Icon name={icon} size={19} color={danger ? theme.colors.error : theme.colors.muted} />
+      ) : glyph ? (
+        <Text variant="body">{glyph}</Text>
+      ) : null}
+      <Text variant="body" style={{ flex: 1, color }}>
         {label}
       </Text>
-      {right ?? <Text color="muted">›</Text>}
+      {right ?? <Icon name="chevron-right" size={18} color={theme.colors.muted} />}
     </Pressable>
   )
 }
