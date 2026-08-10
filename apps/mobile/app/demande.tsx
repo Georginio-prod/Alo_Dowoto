@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import {
   Button,
   Card,
+  Icon,
   Input,
   PriceRow,
   Screen,
@@ -71,6 +72,21 @@ export default function Demande() {
     >
       <ScreenHeader title={t('request.title')} subtitle={t('request.step', { current: step, total: 3 })} back />
 
+      {/* Barre de progression 3 étapes */}
+      <View style={{ flexDirection: 'row', gap: 6 }}>
+        {[1, 2, 3].map((s) => (
+          <View
+            key={s}
+            style={{
+              flex: 1,
+              height: 5,
+              borderRadius: 999,
+              backgroundColor: s <= step ? theme.colors.primary : theme.colors.hairline,
+            }}
+          />
+        ))}
+      </View>
+
       {step === 1 ? (
         <View style={{ gap: theme.spacing.md }}>
           <Text variant="h2">{t('request.step1')}</Text>
@@ -132,6 +148,26 @@ export default function Demande() {
             <PriceRow label={t('request.budgetLabel')} value={formatFcfa(budgetNum)} />
             <PriceRow label={t('request.estimate')} value={`${formatFcfa(est.low)} – ${formatFcfa(est.high)}`} emphasis />
           </Card>
+
+          {/* Le client sait AVANT d'envoyer que son argent sera bloqué, pas dépensé (design §3). */}
+          <Card padded={false} elevation="sm">
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: theme.spacing.md,
+                backgroundColor: theme.tints.success.bg,
+                padding: theme.spacing.lg,
+                borderRadius: theme.radii.card,
+              }}
+            >
+              <Icon name="shield" size={20} color={theme.tints.success.fg} />
+              <Text variant="label" style={{ flex: 1, color: theme.tints.success.fg }}>
+                {t('payment.escrowNote')}
+              </Text>
+            </View>
+          </Card>
+
           {error ? (
             <Text variant="label" color="error">
               {error}
