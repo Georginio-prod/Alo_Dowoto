@@ -1,49 +1,75 @@
 import React from 'react'
 import { View } from 'react-native'
 import { useTranslation } from 'react-i18next'
-import { Avatar, Card, StatusBadge, Text, useTheme } from '@/design-system'
+import { Avatar, Button, Card, Icon, StatusBadge, Text, useTheme } from '@/design-system'
+import { formatFcfa } from '@/features/pricing/utils'
 import type { Provider } from '@/features/providers'
 
-/** Carte prestataire réutilisée en résultats, favoris, avant. */
+/** Carte prestataire (design-edo §2.3) : note, distance, prix, CTA. */
 export function ProviderCard({ provider, onPress }: { provider: Provider; onPress?: () => void }) {
   const { t } = useTranslation()
   const theme = useTheme()
   const name = provider.name || `${provider.firstName} ${provider.lastName}`.trim() || '—'
+  const meta = [provider.sector, provider.location, provider.distanceKm != null ? `${provider.distanceKm.toFixed(1)} km` : null]
+    .filter(Boolean)
+    .join(' · ')
+
   return (
-    <Card onPress={onPress}>
-      <View style={{ flexDirection: 'row', gap: theme.spacing.md, alignItems: 'center' }}>
-        <Avatar uri={provider.avatarUrl} name={name} />
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text variant="bodyBold" numberOfLines={1}>
-            {name}
-          </Text>
-          {provider.sector ? (
+    <Card elevation="sm">
+      {provider.featured ? (
+        <View style={{ marginBottom: theme.spacing.sm }}>
+          <StatusBadge label="TOP" tone="warning" glyph="★" />
+        </View>
+      ) : null}
+
+      <View style={{ flexDirection: 'row', gap: theme.spacing.md }}>
+        <Avatar uri={provider.avatarUrl} name={name} size={52} />
+        <View style={{ flex: 1, gap: 3 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text variant="bodyBold" numberOfLines={1} style={{ flex: 1 }}>
+              {name}
+            </Text>
+            {provider.verified ? <StatusBadge label={t('provider.verified')} tone="success" glyph="✓" /> : null}
+          </View>
+          {meta ? (
             <Text variant="label" color="muted" numberOfLines={1}>
-              {provider.sector}
+              {meta}
             </Text>
           ) : null}
-          <View style={{ flexDirection: 'row', gap: theme.spacing.md, alignItems: 'center' }}>
-            {provider.rating != null ? (
-              <Text variant="caption" color="muted">
-                ⭐ {provider.rating.toFixed(1)}
-                {provider.reviewsCount != null
-                  ? ` · ${t('provider.reviews', { count: provider.reviewsCount })}`
-                  : ''}
-              </Text>
-            ) : null}
-            {provider.distanceKm != null ? (
-              <Text variant="caption" color="muted">
-                📍 {t('results.distance', { km: provider.distanceKm.toFixed(1) })}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Icon name="star" size={13} color={theme.colors.star} />
+            <Text variant="label" style={{ fontFamily: theme.typography.bodyBold.fontFamily }}>
+              {provider.rating != null ? provider.rating.toFixed(1) : '—'}
+            </Text>
+            {provider.reviewsCount != null ? (
+              <Text variant="label" color="muted">
+                ({t('provider.reviews', { count: provider.reviewsCount })})
               </Text>
             ) : null}
           </View>
         </View>
       </View>
-      {provider.verified ? (
-        <View style={{ marginTop: theme.spacing.sm }}>
-          <StatusBadge label={t('provider.verified')} tone="success" glyph="✓" />
-        </View>
-      ) : null}
+
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginTop: theme.spacing.md,
+        }}
+      >
+        {provider.pricePerHour != null ? (
+          <Text variant="label" color="muted">
+            Dès{' '}
+            <Text variant="label" color="ink" style={{ fontFamily: theme.typography.bodyBold.fontFamily }}>
+              {formatFcfa(provider.pricePerHour)}
+            </Text>
+          </Text>
+        ) : (
+          <View />
+        )}
+        <Button label={t('provider.contact')} variant="secondary" fullWidth={false} onPress={onPress} />
+      </View>
     </Card>
   )
 }
