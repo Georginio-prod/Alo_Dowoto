@@ -1,0 +1,23 @@
+# Parcours de bout en bout prestataire (Phase 6.5) — Maestro.
+appId: com.worktogo.mobile
+---
+- launchApp
+- assertVisible: 'Bienvenue sur WorkTogo'
+- tapOn: 'Je propose mes services'
+- inputText: '+228 91 00 00 00'
+- tapOn:
+    id: 'send-code'
+- inputText: '123456'
+- tapOn:
+    id: 'verify'
+# « Aujourd'hui » prestataire
+- assertVisible: "Aujourd'hui"
+# Ouvrir une mission en cours puis check-in → livraison
+- tapOn: 'Missions'
+- runFlow:
+    when:
+      visible: 'Sous séquestre'
+    commands:
+      - tapOn: 'Sous séquestre'
+      - tapOn: 'Arrivée sur place'
+      - tapOn: 'Marquer comme terminée'

@@ -1,0 +1,34 @@
+# Parcours de bout en bout chercheur (Phase 6.5) — Maestro.
+# Lancer : maestro test .maestro/parcours-chercheur.yaml
+appId: com.worktogo.mobile
+---
+- launchApp
+# Onboarding : choisir le rôle chercheur
+- assertVisible: 'Bienvenue sur WorkTogo'
+- tapOn: 'Je cherche un prestataire'
+# Inscription : envoyer le code
+- inputText: '+228 90 00 00 00'
+- tapOn:
+    id: 'send-code'
+# Vérification
+- inputText: '123456'
+- tapOn:
+    id: 'verify'
+# Accueil chercheur → publier une demande
+- tapOn:
+    id: 'cta-new-request'
+- inputText: 'Réparation plomberie'
+- tapOn: 'Suivant'
+- inputText: 'Fuite sous évier'
+- tapOn: 'Suivant'
+# Étape budget
+- tapOn: 'Budget maximum (FCFA)'
+- inputText: '15000'
+- tapOn: 'Suivant'
+- tapOn:
+    id: 'submit-request'
+# Paiement de l'avance
+- assertVisible: "Paiement de l'avance"
+- tapOn:
+    id: 'pay'
+- assertVisible: 'Paiement accepté'
