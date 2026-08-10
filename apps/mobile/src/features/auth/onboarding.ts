@@ -7,6 +7,7 @@ interface OnboardingState {
   method: ContactMethod
   value: string
   referralCode: string
+  username: string
   firstName: string
   lastName: string
   location: string
@@ -19,6 +20,7 @@ const initial = {
   method: 'phone' as ContactMethod,
   value: '',
   referralCode: '',
+  username: '',
   firstName: '',
   lastName: '',
   location: '',

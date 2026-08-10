@@ -57,7 +57,10 @@
     "passwordCreate": "Créez votre mot de passe",
     "referral": "Code de parrainage (optionnel)",
     "invalidPhone": "Numéro invalide.",
-    "invalidCode": "Code à 6 chiffres requis."
+    "invalidCode": "Code à 6 chiffres requis.",
+    "username": "Nom d'utilisateur",
+    "profileTitle": "Vos informations",
+    "profileRequired": "Prénom, nom, ville et nom d'utilisateur sont obligatoires."
   },
   "home": {
     "hello": "Bonjour {{name}}",
@@ -68,7 +71,10 @@
     "myRequests": "Mes demandes",
     "voiceSearch": "Recherche vocale"
   },
-  "categories": { "title": "Catégories", "empty": "Aucune catégorie." },
+  "categories": {
+    "title": "Catégories",
+    "empty": "Aucune catégorie."
+  },
   "results": {
     "title": "Résultats",
     "count": "{{count}} prestataire trouvé",
@@ -201,6 +207,13 @@
     "language": "Langue",
     "public": "Profil public"
   },
-  "notifications": { "title": "Notifications", "empty": "Aucune notification.", "markRead": "Tout marquer comme lu" },
-  "howItWorks": { "title": "Comment ça marche", "subtitle": "WorkTogo en 3 étapes." }
+  "notifications": {
+    "title": "Notifications",
+    "empty": "Aucune notification.",
+    "markRead": "Tout marquer comme lu"
+  },
+  "howItWorks": {
+    "title": "Comment ça marche",
+    "subtitle": "WorkTogo en 3 étapes."
+  }
 }

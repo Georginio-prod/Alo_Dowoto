@@ -162,8 +162,10 @@ function safeJson(text: string): unknown {
 function extractMessage(payload: unknown): string | undefined {
   if (payload && typeof payload === 'object') {
     const p = payload as Record<string, unknown>
+    // `message` porte le texte utile (createError de h3) ; `statusMessage` est
+    // souvent générique ("Server Error"). On privilégie donc `message`.
+    if (typeof p.message === 'string' && p.message.trim()) return p.message
     if (typeof p.statusMessage === 'string') return p.statusMessage
-    if (typeof p.message === 'string') return p.message
   }
   return undefined
 }

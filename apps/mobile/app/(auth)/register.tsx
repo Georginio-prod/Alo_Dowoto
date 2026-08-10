@@ -15,11 +15,17 @@ import { useOnboardingStore } from '@/features/auth/onboarding'
 import { useSendOtp } from '@/features/auth/hooks'
 import type { ContactMethod } from '@/features/auth/types'
 
-/** Écran 2 — Inscription : contact + envoi du code (reprend m/auth.vue). */
+/**
+ * Écran 2 — Inscription : contact + profil, puis envoi du code.
+ * Le backend exige username, prénom, nom et localisation pour CRÉER un compte
+ * (server/utils/userStore.ts) — on les collecte ici et on les transmet à
+ * createSession après vérification du code (voir verify.tsx).
+ */
 export default function Register() {
   const { t } = useTranslation()
   const theme = useTheme()
-  const { method, value, set } = useOnboardingStore()
+  const { method, value, username, firstName, lastName, location, referralCode, set } =
+    useOnboardingStore()
   const sendOtp = useSendOtp()
   const [error, setError] = useState<string | undefined>()
 
@@ -28,6 +34,10 @@ export default function Register() {
     const trimmed = value.trim()
     if (method === 'phone' && trimmed.replace(/\D/g, '').length < 8) {
       setError(t('auth.invalidPhone'))
+      return
+    }
+    if (!firstName.trim() || !lastName.trim() || !location.trim() || !username.trim()) {
+      setError(t('auth.profileRequired'))
       return
     }
     sendOtp.mutate(
@@ -67,18 +77,49 @@ export default function Register() {
           onChangeText={(v) => set({ value: v })}
           keyboardType={method === 'phone' ? 'phone-pad' : 'email-address'}
           autoCapitalize="none"
-          error={error}
           placeholder={method === 'phone' ? '+228 90 00 00 00' : 'vous@exemple.tg'}
+        />
+
+        <Text variant="bodyBold" style={{ marginTop: theme.spacing.sm }}>
+          {t('auth.profileTitle')}
+        </Text>
+        <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
+          <View style={{ flex: 1 }}>
+            <Input
+              label={t('auth.firstName')}
+              value={firstName}
+              onChangeText={(v) => set({ firstName: v })}
+              autoCapitalize="words"
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Input
+              label={t('auth.lastName')}
+              value={lastName}
+              onChangeText={(v) => set({ lastName: v })}
+              autoCapitalize="words"
+            />
+          </View>
+        </View>
+        <Input
+          label={t('auth.username')}
+          value={username}
+          onChangeText={(v) => set({ username: v })}
+          autoCapitalize="none"
+        />
+        <Input
+          label={t('auth.city')}
+          value={location}
+          onChangeText={(v) => set({ location: v })}
+          autoCapitalize="words"
         />
         <Input
           label={t('auth.referral')}
-          value={useOnboardingStore.getState().referralCode}
+          value={referralCode}
           onChangeText={(v) => set({ referralCode: v })}
           autoCapitalize="characters"
+          error={error}
         />
-        <Text variant="caption" color="muted">
-          {t('welcome.attribution')}
-        </Text>
       </View>
     </Screen>
   )

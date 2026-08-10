@@ -57,7 +57,10 @@
     "passwordCreate": "Create your password",
     "referral": "Referral code (optional)",
     "invalidPhone": "Invalid number.",
-    "invalidCode": "6-digit code required."
+    "invalidCode": "6-digit code required.",
+    "username": "Username",
+    "profileTitle": "Your details",
+    "profileRequired": "First name, last name, city and username are required."
   },
   "home": {
     "hello": "Hello {{name}}",
@@ -68,7 +71,10 @@
     "myRequests": "My requests",
     "voiceSearch": "Voice search"
   },
-  "categories": { "title": "Categories", "empty": "No categories." },
+  "categories": {
+    "title": "Categories",
+    "empty": "No categories."
+  },
   "results": {
     "title": "Results",
     "count": "{{count}} provider found",
@@ -175,7 +181,12 @@
     "startTrial": "Start free trial",
     "manage": "Manage subscription"
   },
-  "wallet": { "title": "Wallet", "balance": "Balance", "recharge": "Top up", "amount": "Amount" },
+  "wallet": {
+    "title": "Wallet",
+    "balance": "Balance",
+    "recharge": "Top up",
+    "amount": "Amount"
+  },
   "messages": {
     "title": "Messages",
     "empty": "No conversations.",
@@ -196,6 +207,13 @@
     "language": "Language",
     "public": "Public profile"
   },
-  "notifications": { "title": "Notifications", "empty": "No notifications.", "markRead": "Mark all as read" },
-  "howItWorks": { "title": "How it works", "subtitle": "WorkTogo in 3 steps." }
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications.",
+    "markRead": "Mark all as read"
+  },
+  "howItWorks": {
+    "title": "How it works",
+    "subtitle": "WorkTogo in 3 steps."
+  }
 }
