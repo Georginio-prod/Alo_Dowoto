@@ -28,7 +28,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: 'com.worktogo.mobile',
-    minSdkVersion: 26, // Android 8.0
+    // minSdkVersion (Android 8.0 / API 26) est fixé via expo-build-properties
+    // ci-dessous — ce n'est pas une clé directe du bloc `android`.
     adaptiveIcon: {
       foregroundImage: './assets/images/adaptive-icon.png',
       backgroundColor: '#14A800',
@@ -47,6 +48,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-router',
     'expo-localization',
     'expo-secure-store',
+    ['expo-build-properties', { android: { minSdkVersion: 26 } }],
     [
       'expo-location',
       {

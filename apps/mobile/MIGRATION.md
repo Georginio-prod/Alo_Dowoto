@@ -184,6 +184,17 @@ référencée par `m/welcome.vue` (tailleur, attribution légale). Icônes de se
 
 ---
 
+## 7bis. État de vérification (mesuré)
+- `npx tsc --noEmit` → **0 erreur**.
+- `npx eslint .` → **0 erreur**.
+- `npx jest` → **16/16 tests verts** (tarification, machine à états escrow,
+  extraction du jeton `wt_session`, distance géo).
+- `npx expo config` → configuration valide (scheme `worktogo`, nouvelle archi).
+- **APK** : non buildé ici (pas de NDK, non installable sans `cmdline-tools`).
+  Voir `apk/README.md` — build local (après ajout du NDK) ou EAS cloud.
+- Ancienne coquille Capacitor `mobile/` **supprimée** (commit dédié, revertable) ;
+  site web/backend non touchés.
+
 ## 8. Table de parité (voir Phase 7 du rapport pour le statut final par écran)
 Colonne « statut » renseignée à la livraison : *repris* / *amélioré* / *supprimé
 volontairement*. Objectif : chaque route Nuxt du §1 a un équivalent RN.

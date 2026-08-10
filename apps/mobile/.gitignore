@@ -1,6 +1,7 @@
 node_modules/
 .expo/
 dist/
+apk/*.apk
 web-build/
 *.log
 .env

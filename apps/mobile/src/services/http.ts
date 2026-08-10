@@ -43,11 +43,15 @@ export function setUnauthorizedHandler(fn: () => void) {
   onUnauthorized = fn
 }
 
-export interface RequestOptions<T> {
+export interface RequestOptions<T = unknown> {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'
   body?: unknown
-  /** Schéma Zod validant la réponse — contrat typé (Phase 3). */
-  schema?: ZodType<T>
+  /**
+   * Schéma Zod validant la réponse — contrat typé (Phase 3). `ZodType<T, any,
+   * any>` force l'inférence de T sur le type de SORTIE du schéma (valeurs par
+   * défaut appliquées), pas l'entrée.
+   */
+  schema?: ZodType<T, any, any>
   /** Désactive le renvoi du cookie (endpoints publics). */
   anonymous?: boolean
   signal?: AbortSignal
@@ -88,6 +92,7 @@ async function rawFetch(path: string, init: RequestInit): Promise<Response> {
  * Effectue une requête. Renvoie la réponse JSON validée par `schema` si fourni.
  * Réessaie avec délai croissant sur erreur réseau/5xx uniquement.
  */
+// Avec `schema`, T est inféré sur le type de sortie du schéma ; sinon `unknown`.
 export async function request<T = unknown>(path: string, opts: RequestOptions<T> = {}): Promise<T> {
   const { method = 'GET', body, schema, anonymous, signal } = opts
   const headers = await buildHeaders(anonymous)
@@ -99,8 +104,7 @@ export async function request<T = unknown>(path: string, opts: RequestOptions<T>
   }
 
   let attempt = 0
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
+  for (;;) {
     let res: Response
     try {
       res = await rawFetch(path, init)
@@ -137,7 +141,7 @@ export async function request<T = unknown>(path: string, opts: RequestOptions<T>
         // Réponse inattendue → erreur claire, pas d'écran blanc (Phase 3).
         throw new ApiError(res.status, payload, 'Réponse serveur inattendue.')
       }
-      return parsed.data
+      return parsed.data as T
     }
     return payload as T
   }
@@ -176,7 +180,7 @@ export async function requestWithSession<T = unknown>(
   const payload = text ? safeJson(text) : null
   if (!res.ok) throw new ApiError(res.status, payload, extractMessage(payload))
   const token = extractSessionToken(res.headers.get('set-cookie'))
-  const data = schema ? schema.parse(payload) : (payload as T)
+  const data = (schema ? schema.parse(payload) : payload) as T
   return { data, token }
 }
 

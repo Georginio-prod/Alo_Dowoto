@@ -41,7 +41,7 @@ export default function Verification() {
                 <StatusBadge label={t('profile.verification')} tone="neutral" glyph="•" />
               )}
               <Text variant="label" color="muted" style={{ marginTop: theme.spacing.sm }}>
-                Carte d'identité + photo passeport requises pour publier une première demande.
+                {"Carte d'identité + photo passeport requises pour publier une première demande."}
               </Text>
             </Card>
           </View>

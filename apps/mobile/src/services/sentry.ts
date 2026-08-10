@@ -19,7 +19,6 @@ export function initErrorTracking() {
 
 export function captureError(error: unknown) {
   if (!dsn) {
-    // eslint-disable-next-line no-console
     console.error(error)
     return
   }
