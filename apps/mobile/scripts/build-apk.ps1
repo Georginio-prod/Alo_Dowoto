@@ -46,7 +46,8 @@ $gradle = Join-Path $root 'android\app\build.gradle'
 $txt = Get-Content $gradle -Raw
 if ($txt -notmatch 'debuggableVariants\s*=\s*\[\]') {
   $txt = $txt -replace '(bundleCommand = "export:embed")', "`$1`n    debuggableVariants = []"
-  Set-Content $gradle $txt -Encoding utf8
+  # UTF-8 sans BOM (Set-Content -Encoding utf8 casserait Gradle).
+  [System.IO.File]::WriteAllText($gradle, $txt, (New-Object System.Text.UTF8Encoding($false)))
   Write-Host 'Patch debuggableVariants = [] appliqué.'
 }
 

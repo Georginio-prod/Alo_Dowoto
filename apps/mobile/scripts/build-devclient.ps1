@@ -31,8 +31,10 @@ if (-not (Test-Path 'node_modules')) { npm install }
 npx expo prebuild --platform android --no-install
 
 $gradle = Join-Path $root 'android\app\build.gradle'
-(Get-Content $gradle) | Where-Object { $_ -notmatch '^\s*debuggableVariants = \[\]\s*$' } |
-  Set-Content $gradle -Encoding utf8
+$kept = (Get-Content $gradle) | Where-Object { $_ -notmatch '^\s*debuggableVariants = \[\]\s*$' }
+# Écrit en UTF-8 SANS BOM (Set-Content -Encoding utf8 ajoute un BOM qui casse
+# le parseur Groovy de Gradle : « Unexpected character '﻿' »).
+[System.IO.File]::WriteAllText($gradle, ($kept -join "`n"), (New-Object System.Text.UTF8Encoding($false)))
 
 Set-Location (Join-Path $root 'android')
 & cmd /c ".\gradlew.bat assembleDebug --no-daemon --console=plain"
