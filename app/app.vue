@@ -3,11 +3,14 @@ import { COMPANY_NAME } from '~/data/companyInfo'
 
 const { locale } = useI18n({ useScope: 'global' })
 
-// Session résolue au niveau racine pour que la barre d'onglets globale
-// (MobileTabBar, montée ci-dessous) connaisse le rôle sur toutes les pages,
-// y compris publiques — `ensure()` ne refait pas la requête si déjà chargée.
-const { ensure } = useSession()
-onMounted(() => { ensure() })
+// Parcours d'onboarding mobile (/m/*) : ces écrans sont volontairement nus
+// (voir app/layouts/onboarding.vue). On y masque les widgets montés au niveau
+// racine — raccourci messagerie, bascule de thème, bulle d'assistance — qui
+// n'ont pas leur place sur les premiers écrans de l'app (parties A et C du
+// cahier des charges onboarding). Aucun effet ailleurs : toutes les autres
+// routes continuent de les afficher.
+const route = useRoute()
+const isOnboarding = computed(() => route.path.startsWith('/m/'))
 
 // `<html lang>` dynamique selon la langue active (#364) — remplace le
 // `lang="fr"` figé dans nuxt.config.ts (#343). `seo: false` : pas de liens
@@ -61,17 +64,14 @@ useHead(() => ({
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
-    <!-- Barre d'onglets mobile persistante (#refonte-tabbar) : montée ici, au
-         niveau racine, elle reste présente sur toutes les pages de l'app quel
-         que soit leur layout — elle ne disparaît plus en ouvrant Messages,
-         Solde, Profil… Masquée sur desktop (≥ lg) et hors session via ses
-         propres gardes internes. -->
-    <MobileTabBar />
-    <!-- Montée une seule fois au niveau racine pour apparaître sur toutes les pages (#225). -->
-    <FavoritesMessagingBar />
-    <!-- Bouton de bascule de thème, présent sur toutes les pages. -->
-    <ThemeSwitcher />
-    <!-- Assistant IA (#geoloc), accessible depuis toutes les interfaces. -->
-    <AssistantWidget />
+    <!-- Widgets racine, masqués sur le parcours d'onboarding (/m/*). -->
+    <template v-if="!isOnboarding">
+      <!-- Montée une seule fois au niveau racine pour apparaître sur toutes les pages (#225). -->
+      <FavoritesMessagingBar />
+      <!-- Bouton de bascule de thème, présent sur toutes les pages. -->
+      <ThemeSwitcher />
+      <!-- Assistant IA (#geoloc), accessible depuis toutes les interfaces. -->
+      <AssistantWidget />
+    </template>
   </div>
 </template>

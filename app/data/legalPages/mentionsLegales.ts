@@ -71,6 +71,12 @@ export function getMentionsLegales(t: (key: string, params?: Record<string, unkn
         heading: t('mentionsLegalesPage.s8Heading'),
         body: [t('mentionsLegalesPage.s8Body1', { email: SUPPORT_EMAIL, phone: SUPPORT_PHONE })],
       },
+      {
+        // Attribution requise par la licence CC BY-SA 4.0 de la vidéo d'accueil
+        // (Wikimedia Commons) — voir public/onboarding/welcome.webm.
+        heading: t('mentionsLegalesPage.s9Heading'),
+        body: [t('mentionsLegalesPage.s9Body1')],
+      },
     ],
   }
 }

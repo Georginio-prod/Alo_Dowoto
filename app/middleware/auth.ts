@@ -13,6 +13,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const authRole = typeof to.meta.authRole === 'string' ? to.meta.authRole : undefined
 
   if (!user.value) {
+    // Le point d'entrée figé dans l'APK déjà installé demande /dashboard. Pour
+    // que la coquille mobile déployée ouvre le nouveau parcours d'onboarding
+    // sans réinstallation, un visiteur non connecté sur /dashboard est envoyé
+    // vers l'écran d'accueil animé (/m/welcome) — qui enchaîne sur /m/auth. Les
+    // autres pages protégées conservent la connexion classique (/auth).
+    if (to.path === '/dashboard') {
+      return navigateTo('/m/welcome')
+    }
     return navigateTo({ path: '/auth', query: authRole ? { role: authRole } : {} })
   }
 
