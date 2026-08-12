@@ -233,6 +233,13 @@
     transform: translateY(-6px);
   }
 
+  /* Dégage le contenu derrière la barre d'onglets mobile fixe (MobileTabBar,
+     montée globalement dans app.vue). `--tabbar-height` vaut 0 quand la barre
+     est absente (déconnecté) ou masquée (≥ lg) : aucun espace superflu alors. */
+  .pb-tabbar {
+    padding-bottom: var(--tabbar-height, 0px);
+  }
+
   /* Retour tactile sur les éléments interactifs */
   .press {
     transition: transform 0.12s ease;

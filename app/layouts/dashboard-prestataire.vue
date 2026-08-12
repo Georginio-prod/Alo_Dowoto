@@ -138,7 +138,7 @@ async function logout() {
         </div>
       </aside>
 
-      <main class="min-w-0 flex-1">
+      <main class="min-w-0 flex-1 pb-tabbar">
         <slot />
       </main>
     </div>

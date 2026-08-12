@@ -54,6 +54,27 @@ function sectorLabel(slug?: string) {
   if (!slug) return null
   return SECTORS.find((sector) => sector.slug === slug)?.name ?? slug
 }
+
+// Checklist de démarrage (#tutoriel-onboarding — Partie G) : mélange tutoriels
+// et vraies actions, disparaît définitivement une fois complète. Rendu
+// client-only (états en localStorage) pour éviter tout décalage d'hydratation.
+const onboarding = useOnboarding()
+const tutorials = useTutorials()
+const checklistReady = ref(false)
+onMounted(() => {
+  onboarding.load()
+  tutorials.load()
+  checklistReady.value = true
+})
+const checklist = computed(() => [
+  { key: 'welcome', done: onboarding.state.value.welcomeSeen, label: t('checklist.welcome'), to: '/comment-ca-marche' },
+  { key: 'tour', done: tutorials.hasSeen('dashboard-seeker'), label: t('checklist.tour'), to: '/comment-ca-marche' },
+  { key: 'verify', done: !!user.value?.verified, label: t('checklist.verify'), to: '/profil?open=verification' },
+  { key: 'request', done: myRequests.value.length > 0, label: t('checklist.request'), to: '/demande' },
+])
+const checklistDone = computed(() => checklist.value.filter((i) => i.done).length)
+const checklistTotal = computed(() => checklist.value.length)
+const showChecklist = computed(() => checklistReady.value && checklistDone.value < checklistTotal.value)
 </script>
 
 <template>
@@ -64,7 +85,7 @@ function sectorLabel(slug?: string) {
     </h1>
 
     <form class="mb-6" role="search" @submit.prevent="submitSearch">
-      <label class="flex items-center gap-2.5 rounded-pill border border-hairline bg-surface px-4 py-3 shadow-card-sm focus-within:border-primary">
+      <label data-tour="dash-search" class="flex items-center gap-2.5 rounded-pill border border-hairline bg-surface px-4 py-3 shadow-card-sm focus-within:border-primary">
         <span class="sr-only">{{ t('dashboardClient.searchServiceCta') }}</span>
         <svg class="size-[18px] shrink-0 text-muted" viewBox="0 0 18 18" fill="none" aria-hidden="true">
           <circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.5" />
@@ -80,7 +101,31 @@ function sectorLabel(slug?: string) {
       </label>
     </form>
 
-    <section class="mb-6">
+    <section v-if="showChecklist" class="mb-6 rounded-card border border-primary/25 bg-primary/5 p-4">
+      <div class="mb-3 flex items-center justify-between">
+        <h2 class="text-[14px] font-bold text-dark">{{ t('checklist.title') }}</h2>
+        <span class="text-[12.5px] font-bold text-primary">{{ t('checklist.progress', { done: checklistDone, total: checklistTotal }) }}</span>
+      </div>
+      <ul class="space-y-1">
+        <li v-for="item in checklist" :key="item.key">
+          <button
+            type="button"
+            class="flex w-full items-center gap-2.5 rounded-field py-1.5 text-left"
+            :class="{ press: !item.done }"
+            :disabled="item.done"
+            @click="navigateTo(item.to)"
+          >
+            <span class="grid size-5 shrink-0 place-items-center rounded-full border-2" :class="item.done ? 'border-primary bg-primary text-white' : 'border-hairline'">
+              <svg v-if="item.done" viewBox="0 0 12 12" class="size-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6.5 5 9l4.5-5" /></svg>
+            </span>
+            <span class="flex-1 text-[13.5px]" :class="item.done ? 'text-muted line-through' : 'font-semibold text-dark'">{{ item.label }}</span>
+            <svg v-if="!item.done" viewBox="0 0 24 24" class="size-4 shrink-0 text-primary" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+          </button>
+        </li>
+      </ul>
+    </section>
+
+    <section data-tour="dash-sectors" class="mb-6">
       <div class="mb-3 flex items-baseline justify-between gap-2">
         <h2 class="text-[15px] font-bold text-dark">{{ t('sectorGrid.heading') }}</h2>
         <NuxtLink to="/categories" class="press link-underline text-[12.5px] font-semibold text-primary">

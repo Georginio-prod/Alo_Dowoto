@@ -18,7 +18,10 @@ const SOCIAL_LINKS = [
 </script>
 
 <template>
-  <footer class="border-t border-hairline bg-surface">
+  <!-- Masqué sur mobile / APK (#refonte-tabbar) : la navigation y passe
+       entièrement par la barre d'onglets persistante. Conservé sur desktop web
+       (≥ lg), où il n'y a pas de barre d'onglets. -->
+  <footer class="hidden border-t border-hairline bg-surface lg:block">
     <div class="mx-auto max-w-6xl px-6 py-12">
       <div class="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-5">
         <div class="col-span-2 sm:col-span-3 lg:col-span-1">
