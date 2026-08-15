@@ -90,6 +90,41 @@ export async function applyDisputeResolutionTimeoutIfExpired(order: EscrowOrder)
   )
 }
 
+export type AdminArbitrationResult =
+  | { ok: true; order: EscrowOrder }
+  | { ok: false; error: 'not_found' | 'invalid_status' }
+
+/**
+ * Arbitrage d'un litige par un administrateur (dashboard admin, #admin) :
+ * tranche directement un litige ouvert, sans attendre la réponse du prestataire
+ * ni la confirmation du chercheur.
+ *  - `outcome: 'provider'` → les fonds sont libérés au prestataire
+ *    (`releaseOrderFunds`), comme une validation normale.
+ *  - `outcome: 'client'` → remboursement intégral du chercheur + pénalité au
+ *    prestataire (`resolveDisputeAgainstProvider`), même dénouement que la
+ *    résolution en défaveur du prestataire.
+ * Réutilise exactement les mêmes primitives atomiques et idempotentes (#366),
+ * donc aucun risque de double crédit/débit si l'action est rejouée.
+ */
+export async function adminArbitrateDispute(
+  conversationId: string,
+  outcome: 'provider' | 'client',
+): Promise<AdminArbitrationResult> {
+  const order = await getRawEscrowOrder(conversationId)
+  if (!order) return { ok: false, error: 'not_found' }
+  if (order.status !== 'disputed') return { ok: false, error: 'invalid_status' }
+
+  const updated =
+    outcome === 'provider'
+      ? await releaseOrderFunds(order)
+      : await resolveDisputeAgainstProvider(
+          order,
+          'Litige tranché par un administrateur en faveur du chercheur.',
+          'systemMessages.disputeResolvedNotDone',
+        )
+  return { ok: true, order: updated }
+}
+
 export type ConfirmDisputeResolutionResult =
   | { ok: true; order: EscrowOrder }
   | { ok: false; error: 'not_found' | 'invalid_status' | 'awaiting_provider_response' }

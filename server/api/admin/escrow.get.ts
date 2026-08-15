@@ -42,6 +42,7 @@ export default defineEventHandler(async (event) => {
       take: params.take,
       select: {
         id: true,
+        conversationId: true,
         clientId: true,
         providerId: true,
         amount: true,
@@ -60,6 +61,7 @@ export default defineEventHandler(async (event) => {
 
   const items = rows.map((r) => ({
     id: r.id,
+    conversationId: r.conversationId,
     clientId: r.clientId,
     providerId: r.providerId,
     amount: r.amount,
