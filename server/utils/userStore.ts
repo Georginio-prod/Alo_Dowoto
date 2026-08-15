@@ -11,6 +11,17 @@ import { isVerified } from '~~/server/utils/verificationStore'
 
 export type Role = 'client' | 'prestataire'
 
+/**
+ * Rôle stocké en base pour un compte : le rôle d'inscription publique
+ * (`Role`) plus `admin`, réservé au dashboard d'administration et jamais
+ * attribué via l'inscription (voir scripts/create-admin.mjs). Volontairement
+ * NON injecté dans l'interface `User` (dont le champ `role` reste `Role`) :
+ * l'élargir propagerait `admin` aux types dérivés des messages et témoignages,
+ * auxquels un admin ne participe jamais. Le code d'administration compare donc
+ * `user.role` à `'admin'` via un cast local (server/utils/requireAdminRole.ts).
+ */
+export type AccountRole = Role | 'admin'
+
 export interface User {
   id: string
   contact: string

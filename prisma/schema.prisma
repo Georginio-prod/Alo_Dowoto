@@ -22,6 +22,11 @@ datasource db {
 enum Role {
   client
   prestataire
+  /// Compte administrateur du dashboard desktop (#admin). Jamais créé via
+  /// l'inscription publique — uniquement par le script scripts/create-admin.mjs
+  /// ou par promotion d'un compte existant. SQLite ne contraint pas les enums
+  /// au niveau base : ajouter cette valeur ne nécessite aucune migration SQL.
+  admin
 }
 
 enum SubscriptionStatus {
