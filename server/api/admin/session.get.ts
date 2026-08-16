@@ -4,5 +4,7 @@
  * expiré/invalide/non-admin (l'app redemande alors une connexion).
  */
 export default defineEventHandler(async (event) => {
-  return { user: toPublicUser(await requireAdminRole(event)) }
+  const user = await requireAdminRole(event)
+  const permissions = await getAdminPermissions(user.id)
+  return { user: toPublicUser(user), permissions, isSuperAdmin: permissions === null }
 })

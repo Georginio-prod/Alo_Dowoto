@@ -37,6 +37,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const token = await createSession(user.id)
+  const permissions = await getAdminPermissions(user.id)
 
-  return { token, user: toPublicUser(user) }
+  return { token, user: toPublicUser(user), permissions, isSuperAdmin: permissions === null }
 })

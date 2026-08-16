@@ -116,6 +116,14 @@ model User {
   latitude  Float?
   longitude Float?
 
+  /// Permissions granulaires d'un compte administrateur du dashboard desktop
+  /// (#admin), sérialisées en JSON (tableau de clés, voir
+  /// server/utils/adminPermissions.ts). `null` = super-administrateur (accès
+  /// total, cas de l'admin racine créé par scripts/create-admin.mjs). Sans
+  /// effet pour les comptes client/prestataire. Additif et non-breaking : le
+  /// site et l'APK ne lisent jamais ce champ.
+  adminPermissions String?
+
   /// Code de parrainage (#365) — `null` pour les comptes créés avant cette
   /// fonctionnalité, générés à la volée au premier accès (voir
   /// server/utils/referralStore.ts:getOrCreateReferralCode) plutôt que par
