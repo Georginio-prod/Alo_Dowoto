@@ -62,6 +62,14 @@ export default defineNuxtConfig({
   // NUXT_PUBLIC_SENTRY_DSN. Vide par défaut (voir app/plugins/errorReporting.client.ts,
   // qui reste inerte tant qu'aucune valeur n'est fournie).
   runtimeConfig: {
+    // Relais de mises à jour du dashboard admin desktop (voir
+    // server/api/updates/[...file].get.ts). Le jeton GitHub (lecture seule sur
+    // le dépôt PRIVÉ des releases) vit UNIQUEMENT ici, côté serveur : il n'est
+    // jamais embarqué sur les postes clients. À définir via l'environnement :
+    //   NUXT_GITHUB_UPDATE_TOKEN=github_pat_… (Contents: Read-only)
+    //   NUXT_GITHUB_UPDATE_REPO=Nova2026-graphik/worktogo-admin (facultatif)
+    githubUpdateToken: '',
+    githubUpdateRepo: 'Nova2026-graphik/worktogo-admin',
     public: {
       sentryDsn: ''
     }
