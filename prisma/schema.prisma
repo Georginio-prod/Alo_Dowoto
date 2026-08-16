@@ -130,6 +130,13 @@ model User {
   /// une migration de données rétroactive.
   referralCode String? @unique
 
+  /// Suspension administrative (#admin dashboard) : `null` = compte actif.
+  /// Quand renseigné, la connexion au site/APK est refusée
+  /// (server/api/auth/session.post.ts) et les sessions en cours sont supprimées
+  /// au moment de la suspension. Additif et non-breaking : le site et l'APK ne
+  /// lisent jamais ce champ en dehors du contrôle de connexion.
+  suspendedAt DateTime?
+
   sessions          Session[]
   providerProfile   ProviderProfile?
   subscriptions     Subscription[]
@@ -482,6 +489,15 @@ model Complaint {
   contactEmail String
   userId       String?
   createdAt    DateTime @default(now())
+
+  /// Suivi support depuis le dashboard admin (#admin). Additif et non-breaking :
+  /// la page publique /reclamation ne lit jamais ces champs. `status` ∈
+  /// nouveau | en_cours | resolu. `adminNote` = note interne (jamais exposée
+  /// publiquement). `handledAt`/`handledById` renseignés à la résolution.
+  status      String    @default("nouveau")
+  adminNote   String?
+  handledAt   DateTime?
+  handledById String?
 }
 
 /// Journal des tentatives de contournement détectées dans la messagerie
@@ -509,6 +525,11 @@ model Testimonial {
   message   String
   rating    Int
   createdAt DateTime @default(now())
+
+  /// Modération admin (#admin) : masque l'avis de la page d'accueil sans le
+  /// supprimer. Additif et non-breaking (défaut `false` = visible comme avant).
+  /// Filtré par server/utils/testimonialStore.ts#listTestimonials.
+  hidden    Boolean  @default(false)
 }
 
 /// Type d'événement notifié — un seul cas pour l'instant (#360, premier
@@ -519,6 +540,9 @@ enum NotificationType {
   new_message
   /// Mise à jour d'un litige escrow (réponse du prestataire, résolution) — voir escrowDisputeResolution.ts.
   dispute_update
+  /// Annonce diffusée par un administrateur depuis le dashboard (#admin) :
+  /// message d'information sans conversation liée (conversationId null).
+  admin_message
 }
 
 /// Notification in-app (#360, centre de notifications — premier incrément :

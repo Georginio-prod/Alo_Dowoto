@@ -26,6 +26,7 @@ export default defineEventHandler(async (event) => {
       longitude: true,
       referralCode: true,
       createdAt: true,
+      suspendedAt: true,
       passwordHash: true,
       googleId: true,
       providerProfile: {
@@ -76,6 +77,7 @@ export default defineEventHandler(async (event) => {
     longitude: u.longitude,
     referralCode: u.referralCode,
     createdAt: u.createdAt.getTime(),
+    suspendedAt: u.suspendedAt?.getTime() ?? null,
     passwordSet: !!u.passwordHash,
     hasGoogle: !!u.googleId,
     isProvider: !!u.providerProfile,

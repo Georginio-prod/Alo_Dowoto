@@ -134,7 +134,8 @@ function seedToTestimonial(seed: SeedTestimonial, locale: 'fr' | 'en'): Testimon
 
 /** Les plus récents d'abord — avis réels (base) et avis d'exemple (code, traduits selon `locale`) fusionnés. */
 export async function listTestimonials(locale: 'fr' | 'en' = 'fr'): Promise<Testimonial[]> {
-  const rows = await prisma.testimonial.findMany()
+  // Les avis masqués par la modération admin (#admin) ne sont jamais exposés.
+  const rows = await prisma.testimonial.findMany({ where: { hidden: false } })
   const seeds = SEED_TESTIMONIALS.map((seed) => seedToTestimonial(seed, locale))
   return [...rows.map(toTestimonial), ...seeds].sort((a, b) => b.createdAt - a.createdAt)
 }

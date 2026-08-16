@@ -11,9 +11,11 @@ export default defineEventHandler(async (event) => {
 
   const params = readAdminListParams(event)
   const category = String(getQuery(event).category ?? '').trim()
+  const status = String(getQuery(event).status ?? '').trim()
 
   const where: Prisma.ComplaintWhereInput = {}
   if (category) where.category = category
+  if (status === 'nouveau' || status === 'en_cours' || status === 'resolu') where.status = status
   if (params.search) {
     where.OR = [
       { subject: { contains: params.search } },
@@ -36,6 +38,9 @@ export default defineEventHandler(async (event) => {
         contactEmail: true,
         userId: true,
         createdAt: true,
+        status: true,
+        adminNote: true,
+        handledAt: true,
       },
     }),
     prisma.complaint.count({ where }),
@@ -49,6 +54,9 @@ export default defineEventHandler(async (event) => {
     contactEmail: r.contactEmail,
     userId: r.userId,
     createdAt: r.createdAt.getTime(),
+    status: r.status,
+    adminNote: r.adminNote,
+    handledAt: r.handledAt?.getTime() ?? null,
   }))
 
   return paginated(items, total, params)
