@@ -88,6 +88,14 @@ export default defineNuxtConfig({
     }
   },
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    // Le serveur de dev Vite refuse par défaut les requêtes dont l'en-tête Host
+    // n'est pas local (protection anti-DNS-rebinding). Quand le backend est
+    // exposé via un tunnel ngrok (dashboard admin + APK sur d'autres machines),
+    // il faut autoriser explicitement le domaine du tunnel. N'affecte QUE le
+    // serveur de dev ; le build de production (nuxt build) n'a pas ce contrôle.
+    server: {
+      allowedHosts: ['.ngrok-free.dev', '.ngrok-free.app']
+    }
   }
 })
