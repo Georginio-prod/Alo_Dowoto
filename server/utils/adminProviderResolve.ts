@@ -1,5 +1,6 @@
 import { getUserById } from '~~/server/utils/userStore'
 import { getProviderProfile } from '~~/server/utils/providerStore'
+import { getPersistedProviderProfile } from '~~/server/utils/providerProfilePersist'
 import { getProviderById } from '~~/server/utils/providerDirectory'
 
 /**
@@ -25,10 +26,12 @@ export interface ResolvedProvider {
 
 export async function resolveProviderIdentity(providerId: string): Promise<ResolvedProvider> {
   const user = await getUserById(providerId)
-  const profile = getProviderProfile(providerId)
-  const demo = user ? null : getProviderById(providerId)
+  // Profil : store en mémoire (frais) puis miroir DB (survit aux redémarrages,
+  // audit H3 écriture double). Les deux exposent les mêmes champs d'affichage.
+  const profile = getProviderProfile(providerId) ?? (await getPersistedProviderProfile(providerId))
+  const demo = user || profile ? null : getProviderById(providerId)
 
-  if (!user && !demo) {
+  if (!user && !profile && !demo) {
     return {
       id: providerId,
       name: providerId,
