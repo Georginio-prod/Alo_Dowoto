@@ -52,6 +52,18 @@ export async function persistProviderProfile(profile: ProviderProfile): Promise<
     pointsDeRepere: profile.pointsDeRepere ?? null,
     rayonInterventionKm: profile.rayonInterventionKm ?? null,
     positionApproximative: profile.positionApproximative ?? true,
+    // Profil complet (approche A) — scalaires + listes sérialisées en JSON.
+    payoutMethod: profile.payoutMethod ?? null,
+    rateTo: profile.rateTo ?? null,
+    mobility: profile.mobility ?? null,
+    availability: profile.availability ?? null,
+    cvUrl: profile.cvUrl ?? null,
+    cvFileName: profile.cvFileName ?? null,
+    whatsapp: profile.whatsapp ?? null,
+    website: profile.website ?? null,
+    languages: profile.languages ? JSON.stringify(profile.languages) : null,
+    formations: profile.formations ? JSON.stringify(profile.formations) : null,
+    certifications: profile.certifications ? JSON.stringify(profile.certifications) : null,
   }
 
   await prisma.providerProfile.upsert({

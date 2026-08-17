@@ -253,6 +253,27 @@ model ProviderProfile {
   /// server/utils/geo.ts#fuzzCoordinate et providerDirectory.ts#toSearchResult.
   positionApproximative Boolean @default(true)
 
+  // --- Profil complet (migration base = source de vérité, approche A) ---
+  // Champs additifs miroir de server/utils/providerStore.ts:ProviderProfile,
+  // pour que la base porte l'intégralité du profil (et plus seulement les
+  // champs d'affichage écrits par l'approche B). Tous nullables/non-breaking.
+  /// Mode de rémunération WorkTogo : flooz | tmoney | virement.
+  payoutMethod   String?
+  /// Tarif haut de fourchette (FCFA), complète `rateFrom`.
+  rateTo         Int?
+  /// Mobilité : client | atelier | les_deux.
+  mobility       String?
+  /// Disponibilité (texte libre).
+  availability   String?
+  cvUrl          String?
+  cvFileName     String?
+  whatsapp       String?
+  website        String?
+  /// Listes sérialisées en JSON (SQLite n'a pas de type tableau natif).
+  languages      String?
+  formations     String?
+  certifications String?
+
   reviews Review[]
 
   @@index([sectorId, city])
