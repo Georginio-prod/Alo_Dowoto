@@ -37,6 +37,7 @@ const GOOGLE_ERROR_KEYS: Record<string, string> = {
   google_state: 'auth.googleErrorState',
   google_failed: 'auth.googleErrorFailed',
   google_email: 'auth.googleErrorEmail',
+  google_suspended: 'auth.googleErrorSuspended',
 }
 const googleError = computed(() => {
   const errorCode = route.query.error

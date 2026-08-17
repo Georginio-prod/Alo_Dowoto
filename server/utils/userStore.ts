@@ -14,6 +14,17 @@ export type Role = 'client' | 'prestataire' | 'admin'
 /** Statut de compte (#dashboard-admin) — voir `getSessionUser`, qui refuse la session d'un compte suspendu. */
 export type UserStatus = 'active' | 'suspended'
 
+/**
+ * Rôle stocké en base pour un compte : le rôle d'inscription publique
+ * (`Role`) plus `admin`, réservé au dashboard d'administration et jamais
+ * attribué via l'inscription (voir scripts/create-admin.mjs). Volontairement
+ * NON injecté dans l'interface `User` (dont le champ `role` reste `Role`) :
+ * l'élargir propagerait `admin` aux types dérivés des messages et témoignages,
+ * auxquels un admin ne participe jamais. Le code d'administration compare donc
+ * `user.role` à `'admin'` via un cast local (server/utils/requireAdminRole.ts).
+ */
+export type AccountRole = Role | 'admin'
+
 export interface User {
   id: string
   contact: string
@@ -137,6 +148,18 @@ export async function findOrCreateUser(
 export async function getUserById(id: string): Promise<User | null> {
   const row = await prisma.user.findUnique({ where: { id } })
   return row ? toUser(row) : null
+}
+
+/**
+ * `true` si le compte a été suspendu par un administrateur (#admin dashboard,
+ * champ User.suspendedAt). Sert à refuser TOUTE création de session : login
+ * OTP/mot de passe (server/api/auth/session.post.ts) ET « Continuer avec
+ * Google » (server/api/auth/google/callback.get.ts) — la suspension supprime
+ * par ailleurs les sessions actives (server/api/admin/users/[id]/suspend.post.ts).
+ */
+export async function isSuspended(userId: string): Promise<boolean> {
+  const row = await prisma.user.findUnique({ where: { id: userId }, select: { suspendedAt: true } })
+  return row?.suspendedAt != null
 }
 
 /** Retrouve un utilisateur par contact normalisé (connexion Google, #219). */

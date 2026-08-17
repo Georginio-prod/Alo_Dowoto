@@ -103,7 +103,7 @@ onUnmounted(() => {
       <NuxtLink
         v-for="notification in notifications"
         :key="notification.id"
-        :to="notification.conversationId ? `/messages/${notification.conversationId}` : '/messages'"
+        :to="notification.conversationId ? `/messages/${notification.conversationId}` : '/'"
         role="menuitem"
         class="press block rounded-field px-3 py-2.5 text-left hover:bg-bg"
         :class="unreadIdsAtOpen.has(notification.id) ? 'bg-primary/5' : ''"

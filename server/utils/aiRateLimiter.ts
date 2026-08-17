@@ -41,3 +41,13 @@ export async function isRateLimited(
 
   return row.count > limit
 }
+
+/**
+ * Réinitialise le compteur d'une clé (toutes fenêtres). Utile pour un anti
+ * brute-force de connexion : on remet à zéro après une authentification
+ * réussie, afin que seules les tentatives infructueuses s'accumulent vers le
+ * blocage (voir server/api/admin/login.post.ts).
+ */
+export async function resetRateLimit(key: string): Promise<void> {
+  await prisma.aiRateWindow.deleteMany({ where: { key } })
+}

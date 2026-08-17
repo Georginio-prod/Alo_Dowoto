@@ -22,6 +22,10 @@ datasource db {
 enum Role {
   client
   prestataire
+  /// Compte administrateur du dashboard desktop (#admin). Jamais créé via
+  /// l'inscription publique — uniquement par le script scripts/create-admin.mjs
+  /// ou par promotion d'un compte existant. SQLite ne contraint pas les enums
+  /// au niveau base : ajouter cette valeur ne nécessite aucune migration SQL.
   admin
 }
 
@@ -131,13 +135,24 @@ model User {
   latitude  Float?
   longitude Float?
 
+  /// Permissions granulaires d'un compte administrateur du dashboard desktop
+  /// (#admin), sérialisées en JSON (tableau de clés, voir
+  /// server/utils/adminPermissions.ts). `null` = super-administrateur (accès
+  /// total, cas de l'admin racine créé par scripts/create-admin.mjs). Sans
+  /// effet pour les comptes client/prestataire. Additif et non-breaking : le
+  /// site et l'APK ne lisent jamais ce champ.
+  adminPermissions String?
+
   /// Code de parrainage (#365) — `null` pour les comptes créés avant cette
   /// fonctionnalité, générés à la volée au premier accès (voir
   /// server/utils/referralStore.ts:getOrCreateReferralCode) plutôt que par
   /// une migration de données rétroactive.
   referralCode String? @unique
 
-  /// Statut de compte (#dashboard-admin) — voir UserStatus.
+  /// Statut de compte (#dashboard-admin) — voir UserStatus. Suspension : la
+  /// connexion est refusée dès getSessionUser (web) ET session.post.ts (OTP /
+  /// mot de passe) + callback Google (desktop #admin), et les sessions actives
+  /// sont supprimées au moment de la suspension.
   status           UserStatus @default(active)
   suspendedAt      DateTime?
   suspendedReason  String?
@@ -514,6 +529,15 @@ model Complaint {
   contactEmail String
   userId       String?
   createdAt    DateTime @default(now())
+
+  /// Suivi support depuis le dashboard admin (#admin). Additif et non-breaking :
+  /// la page publique /reclamation ne lit jamais ces champs. `status` ∈
+  /// nouveau | en_cours | resolu. `adminNote` = note interne (jamais exposée
+  /// publiquement). `handledAt`/`handledById` renseignés à la résolution.
+  status      String    @default("nouveau")
+  adminNote   String?
+  handledAt   DateTime?
+  handledById String?
 }
 
 /// Journal des tentatives de contournement détectées dans la messagerie
@@ -541,6 +565,11 @@ model Testimonial {
   message   String
   rating    Int
   createdAt DateTime @default(now())
+
+  /// Modération admin (#admin) : masque l'avis de la page d'accueil sans le
+  /// supprimer. Additif et non-breaking (défaut `false` = visible comme avant).
+  /// Filtré par server/utils/testimonialStore.ts#listTestimonials.
+  hidden    Boolean  @default(false)
 }
 
 /// Type d'événement notifié — un seul cas pour l'instant (#360, premier
@@ -551,7 +580,8 @@ enum NotificationType {
   new_message
   /// Mise à jour d'un litige escrow (réponse du prestataire, résolution) — voir escrowDisputeResolution.ts.
   dispute_update
-  /// Message direct envoyé par l'équipe WorkTogo depuis /admin (#dashboard-admin, modules Prestataires/Chercheurs).
+  /// Message/annonce de l'équipe WorkTogo depuis un dashboard admin (desktop
+  /// #admin ou web #dashboard-admin) — sans conversation liée (conversationId null).
   admin_message
 }
 

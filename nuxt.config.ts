@@ -62,6 +62,14 @@ export default defineNuxtConfig({
   // NUXT_PUBLIC_SENTRY_DSN. Vide par défaut (voir app/plugins/errorReporting.client.ts,
   // qui reste inerte tant qu'aucune valeur n'est fournie).
   runtimeConfig: {
+    // Relais de mises à jour du dashboard admin desktop (voir
+    // server/api/updates/[...file].get.ts). Le jeton GitHub (lecture seule sur
+    // le dépôt PRIVÉ des releases) vit UNIQUEMENT ici, côté serveur : il n'est
+    // jamais embarqué sur les postes clients. À définir via l'environnement :
+    //   NUXT_GITHUB_UPDATE_TOKEN=github_pat_… (Contents: Read-only)
+    //   NUXT_GITHUB_UPDATE_REPO=Nova2026-graphik/worktogo-admin (facultatif)
+    githubUpdateToken: '',
+    githubUpdateRepo: 'Nova2026-graphik/worktogo-admin',
     public: {
       sentryDsn: ''
     }
@@ -88,6 +96,14 @@ export default defineNuxtConfig({
     }
   },
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    // Le serveur de dev Vite refuse par défaut les requêtes dont l'en-tête Host
+    // n'est pas local (protection anti-DNS-rebinding). Quand le backend est
+    // exposé via un tunnel ngrok (dashboard admin + APK sur d'autres machines),
+    // il faut autoriser explicitement le domaine du tunnel. N'affecte QUE le
+    // serveur de dev ; le build de production (nuxt build) n'a pas ce contrôle.
+    server: {
+      allowedHosts: ['.ngrok-free.dev', '.ngrok-free.app']
+    }
   }
 })

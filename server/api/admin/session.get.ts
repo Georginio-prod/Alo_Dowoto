@@ -1,0 +1,10 @@
+/**
+ * Vérifie le jeton porté par le dashboard admin au démarrage de
+ * l'application : renvoie l'admin courant, ou 401/403 si le jeton est
+ * expiré/invalide/non-admin (l'app redemande alors une connexion).
+ */
+export default defineEventHandler(async (event) => {
+  const user = await requireAdminRole(event)
+  const permissions = await getAdminPermissions(user.id)
+  return { user: toPublicUser(user), permissions, isSuperAdmin: permissions === null }
+})

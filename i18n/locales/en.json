@@ -402,6 +402,7 @@
     "googleErrorState": "The Google security check failed. Please try again.",
     "googleErrorFailed": "Google sign-in failed. Please try again.",
     "googleErrorEmail": "Your Google email address isn't verified — use the regular form instead.",
+    "googleErrorSuspended": "This account has been suspended. Please contact support for more information.",
     "pageTitle": "Log in or sign up",
     "loginTab": "Log in",
     "signupTab": "Sign up",

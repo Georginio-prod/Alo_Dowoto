@@ -11,6 +11,8 @@
  * facultatifs, remplis progressivement depuis le hub `/profil`.
  */
 
+import { persistProviderProfile, persistClearPosition } from '~~/server/utils/providerProfilePersist'
+
 export type PayoutMethod = 'flooz' | 'tmoney' | 'virement'
 
 /** Où le prestataire réalise ses prestations — affiché sur la carte « Préférences ». */
@@ -141,6 +143,9 @@ export function upsertProviderProfile(userId: string, patch: ProviderProfilePatc
     updatedAt: Date.now(),
   }
   profilesByUserId.set(userId, profile)
+  // Miroir best-effort en base pour le dashboard admin (audit H3, écriture
+  // double) — fire-and-forget : ne bloque ni ne modifie le flux public.
+  void persistProviderProfile(profile).catch((e) => console.error('[providerProfilePersist] upsert', e))
   return profile
 }
 
@@ -202,5 +207,6 @@ export function clearProviderPosition(userId: string): ProviderProfile | null {
   if (!existing) return null
   const updated: ProviderProfile = { ...existing, latitude: undefined, longitude: undefined, updatedAt: Date.now() }
   profilesByUserId.set(userId, updated)
+  void persistClearPosition(userId).catch((e) => console.error('[providerProfilePersist] clearPosition', e))
   return updated
 }
