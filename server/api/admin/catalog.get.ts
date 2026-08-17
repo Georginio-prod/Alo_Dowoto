@@ -12,16 +12,18 @@ import { SECTORS } from '~~/app/data/sectors'
 export default defineEventHandler(async (event) => {
   await requireAdminPermission(event, 'catalog.view')
 
-  const sectors = SECTORS.map((s) => ({
-    slug: s.slug,
-    name: s.name,
-    emoji: s.emoji,
-    icon: s.icon,
-    color: s.color,
-    ink: s.ink,
-    subSectors: s.subSectors.map((ss) => ss.name),
-    providerCount: countBySector(s.slug),
-  }))
+  const sectors = await Promise.all(
+    SECTORS.map(async (s) => ({
+      slug: s.slug,
+      name: s.name,
+      emoji: s.emoji,
+      icon: s.icon,
+      color: s.color,
+      ink: s.ink,
+      subSectors: s.subSectors.map((ss) => ss.name),
+      providerCount: await countBySector(s.slug),
+    })),
+  )
 
   return {
     editable: false,

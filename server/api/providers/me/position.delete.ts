@@ -4,7 +4,7 @@
  */
 export default defineEventHandler(async (event) => {
   const user = await requireProviderRole(event)
-  const updated = clearProviderPosition(user.id)
+  const updated = await clearProviderPosition(user.id)
   if (!updated) notFound('Profil prestataire introuvable.')
   return { profile: updated }
 })

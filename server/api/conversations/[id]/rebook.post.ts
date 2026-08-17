@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
 
   const { description } = await readSchemaBody(event, rebookSchema)
 
-  const amount = resolveProviderRate(conversation.providerId)
+  const amount = await resolveProviderRate(conversation.providerId)
   if (amount === null) {
     conflict('Ce prestataire n\'a pas encore configuré de tarif fixe : demande impossible pour le moment.')
   }

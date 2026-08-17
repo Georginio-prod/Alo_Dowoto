@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
   const user = await requireProviderRole(event)
   const body = await readSchemaBody(event, walletWithdrawSchema)
 
-  const profile = getProviderProfile(user.id)
+  const profile = await getProviderProfile(user.id)
   if (!profile?.payoutMethod) {
     badRequest('Choisissez un moyen de retrait avant de faire une demande.')
   }

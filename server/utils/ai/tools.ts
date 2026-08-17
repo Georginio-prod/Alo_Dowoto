@@ -94,9 +94,9 @@ export async function executeAssistantTool(name: string, input: Record<string, u
 
       const filters = { query: metier, quartier, priceMax: budgetMax }
       const nearby = latitude !== undefined && longitude !== undefined
-        ? searchProvidersNearby({ ...filters, latitude, longitude }, rayonKm)
+        ? await searchProvidersNearby({ ...filters, latitude, longitude }, rayonKm)
         : null
-      const results = nearby ? nearby.results : searchProviders(filters)
+      const results = nearby ? nearby.results : await searchProviders(filters)
 
       return {
         rayonUtiliseKm: nearby?.usedRadiusKm ?? null,
@@ -117,7 +117,7 @@ export async function executeAssistantTool(name: string, input: Record<string, u
     }
     case 'obtenirProfilPrestataire': {
       const id = asString(input.id)
-      const detail = id ? getProviderDetail(id, false) : null
+      const detail = id ? await getProviderDetail(id, false) : null
       if (!detail) return { trouve: false }
       return {
         trouve: true,

@@ -8,7 +8,7 @@
 export default defineEventHandler(async (event) => {
   const user = await requireSessionUser(event)
 
-  const providerProfile = user.role === 'prestataire' ? getProviderProfile(user.id) : null
+  const providerProfile = user.role === 'prestataire' ? await getProviderProfile(user.id) : null
   const subscription = user.role === 'prestataire' ? await getSubscriptionByUserId(user.id) : null
   const verification = getVerification(user.id)
 

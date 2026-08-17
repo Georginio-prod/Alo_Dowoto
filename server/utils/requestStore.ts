@@ -99,7 +99,7 @@ async function isAtRequestsQuota(providerId: string): Promise<boolean> {
 
 /** Calcule (ou recalcule) le classement des prestataires pour une demande. */
 export async function computeMatches(request: ServiceRequest, limit = 5): Promise<MatchedProvider[]> {
-  const candidates = searchProviders(request.sector ? { sector: request.sector } : {})
+  const candidates = await searchProviders(request.sector ? { sector: request.sector } : {})
   const candidatesById = new Map(candidates.map((provider) => [provider.id, provider]))
 
   const matchRequest: MatchRequest = {
@@ -130,7 +130,7 @@ export async function computeMatches(request: ServiceRequest, limit = 5): Promis
     if (!provider) continue
     // Même note effective que celle utilisée pour le scoring (#61) : la
     // maquette affiche donc la moyenne à jour, cohérente avec le classement.
-    const { rating, reviewCount } = getEffectiveRating(provider.id)
+    const { rating, reviewCount } = getEffectiveRating(provider.id, { rating: provider.rating, reviewCount: provider.reviewCount })
     matches.push({
       providerId: provider.id,
       displayName: provider.displayName,
