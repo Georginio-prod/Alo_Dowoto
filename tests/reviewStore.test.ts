@@ -30,16 +30,18 @@ describe('reviewStore (#61 API backend — avis & notation)', () => {
 
   it('la moyenne recalculée est immédiatement utilisée par le moteur de scoring', () => {
     // p02 vient de l'annuaire de démo (server/utils/providerDirectory.ts) :
-    // sans avis, getEffectiveRating retombe sur sa note figée.
-    const before = getEffectiveRating('p02')
+    // sans avis, getEffectiveRating retombe sur la note figée fournie par
+    // l'appelant (repli — voir providerDirectory.getEffectiveRating).
+    const fallback = { rating: 4.6, reviewCount: 18 }
+    const before = getEffectiveRating('p02', fallback)
     expect(before).toEqual({ rating: 4.6, reviewCount: 18 })
 
     submitReview('conv-p02-a', 'client-a', 'p02', 5)
     submitReview('conv-p02-b', 'client-b', 'p02', 3)
 
     // Dès qu'un avis existe, la moyenne recalculée (ici (5+3)/2 = 4)
-    // remplace la valeur figée de l'annuaire.
-    const after = getEffectiveRating('p02')
+    // remplace la valeur de repli.
+    const after = getEffectiveRating('p02', fallback)
     expect(after).toEqual({ rating: 4, reviewCount: 2 })
   })
 })

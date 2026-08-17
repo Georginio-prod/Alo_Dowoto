@@ -161,7 +161,9 @@ export async function upsertProviderProfile(userId: string, patch: ProviderProfi
   // vérité en mode `db`). La persistance est attendue pour qu'une relecture
   // immédiate voie la valeur à jour.
   profilesByUserId.set(userId, profile)
-  await persistProviderProfile(profile)
+  // Base = source de vérité : la persistance doit réussir. En mode `memory`
+  // (rollback / tests), on reste purement en mémoire — aucune écriture base.
+  if (PROVIDERS_SOURCE === 'db') await persistProviderProfile(profile)
   return profile
 }
 
@@ -225,6 +227,6 @@ export async function clearProviderPosition(userId: string): Promise<ProviderPro
   if (!existing) return null
   const updated: ProviderProfile = { ...existing, latitude: undefined, longitude: undefined, updatedAt: Date.now() }
   profilesByUserId.set(userId, updated)
-  await persistClearPosition(userId)
+  if (PROVIDERS_SOURCE === 'db') await persistClearPosition(userId)
   return updated
 }
