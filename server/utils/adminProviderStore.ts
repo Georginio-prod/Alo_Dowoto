@@ -44,7 +44,7 @@ async function resolveKycStatus(userId: string): Promise<{ status: KycStatus, de
 }
 
 async function toSummary(user: User): Promise<AdminProviderSummary> {
-  const profile = getProviderProfile(user.id)
+  const profile = await getProviderProfile(user.id)
   const subscription = await getSubscriptionByUserId(user.id)
   const { status: kycStatus } = await resolveKycStatus(user.id)
   const { average, count } = getAverageRating(user.id)
@@ -140,7 +140,7 @@ export async function getAdminProviderDetail(userId: string): Promise<AdminProvi
 
   return {
     user,
-    profile: getProviderProfile(userId),
+    profile: await getProviderProfile(userId),
     subscription,
     kyc: { status: kycInfo.status, decisions: kycInfo.decisions, hasSubmission: getVerification(userId) !== null },
     missions: missions.map((m) => ({ id: m.id, status: m.status, amount: m.amount, createdAt: m.createdAt.getTime(), clientId: m.clientId })),
@@ -151,18 +151,18 @@ export async function getAdminProviderDetail(userId: string): Promise<AdminProvi
 }
 
 /** Force la mise à jour des catégories autorisées d'un prestataire (#dashboard-admin, action admin). */
-export function adminUpdateProviderCategories(userId: string, sector: string): ProviderProfile | null {
-  const existing = getProviderProfile(userId)
+export async function adminUpdateProviderCategories(userId: string, sector: string): Promise<ProviderProfile | null> {
+  const existing = await getProviderProfile(userId)
   if (!existing) return null
-  return upsertProviderProfile(userId, { displayName: existing.displayName, sector })
+  return await upsertProviderProfile(userId, { displayName: existing.displayName, sector })
 }
 
 /** Force la mise à jour de la zone géographique d'un prestataire (#dashboard-admin, action admin). */
-export function adminUpdateProviderZone(
+export async function adminUpdateProviderZone(
   userId: string,
   zone: { city?: string, latitude?: number, longitude?: number, quartier?: string, rayonInterventionKm?: number },
-): ProviderProfile | null {
-  const existing = getProviderProfile(userId)
+): Promise<ProviderProfile | null> {
+  const existing = await getProviderProfile(userId)
   if (!existing) return null
-  return upsertProviderProfile(userId, { displayName: existing.displayName, sector: existing.sector, ...zone })
+  return await upsertProviderProfile(userId, { displayName: existing.displayName, sector: existing.sector, ...zone })
 }

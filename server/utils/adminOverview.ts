@@ -105,7 +105,7 @@ export async function getRevenueBySector(): Promise<RevenueBySector[]> {
 
   const bySector = new Map<string, number>()
   for (const order of releasedThisMonth) {
-    const provider = getProviderById(order.providerId)
+    const provider = await getProviderById(order.providerId)
     const sector = provider?.sector ?? 'autre'
     const commission = Math.round(order.amount * 0.1)
     bySector.set(sector, (bySector.get(sector) ?? 0) + commission)

@@ -19,8 +19,10 @@ export default defineEventHandler(async (event) => {
 
   const target = await prisma.user.findUnique({ where: { id }, select: { id: true, role: true } })
   if (!target) notFound('Utilisateur introuvable.')
+  // Garde-fou anti-lockout : on ne suspend jamais SON PROPRE compte. Suspendre
+  // un AUTRE admin reste permis (comportement du dashboard web #dashboard-admin ;
+  // l'UI desktop, elle, masque déjà la suspension pour les comptes admin).
   if (target.id === me.id) badRequest('Vous ne pouvez pas suspendre votre propre compte.')
-  if ((target.role as string) === 'admin') badRequest('Un compte administrateur ne peut pas être suspendu.')
 
   const body = await readBody<{ suspended?: unknown; reason?: unknown }>(event)
   const suspended = body && typeof body === 'object' && 'suspended' in body ? body.suspended === true : true
