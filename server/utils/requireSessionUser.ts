@@ -2,9 +2,20 @@ import type { H3Event } from 'h3'
 import type { User } from '~~/server/utils/userStore'
 
 export async function requireSessionUser(event: H3Event): Promise<User> {
-  const token = getCookie(event, SESSION_COOKIE)
-  const user = await getSessionUser(token)
+  // Cookie (site/web) OU en-tête `Authorization: Bearer <token>` (dashboard
+  // admin DESKTOP Electron, qui appelle l'API depuis son process Node sans
+  // cookies). Réconciliation des deux dashboards : sans le repli Bearer, toute
+  // l'auth desktop échouait en 401 sur les routes gardées par requireSessionUser
+  // (dont le requireAdminRole du #dashboard-admin).
+  let token = getCookie(event, SESSION_COOKIE)
+  if (!token) {
+    const header = getHeader(event, 'authorization')
+    if (header && header.startsWith('Bearer ')) {
+      token = header.slice('Bearer '.length).trim()
+    }
+  }
 
+  const user = await getSessionUser(token)
   if (!user) {
     unauthorized()
   }
