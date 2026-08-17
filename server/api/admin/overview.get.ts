@@ -7,7 +7,7 @@ import { prisma } from '~~/server/utils/prisma'
  * base).
  */
 export default defineEventHandler(async (event) => {
-  await requireAdminRole(event)
+  await requireAdminPermission(event, 'dashboard.view')
 
   const now = Date.now()
   const since7d = new Date(now - 7 * 24 * 60 * 60 * 1000)

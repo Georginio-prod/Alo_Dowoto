@@ -7,7 +7,7 @@ import { prisma } from '~~/server/utils/prisma'
  * l'email de contact ; filtre optionnel ?category=.
  */
 export default defineEventHandler(async (event) => {
-  await requireAdminRole(event)
+  await requireAdminPermission(event, 'complaints.view')
 
   const params = readAdminListParams(event)
   const category = String(getQuery(event).category ?? '').trim()

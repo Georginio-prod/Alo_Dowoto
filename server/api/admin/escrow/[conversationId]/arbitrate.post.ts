@@ -7,7 +7,7 @@ import { adminArbitrateDispute } from '~~/server/utils/escrowDisputeResolution'
  * atomiques de résolution de litige (#366).
  */
 export default defineEventHandler(async (event) => {
-  await requireAdminRole(event)
+  await requireAdminPermission(event, 'escrow.manage')
 
   const conversationId = getRouterParam(event, 'conversationId')
   if (!conversationId) badRequest('Identifiant de commande manquant.')

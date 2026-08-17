@@ -6,7 +6,7 @@ import { prisma } from '~~/server/utils/prisma'
  * admin. Filtre optionnel ?status=pending|confirmed|failed. Montants en FCFA.
  */
 export default defineEventHandler(async (event) => {
-  await requireAdminRole(event)
+  await requireAdminPermission(event, 'payments.view')
 
   const params = readAdminListParams(event)
   const status = String(getQuery(event).status ?? '').trim()

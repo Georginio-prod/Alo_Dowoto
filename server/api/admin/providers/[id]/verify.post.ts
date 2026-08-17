@@ -7,7 +7,7 @@ import { prisma } from '~~/server/utils/prisma'
  * l'identifiant du ProviderProfile (celui listé par /api/admin/providers).
  */
 export default defineEventHandler(async (event) => {
-  await requireAdminRole(event)
+  await requireAdminPermission(event, 'providers.verify')
 
   const id = getRouterParam(event, 'id')
   if (!id) badRequest('Identifiant prestataire manquant.')

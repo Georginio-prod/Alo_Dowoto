@@ -6,7 +6,7 @@ import { prisma } from '~~/server/utils/prisma'
  * optionnel ?status=en_attente|actif|expire.
  */
 export default defineEventHandler(async (event) => {
-  await requireAdminRole(event)
+  await requireAdminPermission(event, 'subscriptions.view')
 
   const params = readAdminListParams(event)
   const status = String(getQuery(event).status ?? '').trim()

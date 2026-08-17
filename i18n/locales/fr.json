@@ -402,6 +402,7 @@
     "googleErrorState": "La vérification de sécurité Google a échoué. Réessayez.",
     "googleErrorFailed": "La connexion avec Google a échoué. Réessayez.",
     "googleErrorEmail": "Votre adresse email Google n'est pas vérifiée — utilisez le formulaire classique.",
+    "googleErrorSuspended": "Ce compte a été suspendu. Contactez le support pour plus d'informations.",
     "pageTitle": "Connexion ou inscription",
     "loginTab": "Connexion",
     "signupTab": "Inscription",

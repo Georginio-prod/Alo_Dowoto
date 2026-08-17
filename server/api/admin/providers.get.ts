@@ -7,7 +7,7 @@ import { prisma } from '~~/server/utils/prisma'
  * filtre optionnel ?verified=true|false.
  */
 export default defineEventHandler(async (event) => {
-  await requireAdminRole(event)
+  await requireAdminPermission(event, 'providers.view')
 
   const params = readAdminListParams(event)
   const verified = String(getQuery(event).verified ?? '').trim()

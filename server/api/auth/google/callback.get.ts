@@ -1,3 +1,5 @@
+import { isSuspended } from '~~/server/utils/userStore'
+
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
 
 /**
@@ -57,6 +59,11 @@ export default defineEventHandler(async (event) => {
   }
 
   if (user) {
+    // Compte suspendu par un administrateur (#admin) : la connexion Google est
+    // refusée au même titre que le login OTP/mot de passe (voir session.post.ts).
+    if (await isSuspended(user.id)) {
+      return sendRedirect(event, '/auth?error=google_suspended')
+    }
     const token = await createSession(user.id)
     setCookie(event, SESSION_COOKIE, token, {
       httpOnly: true,

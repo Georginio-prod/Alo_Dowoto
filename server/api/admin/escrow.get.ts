@@ -17,7 +17,7 @@ const VALID_STATUS = new Set([
 ])
 
 export default defineEventHandler(async (event) => {
-  await requireAdminRole(event)
+  await requireAdminPermission(event, 'escrow.view')
 
   const params = readAdminListParams(event)
   const status = String(getQuery(event).status ?? '').trim()

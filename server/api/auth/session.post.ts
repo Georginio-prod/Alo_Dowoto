@@ -1,4 +1,4 @@
-import { prisma } from '~~/server/utils/prisma'
+import { isSuspended } from '~~/server/utils/userStore'
 
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
 
@@ -51,11 +51,8 @@ export default defineEventHandler(async (event) => {
   // Compte suspendu par un administrateur (#admin dashboard) : connexion
   // refusée. Vérifié après les identifiants pour ne pas révéler l'état d'un
   // compte à qui n'en connaît pas le mot de passe.
-  if (!created) {
-    const status = await prisma.user.findUnique({ where: { id: user.id }, select: { suspendedAt: true } })
-    if (status?.suspendedAt) {
-      forbidden('Ce compte a été suspendu. Contactez le support pour plus d’informations.')
-    }
+  if (!created && (await isSuspended(user.id))) {
+    forbidden('Ce compte a été suspendu. Contactez le support pour plus d’informations.')
   }
 
   const token = await createSession(user.id)

@@ -7,7 +7,7 @@ import { cancelEscrowOrder } from '~~/server/utils/escrowOrderStore'
  * idempotents, #366). Pour un litige ouvert, utiliser plutôt l'arbitrage.
  */
 export default defineEventHandler(async (event) => {
-  await requireAdminRole(event)
+  await requireAdminPermission(event, 'escrow.manage')
 
   const conversationId = getRouterParam(event, 'conversationId')
   if (!conversationId) badRequest('Identifiant de commande manquant.')
