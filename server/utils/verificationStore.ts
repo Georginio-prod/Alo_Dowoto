@@ -73,3 +73,18 @@ export function isVerified(userId: string): boolean {
 export function deleteVerification(userId: string): boolean {
   return verificationsByUserId.delete(userId)
 }
+
+/**
+ * Toutes les vérifications soumises, les plus récentes d'abord
+ * (#dashboard-admin, module Prestataires/Chercheurs — file de KYC à traiter).
+ * Lecture directe du store en mémoire — voir docs/admin-dashboard.md pour la
+ * portée (soumissions réelles mais volatiles, perdues au redémarrage).
+ */
+export function listAllVerifications(): Verification[] {
+  return [...verificationsByUserId.values()]
+    .map((verification) => {
+      applyRetentionPurgeIfExpired(verification)
+      return verification
+    })
+    .sort((a, b) => b.submittedAt - a.submittedAt)
+}

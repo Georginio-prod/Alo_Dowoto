@@ -107,7 +107,7 @@ export default defineEventHandler(async (event) => {
   const messageLines = [description, ...sectorAnswerLines, `Contact : ${maskContact(contact)}`]
   if (urgency) messageLines.push(`Urgence / délai souhaité : ${urgency}`)
 
-  const message = await addMessage(conversation.id, user.id, user.role, messageLines.join('\n\n'), {
+  const message = await addMessage(conversation.id, user.id, user.role as 'client' | 'prestataire', messageLines.join('\n\n'), {
     translation: {
       key: 'systemMessages.firstContact',
       params: {
