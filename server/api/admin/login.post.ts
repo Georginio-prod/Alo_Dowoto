@@ -9,7 +9,23 @@
  * compte non-admin : le message d'erreur reste volontairement générique pour
  * ne pas révéler l'existence d'un compte.
  */
+import { isRateLimited, resetRateLimit } from '~~/server/utils/aiRateLimiter'
+
+// Anti brute-force (audit M1) : au plus MAX_LOGIN_ATTEMPTS tentatives par IP et
+// par fenêtre ; une connexion réussie remet le compteur à zéro (seules les
+// tentatives infructueuses s'accumulent vers le blocage). Le backend étant
+// exposé publiquement (tunnel ngrok), sans ce garde-fou un mot de passe admin
+// serait brute-forçable.
+const MAX_LOGIN_ATTEMPTS = 10
+const LOGIN_WINDOW_MS = 15 * 60 * 1000
+
 export default defineEventHandler(async (event) => {
+  const ip = getRequestIP(event, { xForwardedFor: true }) ?? 'unknown'
+  const rateKey = `admin-login:${ip}`
+  if (await isRateLimited(rateKey, MAX_LOGIN_ATTEMPTS, LOGIN_WINDOW_MS)) {
+    tooManyRequests('Trop de tentatives de connexion. Réessayez dans quelques minutes.')
+  }
+
   const body = await readBody<{ email?: unknown; password?: unknown }>(event)
 
   const email = typeof body?.email === 'string' ? body.email : ''
@@ -38,6 +54,9 @@ export default defineEventHandler(async (event) => {
 
   const token = await createSession(user.id)
   const permissions = await getAdminPermissions(user.id)
+
+  // Connexion réussie : on remet le compteur anti brute-force à zéro pour cette IP.
+  await resetRateLimit(rateKey)
 
   return { token, user: toPublicUser(user), permissions, isSuperAdmin: permissions === null }
 })
