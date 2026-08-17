@@ -60,6 +60,8 @@ export default defineConfig({
       // on les exécute en mode `memory` (les upserts alimentent la Map, la
       // persistance base est best-effort). La prod tourne en `db` par défaut.
       NUXT_PROVIDERS_SOURCE: 'memory',
+      // Les tests d'annuaire s'appuient sur les fiches de démonstration.
+      NUXT_PROVIDERS_DEMO: 'on',
     },
   },
 })

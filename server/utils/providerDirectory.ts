@@ -147,8 +147,21 @@ function toSearchResult(profile: ProviderProfile): ProviderSearchResult {
  * et localisation sont obligatoires, voir resolveRequiredOnboardingFields),
  * pas seulement une fois son profil professionnel complété.
  */
+/**
+ * Faut-il inclure l'annuaire de DÉMONSTRATION (faux prestataires `p01…`) dans
+ * les résultats publics ? Ces fiches sont utiles pour peupler le catalogue en
+ * développement/démo, mais ne doivent PAS apparaître en production : ce sont de
+ * faux profils, contactables et payables (séquestre), qui tromperaient un vrai
+ * utilisateur. Défaut : activé hors production (dev, tests, staging), désactivé
+ * en production — surchargeable explicitement via NUXT_PROVIDERS_DEMO=on|off.
+ */
+const INCLUDE_DEMO_PROVIDERS = process.env.NUXT_PROVIDERS_DEMO
+  ? process.env.NUXT_PROVIDERS_DEMO === 'on'
+  : process.env.NODE_ENV !== 'production'
+
 async function allProviders(): Promise<ProviderSearchResult[]> {
-  return [...DIRECTORY, ...(await listProviderProfiles()).map(toSearchResult)]
+  const real = (await listProviderProfiles()).map(toSearchResult)
+  return INCLUDE_DEMO_PROVIDERS ? [...DIRECTORY, ...real] : real
 }
 
 /** Retrouve une fiche par id, dans l'annuaire de démo ou parmi les vrais comptes (ex. utilisé par la messagerie, #59). */
