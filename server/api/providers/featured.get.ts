@@ -27,7 +27,7 @@ function firstValue(value: unknown): string | undefined {
   return typeof raw === 'string' && raw.trim() !== '' ? raw.trim() : undefined
 }
 
-export default defineEventHandler((event): { results: FeaturedProviderResult[] } => {
+export default defineEventHandler(async (event): Promise<{ results: FeaturedProviderResult[] }> => {
   const query = getQuery(event)
 
   const sector = firstValue(query.secteur)
@@ -39,16 +39,16 @@ export default defineEventHandler((event): { results: FeaturedProviderResult[] }
   const parsedLimit = rawLimit !== undefined ? Number(rawLimit) : NaN
   const limit = Number.isFinite(parsedLimit) ? Math.min(MAX_LIMIT, Math.max(1, Math.trunc(parsedLimit))) : DEFAULT_LIMIT
 
-  const ranked = rankFeaturedProviders(getFeaturedCandidates(sector), undefined, limit)
+  const ranked = rankFeaturedProviders(await getFeaturedCandidates(sector), undefined, limit)
 
-  const results = ranked
-    .map((result, index): FeaturedProviderResult | null => {
-      const provider = getProviderById(result.providerId)
+  const results = (await Promise.all(
+    ranked.map(async (result, index): Promise<FeaturedProviderResult | null> => {
+      const provider = await getProviderById(result.providerId)
       if (!provider) return null
       // Même note effective (#61) que celle utilisée pour le classement,
       // pour que la carte affichée reste cohérente avec le score qui l'a
       // sélectionnée (voir requestStore.computeMatches, même principe).
-      const { rating, reviewCount } = getEffectiveRating(provider.id)
+      const { rating, reviewCount } = getEffectiveRating(provider.id, { rating: provider.rating, reviewCount: provider.reviewCount })
       return {
         ...provider,
         rating,
@@ -56,8 +56,8 @@ export default defineEventHandler((event): { results: FeaturedProviderResult[] }
         featuredScore: result.total,
         badge: index === 0 ? 'top' : 'recommande',
       }
-    })
-    .filter((provider): provider is FeaturedProviderResult => provider !== null)
+    }),
+  )).filter((provider): provider is FeaturedProviderResult => provider !== null)
 
   return { results }
 })

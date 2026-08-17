@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
 
   const { frequency } = await readSchemaBody(event, recurringServiceSchema)
 
-  const amount = resolveProviderRate(conversation.providerId)
+  const amount = await resolveProviderRate(conversation.providerId)
   if (amount === null) {
     conflict('Ce prestataire n\'a pas encore configuré de tarif fixe : service récurrent impossible pour le moment.')
   }

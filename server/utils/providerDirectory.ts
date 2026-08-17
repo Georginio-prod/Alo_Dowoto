@@ -147,13 +147,26 @@ function toSearchResult(profile: ProviderProfile): ProviderSearchResult {
  * et localisation sont obligatoires, voir resolveRequiredOnboardingFields),
  * pas seulement une fois son profil professionnel complété.
  */
-function allProviders(): ProviderSearchResult[] {
-  return [...DIRECTORY, ...listProviderProfiles().map(toSearchResult)]
+/**
+ * Faut-il inclure l'annuaire de DÉMONSTRATION (faux prestataires `p01…`) dans
+ * les résultats publics ? Ces fiches sont utiles pour peupler le catalogue en
+ * développement/démo, mais ne doivent PAS apparaître en production : ce sont de
+ * faux profils, contactables et payables (séquestre), qui tromperaient un vrai
+ * utilisateur. Défaut : activé hors production (dev, tests, staging), désactivé
+ * en production — surchargeable explicitement via NUXT_PROVIDERS_DEMO=on|off.
+ */
+const INCLUDE_DEMO_PROVIDERS = process.env.NUXT_PROVIDERS_DEMO
+  ? process.env.NUXT_PROVIDERS_DEMO === 'on'
+  : process.env.NODE_ENV !== 'production'
+
+async function allProviders(): Promise<ProviderSearchResult[]> {
+  const real = (await listProviderProfiles()).map(toSearchResult)
+  return INCLUDE_DEMO_PROVIDERS ? [...DIRECTORY, ...real] : real
 }
 
 /** Retrouve une fiche par id, dans l'annuaire de démo ou parmi les vrais comptes (ex. utilisé par la messagerie, #59). */
-export function getProviderById(id: string): ProviderSearchResult | null {
-  return allProviders().find((provider) => provider.id === id) ?? null
+export async function getProviderById(id: string): Promise<ProviderSearchResult | null> {
+  return (await allProviders()).find((provider) => provider.id === id) ?? null
 }
 
 /**
@@ -171,7 +184,7 @@ export function getProviderById(id: string): ProviderSearchResult | null {
  * `distanceKm: null` (aucune régression pour les comptes n'ayant pas
  * activé la géolocalisation).
  */
-export function searchProviders(filters: ProviderSearchFilters): ProviderSearchResult[] {
+export async function searchProviders(filters: ProviderSearchFilters): Promise<ProviderSearchResult[]> {
   const query = filters.query ? normalize(filters.query) : ''
   const availabilityDate = filters.date ?? todayIsoDate()
   const searcherCoords = isValidCoordinatePair(filters.latitude, filters.longitude)
@@ -189,7 +202,7 @@ export function searchProviders(filters: ProviderSearchFilters): ProviderSearchR
     ? boundingBoxAround(searcherCoords, filters.radiusKm)
     : null
 
-  const filtered = allProviders()
+  const filtered = (await allProviders())
     .filter((provider) => {
       if (filters.sector && provider.sector !== filters.sector) return false
       if (filters.subSectors?.length && !filters.subSectors.includes(provider.subSector)) return false
@@ -266,18 +279,18 @@ export interface NearbySearchResult {
  * du changement plutôt que de le laisser croire que le rayon demandé a été
  * respecté.
  */
-export function searchProvidersNearby(
+export async function searchProvidersNearby(
   filters: Omit<ProviderSearchFilters, 'radiusKm'>,
   requestedRadiusKm: number = DEFAULT_RADIUS_KM,
-): NearbySearchResult {
+): Promise<NearbySearchResult> {
   const widerSteps = RADIUS_SLIDER_OPTIONS_KM.filter((step) => step > requestedRadiusKm)
 
   let usedRadiusKm = requestedRadiusKm
-  let results = searchProviders({ ...filters, radiusKm: usedRadiusKm })
+  let results = await searchProviders({ ...filters, radiusKm: usedRadiusKm })
 
   for (const radiusKm of widerSteps) {
     if (results.length > 0) break
-    results = searchProviders({ ...filters, radiusKm })
+    results = await searchProviders({ ...filters, radiusKm })
     usedRadiusKm = radiusKm
   }
 
@@ -304,7 +317,9 @@ function sortResults(results: ProviderSearchResult[], sort: ProviderSortOption):
 
 /** Score multi-critères (0-100) d'un résultat de recherche, voir `searchProviders`. */
 function scoreSearchResult(provider: ProviderSearchResult): number {
-  const { rating, reviewCount } = getEffectiveRating(provider.id)
+  // On passe le prestataire déjà en main comme repli : évite un re-fetch de
+  // l'annuaire (coûteux, désormais une requête base) par résultat.
+  const { rating, reviewCount } = getEffectiveRating(provider.id, { rating: provider.rating, reviewCount: provider.reviewCount })
   return scoreFeaturedProvider({
     providerId: provider.id,
     rating,
@@ -319,8 +334,8 @@ function scoreSearchResult(provider: ProviderSearchResult): number {
  * `/categories`). Repose sur `searchProviders` pour rester cohérent avec le
  * filtrage utilisé par la recherche publique.
  */
-export function countBySector(sector: string): number {
-  return searchProviders({ sector }).length
+export async function countBySector(sector: string): Promise<number> {
+  return (await searchProviders({ sector })).length
 }
 
 /**
@@ -332,12 +347,17 @@ export function countBySector(sector: string): number {
  * le moteur de scoring (#54) reflète immédiatement les nouvelles
  * notations, sans dupliquer cette logique dans chaque appelant.
  */
-export function getEffectiveRating(providerId: string): { rating: number, reviewCount: number } {
+export function getEffectiveRating(
+  providerId: string,
+  fallback?: { rating: number; reviewCount: number },
+): { rating: number, reviewCount: number } {
   const { average, count } = getAverageRating(providerId)
   if (count > 0) return { rating: average, reviewCount: count }
 
-  const provider = getProviderById(providerId)
-  return { rating: provider?.rating ?? 0, reviewCount: provider?.reviewCount ?? 0 }
+  // Repli sur la note figée du prestataire, fourni par l'appelant (qui l'a déjà
+  // en main) pour rester synchrone — évite de reconstruire l'annuaire (requête
+  // base, approche A). Sans repli : 0 (aucun avis, aucune fiche fournie).
+  return { rating: fallback?.rating ?? 0, reviewCount: fallback?.reviewCount ?? 0 }
 }
 
 /**
@@ -351,10 +371,10 @@ export function getEffectiveRating(providerId: string): { rating: number, review
  * `getProviderById`, dont la fiche fusionnée (#43 → vrais comptes) retombe
  * sur `0` par défaut et masquerait ce cas.
  */
-export function resolveProviderRate(providerId: string): number | null {
+export async function resolveProviderRate(providerId: string): Promise<number | null> {
   const directoryEntry = DIRECTORY.find((provider) => provider.id === providerId)
   if (directoryEntry) return directoryEntry.priceFrom
-  return getProviderProfile(providerId)?.rateFrom ?? null
+  return (await getProviderProfile(providerId))?.rateFrom ?? null
 }
 
 /** Approximation du nombre d'années d'expérience à partir du nombre d'avis (pas de champ dédié pour l'instant). */
@@ -369,10 +389,10 @@ export function estimateExperienceYears(reviewCount: number): number {
  * mise en avant aux prestataires de ce secteur (cohérence avec la page
  * consultée) — sinon tout l'annuaire est éligible.
  */
-export function getFeaturedCandidates(sector?: string): FeaturedCandidate[] {
-  const providers = searchProviders(sector ? { sector } : {})
+export async function getFeaturedCandidates(sector?: string): Promise<FeaturedCandidate[]> {
+  const providers = await searchProviders(sector ? { sector } : {})
   return providers.map((provider) => {
-    const { rating, reviewCount } = getEffectiveRating(provider.id)
+    const { rating, reviewCount } = getEffectiveRating(provider.id, { rating: provider.rating, reviewCount: provider.reviewCount })
     return {
       providerId: provider.id,
       rating,
@@ -431,11 +451,11 @@ function maskEmail(email: string): string {
  * partiellement masquées — laissé à la charge de l'appelant (la route API
  * sait, elle, si l'utilisateur courant a déjà engagé le contact).
  */
-export function getProviderDetail(id: string, contactRevealed: boolean): ProviderDetail | null {
-  const provider = getProviderById(id)
+export async function getProviderDetail(id: string, contactRevealed: boolean): Promise<ProviderDetail | null> {
+  const provider = await getProviderById(id)
   if (!provider) return null
 
-  const { rating, reviewCount } = getEffectiveRating(id)
+  const { rating, reviewCount } = getEffectiveRating(id, { rating: provider.rating, reviewCount: provider.reviewCount })
   const experienceYears = estimateExperienceYears(reviewCount)
   const { phone, email } = derivedContact(provider)
 
@@ -443,7 +463,7 @@ export function getProviderDetail(id: string, contactRevealed: boolean): Provide
   // prestataire (#43 → vrais comptes) : sa fiche reprend sa propre
   // description/disponibilité/CV (hub /profil) plutôt que le texte
   // générique de démo.
-  const realProfile = DIRECTORY.some((entry) => entry.id === id) ? null : getProviderProfile(id)
+  const realProfile = DIRECTORY.some((entry) => entry.id === id) ? null : await getProviderProfile(id)
 
   const bio = realProfile?.description
     || `Prestataire ${provider.subSector.toLowerCase()} basé·e à ${provider.city}, ${experienceYears} an${experienceYears > 1 ? 's' : ''} d'expérience sur WorkTogo.`

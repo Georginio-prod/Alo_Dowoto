@@ -332,7 +332,7 @@ export async function toConversationSummary(conversation: Conversation, viewerId
   if (isViewerClient) {
     // L'autre partie est le prestataire : on tente d'abord l'annuaire de
     // démo (cas courant du prototype), puis un vrai compte utilisateur.
-    const directoryEntry = getProviderById(otherPartyId)
+    const directoryEntry = await getProviderById(otherPartyId)
     if (directoryEntry) {
       otherPartyName = directoryEntry.displayName
       otherPartySector = directoryEntry.subSector

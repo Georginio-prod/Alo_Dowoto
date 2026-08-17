@@ -11,7 +11,22 @@
  * facultatifs, remplis progressivement depuis le hub `/profil`.
  */
 
-import { persistProviderProfile, persistClearPosition } from '~~/server/utils/providerProfilePersist'
+import {
+  persistProviderProfile,
+  persistClearPosition,
+  readProviderProfileFromDb,
+  listProviderProfilesFromDb,
+} from '~~/server/utils/providerProfilePersist'
+
+/**
+ * Source de vérité des profils prestataires (migration approche A). `db` (défaut)
+ * : lecture depuis la base (persistante, partagée, survit aux redémarrages).
+ * `memory` : ancien comportement (Map en mémoire) — bascule de secours pour
+ * rollback instantané via NUXT_PROVIDERS_SOURCE=memory, sans redéploiement.
+ * L'écriture va TOUJOURS en base (et alimente le cache mémoire) quel que soit
+ * le mode, pour que la bascule ne perde rien.
+ */
+const PROVIDERS_SOURCE: 'db' | 'memory' = process.env.NUXT_PROVIDERS_SOURCE === 'memory' ? 'memory' : 'db'
 
 export type PayoutMethod = 'flooz' | 'tmoney' | 'virement'
 
@@ -110,8 +125,8 @@ function withNullableOverride<T>(patchValue: T | null | undefined, existingValue
 
 const profilesByUserId = new Map<string, ProviderProfile>()
 
-export function upsertProviderProfile(userId: string, patch: ProviderProfilePatch): ProviderProfile {
-  const existing = profilesByUserId.get(userId)
+export async function upsertProviderProfile(userId: string, patch: ProviderProfilePatch): Promise<ProviderProfile> {
+  const existing = await getProviderProfile(userId)
   const profile: ProviderProfile = {
     userId,
     displayName: patch.displayName,
@@ -142,14 +157,18 @@ export function upsertProviderProfile(userId: string, patch: ProviderProfilePatc
     website: patch.website ?? existing?.website,
     updatedAt: Date.now(),
   }
+  // Cache mémoire (utilisé en mode `memory`) + écriture en base (source de
+  // vérité en mode `db`). La persistance est attendue pour qu'une relecture
+  // immédiate voie la valeur à jour.
   profilesByUserId.set(userId, profile)
-  // Miroir best-effort en base pour le dashboard admin (audit H3, écriture
-  // double) — fire-and-forget : ne bloque ni ne modifie le flux public.
-  void persistProviderProfile(profile).catch((e) => console.error('[providerProfilePersist] upsert', e))
+  // Base = source de vérité : la persistance doit réussir. En mode `memory`
+  // (rollback / tests), on reste purement en mémoire — aucune écriture base.
+  if (PROVIDERS_SOURCE === 'db') await persistProviderProfile(profile)
   return profile
 }
 
-export function getProviderProfile(userId: string): ProviderProfile | null {
+export async function getProviderProfile(userId: string): Promise<ProviderProfile | null> {
+  if (PROVIDERS_SOURCE === 'db') return readProviderProfileFromDb(userId)
   return profilesByUserId.get(userId) ?? null
 }
 
@@ -158,7 +177,8 @@ export function getProviderProfile(userId: string): ProviderProfile | null {
  * fusionner avec l'annuaire de démonstration côté recherche publique — voir
  * server/utils/providerDirectory.ts.
  */
-export function listProviderProfiles(): ProviderProfile[] {
+export async function listProviderProfiles(): Promise<ProviderProfile[]> {
+  if (PROVIDERS_SOURCE === 'db') return listProviderProfilesFromDb()
   return [...profilesByUserId.values()]
 }
 
@@ -202,11 +222,11 @@ export function resolveRequiredOnboardingFields(
  * `city` ne sont volontairement pas effacés : ce ne sont pas des
  * coordonnées précises.
  */
-export function clearProviderPosition(userId: string): ProviderProfile | null {
-  const existing = profilesByUserId.get(userId)
+export async function clearProviderPosition(userId: string): Promise<ProviderProfile | null> {
+  const existing = await getProviderProfile(userId)
   if (!existing) return null
   const updated: ProviderProfile = { ...existing, latitude: undefined, longitude: undefined, updatedAt: Date.now() }
   profilesByUserId.set(userId, updated)
-  void persistClearPosition(userId).catch((e) => console.error('[providerProfilePersist] clearPosition', e))
+  if (PROVIDERS_SOURCE === 'db') await persistClearPosition(userId)
   return updated
 }

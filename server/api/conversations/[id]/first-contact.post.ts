@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
   // fréquence pour du ménage) dépendent du secteur du prestataire — voir
   // app/data/firstContactSectorFields.ts. Revalidés ici car le client ne
   // fait pas foi (requis, anti-contournement sur les champs texte).
-  const providerSector = getProviderById(conversation.providerId)?.sector ?? null
+  const providerSector = (await getProviderById(conversation.providerId))?.sector ?? null
   const sectorFields = getSectorFieldsFr(providerSector)
   const sectorAnswerLines: string[] = []
   // `sectorAnswerParams` (#i18n) : valeurs brutes (clé de champ + valeur),
@@ -81,7 +81,7 @@ export default defineEventHandler(async (event) => {
   // (#194, epic #191) : cette itération ne gère que le tarif fixe affiché
   // (pas de devis à valider, choix produit encore à trancher). Sans tarif
   // configuré, la demande ne peut pas être engagée.
-  const amount = resolveProviderRate(conversation.providerId)
+  const amount = await resolveProviderRate(conversation.providerId)
   if (amount === null) {
     conflict('Ce prestataire n\'a pas encore configuré de tarif fixe : demande impossible pour le moment.')
   }

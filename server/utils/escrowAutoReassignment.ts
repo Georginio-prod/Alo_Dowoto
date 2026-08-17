@@ -34,17 +34,17 @@ import { creditWallet } from '~~/server/utils/walletStore'
  * Prochain prestataire disponible du même secteur/ville qu'un prestataire donné
  * (#289), classé par note effective décroissante. `null` si aucune alternative.
  */
-function findNextAvailableProvider(currentProviderId: string): ProviderSearchResult | null {
-  const current = getProviderById(currentProviderId)
+async function findNextAvailableProvider(currentProviderId: string): Promise<ProviderSearchResult | null> {
+  const current = await getProviderById(currentProviderId)
   if (!current) return null
 
-  const alternatives = searchProviders({ sector: current.sector, city: current.city }).filter(
+  const alternatives = (await searchProviders({ sector: current.sector, city: current.city })).filter(
     (provider) => provider.id !== currentProviderId,
   )
   if (alternatives.length === 0) return null
 
   const ranked = alternatives
-    .map((provider) => ({ provider, ...getEffectiveRating(provider.id) }))
+    .map((provider) => ({ provider, ...getEffectiveRating(provider.id, { rating: provider.rating, reviewCount: provider.reviewCount }) }))
     .sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount)
   return ranked[0]?.provider ?? null
 }
@@ -63,7 +63,7 @@ export async function applyAutoReassignmentIfExpired(order: EscrowOrder): Promis
   const pendingConfirmation = await findLatestUnresolvedMessage(order.conversationId, 'order_confirmation')
   if (!pendingConfirmation) return order
 
-  const nextProvider = findNextAvailableProvider(order.providerId)
+  const nextProvider = await findNextAvailableProvider(order.providerId)
   if (!nextProvider) {
     const body = "Le prestataire n'a pas répondu à temps et aucune alternative n'est disponible pour le moment. Vous pouvez annuler cette commande ou réessayer plus tard."
     await addSystemMessage(order.conversationId, body, 'text', { key: 'systemMessages.noResponseNoAlternative' })
@@ -98,7 +98,7 @@ export async function applyAutoReassignmentIfExpired(order: EscrowOrder): Promis
   if (clientContact) await setClientContact(newConversation.id, clientContact)
   await markFirstContactDone(newConversation.id)
 
-  const newAmount = resolveProviderRate(nextProvider.id) ?? order.amount
+  const newAmount = (await resolveProviderRate(nextProvider.id)) ?? order.amount
   await createEscrowOrder({ conversationId: newConversation.id, clientId: order.clientId, providerId: nextProvider.id, amount: newAmount })
   const awaitingBody = "Cette demande vous a été transmise automatiquement suite à l'absence de réponse d'un autre prestataire. Réglez le paiement pour la confirmer."
   await addSystemMessage(newConversation.id, awaitingBody, 'text', { key: 'systemMessages.autoReassignedAwaitingPayment' })

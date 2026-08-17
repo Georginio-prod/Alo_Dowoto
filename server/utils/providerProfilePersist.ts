@@ -1,6 +1,124 @@
 import { prisma } from '~~/server/utils/prisma'
 import { SECTORS } from '~~/app/data/sectors'
-import type { ProviderProfile } from '~~/server/utils/providerStore'
+import type {
+  ProviderProfile,
+  PayoutMethod,
+  Mobility,
+  FormationEntry,
+  CertificationEntry,
+} from '~~/server/utils/providerStore'
+
+/** Colonnes lues pour reconstituer un ProviderProfile complet depuis la base. */
+const FULL_SELECT = {
+  userId: true,
+  displayName: true,
+  city: true,
+  description: true,
+  photoUrl: true,
+  rateFrom: true,
+  rateTo: true,
+  latitude: true,
+  longitude: true,
+  quartier: true,
+  adresse: true,
+  pointsDeRepere: true,
+  rayonInterventionKm: true,
+  positionApproximative: true,
+  payoutMethod: true,
+  mobility: true,
+  availability: true,
+  cvUrl: true,
+  cvFileName: true,
+  whatsapp: true,
+  website: true,
+  languages: true,
+  formations: true,
+  certifications: true,
+  updatedAt: true,
+  sector: { select: { slug: true } },
+} as const
+
+function parseJson<T>(raw: string | null): T | undefined {
+  if (!raw) return undefined
+  try {
+    return JSON.parse(raw) as T
+  } catch {
+    return undefined
+  }
+}
+
+type FullRow = {
+  userId: string
+  displayName: string
+  city: string | null
+  description: string | null
+  photoUrl: string | null
+  rateFrom: number | null
+  rateTo: number | null
+  latitude: number | null
+  longitude: number | null
+  quartier: string | null
+  adresse: string | null
+  pointsDeRepere: string | null
+  rayonInterventionKm: number | null
+  positionApproximative: boolean
+  payoutMethod: string | null
+  mobility: string | null
+  availability: string | null
+  cvUrl: string | null
+  cvFileName: string | null
+  whatsapp: string | null
+  website: string | null
+  languages: string | null
+  formations: string | null
+  certifications: string | null
+  updatedAt: Date
+  sector: { slug: string } | null
+}
+
+/** Reconstitue un ProviderProfile (forme du store) depuis une ligne DB. */
+function rowToProfile(row: FullRow): ProviderProfile {
+  return {
+    userId: row.userId,
+    displayName: row.displayName,
+    sector: row.sector?.slug ?? '',
+    city: row.city ?? undefined,
+    latitude: row.latitude ?? undefined,
+    longitude: row.longitude ?? undefined,
+    quartier: row.quartier ?? undefined,
+    adresse: row.adresse ?? undefined,
+    pointsDeRepere: row.pointsDeRepere ?? undefined,
+    rayonInterventionKm: row.rayonInterventionKm ?? undefined,
+    positionApproximative: row.positionApproximative,
+    payoutMethod: (row.payoutMethod as PayoutMethod | null) ?? undefined,
+    photoUrl: row.photoUrl ?? undefined,
+    description: row.description ?? undefined,
+    rateFrom: row.rateFrom ?? undefined,
+    rateTo: row.rateTo ?? undefined,
+    mobility: (row.mobility as Mobility | null) ?? undefined,
+    availability: row.availability ?? undefined,
+    cvUrl: row.cvUrl ?? undefined,
+    cvFileName: row.cvFileName ?? undefined,
+    languages: parseJson<string[]>(row.languages),
+    formations: parseJson<FormationEntry[]>(row.formations),
+    certifications: parseJson<CertificationEntry[]>(row.certifications),
+    whatsapp: row.whatsapp ?? undefined,
+    website: row.website ?? undefined,
+    updatedAt: row.updatedAt.getTime(),
+  }
+}
+
+/** Lit le profil complet d'un prestataire depuis la base (source de vérité, approche A). */
+export async function readProviderProfileFromDb(userId: string): Promise<ProviderProfile | null> {
+  const row = await prisma.providerProfile.findUnique({ where: { userId }, select: FULL_SELECT })
+  return row ? rowToProfile(row) : null
+}
+
+/** Tous les profils prestataires persistés (source de vérité, approche A). */
+export async function listProviderProfilesFromDb(): Promise<ProviderProfile[]> {
+  const rows = await prisma.providerProfile.findMany({ select: FULL_SELECT })
+  return rows.map(rowToProfile)
+}
 
 /**
  * Persistance en base des profils prestataires (#admin, correctif audit H3,
@@ -52,6 +170,18 @@ export async function persistProviderProfile(profile: ProviderProfile): Promise<
     pointsDeRepere: profile.pointsDeRepere ?? null,
     rayonInterventionKm: profile.rayonInterventionKm ?? null,
     positionApproximative: profile.positionApproximative ?? true,
+    // Profil complet (approche A) — scalaires + listes sérialisées en JSON.
+    payoutMethod: profile.payoutMethod ?? null,
+    rateTo: profile.rateTo ?? null,
+    mobility: profile.mobility ?? null,
+    availability: profile.availability ?? null,
+    cvUrl: profile.cvUrl ?? null,
+    cvFileName: profile.cvFileName ?? null,
+    whatsapp: profile.whatsapp ?? null,
+    website: profile.website ?? null,
+    languages: profile.languages ? JSON.stringify(profile.languages) : null,
+    formations: profile.formations ? JSON.stringify(profile.formations) : null,
+    certifications: profile.certifications ? JSON.stringify(profile.certifications) : null,
   }
 
   await prisma.providerProfile.upsert({

@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { clearProviderPosition, getProviderProfile, resolveRequiredOnboardingFields, upsertProviderProfile } from '~~/server/utils/providerStore'
 
-describe('providerStore — localisation & mode de rémunération (#123)', () => {
-  it('sauvegarde le mode de rémunération sélectionné (correction du bug #123)', () => {
-    const profile = upsertProviderProfile('provider-1', { displayName: 'Prestataire 1', sector: 'menage', payoutMethod: 'flooz' })
+describe('providerStore — localisation & mode de rémunération (#123)', async () => {
+  it('sauvegarde le mode de rémunération sélectionné (correction du bug #123)', async () => {
+    const profile = await upsertProviderProfile('provider-1', { displayName: 'Prestataire 1', sector: 'menage', payoutMethod: 'flooz' })
     expect(profile.payoutMethod).toBe('flooz')
-    expect(getProviderProfile('provider-1')?.payoutMethod).toBe('flooz')
+    expect((await getProviderProfile('provider-1'))?.payoutMethod).toBe('flooz')
   })
 
-  it('conserve la ville et le mode de rémunération déjà enregistrés lors d\'une mise à jour partielle', () => {
-    upsertProviderProfile('provider-2', { displayName: 'Prestataire 2', sector: 'menage', city: 'Lomé', payoutMethod: 'tmoney' })
-    const updated = upsertProviderProfile('provider-2', { displayName: 'Prestataire 2', sector: 'menage', description: 'Ménage à domicile' })
+  it('conserve la ville et le mode de rémunération déjà enregistrés lors d\'une mise à jour partielle', async () => {
+    await upsertProviderProfile('provider-2', { displayName: 'Prestataire 2', sector: 'menage', city: 'Lomé', payoutMethod: 'tmoney' })
+    const updated = await upsertProviderProfile('provider-2', { displayName: 'Prestataire 2', sector: 'menage', description: 'Ménage à domicile' })
 
     expect(updated.city).toBe('Lomé')
     expect(updated.payoutMethod).toBe('tmoney')
@@ -18,14 +18,14 @@ describe('providerStore — localisation & mode de rémunération (#123)', () =>
   })
 })
 
-describe('providerStore — champs géolocalisation (#geoloc)', () => {
-  it('active la position approximative par défaut, sans que le prestataire n\'ait rien renseigné', () => {
-    const profile = upsertProviderProfile('provider-geo-default', { displayName: 'Prestataire', sector: 'menage' })
+describe('providerStore — champs géolocalisation (#geoloc)', async () => {
+  it('active la position approximative par défaut, sans que le prestataire n\'ait rien renseigné', async () => {
+    const profile = await upsertProviderProfile('provider-geo-default', { displayName: 'Prestataire', sector: 'menage' })
     expect(profile.positionApproximative).toBe(true)
   })
 
-  it('enregistre quartier, points de repère et rayon d\'intervention', () => {
-    const profile = upsertProviderProfile('provider-geo-1', {
+  it('enregistre quartier, points de repère et rayon d\'intervention', async () => {
+    const profile = await upsertProviderProfile('provider-geo-1', {
       displayName: 'Prestataire Géo',
       sector: 'btp',
       quartier: 'be',
@@ -39,19 +39,19 @@ describe('providerStore — champs géolocalisation (#geoloc)', () => {
     expect(profile.rayonInterventionKm).toBe(8)
   })
 
-  it('conserve un opt-out explicite de la position approximative lors d\'une mise à jour partielle ultérieure', () => {
-    upsertProviderProfile('provider-geo-2', { displayName: 'Prestataire Visible', sector: 'commerce', positionApproximative: false })
-    const updated = upsertProviderProfile('provider-geo-2', { displayName: 'Prestataire Visible', sector: 'commerce', description: 'Boutique physique' })
+  it('conserve un opt-out explicite de la position approximative lors d\'une mise à jour partielle ultérieure', async () => {
+    await upsertProviderProfile('provider-geo-2', { displayName: 'Prestataire Visible', sector: 'commerce', positionApproximative: false })
+    const updated = await upsertProviderProfile('provider-geo-2', { displayName: 'Prestataire Visible', sector: 'commerce', description: 'Boutique physique' })
 
     expect(updated.positionApproximative).toBe(false)
   })
 })
 
-describe('clearProviderPosition (#geoloc, partie 3 — vie privée)', () => {
-  it('efface latitude/longitude tout en conservant le reste du profil', () => {
-    upsertProviderProfile('provider-geo-clear', { displayName: 'À effacer', sector: 'menage', city: 'Lomé', latitude: 6.13, longitude: 1.22 })
+describe('clearProviderPosition (#geoloc, partie 3 — vie privée)', async () => {
+  it('efface latitude/longitude tout en conservant le reste du profil', async () => {
+    await upsertProviderProfile('provider-geo-clear', { displayName: 'À effacer', sector: 'menage', city: 'Lomé', latitude: 6.13, longitude: 1.22 })
 
-    const updated = clearProviderPosition('provider-geo-clear')
+    const updated = await clearProviderPosition('provider-geo-clear')
 
     expect(updated?.latitude).toBeUndefined()
     expect(updated?.longitude).toBeUndefined()
@@ -59,34 +59,34 @@ describe('clearProviderPosition (#geoloc, partie 3 — vie privée)', () => {
     expect(updated?.displayName).toBe('À effacer')
   })
 
-  it('renvoie null pour un profil inexistant (cas limite)', () => {
-    expect(clearProviderPosition('profil-inexistant')).toBeNull()
+  it('renvoie null pour un profil inexistant (cas limite)', async () => {
+    expect(await clearProviderPosition('profil-inexistant')).toBeNull()
   })
 })
 
-describe('resolveRequiredOnboardingFields — obligatoire côté serveur (#124)', () => {
-  it('rejette une inscription sans localisation ni mode de rémunération', () => {
+describe('resolveRequiredOnboardingFields — obligatoire côté serveur (#124)', async () => {
+  it('rejette une inscription sans localisation ni mode de rémunération', async () => {
     expect(resolveRequiredOnboardingFields({}, null)).toEqual({
       ok: false,
       error: 'La localisation est obligatoire.',
     })
   })
 
-  it('rejette une localisation vide (cas limite : espaces uniquement)', () => {
+  it('rejette une localisation vide (cas limite : espaces uniquement)', async () => {
     expect(resolveRequiredOnboardingFields({ city: '   ', payoutMethod: 'flooz' }, null)).toEqual({
       ok: false,
       error: 'La localisation est obligatoire.',
     })
   })
 
-  it('rejette un mode de rémunération manquant', () => {
+  it('rejette un mode de rémunération manquant', async () => {
     expect(resolveRequiredOnboardingFields({ city: 'Lomé' }, null)).toEqual({
       ok: false,
       error: 'Le mode de rémunération WorkTogo est obligatoire.',
     })
   })
 
-  it('accepte quand les deux champs sont renseignés', () => {
+  it('accepte quand les deux champs sont renseignés', async () => {
     expect(resolveRequiredOnboardingFields({ city: 'Lomé', payoutMethod: 'flooz' }, null)).toEqual({
       ok: true,
       city: 'Lomé',
@@ -94,8 +94,8 @@ describe('resolveRequiredOnboardingFields — obligatoire côté serveur (#124)'
     })
   })
 
-  it('retombe sur le profil déjà enregistré pour une mise à jour partielle', () => {
-    const existing = upsertProviderProfile('provider-3', { displayName: 'Prestataire 3', sector: 'menage', city: 'Kara', payoutMethod: 'virement' })
+  it('retombe sur le profil déjà enregistré pour une mise à jour partielle', async () => {
+    const existing = await upsertProviderProfile('provider-3', { displayName: 'Prestataire 3', sector: 'menage', city: 'Kara', payoutMethod: 'virement' })
     expect(resolveRequiredOnboardingFields({}, existing)).toEqual({
       ok: true,
       city: 'Kara',

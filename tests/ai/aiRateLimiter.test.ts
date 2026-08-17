@@ -27,9 +27,9 @@ describe('isRateLimited (#geoloc, 2.2, maîtrise des coûts IA)', () => {
 
   it('libère à nouveau la clé une fois la fenêtre écoulée', async () => {
     const key = randomUUID()
-    expect(await isRateLimited(key, 1, 20)).toBe(false)
-    expect(await isRateLimited(key, 1, 20)).toBe(true)
-    await new Promise((resolve) => setTimeout(resolve, 30))
-    expect(await isRateLimited(key, 1, 20)).toBe(false)
+    expect(await isRateLimited(key, 1, 150)).toBe(false)
+    expect(await isRateLimited(key, 1, 150)).toBe(true)
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    expect(await isRateLimited(key, 1, 150)).toBe(false)
   })
 })

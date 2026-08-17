@@ -32,7 +32,7 @@ function toNumber(value: unknown, message: string): number | undefined {
   return parsed
 }
 
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   const query = getQuery(event)
 
   const sector = firstValue(query.secteur)
@@ -105,10 +105,10 @@ export default defineEventHandler((event) => {
   // Sans coordonnées, comportement historique inchangé (filtrage par ville
   // uniquement, tri multi-critères ou explicite).
   const nearby = latitude !== undefined && longitude !== undefined
-    ? searchProvidersNearby({ ...baseFilters, latitude, longitude }, radiusKm)
+    ? await searchProvidersNearby({ ...baseFilters, latitude, longitude }, radiusKm)
     : null
 
-  const matches = nearby ? nearby.results : searchProviders(baseFilters)
+  const matches = nearby ? nearby.results : await searchProviders(baseFilters)
 
   const total = matches.length
   const start = (page - 1) * pageSize

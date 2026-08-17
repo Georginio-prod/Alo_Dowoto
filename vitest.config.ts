@@ -56,6 +56,12 @@ export default defineConfig({
     setupFiles: ['tests/setup/i18n.ts'],
     env: {
       DATABASE_URL: `file:${fileURLToPath(new URL('./tests/setup/test.db', import.meta.url))}`,
+      // Les tests des prestataires ont été écrits pour le store en mémoire :
+      // on les exécute en mode `memory` (les upserts alimentent la Map, la
+      // persistance base est best-effort). La prod tourne en `db` par défaut.
+      NUXT_PROVIDERS_SOURCE: 'memory',
+      // Les tests d'annuaire s'appuient sur les fiches de démonstration.
+      NUXT_PROVIDERS_DEMO: 'on',
     },
   },
 })

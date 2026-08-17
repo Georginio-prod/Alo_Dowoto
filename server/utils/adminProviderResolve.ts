@@ -28,8 +28,8 @@ export async function resolveProviderIdentity(providerId: string): Promise<Resol
   const user = await getUserById(providerId)
   // Profil : store en mémoire (frais) puis miroir DB (survit aux redémarrages,
   // audit H3 écriture double). Les deux exposent les mêmes champs d'affichage.
-  const profile = getProviderProfile(providerId) ?? (await getPersistedProviderProfile(providerId))
-  const demo = user || profile ? null : getProviderById(providerId)
+  const profile = (await getProviderProfile(providerId)) ?? (await getPersistedProviderProfile(providerId))
+  const demo = user || profile ? null : await getProviderById(providerId)
 
   if (!user && !profile && !demo) {
     return {

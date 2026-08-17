@@ -2,7 +2,7 @@ export default defineEventHandler(async (event) => {
   const user = await requireProviderRole(event)
 
   const body = await readSchemaBody(event, patchProviderSchema)
-  const existing = getProviderProfile(user.id)
+  const existing = await getProviderProfile(user.id)
   const sector = body.sector ?? existing?.sector
 
   if (!sector) {
@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
   // sur la fiche visible en recherche publique (#hub-profil-prestataire).
   const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.username || 'Prestataire WorkTogo'
 
-  const profile = upsertProviderProfile(user.id, {
+  const profile = await upsertProviderProfile(user.id, {
     displayName,
     sector,
     city: requiredFields.city,
