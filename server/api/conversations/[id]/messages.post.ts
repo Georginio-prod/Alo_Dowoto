@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
     badRequest('Ce message semble contenir un numéro, un e-mail ou une proposition hors plateforme, ce qui est interdit par les CGU. Utilisez la messagerie WorkTogo pour tous vos échanges.')
   }
 
-  const message = await addMessage(conversation.id, user.id, user.role, text)
+  const message = await addMessage(conversation.id, user.id, user.role as 'client' | 'prestataire', text)
 
   // Notifie l'autre partie (#360) : ne doit jamais faire échouer l'envoi du
   // message lui-même déjà enregistré — best-effort, erreurs journalisées.

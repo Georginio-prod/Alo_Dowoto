@@ -186,6 +186,16 @@ export function getStoredMatches(requestId: string): MatchedProvider[] | null {
   return matchesByRequestId.get(requestId) ?? null
 }
 
+/**
+ * Toutes les demandes (fiches préalables), du plus récent au plus ancien
+ * (#dashboard-admin, module Missions & fiches préalables). Lecture directe du
+ * store en mémoire — voir docs/admin-dashboard.md pour la portée (données
+ * réelles mais volatiles, perdues au redémarrage du process).
+ */
+export function listAllServiceRequests(): ServiceRequest[] {
+  return [...requests.values()].sort((a, b) => b.createdAt - a.createdAt)
+}
+
 export interface ProviderMatchedRequest {
   request: ServiceRequest
   score: MatchedProvider['score']

@@ -29,6 +29,25 @@ enum Role {
   admin
 }
 
+/// Statut de compte (#dashboard-admin) — suspension appliquée dès
+/// server/utils/userStore.ts:getSessionUser (une session dont le compte est
+/// suspendu est refusée comme si elle n'existait pas), pas seulement caché
+/// côté client.
+enum UserStatus {
+  active
+  suspended
+}
+
+/// Décision de vérification d'identité (#dashboard-admin), en plus de
+/// l'auto-certification existante de server/utils/verificationStore.ts : un
+/// refus révoque réellement le badge (verificationStore.deleteVerification),
+/// une validation confirme/trace la décision sans changer le comportement
+/// existant (le badge est déjà accordé à la soumission).
+enum KycDecisionStatus {
+  approved
+  rejected
+}
+
 enum SubscriptionStatus {
   en_attente
   actif
@@ -130,12 +149,20 @@ model User {
   /// une migration de données rétroactive.
   referralCode String? @unique
 
-  /// Suspension administrative (#admin dashboard) : `null` = compte actif.
-  /// Quand renseigné, la connexion au site/APK est refusée
-  /// (server/api/auth/session.post.ts) et les sessions en cours sont supprimées
-  /// au moment de la suspension. Additif et non-breaking : le site et l'APK ne
-  /// lisent jamais ce champ en dehors du contrôle de connexion.
-  suspendedAt DateTime?
+  /// Statut de compte (#dashboard-admin) — voir UserStatus. Suspension : la
+  /// connexion est refusée dès getSessionUser (web) ET session.post.ts (OTP /
+  /// mot de passe) + callback Google (desktop #admin), et les sessions actives
+  /// sont supprimées au moment de la suspension.
+  status           UserStatus @default(active)
+  suspendedAt      DateTime?
+  suspendedReason  String?
+  /// Compte à risque (#dashboard-admin, module Chercheurs/Prestataires), marqué manuellement par un admin.
+  riskFlag         Boolean    @default(false)
+  riskNote         String?
+  /// Messagerie restreinte (#dashboard-admin, module anti-désintermédiation) : le prestataire/chercheur ne peut plus initier de nouveaux fils.
+  messagingRestricted Boolean @default(false)
+  /// Niveau d'accès équipe (#dashboard-admin, module Paramètres) — significatif seulement quand `role = admin` : admin (tout), moderateur, support.
+  adminLevel       String?
 
   sessions          Session[]
   providerProfile   ProviderProfile?
@@ -192,16 +219,29 @@ model VerifiedContact {
 }
 
 /// Secteur d'activité — voir app/data/sectors.ts (#8).
+///
+/// NB (#dashboard-admin, module Catégories) : la recherche publique, la page
+/// /categories et le formulaire d'inscription prestataire lisent aujourd'hui
+/// app/data/sectors.ts (liste statique), pas cette table — comme ProviderProfile
+/// avant elle, ce modèle documentait une bascule pas encore faite (#46). Le CRUD
+/// admin écrit ici pour de vrai (table jusque-là vide), mais ne pilote pas encore
+/// le site public : rebrancher app/data/sectors.ts sur Prisma est un chantier
+/// séparé (le site public en dépend en lecture synchrone à de nombreux endroits).
 model Sector {
-  id    String @id @default(uuid())
-  slug  String @unique
-  name  String
-  emoji String
-  color String
-  ink   String
+  id     String  @id @default(uuid())
+  slug   String  @unique
+  name   String
+  emoji  String
+  color  String
+  ink    String
+  /// Catégorie désactivée : n'apparaît plus dans les nouvelles fiches (#dashboard-admin).
+  active Boolean @default(true)
+  /// Ordre d'affichage (#dashboard-admin) — croissant.
+  order  Int     @default(0)
 
   subSectors       SubSector[]
   providerProfiles ProviderProfile[]
+  prealableQuestions PrealableQuestion[]
 }
 
 /// Sous-secteur rattaché à un secteur — voir app/data/sectors.ts (#8).
@@ -540,8 +580,8 @@ enum NotificationType {
   new_message
   /// Mise à jour d'un litige escrow (réponse du prestataire, résolution) — voir escrowDisputeResolution.ts.
   dispute_update
-  /// Annonce diffusée par un administrateur depuis le dashboard (#admin) :
-  /// message d'information sans conversation liée (conversationId null).
+  /// Message/annonce de l'équipe WorkTogo depuis un dashboard admin (desktop
+  /// #admin ou web #dashboard-admin) — sans conversation liée (conversationId null).
   admin_message
 }
 
@@ -595,4 +635,193 @@ model AiRateWindow {
 
   @@id([key, windowStart])
   @@index([windowStart])
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard admin (#dashboard-admin) — modèles entièrement nouveaux, propriété
+// exclusive de l'espace /admin. Voir docs/admin-dashboard.md pour le détail des
+// modules et de ce qui est réellement branché vs isolé en attente de bascule.
+// ---------------------------------------------------------------------------
+
+/// Journal d'audit horodaté de toute action sensible effectuée depuis /admin
+/// (qui, quoi, quand, sur quelle ressource) — module Paramètres.
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String
+  actorLabel String
+  action     String
+  targetType String
+  targetId   String?
+  /// Détail libre (JSON sérialisé) : motif, montant, ancien/nouveau statut...
+  metadata   String?
+  createdAt  DateTime @default(now())
+
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+/// Décision admin sur une vérification d'identité (#dashboard-admin, module
+/// Prestataires/Chercheurs) — un refus révoque réellement le badge vérifié
+/// (voir server/utils/verificationStore.ts:deleteVerification), une validation
+/// trace la confirmation sans changer le comportement d'auto-certification
+/// existant. Historique conservé (plusieurs décisions possibles par utilisateur).
+model KycDecision {
+  id         String            @id @default(uuid())
+  userId     String
+  status     KycDecisionStatus
+  reason     String?
+  reviewedBy String
+  reviewedAt DateTime          @default(now())
+
+  @@index([userId])
+}
+
+/// Note interne visible seulement par l'équipe WorkTogo (#dashboard-admin,
+/// modules Missions/Prestataires/Chercheurs) — jamais exposée aux utilisateurs.
+model AdminNote {
+  id          String   @id @default(uuid())
+  targetType  String
+  targetId    String
+  authorId    String
+  authorLabel String
+  body        String
+  createdAt   DateTime @default(now())
+
+  @@index([targetType, targetId])
+}
+
+/// Formule d'abonnement prestataire éditable depuis /admin (#dashboard-admin,
+/// module Abonnements & tarification) — table jusque-là inexistante : les
+/// formules réellement proposées au checkout restent app/data/plans.ts
+/// (PLANS, statique, lu de façon synchrone par server/api/subscriptions et par
+/// /abonnement). Ce modèle donne un vrai CRUD admin ; le rebranchement du
+/// checkout dessus est un chantier séparé (rendrait `findPlan` asynchrone,
+/// utilisé en synchrone à plusieurs endroits).
+model SubscriptionPlanConfig {
+  id             String   @id @default(uuid())
+  slug           String   @unique
+  name           String
+  priceAmount    Int
+  durationDays   Int
+  commissionRate Float    @default(0.10)
+  /// Avantages affichés, un par ligne (texte libre).
+  features       String
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+/// Code promo (#dashboard-admin, module Abonnements & tarification) — pas encore
+/// consommé par le flux de paiement existant (server/api/payments), qui n'a
+/// aucune notion de remise ; CRUD admin réel en attendant le branchement.
+model Coupon {
+  id            String    @id @default(uuid())
+  code          String    @unique
+  discountType  String
+  discountValue Int
+  active        Boolean   @default(true)
+  expiresAt     DateTime?
+  usageLimit    Int?
+  usageCount    Int       @default(0)
+  createdAt     DateTime  @default(now())
+}
+
+/// Réglages généraux de la plateforme (#dashboard-admin, module Paramètres) —
+/// ligne unique (`id = 1`). Lus par le dashboard admin ; pas encore branchés
+/// sur les valeurs actuellement codées en dur ailleurs (ex. ESCROW_COMMISSION_RATE,
+/// TACIT_VALIDATION_DELAY_MS) — voir docs/admin-dashboard.md.
+model PlatformSettings {
+  id                       Int      @id @default(1)
+  geoRadiusKm              Int      @default(15)
+  autoValidationDelayHours Int      @default(72)
+  retractationDelayHours   Int      @default(24)
+  currency                 String   @default("XOF")
+  language                 String   @default("fr")
+  minAdvanceAmount         Int      @default(1000)
+  commissionRate           Float    @default(0.10)
+  updatedAt                DateTime @updatedAt
+}
+
+/// État de modération d'un avis (#dashboard-admin, module Avis) — clé sur
+/// `reviewId` (id du store en mémoire server/utils/reviewStore.ts, stable pour
+/// la durée de vie du process ; voir docs/admin-dashboard.md pour la portée).
+model ReviewModeration {
+  reviewId     String    @id
+  hidden       Boolean   @default(false)
+  hiddenReason String?
+  flagged      Boolean   @default(false)
+  flagReason   String?
+  restoredAt   DateTime?
+  updatedAt    DateTime  @updatedAt
+}
+
+/// Signalement anti-désintermédiation marqué comme faux positif par un admin
+/// (#dashboard-admin, module Anti-désintermédiation) — exclu du score de risque
+/// calculé à la volée à partir de ContournementAttempt.
+model RiskFalsePositive {
+  userId   String   @id
+  markedBy String
+  markedAt DateTime @default(now())
+  note     String?
+}
+
+/// Bloc de contenu éditable des pages publiques (accueil, FAQ, CGU) —
+/// (#dashboard-admin, module Catégories & contenu). CRUD admin réel ; les pages
+/// publiques concernées (app/data/legalPages, /faq) restent statiques pour
+/// l'instant — voir docs/admin-dashboard.md.
+model SiteContent {
+  key       String   @id
+  label     String
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+/// Question de fiche préalable propre à une catégorie de service
+/// (#dashboard-admin, module Catégories & contenu). CRUD admin réel ; le
+/// formulaire de première prise de contact (server/utils/requestStore.ts,
+/// conversationStore.ts) reste générique pour l'instant — voir
+/// docs/admin-dashboard.md.
+model PrealableQuestion {
+  id       String  @id @default(uuid())
+  sectorId String
+  sector   Sector  @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  label    String
+  order    Int     @default(0)
+  required Boolean @default(true)
+
+  @@index([sectorId])
+}
+
+/// Modèle de message automatique éditable (#dashboard-admin, module
+/// Notifications & campagnes) — ex. confirmation de paiement, rappel de
+/// validation, expiration d'abonnement. CRUD admin réel ; les messages
+/// système actuellement envoyés (ex. server/utils/escrowOrderStore.ts) restent
+/// des chaînes en dur — voir docs/admin-dashboard.md.
+model MessageTemplate {
+  key       String   @id
+  label     String
+  channel   String
+  subject   String?
+  body      String
+  updatedAt DateTime @updatedAt
+}
+
+/// Campagne de notification envoyée à un segment d'utilisateurs
+/// (#dashboard-admin, module Notifications & campagnes). Le canal `in_app`
+/// crée réellement des lignes Notification (server/utils/notificationStore.ts)
+/// pour chaque destinataire du segment ; `email`/`sms`/`push` et le taux
+/// d'ouverture sont enregistrés mais non délivrés (aucun fournisseur externe
+/// intégré dans ce lot) — voir docs/admin-dashboard.md.
+model NotificationCampaign {
+  id             String    @id @default(uuid())
+  segment        String
+  channel        String
+  subject        String?
+  body           String
+  scheduledAt    DateTime?
+  sentAt         DateTime?
+  recipientCount Int       @default(0)
+  openCount      Int       @default(0)
+  createdBy      String
+  createdAt      DateTime  @default(now())
 }

@@ -8,7 +8,9 @@ const emit = defineEmits<{ posted: [testimonial: Testimonial] }>()
 const { user } = useSession()
 
 const name = ref(user.value ? `${user.value.firstName} ${user.value.lastName}`.trim() : '')
-const role = ref<TestimonialRole>(user.value?.role ?? 'client')
+// `user.value?.role` (Role) inclut aussi 'admin' (#dashboard-admin) : un
+// admin n'a pas de formule de témoignage dédiée, on retombe sur 'client'.
+const role = ref<TestimonialRole>(user.value?.role === 'prestataire' ? 'prestataire' : 'client')
 const message = ref('')
 const rating = ref(0)
 const hoverRating = ref(0)

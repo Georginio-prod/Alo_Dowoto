@@ -2,7 +2,7 @@ import type { Conversation as PrismaConversation, Message as PrismaMessage } fro
 import { getProviderById } from '~~/server/utils/providerDirectory'
 import { prisma } from '~~/server/utils/prisma'
 import { hasReviewed } from '~~/server/utils/reviewStore'
-import { getUserById, type Role } from '~~/server/utils/userStore'
+import { getUserById } from '~~/server/utils/userStore'
 
 /**
  * Conversations et messages liés à une mise en relation client/prestataire
@@ -63,8 +63,15 @@ export interface Conversation {
  */
 export type MessageKind = 'text' | 'order_confirmation' | 'location_request' | 'location_shared' | 'reschedule_request'
 
-/** `system` : message automatique WorkTogo, pas d'utilisateur réel derrière (voir `WORKTOGO_SYSTEM_SENDER_ID`). */
-export type MessageSenderRole = Role | 'system'
+/**
+ * `system` : message automatique WorkTogo, pas d'utilisateur réel derrière
+ * (voir `WORKTOGO_SYSTEM_SENDER_ID`). Volontairement `'client' | 'prestataire'`
+ * plutôt que `Role` (server/utils/userStore.ts, qui inclut aussi `'admin'`
+ * depuis #dashboard-admin) : un admin n'est jamais l'expéditeur d'un message
+ * de conversation client/prestataire — ses messages passent par le centre de
+ * notifications (server/utils/adminMessaging.ts), un canal distinct.
+ */
+export type MessageSenderRole = 'client' | 'prestataire' | 'system'
 
 export interface Message {
   id: string

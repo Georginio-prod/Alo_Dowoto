@@ -1,12 +1,15 @@
 import { prisma } from '~~/server/utils/prisma'
+import { suspendUser, reactivateUser } from '~~/server/utils/userStore'
+import { recordAuditLog } from '~~/server/utils/auditLog'
 
 /**
- * Suspend ou réactive un compte (`users.suspend`). Body : `{ suspended: bool }`.
+ * Suspend ou réactive un compte — RÉCONCILIE les deux dashboards :
+ *  - permission granulaire `users.suspend` + garde-fous (pas soi, pas un admin) [desktop #admin] ;
+ *  - `suspendUser`/`reactivateUser` (status + suspendedAt + suspendedReason + suppression des sessions) [web #dashboard-admin] ;
+ *  - journal d'audit.
  *
- * À la suspension, on pose `suspendedAt` ET on supprime toutes les sessions du
- * compte : l'utilisateur est déconnecté immédiatement et ne peut plus se
- * reconnecter (blocage dans server/api/auth/session.post.ts). Garde-fous : on
- * ne suspend ni son propre compte, ni un compte administrateur.
+ * Body : `{ suspended?: boolean, reason?: string }`. `suspended` absent ⇒
+ * suspension (contrat web) ; fourni ⇒ bascule suspendre/réactiver (contrat desktop).
  */
 export default defineEventHandler(async (event) => {
   const me = await requireAdminPermission(event, 'users.suspend')
@@ -19,18 +22,21 @@ export default defineEventHandler(async (event) => {
   if (target.id === me.id) badRequest('Vous ne pouvez pas suspendre votre propre compte.')
   if ((target.role as string) === 'admin') badRequest('Un compte administrateur ne peut pas être suspendu.')
 
-  const body = await readBody<{ suspended?: unknown }>(event)
-  const suspended = body?.suspended === true
+  const body = await readBody<{ suspended?: unknown; reason?: unknown }>(event)
+  const suspended = body && typeof body === 'object' && 'suspended' in body ? body.suspended === true : true
+  const reason = typeof body?.reason === 'string' ? body.reason.trim() : ''
 
-  await prisma.user.update({
-    where: { id },
-    data: { suspendedAt: suspended ? new Date() : null },
+  const user = suspended
+    ? await suspendUser(id, reason || 'Suspension administrative.')
+    : await reactivateUser(id)
+
+  await recordAuditLog({
+    actor: me,
+    action: suspended ? 'user.suspend' : 'user.reactivate',
+    targetType: 'user',
+    targetId: id,
+    metadata: { reason },
   })
 
-  // Suspension = déconnexion immédiate (les sessions actives sont invalidées).
-  if (suspended) {
-    await prisma.session.deleteMany({ where: { userId: id } })
-  }
-
-  return { ok: true, suspended }
+  return { ok: true, suspended, user }
 })
