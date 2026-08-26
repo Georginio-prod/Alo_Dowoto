@@ -27,7 +27,9 @@ export default withNuxt(
       '@typescript-eslint/no-non-null-assertion': 'error',
 
       // ---- Qualité générale ----
-      eqeqeq: ['error', 'always'],
+      // `== null` / `!= null` est un idiome volontaire (couvre null ET undefined) ;
+      // l'exiger strict casserait ce comportement. On garde `===` partout ailleurs.
+      eqeqeq: ['error', 'always', { null: 'ignore' }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-debugger': 'error',
       'prefer-const': 'error',

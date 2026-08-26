@@ -10,7 +10,10 @@
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "lint:md": "markdownlint-cli2",
+    "lint:md:fix": "markdownlint-cli2 --fix",
     "typecheck": "nuxt typecheck",
+    "prepare": "husky",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
@@ -47,8 +50,12 @@
     "@types/pdfkit": "^0.17.6",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vue/test-utils": "^2.4.11",
+    "danger": "^13.0.7",
     "eslint": "^10.7.0",
     "happy-dom": "^20.10.6",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.5",
+    "markdownlint-cli2": "^0.23.2",
     "prisma": "^6.19.3",
     "unplugin-auto-import": "^21.0.0",
     "vitest": "^4.1.10",
@@ -56,5 +63,9 @@
   },
   "overrides": {
     "h3": "1.15.11"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,vue,js,mjs,cjs}": "eslint --fix",
+    "*.md": "markdownlint-cli2 --fix"
   }
 }

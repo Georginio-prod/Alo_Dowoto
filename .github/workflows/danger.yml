@@ -1,0 +1,43 @@
+name: Danger · taille des PR
+
+# Plafonne la taille des PR à 400 lignes de production modifiées (lockfiles,
+# fichiers générés et snapshots exclus) et commente une suggestion de découpage
+# quand le plafond est dépassé.
+# Dérogation : ajouter le label `large-pr-justified` ET une justification sous
+# un titre `## Large PR justification` dans le corps de la PR. Voir ./dangerfile.js.
+
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request:
+    branches: ["**"]
+    types: [opened, synchronize, reopened, labeled, unlabeled, edited]
+  workflow_dispatch:
+
+jobs:
+  danger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛫 Checkout du code
+        uses: actions/checkout@v4
+        with:
+          # Danger diffe contre la branche de base, il faut l'historique complet.
+          fetch-depth: 0
+
+      - name: 🏗 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ./package-lock.json
+
+      - name: ⚙️ Installation NPM
+        run: npm ci
+
+      - name: 🚨 Exécuter Danger
+        run: npx danger ci --failOnErrors
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DANGER_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
