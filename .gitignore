@@ -23,6 +23,15 @@ logs
 .env.*
 !.env.example
 
+# Secrets / credentials (jamais versionner — le dépôt est public)
+*.pem
+*.key
+*.p12
+*.pfx
+**/*service*account*.json
+**/*credential*.json
+secrets/
+
 # Scheduler lock file
 .claude/scheduled_tasks.lock
 

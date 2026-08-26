@@ -1,0 +1,19 @@
+config:
+  default: false
+  MD009: true # Pas d'espaces en fin de ligne.
+  MD010: true # Pas de tabulations dures.
+  MD011: true # Ne pas inverser la syntaxe des liens.
+  MD034: true # Les URL nues sont plus difficiles à lire et maintenir.
+  MD042: true # Les liens et images doivent avoir une destination.
+  MD045: true # Les images ont besoin d'un texte alternatif accessible.
+  MD047: true # Les fichiers se terminent par une seule nouvelle ligne.
+globs:
+  - "**/*.md"
+ignores:
+  - "**/node_modules/**"
+  - "**/coverage/**"
+  - ".nuxt/**"
+  - ".output/**"
+  - "playwright-report/**"
+  - "test-results/**"
+  - "docs/design-reference/**"
