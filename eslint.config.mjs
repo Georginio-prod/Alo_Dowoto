@@ -4,8 +4,10 @@ import withNuxt from './.nuxt/eslint.config.mjs'
 export default withNuxt(
   {
     // Matériel de référence vendored (prototype tiers), pas du code applicatif.
+    // `backend/**` est un sous-projet Express autonome, linté par sa propre
+    // config (voir docs/adr — extraction backend) : le lint Nuxt racine l'ignore.
     name: 'worktogo/ignores',
-    ignores: ['docs/design-reference/**']
+    ignores: ['docs/design-reference/**', 'backend/**']
   },
   {
     name: 'worktogo/custom-rules',
