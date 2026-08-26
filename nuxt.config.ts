@@ -71,7 +71,15 @@ export default defineNuxtConfig({
     githubUpdateToken: '',
     githubUpdateRepo: 'Nova2026-graphik/worktogo-admin',
     public: {
-      sentryDsn: ''
+      sentryDsn: '',
+      // Point de bascule vers le backend Express (chantier d'extraction, ADR-0014).
+      // Les deux sont VIDES par défaut → l'API interne Nitro est utilisée, aucun
+      // changement de comportement. La bascule d'un domaine se fait sans redéploiement
+      // de code, par simple configuration (réversible instantanément) :
+      //   NUXT_PUBLIC_BACKEND_BASE_URL=https://api.worktogo.example   (URL du backend)
+      //   NUXT_PUBLIC_MIGRATED_API_PREFIXES=/api/auth,/api/wallet     (domaines déjà portés, CSV)
+      backendBaseUrl: '',
+      migratedApiPrefixes: ''
     }
   },
   app: {
