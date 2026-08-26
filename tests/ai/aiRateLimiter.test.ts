@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { isRateLimited } from '~~/server/utils/aiRateLimiter'
 
 /**
@@ -26,10 +26,22 @@ describe('isRateLimited (#geoloc, 2.2, maîtrise des coûts IA)', () => {
   })
 
   it('libère à nouveau la clé une fois la fenêtre écoulée', async () => {
+    // Horloge figée : les deux premiers appels partagent le MÊME instant, donc
+    // la même fenêtre de 150 ms. Avec l'horloge réelle, sous la latence de la
+    // base en CI, ils pouvaient chevaucher une frontière de fenêtre et rendre le
+    // test flaky (« expected false to be true »). L'avance explicite de 300 ms
+    // (deux fenêtres) teste la libération sans attente réelle. Le limiteur n'est
+    // pas modifié — c'est un correctif de déterminisme du test uniquement.
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'))
     const key = randomUUID()
     expect(await isRateLimited(key, 1, 150)).toBe(false)
     expect(await isRateLimited(key, 1, 150)).toBe(true)
-    await new Promise((resolve) => setTimeout(resolve, 300))
+    vi.setSystemTime(new Date('2026-01-01T00:00:00.300Z'))
     expect(await isRateLimited(key, 1, 150)).toBe(false)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 })
