@@ -1,30 +1,39 @@
 // @vitest-environment node
 //
-// Capture comportementale de référence : l'application Nitro complète est
-// montée derrière un vrai serveur HTTP, et l'on fige statut + corps de réponse.
-// Ces instantanés sont la preuve « avant » du chantier d'extraction — ils
-// seront rejoués contre le backend Express pour garantir le zéro changement.
+// Capture comportementale de référence + garde-fou de chargement. On fige
+// statut + corps de réponse : instantané « avant » du chantier d'extraction,
+// rejoué plus tard contre le backend Express pour garantir le zéro changement.
+//
+// Léger volontairement : la vérification « tous les handlers chargent » se fait
+// par import seul (aucun serveur), et l'instantané ne monte QUE la route testée
+// — pour ne pas saturer le runner CI en parallèle (le montage complet des 183
+// routes est réservé au rejeu, voir contractServer.ts).
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { startContractServer, type ContractServer } from './contractServer'
+import sectorsCountsHandler from '~~/server/api/sectors/counts.get'
+import { loadAllHandlers } from './loadApiRoutes'
+import { startTestServer, type TestServer } from '../setup/httpTestApp'
 
-let server: ContractServer
+let server: TestServer
 
 beforeAll(async () => {
-  server = await startContractServer()
+  server = await startTestServer([
+    { method: 'get', path: '/api/sectors/counts', handler: sectorsCountsHandler },
+  ])
 })
 
 afterAll(async () => {
   await server?.close()
 })
 
-describe('Contrat — l’API Nitro monte et répond', () => {
-  it('charge tous les handlers server/api/** sans erreur d’import', () => {
-    // Si un handler n'est pas importable isolément, il apparaît ici nommé —
-    // à corriger avant de le porter vers Express.
-    expect(server.loadErrors).toEqual([])
-    expect(server.routeCount).toBeGreaterThanOrEqual(180)
-  })
+describe('Contrat — chargement des handlers', () => {
+  it('tous les handlers server/api/** s’importent sans erreur', async () => {
+    const { routeCount, loadErrors } = await loadAllHandlers()
+    expect(loadErrors).toEqual([])
+    expect(routeCount).toBeGreaterThanOrEqual(180)
+  }, 20_000)
+})
 
+describe('Contrat — capture comportementale', () => {
   it('GET /api/sectors/counts — instantané de la réponse publique (statut + corps)', async () => {
     const res = await fetch(`${server.url}/api/sectors/counts`)
     const body = await res.json()

@@ -72,3 +72,34 @@ export function discoverApiRoutes(): ApiRoute[] {
     `${a.routePath} ${a.method}`.localeCompare(`${b.routePath} ${b.method}`),
   )
 }
+
+export interface HandlerLoadReport {
+  /** Nombre de handlers importés avec succès. */
+  routeCount: number
+  /** Handlers non importables isolément (aucun attendu). */
+  loadErrors: { route: string; error: string }[]
+}
+
+/**
+ * Importe tous les handlers pour vérifier qu'ils se chargent isolément, SANS
+ * démarrer de serveur — bien plus léger que `startContractServer` (utile en
+ * suite parallèle, où monter 183 routes ajoutait une charge inutile). Le
+ * montage complet reste réservé au rejeu (voir contractServer.ts).
+ */
+export async function loadAllHandlers(): Promise<HandlerLoadReport> {
+  const routes = discoverApiRoutes()
+  const loadErrors: { route: string; error: string }[] = []
+  let routeCount = 0
+  for (const route of routes) {
+    try {
+      await route.load()
+      routeCount++
+    } catch (error) {
+      loadErrors.push({
+        route: `${route.method.toUpperCase()} ${route.routePath}`,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    }
+  }
+  return { routeCount, loadErrors }
+}

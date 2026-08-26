@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Contrat — l’API Nitro monte et répond > GET /api/sectors/counts — instantané de la réponse publique (statut + corps) 1`] = `
+exports[`Contrat — capture comportementale > GET /api/sectors/counts — instantané de la réponse publique (statut + corps) 1`] = `
 {
   "body": [
     {
