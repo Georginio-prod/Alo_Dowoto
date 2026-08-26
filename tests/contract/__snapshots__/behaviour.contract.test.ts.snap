@@ -1,0 +1,49 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Contrat — l’API Nitro monte et répond > GET /api/sectors/counts — instantané de la réponse publique (statut + corps) 1`] = `
+{
+  "body": [
+    {
+      "count": 1,
+      "slug": "btp",
+    },
+    {
+      "count": 1,
+      "slug": "digital",
+    },
+    {
+      "count": 9,
+      "slug": "menage",
+    },
+    {
+      "count": 1,
+      "slug": "beaute",
+    },
+    {
+      "count": 1,
+      "slug": "evenement",
+    },
+    {
+      "count": 0,
+      "slug": "education",
+    },
+    {
+      "count": 1,
+      "slug": "transport",
+    },
+    {
+      "count": 0,
+      "slug": "commerce",
+    },
+    {
+      "count": 0,
+      "slug": "industrie",
+    },
+    {
+      "count": 0,
+      "slug": "sante",
+    },
+  ],
+  "status": 200,
+}
+`;
