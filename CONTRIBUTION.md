@@ -13,7 +13,7 @@
 4. Ouvrir une PR vers `develop` depuis le template, lier l'issue avec `Fixes #N`.
 5. Attendre la revue et le vert de la CI, puis merger.
 
-## Règles CI/CD (alignées sur cnc-portal)
+## Règles CI/CD
 
 - **Taille de PR** plafonnée par Danger (400 lignes de production / 800 de test,
   fichiers générés exclus). Dérogation via le label `large-pr-justified` + une

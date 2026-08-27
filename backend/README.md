@@ -9,7 +9,7 @@ sécurité `tests/contract/`.
 > État : **Phase 1 — squelette**. L'app démarre à vide (sonde `/health`), la
 > plomberie transverse est posée, aucune route métier n'est encore portée.
 
-## Structure (modèle cnc-portal)
+## Structure
 
 ```
 src/
@@ -61,9 +61,15 @@ npm run build && npm start
 
 ## Reste à faire (prochaines briques)
 
+- ✅ **Couche auth transverse** : gardes `requireSessionUser` / `requireProviderRole`
+  / `requireClientRole` / `requireAdminRole` (`src/middleware/auth.ts`), cookie
+  `wt_session` + Bearer, expiration/suspension, mêmes codes et messages que Nitro
+  (vérifié contre Postgres, `src/middleware/__tests__/auth.test.ts`).
+  > ⚠️ Ces gardes interrogent la base **du backend** (Postgres). Les sessions
+  > réelles des utilisateurs vivent encore dans la base **SQLite de l'app** :
+  > l'auth n'authentifiera les vrais comptes qu'**après la convergence des bases**.
 - Workflows CI par section (`backend-code-quality.yml`, `backend-vitest.yml`).
-- ESLint/Prettier propres au sous-projet.
-- Couche transverse : auth (cookie + Bearer, iso `requireSessionUser`), Swagger.
+- ESLint/Prettier propres au sous-projet ; Swagger.
 - Migration domaine par domaine, chaque domaine validé par `tests/contract`.
 - Convergence de la base : migration de l'app Nuxt SQLite → PostgreSQL (étape
   dédiée, avec cutover prod sous contrôle de l'équipe).

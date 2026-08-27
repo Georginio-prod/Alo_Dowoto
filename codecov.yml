@@ -1,4 +1,4 @@
-# Configuration Codecov — alignée sur le modèle par section de cnc-portal.
+# Configuration Codecov — couverture par section.
 #
 # Les flags `app-unit-tests` et `backend-unit-tests` deviennent pleinement
 # actifs en Phase 1, quand le dépôt est découpé en sous-projets `app/` et

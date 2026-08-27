@@ -17,8 +17,8 @@ autonome, versionnable et déployable indépendamment, est désormais justifié.
 ## Décision
 
 Extraire l'API vers un service **Express + TypeScript autonome** dans un dossier
-`backend/`, frère de `app/` dans le **même dépôt** (forme empruntée à
-`cnc-portal` : `app/` + `backend/`). Structure en couches :
+`backend/`, frère de `app/` dans le **même dépôt** (`app/` + `backend/`).
+Structure en couches :
 `config/ routes/ controllers/ services/ repositories/ validation/schemas/ middleware/ utils/ types/`.
 
 - Le dépôt reste unique (pas de monorepo multi-packages) : `app/` (front Nuxt),
