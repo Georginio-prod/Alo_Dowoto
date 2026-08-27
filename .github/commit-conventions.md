@@ -1,7 +1,6 @@
 # Conventions de commit
 
-> Aligné sur le modèle cnc-portal. Ces conventions s'appliquent aussi aux
-> **titres d'issues et de PR**.
+> Ces conventions s'appliquent aussi aux **titres d'issues et de PR**.
 
 ## Format
 

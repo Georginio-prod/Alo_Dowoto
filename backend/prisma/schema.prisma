@@ -1,10 +1,10 @@
 // Schéma Prisma du backend Express — cible PostgreSQL (ADR-0015).
 //
-// AUCUN modèle métier pour l'instant : le squelette n'expose que /health. Les
-// modèles seront ajoutés DOMAINE PAR DOMAINE au fil du portage depuis le schéma
-// racine (prisma/schema.prisma, encore SQLite tant que l'app Nuxt n'a pas
-// migré). La convergence vers un schéma unique partagé se décidera à ce
-// moment-là (cf. ADR-0015) — ici on prouve d'abord le câblage.
+// Les modèles sont ajoutés DOMAINE PAR DOMAINE au fil du portage. Premier
+// domaine porté : l'AUTHENTIFICATION (User + Session), miroir des modèles
+// correspondants du schéma racine (prisma/schema.prisma). Les relations vers
+// les autres domaines (profils, abonnements, paiements…) seront ajoutées quand
+// ces domaines seront portés.
 
 generator client {
   provider = "prisma-client-js"
@@ -13,4 +13,59 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum Role {
+  client
+  prestataire
+  admin
+}
+
+enum UserStatus {
+  active
+  suspended
+}
+
+/// Compte utilisateur — miroir (scalaires) de `model User` du schéma racine.
+model User {
+  id        String   @id @default(uuid())
+  contact   String   @unique
+  role      Role
+  createdAt DateTime @default(now())
+
+  passwordHash String?
+  googleId     String? @unique
+
+  username  String @default("")
+  firstName String @default("")
+  lastName  String @default("")
+  location  String @default("")
+
+  latitude  Float?
+  longitude Float?
+
+  adminPermissions String?
+  referralCode     String? @unique
+
+  status              UserStatus @default(active)
+  suspendedAt         DateTime?
+  suspendedReason     String?
+  riskFlag            Boolean    @default(false)
+  riskNote            String?
+  messagingRestricted Boolean    @default(false)
+  adminLevel          String?
+
+  sessions Session[]
+}
+
+/// Session d'authentification — cookie `wt_session` (web) ou en-tête Bearer
+/// (dashboard desktop, mobile). Miroir de `model Session` du schéma racine.
+model Session {
+  token     String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
