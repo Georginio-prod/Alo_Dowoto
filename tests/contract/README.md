@@ -17,6 +17,26 @@ dashboard a changé : la migration n'est pas iso-fonctionnelle et doit être cor
 | `contractServer.ts` | Monte l'intégralité de ces routes sur un vrai serveur HTTP de test (réutilise `tests/setup/httpTestApp.ts`). |
 | `routeInventory.contract.test.ts` | Fige la **surface** (liste méthode + chemin). Toute route ajoutée/retirée fait bouger l'instantané. |
 | `behaviour.contract.test.ts` | Fige le **comportement** (statut + corps) route par route. Démarre par une route publique déterministe. |
+| `replay/` | **Runner de rejeu Nitro ↔ Express** (Phase 2). Envoie les mêmes requêtes aux deux runtimes et affirme statut + corps iso. |
+
+## Rejeu Nitro ↔ Express (`replay/`)
+
+Depuis la Phase 2 (portage des routes vers Express, ADR-0017), chaque domaine
+porté est validé par **rejeu réel** : les mêmes requêtes partent vers le serveur
+Nitro de référence ET vers le backend Express, sur la **même base de test**, et
+l'on compare statut + corps.
+
+| Fichier | Rôle |
+| --- | --- |
+| `replay/replay.ts` | Cœur générique : `callServer` (fetch) + `expectIso` (rejoue les deux, compare après normalisation). |
+| `replay/nitroServer.ts` | Démarre le Nitro de référence en **répliquant l'enveloppe d'erreur JSON de production** (`{ error, url, statusCode, statusMessage, message, data }`) que le h3 brut du harnais n'applique pas. |
+| `replay/backendApp.ts` | Démarre le vrai backend Express (`createServer`) sur un port éphémère (import dynamique → `DATABASE_URL` déjà fixé). |
+| `replay/normalize.ts` | Normaliseurs des champs **non déterministes** : horodatages des seeds, ids/dates générés à l'écriture, et enveloppe d'erreur (écarte `url`/`statusMessage`, comme le contrat n'a jamais figé les en-têtes). |
+| `replay/testimonials.replay.test.ts` | 1er domaine rejoué (gabarit) : GET (fr/en), POST valide, POST invalides (400 iso). |
+
+> Un domaine porté = un fichier `replay/<domaine>.replay.test.ts` : monter ses
+> handlers Nitro (`startNitroServer`), lister les scénarios, choisir le
+> normaliseur adéquat. `expectIso` fait échouer tout écart réel de comportement.
 
 ## Lancer
 
@@ -34,12 +54,12 @@ npm run test -- tests/contract -u
 
 - ✅ Inventaire complet des 183 routes.
 - ✅ Amorçage : montage de toute l'application + première capture publique.
+- ✅ **Rejeu Nitro ↔ Express** (`replay/`) : runner opérationnel, 1er domaine
+  rejoué (`testimonials`). Voir la section dédiée ci-dessus.
 - ⏭️ À étendre domaine par domaine (auth, prestataires, messagerie, séquestre,
   admin…) avec les scénarios authentifiés (`tests/setup/httpAuth.ts` fournit un
   cookie de session réel) : un scénario = méthode + chemin + rôle + corps + état
-  de départ, capturé en instantané.
-- ⏭️ **Rejeu** : quand `backend/` (Express) existera, un runner enverra le même
-  jeu de scénarios à son URL et comparera aux instantanés capturés ici.
+  de départ, rejoué contre les deux runtimes.
 
 > Les en-têtes (CSP à nonce par requête, HSTS prod-only — `server/middleware/security.ts`)
 > ne sont volontairement pas figés à ce stade : non déterministes et portés tels
