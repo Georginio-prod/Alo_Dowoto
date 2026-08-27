@@ -9,7 +9,7 @@ const server = app.listen(env.port, () => {
 })
 
 /**
- * Arrêt gracieux (modèle repris de cnc-portal) : on ferme le serveur HTTP
+ * Arrêt gracieux : on ferme le serveur HTTP
  * proprement pour libérer le port et laisser les requêtes en cours se terminer.
  */
 function shutdown(signal: string): void {
