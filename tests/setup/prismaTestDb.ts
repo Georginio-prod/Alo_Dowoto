@@ -15,7 +15,7 @@ export const TEST_DATABASE_URL =
   process.env.TEST_DATABASE_URL ?? 'postgresql://worktogo:worktogo@localhost:5433/worktogo_test'
 
 export default function setup() {
-  execSync('npx prisma db push --force-reset --skip-generate', {
+  execSync('npx prisma db push --schema backend/prisma/schema.prisma --force-reset --skip-generate', {
     cwd: fileURLToPath(new URL('../..', import.meta.url)),
     env: { ...process.env, DATABASE_URL: TEST_DATABASE_URL },
     stdio: 'inherit',

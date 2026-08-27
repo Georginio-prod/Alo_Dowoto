@@ -16,7 +16,7 @@ const DATABASE_URL =
   process.env.E2E_DATABASE_URL ?? 'postgresql://worktogo:worktogo@localhost:5433/worktogo_e2e'
 
 export default function globalSetup() {
-  execSync('npx prisma db push --skip-generate', {
+  execSync('npx prisma db push --schema backend/prisma/schema.prisma --skip-generate', {
     cwd: fileURLToPath(new URL('..', import.meta.url)),
     env: { ...process.env, DATABASE_URL },
     stdio: 'inherit',

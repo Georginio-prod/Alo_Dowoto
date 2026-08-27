@@ -12,6 +12,9 @@ const DATABASE_URL =
   process.env.TEST_DATABASE_URL ?? 'postgresql://worktogo:worktogo@localhost:5433/worktogo_backend_test'
 
 export default function setup() {
+  // Le backend est propriétaire de Prisma (backend/prisma/schema.prisma via
+  // backend/prisma.config.ts). `db push` synchronise le schéma dans la base de
+  // test isolée. Lancé depuis le cwd backend → la config est trouvée automatiquement.
   execSync('npx prisma db push --skip-generate', {
     env: { ...process.env, DATABASE_URL },
     stdio: 'inherit',
