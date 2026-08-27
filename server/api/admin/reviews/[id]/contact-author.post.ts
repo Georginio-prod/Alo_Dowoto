@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   if (!id) badRequest('Identifiant requis.')
   const body = await readSchemaBody(event, adminMessageSchema)
 
-  const review = getReviewById(id)
+  const review = await getReviewById(id)
   if (!review) notFound('Avis introuvable.')
 
   await sendAdminMessage(review.authorId, body.subject, body.body)

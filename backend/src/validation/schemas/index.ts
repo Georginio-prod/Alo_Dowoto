@@ -12,3 +12,5 @@
 
 export * from './testimonials'
 export * from './reclamations'
+export * from './favorites'
+export * from './subscriptions'
