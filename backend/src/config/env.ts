@@ -11,6 +11,13 @@ export interface AppEnv {
   corsOrigins: string[]
   sentryDsn: string | undefined
   isProd: boolean
+  /** Expose la doc OpenAPI (`/api/docs`). Par défaut : activée hors production. */
+  docsEnabled: boolean
+}
+
+function parseBool(raw: string | undefined, fallback: boolean): boolean {
+  if (raw === undefined || raw === '') return fallback
+  return raw === '1' || raw.toLowerCase() === 'true'
 }
 
 function parseOrigins(raw: string | undefined): string[] {
@@ -29,4 +36,5 @@ export const env: AppEnv = {
   corsOrigins: parseOrigins(process.env.CORS_ORIGINS),
   sentryDsn: process.env.SENTRY_DSN || undefined,
   isProd: nodeEnv === 'production',
+  docsEnabled: parseBool(process.env.API_DOCS_ENABLED, nodeEnv !== 'production'),
 }
