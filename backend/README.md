@@ -30,10 +30,15 @@ src/
 ## Démarrer
 
 ```bash
+# Depuis la racine du dépôt : démarrer la base PostgreSQL (conteneur Docker)
+docker compose up -d postgres
+
 cd backend
-cp .env.example .env
+cp .env.example .env       # DATABASE_URL pointe déjà sur le conteneur (port 5433)
 npm install
-npm run dev        # tsx watch, http://localhost:3001/health
+npm run prisma:generate    # génère le client Prisma
+npm run prisma:push        # crée le schéma dans la base (aucun modèle pour l'instant)
+npm run dev                # tsx watch, http://localhost:3001/health  (·/health/db pour la base)
 ```
 
 Build de production :
@@ -48,8 +53,11 @@ npm run build && npm start
   Toujours lever une `HttpError` (`src/utils/apiError.ts`) — jamais un
   `res.status().json()` d'erreur ad hoc.
 - **Multi-clients** : CORS `credentials: true`, liste blanche via `CORS_ORIGINS`.
-- **Prisma reste à la racine** pour l'instant (l'app Nuxt l'utilise encore) ; le
-  schéma sera partagé/déplacé quand le premier domaine sera porté (Phase 3).
+- **Base : PostgreSQL** (conteneur Docker, `docker-compose.yml` racine, port
+  **5433**, ADR-0015). Le backend a son propre schéma
+  (`backend/prisma/schema.prisma`), **sans modèle pour l'instant** — les modèles
+  sont ajoutés domaine par domaine au portage. L'app Nuxt reste sur SQLite tant
+  qu'elle n'a pas migré (étape séparée).
 
 ## Reste à faire (prochaines briques)
 
@@ -57,3 +65,5 @@ npm run build && npm start
 - ESLint/Prettier propres au sous-projet.
 - Couche transverse : auth (cookie + Bearer, iso `requireSessionUser`), Swagger.
 - Migration domaine par domaine, chaque domaine validé par `tests/contract`.
+- Convergence de la base : migration de l'app Nuxt SQLite → PostgreSQL (étape
+  dédiée, avec cutover prod sous contrôle de l'équipe).
