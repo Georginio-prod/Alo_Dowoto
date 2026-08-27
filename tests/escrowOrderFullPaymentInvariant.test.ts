@@ -12,7 +12,7 @@ function id(): string {
 }
 
 /**
- * Décision produit (#276, ADR 0001, `docs/decisions/0001-paiement-integral-plateforme.md`) :
+ * Décision produit (#276, ADR 0001, `docs/adr/0001-paiement-integral-plateforme.md`) :
  * 100% du montant transite par la plateforme, aucun acompte/solde résiduel
  * réglé en espèces. Ces tests figent l'invariant structurel qui applique
  * cette décision : une commande ne peut jamais atteindre `delivered` ou

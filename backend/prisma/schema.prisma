@@ -1,0 +1,16 @@
+// Schéma Prisma du backend Express — cible PostgreSQL (ADR-0015).
+//
+// AUCUN modèle métier pour l'instant : le squelette n'expose que /health. Les
+// modèles seront ajoutés DOMAINE PAR DOMAINE au fil du portage depuis le schéma
+// racine (prisma/schema.prisma, encore SQLite tant que l'app Nuxt n'a pas
+// migré). La convergence vers un schéma unique partagé se décidera à ce
+// moment-là (cf. ADR-0015) — ici on prouve d'abord le câblage.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

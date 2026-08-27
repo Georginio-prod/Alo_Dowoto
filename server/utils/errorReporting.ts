@@ -10,7 +10,7 @@ import * as Sentry from '@sentry/node'
  * réseau, aucune dépendance à un compte externe) : la création du compte
  * fournisseur (Sentry ou équivalent auto-hébergé type GlitchTip) et la
  * vérification en environnement réel restent un choix produit/infra hors
- * périmètre de ce correctif — voir docs/decisions/0009-instrumentation-erreurs-production.md.
+ * périmètre de ce correctif — voir docs/adr/0009-instrumentation-erreurs-production.md.
  */
 
 /** Champs jamais transmis au fournisseur, quel que soit leur emplacement dans l'événement (corps de requête, extra, breadcrumbs). */

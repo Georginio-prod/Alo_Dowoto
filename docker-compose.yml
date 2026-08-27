@@ -1,0 +1,45 @@
+# Infrastructure de développement d'Alo_Dowoto.
+#
+# Base PostgreSQL du backend Express (chantier d'extraction, ADR-0015). Postgres
+# gère les écritures concurrentes des trois clients (web, dashboard, mobile), ce
+# que le SQLite fichier actuel ne fait pas. L'app Nuxt reste sur SQLite tant que
+# sa migration vers Postgres n'est pas faite (étape séparée) ; à terme, l'app et
+# le backend partagent cette même base.
+#
+#   docker compose up -d postgres     # démarrer la base
+#   docker compose down               # arrêter (les données persistent dans le volume)
+#   Adminer (UI web) : http://localhost:8080  (Système: PostgreSQL, Serveur: postgres)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: worktogo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: worktogo
+      POSTGRES_PASSWORD: worktogo
+      POSTGRES_DB: worktogo
+    ports:
+      # Hôte 5433 (5432 souvent déjà pris par un Postgres local) → conteneur 5432.
+      # DATABASE_URL utilise donc le port 5433.
+      - '5433:5432'
+    volumes:
+      - worktogo-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U worktogo -d worktogo']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  adminer:
+    image: adminer:4
+    container_name: worktogo-adminer
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  worktogo-pg-data:

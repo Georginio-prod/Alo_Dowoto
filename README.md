@@ -6,91 +6,152 @@ Place de marché de services togolaise mettant en relation des **clients**
 
 Le cœur du produit est un **paiement en séquestre (escrow)** avec portefeuille
 interne : le client alimente son solde par mobile money, paie une prestation
-(fonds bloqués), et les fonds ne sont libérés vers le prestataire qu'après
-double validation (ou 72 h de validation tacite), avec commission plateforme,
+(fonds bloqués), et les fonds ne sont libérés vers le prestataire qu'après double
+validation (ou 72 h de validation tacite), avec commission plateforme,
 remboursement et gestion de litige.
 
-## Stack
+## Architecture (en un coup d'œil)
 
-- **Framework :** [Nuxt 4](https://nuxt.com) (Vue 3, rendu SSR)
-- **API :** routes serveur [Nitro](https://nitro.build) intégrées (`server/api/**`) — voir [docs/architecture-api.md](docs/architecture-api.md)
-- **Langage :** TypeScript strict
-- **Style :** Tailwind CSS v4
-- **ORM / base :** [Prisma](https://www.prisma.io) (SQLite en développement) — voir [docs/database-schema.md](docs/database-schema.md)
-- **Tests :** [Vitest](https://vitest.dev) + @vue/test-utils (unitaires) et [Playwright](https://playwright.dev) (parcours de bout en bout)
-- **Hébergement / CI :** Vercel + GitHub Actions — voir [docs/deployment.md](docs/deployment.md)
+Le dépôt contient **deux applications** :
+
+| Dossier    | Rôle                                                                 | Techno                          | Port |
+| ---------- | -------------------------------------------------------------------- | ------------------------------- | ---- |
+| `app/` + `server/` | Front SSR **et** API interne (routes Nitro `server/api/**`)   | Nuxt 4, Vue 3, Nitro, TypeScript | 3000 |
+| `backend/` | API HTTP autonome, **en cours d'extraction** depuis les routes Nitro | Express, TypeScript, Prisma      | 3001 |
+
+> **Où en est le chantier ?** L'API est aujourd'hui servie par **Nitro**
+> (`server/api/**`). On l'extrait progressivement vers `backend/` (Express),
+> domaine par domaine, **sans changement de comportement** — voir
+> [`docs/adr/`](docs/adr/README.md) (ADR-0014 à 0016) et le filet
+> [`tests/contract/`](tests/contract/README.md). Tant qu'un domaine n'est pas
+> basculé, c'est Nitro qui répond : **l'app fonctionne normalement sans le backend**.
 
 ## Prérequis
 
-- Node.js 22
-- npm
+- **Node.js 22** et **npm**
+- **Docker** + **Docker Compose** (pour la base PostgreSQL du backend)
 
-## Démarrage
+## Démarrage rapide
+
+### 1. L'application (Nuxt + API Nitro) — suffit pour lancer le site
 
 ```bash
-# 1. Installer les dépendances
+npm install                 # dépendances de l'app
+cp .env.example .env         # puis renseigner les valeurs locales
+npm run db:migrate           # base SQLite de dev + client Prisma
+npm run dev                  # http://localhost:3000
+```
+
+À ce stade, **le site tourne entièrement** (front + API Nitro + base SQLite).
+Les étapes 2 et 3 ne sont nécessaires que pour travailler sur le nouveau backend.
+
+### 2. La base PostgreSQL (Docker) — pour le backend
+
+```bash
+docker compose up -d postgres     # démarre PostgreSQL (port hôte 5433)
+# Adminer (UI web de la base) : http://localhost:8080
+#   Système : PostgreSQL · Serveur : postgres · Utilisateur/mot de passe/base : worktogo
+docker compose down               # arrêter (les données persistent dans le volume)
+```
+
+### 3. Le backend Express (en extraction)
+
+```bash
+cd backend
+cp .env.example .env         # DATABASE_URL pointe déjà sur le conteneur (port 5433)
 npm install
-
-# 2. Configurer l'environnement
-cp .env.example .env      # puis renseigner les valeurs locales
-
-# 3. Créer la base de développement (SQLite) + générer le client Prisma
-npm run db:migrate
-
-# 4. Lancer le serveur de développement (http://localhost:3000)
-npm run dev
+npm run prisma:generate      # génère le client Prisma
+npm run prisma:push          # applique le schéma à la base (aucun modèle pour l'instant)
+npm run dev                  # http://localhost:3001/health  (et /health/db pour la base)
 ```
 
-Les variables d'environnement sont documentées dans [`.env.example`](.env.example)
-(base de données, secret de webhook de paiement, OTP SMS/email, OAuth Google).
-Aucune valeur réelle n'est versionnée — voir [docs/deployment.md](docs/deployment.md)
-pour la gestion des secrets en CI/CD et sur Vercel.
+## Bases de données (état transitoire)
 
-## Scripts
+- **App Nuxt → SQLite** (`prisma/schema.prisma`, `DATABASE_URL="file:./dev.db"`).
+  Inchangé, l'app l'utilise encore.
+- **Backend → PostgreSQL** (conteneur Docker, `backend/prisma/schema.prisma`).
+  Postgres gère les écritures concurrentes des trois clients (web, dashboard,
+  mobile), contrairement à SQLite.
 
-| Commande | Rôle |
-|---|---|
-| `npm run dev` | Serveur de développement |
-| `npm run build` | Build de production |
-| `npm run preview` | Prévisualisation du build |
-| `npm run lint` / `lint:fix` | ESLint (strict, règle des 300 lignes) |
+À terme, l'app migrera aussi vers PostgreSQL et les deux partageront la même base
+(étape dédiée, sous contrôle de l'équipe — cf.
+[ADR-0015](docs/adr/0015-partage-logique-metier-et-donnees.md)).
+
+## Point de bascule front → backend
+
+Tous les appels API du front passeront par `useApi().apiFetch('/api/...')`
+([`app/composables/useApi.ts`](app/composables/useApi.ts)), qui aiguille chaque
+requête vers Nitro (défaut) ou le backend Express **par domaine**, via deux
+variables **vides par défaut** (donc aucun changement) :
+
+```bash
+NUXT_PUBLIC_BACKEND_BASE_URL=https://api.worktogo.example   # URL du backend
+NUXT_PUBLIC_MIGRATED_API_PREFIXES=/api/auth,/api/wallet     # domaines déjà portés (CSV)
+```
+
+Ajouter un préfixe bascule ce domaine vers le backend ; le retirer revient
+instantanément à Nitro (rollback sans redéploiement).
+
+## Tests
+
+```bash
+# App (racine)
+npm test                 # unitaires Vitest (dont tests/http/** et tests/contract/**)
+npm run test:e2e         # parcours Playwright (vraie instance Nuxt, base SQLite jetable)
+
+# Backend
+npm --prefix backend test   # Vitest (santé + connexion Prisma si Postgres démarré)
+```
+
+Le harnais [`tests/contract/`](tests/contract/README.md) fige le comportement de
+l'API Nitro actuelle et sera rejoué contre le backend pour garantir l'iso-fonctionnement.
+
+## Scripts principaux
+
+| Commande (racine) | Rôle |
+| --- | --- |
+| `npm run dev` / `build` / `preview` | Dev / build de prod / prévisualisation |
+| `npm run lint` / `lint:fix` / `lint:md` | ESLint (règle des 300 lignes) / markdownlint |
 | `npm run typecheck` | Vérification de types (`nuxt typecheck`) |
-| `npm test` / `test:watch` | Tests unitaires (Vitest) |
-| `npm run test:e2e` | Tests de parcours (Playwright) — démarre Nuxt et une base SQLite jetable |
-| `npm run test:e2e:ui` | Idem, en mode interactif (inspecteur Playwright) |
-| `npm run db:migrate` | Créer/appliquer une migration Prisma (dev) |
-| `npm run db:generate` | Régénérer le client Prisma |
-| `npm run db:studio` | Explorer la base (Prisma Studio) |
+| `npm test` / `test:e2e` | Tests unitaires / de parcours |
+| `npm run db:migrate` / `db:generate` / `db:studio` / `db:seed` | Prisma (dev SQLite) |
 
-## Structure
+| Commande (`backend/`) | Rôle |
+| --- | --- |
+| `npm run dev` / `build` / `start` | Dev (tsx watch) / build tsc / lancer le build |
+| `npm run typecheck` / `test` | Types / tests Vitest |
+| `npm run prisma:generate` / `prisma:push` / `prisma:migrate` | Prisma (Postgres) |
+
+## Structure du dépôt
 
 ```
-app/                 Front (pages, composants, composables, layouts, middleware, data)
+app/                 Front Nuxt (pages, composants, composables, data)
 server/
-  api/**             Routes API (1 route/fichier, convention <segment>.<méthode>.ts)
-  utils/*Store.ts    Logique métier, isolée du HTTP
-prisma/              Schéma + migrations versionnées
-tests/               Tests Vitest (unitaires + HTTP)
-e2e/                 Tests de parcours Playwright (vrai navigateur, vraie instance Nuxt)
-docs/                Architecture, schéma DB, déploiement, audits a11y & responsive
+  api/**             API Nitro actuelle (1 route/fichier : <segment>.<méthode>.ts)
+  utils/*Store.ts    Logique métier (couplée à Nitro, à découpler au portage)
+backend/             API Express autonome (en extraction) — voir backend/README.md
+prisma/              Schéma + migrations SQLite de l'app
+docker-compose.yml   PostgreSQL (+ Adminer) pour le backend
+tests/               Vitest (unitaires, HTTP, contrat)
+e2e/                 Parcours Playwright
+docs/
+  adr/               Décisions d'architecture (ADR) — voir docs/adr/README.md
+  ...                architecture-api, database-schema, deployment, audits
 ```
-
-**Convention API :** un handler ne fait qu'authentifier/autoriser, valider la
-requête, appeler le store, et retourner `{ <ressource>: valeur }`. La logique
-métier vit dans `server/utils/*Store.ts`.
 
 ## Documentation
 
-- [Architecture de l'API](docs/architecture-api.md)
-- [Schéma de base de données](docs/database-schema.md)
+- [Décisions d'architecture (ADR)](docs/adr/README.md) — dont le chantier d'extraction (0014-0016)
+- [Architecture de l'API](docs/architecture-api.md) · [Schéma de base de données](docs/database-schema.md)
 - [Déploiement & CI/CD](docs/deployment.md)
-- [Audit accessibilité](docs/accessibility-audit.md)
-- [Audit responsive](docs/responsive-audit.md)
-- [Pré-audit complet](docs/pre-audit-complet.md)
+- [Guide de contribution](CONTRIBUTION.md) · [Conventions de commit](.github/commit-conventions.md)
 
 ## Contribution
 
-Le travail se fait par branches `feat/…`, `fix/…`, `chore/…` ouvertes en Pull
-Request vers `develop`. Chaque PR passe la CI (lint, typecheck, tests, build)
-avant fusion ; `develop` déploie en staging et `master` en production (voir
-[docs/deployment.md](docs/deployment.md)).
+- **Toujours créer une branche depuis `develop` avant de commencer** (`feat/…`,
+  `fix/…`, `chore/…`, `docs/…`) — jamais de travail directement sur `develop`.
+- **Commits** : [Conventional Commits + gitmoji](.github/commit-conventions.md)
+  (ex. `feat: ✨ …`, `fix: 🐛 …`), atomiques.
+- Ouvrir une **Pull Request vers `develop`**. La CI (lint, typecheck, tests,
+  build, Danger sur la taille de PR) doit être verte avant fusion ; `develop`
+  déploie en staging, `master` en production.

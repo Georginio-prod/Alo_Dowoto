@@ -12,7 +12,7 @@ suivies d'une **synthèse des priorités** et d'un **plan de mise en pratique**.
 ## 0. Impression générale (à lire en premier)
 
 Contrairement à ce que le mot « failles » pourrait laisser craindre, ce projet est **mature et
-bien tenu** : design system documenté, ADR (`docs/decisions/`), 58 fichiers de tests, CI + déploiement,
+bien tenu** : design system documenté, ADR (`docs/adr/`), 58 fichiers de tests, CI + déploiement,
 règle ESLint des 300 lignes, TypeScript strict, `prefers-reduced-motion` géré, anneaux de focus clavier,
 webhooks signés en HMAC avec `timingSafeEqual`, OTP à tentatives limitées, cookies `httpOnly`.
 
