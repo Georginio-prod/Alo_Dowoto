@@ -1,3 +1,4 @@
+import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express, { type Express } from 'express'
 import rateLimit from 'express-rate-limit'
@@ -31,6 +32,7 @@ export function createServer(): Express {
   )
 
   app.use(express.json({ limit: '1mb' }))
+  app.use(cookieParser())
 
   app.use(
     rateLimit({
