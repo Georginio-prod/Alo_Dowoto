@@ -36,9 +36,11 @@ jobs:
         run: npm ci
       # Le client Prisma doit correspondre au schéma : sans ça, l'instance Nuxt
       # démarrée par Playwright échoue dès qu'une route touche aux modèles
-      # ajoutés récemment.
+      # ajoutés récemment. Le schéma appartient au backend (`backend/prisma/`,
+      # ADR-0017) : on génère via le script racine qui délègue au workspace
+      # (client mutualisé/hoisté, importable par l'app), comme le fait ci.yml.
       - name: Générer le client Prisma
-        run: npx prisma generate
+        run: npm run db:generate
       - name: Installer les navigateurs Playwright
         run: npx playwright install --with-deps chromium
       # La base SQLite jetable et le serveur Nuxt sont pris en charge par
