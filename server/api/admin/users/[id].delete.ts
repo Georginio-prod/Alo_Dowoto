@@ -37,18 +37,13 @@ export default defineEventHandler(async (event) => {
   }
 
   await prisma.$transaction(async (tx) => {
-    // Avis rédigés par l'utilisateur.
+    // Avis rédigés par l'utilisateur, et avis reçus (le noté est identifié par
+    // son id utilisateur — `targetId`, cf. server/utils/reviewStore.ts).
     await tx.review.deleteMany({ where: { authorId: id } })
+    await tx.review.deleteMany({ where: { targetId: id } })
 
-    // Profil prestataire et ses avis reçus, le cas échéant.
-    const profile = await tx.providerProfile.findUnique({
-      where: { userId: id },
-      select: { id: true },
-    })
-    if (profile) {
-      await tx.review.deleteMany({ where: { providerId: profile.id } })
-      await tx.providerProfile.delete({ where: { userId: id } })
-    }
+    // Profil prestataire, le cas échéant.
+    await tx.providerProfile.deleteMany({ where: { userId: id } })
 
     // Paiements puis abonnements (les paiements référencent l'abonnement).
     await tx.payment.deleteMany({ where: { userId: id } })

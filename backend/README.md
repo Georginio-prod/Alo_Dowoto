@@ -13,9 +13,26 @@ sécurité `tests/contract/`.
 > **et rejeu de contrat** `tests/contract/replay/`) :
 > - **avis d'accueil** (`/api/testimonials`, public : lecture + écriture) ;
 > - **réclamations** (`/api/reclamations`, écriture, **auth optionnelle par
->   cookie** — le compte est rattaché si présent, jamais exigé).
+>   cookie** — le compte est rattaché si présent, jamais exigé) ;
+> - **favoris** (`POST`/`DELETE /api/favorites`, **auth obligatoire + rôle
+>   client** → 401/403). ⚠️ `GET /api/favorites` **différé** (voir plus bas) ;
+> - **notifications** (`GET`/`POST /api/notifications[/read]`, auth requise) ;
+> - **parrainage** (`GET /api/referrals/me`, auth requise) ;
+> - **abonnements** (`/api/subscriptions[...]`, **rôle prestataire**, 400/409).
 >
-> Reste ~181 routes à porter.
+> **Bloqués — dépendent de stores encore EN MÉMOIRE** (un backend séparé aurait
+> ces Map vides → divergence en prod). À persister en base avant portage :
+> - `providers`, `sectors`, `GET /api/favorites` → l'annuaire lit ~~`reviewStore`
+>   (notes, ✅ **persisté**)~~ + `verificationStore` (badge vérifié) +
+>   `providerAvailabilityStore` (encore à persister) ;
+> - `account`, `verification` → `verificationStore` ;
+> - `quotas`, `requests`, `assistant` → stores en mémoire respectifs.
+>
+> **`reviewStore` persisté** (Prisma, modèle `Review` branché) : ses lectures
+> sont passées en `async` (annuaire/matching/escrow adaptés), 765 tests app verts.
+> Restent `verificationStore` + `providerAvailabilityStore` avant de porter `providers`.
+>
+> Reste ~177 routes à porter (dont admin=101).
 
 ## Structure
 
