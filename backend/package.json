@@ -15,9 +15,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prisma:generate": "prisma generate",
-    "prisma:push": "prisma db push",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:generate": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

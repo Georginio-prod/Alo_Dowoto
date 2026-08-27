@@ -12,11 +12,10 @@ import { requireAdminRole, requireSessionUser } from '../auth'
  * (`server/utils/requireSessionUser.ts`) : cookie OU Bearer, expiration,
  * suspension, rôles — mêmes codes et messages (ADR-0016).
  *
- * Nécessite la base Docker (`docker compose up -d postgres`) + `DATABASE_URL` ;
- * sinon la suite est ignorée (pas de workflow backend en CI pour l'instant).
+ * S'exécute contre la base de test ISOLÉE préparée par le globalSetup (jamais la
+ * base partagée `worktogo`). Nécessite le conteneur Docker démarré
+ * (`docker compose up -d postgres`).
  */
-const HAS_DB = Boolean(process.env.DATABASE_URL)
-
 function buildApp(): Express {
   const app = express()
   app.use(cookieParser())
@@ -30,7 +29,7 @@ function buildApp(): Express {
   return app
 }
 
-describe.skipIf(!HAS_DB)('Gardes d’auth du backend', () => {
+describe('Gardes d’auth du backend', () => {
   const app = buildApp()
   const state = { userId: '', token: '', expiredToken: '', suspendedUserId: '', suspendedToken: '' }
 
