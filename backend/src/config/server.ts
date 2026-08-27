@@ -10,6 +10,10 @@ import { notFoundHandler } from '../middleware/notFound'
 import { healthRoutes } from '../routes/health.routes'
 import { testimonialsRoutes } from '../routes/testimonials.routes'
 import { reclamationsRoutes } from '../routes/reclamations.routes'
+import { favoritesRoutes } from '../routes/favorites.routes'
+import { notificationsRoutes } from '../routes/notifications.routes'
+import { referralsRoutes } from '../routes/referrals.routes'
+import { subscriptionsRoutes } from '../routes/subscriptions.routes'
 
 /**
  * Fabrique l'application Express. La plomberie transverse est posée ici —
@@ -54,6 +58,10 @@ export function createServer(): Express {
   // reverse proxy reste passe-plat. Chaque domaine porté vient s'ajouter ici.
   app.use('/api', testimonialsRoutes)
   app.use('/api', reclamationsRoutes)
+  app.use('/api', favoritesRoutes)
+  app.use('/api', notificationsRoutes)
+  app.use('/api', referralsRoutes)
+  app.use('/api', subscriptionsRoutes)
 
   // Doc OpenAPI (hors prod par défaut, cf. env.docsEnabled). Montée sous `/api`
   // pour rester cohérente avec le reverse proxy `/api/* → backend` (ADR-0017) :
