@@ -8,13 +8,24 @@ jobs:
   test:
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: worktogo
+          POSTGRES_PASSWORD: worktogo
+          POSTGRES_DB: worktogo_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U worktogo" --health-interval 5s
+          --health-timeout 5s --health-retries 15
     env:
-      # Prisma (prisma.config.ts) exige DATABASE_URL même pour `prisma
-      # generate`, qui ne fait que lire prisma/schema.prisma (aucune connexion
-      # réelle n'est ouverte) — même valeur factice que ci.yml. La base SQLite
-      # jetable réellement utilisée par les tests est gérée séparément par
-      # playwright.config.ts (globalSetup + webServer).
-      DATABASE_URL: 'file:./ci.db'
+      # Base PostgreSQL fournie par le service ci-dessus. `prisma generate` ne
+      # s'y connecte pas ; la base jetable des tests est gérée par
+      # playwright.config.ts (globalSetup + webServer), via E2E_DATABASE_URL.
+      DATABASE_URL: 'postgresql://worktogo:worktogo@localhost:5432/worktogo_e2e'
+      E2E_DATABASE_URL: 'postgresql://worktogo:worktogo@localhost:5432/worktogo_e2e'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

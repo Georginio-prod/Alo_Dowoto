@@ -24,13 +24,24 @@ jobs:
   quality:
     name: Lint · Typecheck · Build
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: worktogo
+          POSTGRES_PASSWORD: worktogo
+          POSTGRES_DB: worktogo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U worktogo" --health-interval 5s
+          --health-timeout 5s --health-retries 15
     env:
-      # Prisma (prisma.config.ts) exige DATABASE_URL même pour `prisma
-      # generate`, qui ne fait que lire prisma/schema.prisma (aucune
-      # connexion réelle n'est ouverte). Valeur factice suffisante pour le CI
-      # — jamais utilisée pour se connecter à une vraie base. Voir
-      # docs/deployment.md.
-      DATABASE_URL: 'file:./ci.db'
+      # Base PostgreSQL fournie par le service ci-dessus. `prisma generate` ne
+      # s'y connecte pas ; les tests unitaires utilisent TEST_DATABASE_URL (voir
+      # tests/setup/prismaTestDb.ts + vitest.config.ts). Voir docs/deployment.md.
+      DATABASE_URL: 'postgresql://worktogo:worktogo@localhost:5432/worktogo_test'
+      TEST_DATABASE_URL: 'postgresql://worktogo:worktogo@localhost:5432/worktogo_test'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
