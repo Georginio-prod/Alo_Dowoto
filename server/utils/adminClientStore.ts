@@ -104,6 +104,6 @@ export async function getAdminClientDetail(userId: string): Promise<AdminClientD
     missions: missions.map((m) => ({ id: m.id, status: m.status, amount: m.amount, createdAt: m.createdAt.getTime(), providerId: m.providerId })),
     disputes: missions.filter((m) => m.disputedAt !== null).map((m) => ({ id: m.id, disputeReason: m.disputeReason, disputedAt: m.disputedAt?.getTime() ?? null })),
     refunds: refunds.map((r) => ({ id: r.id, amount: r.amount, createdAt: r.createdAt.getTime() })),
-    reviewsLeft: listReviewsByAuthor(userId).map((r) => ({ id: r.id, rating: r.rating, comment: r.comment, createdAt: r.createdAt, targetId: r.targetId })),
+    reviewsLeft: (await listReviewsByAuthor(userId)).map((r) => ({ id: r.id, rating: r.rating, comment: r.comment, createdAt: r.createdAt, targetId: r.targetId })),
   }
 }
