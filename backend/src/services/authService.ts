@@ -1,6 +1,6 @@
 import type { User } from '@prisma/client'
 import type { Request } from 'express'
-import { prisma } from '../config/prisma'
+import { sessionRepository } from '../repositories/sessionRepository'
 
 /** Nom du cookie de session — identique au front/Nitro (`server/utils/userStore.ts`). */
 export const SESSION_COOKIE = 'wt_session'
@@ -26,10 +26,10 @@ export function extractSessionToken(req: Request): string | undefined {
  */
 export async function getSessionUser(token: string | undefined): Promise<User | null> {
   if (!token) return null
-  const session = await prisma.session.findUnique({ where: { token }, include: { user: true } })
+  const session = await sessionRepository.findByToken(token)
   if (!session) return null
   if (session.expiresAt.getTime() < Date.now()) {
-    await prisma.session.delete({ where: { token } }).catch(() => undefined)
+    await sessionRepository.deleteByToken(token)
     return null
   }
   if (session.user.status === 'suspended') return null

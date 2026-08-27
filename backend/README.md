@@ -6,8 +6,11 @@ Nitro** (`server/api/**`) de l'app Nuxt, sous la contrainte absolue du **zéro
 changement fonctionnel** — voir `docs/adr/` (ADR-0014/0015/0016) et le filet de
 sécurité `tests/contract/`.
 
-> État : **Phase 1 — squelette**. L'app démarre à vide (sonde `/health`), la
-> plomberie transverse est posée, aucune route métier n'est encore portée.
+> État : **Phase 1 — couche transverse posée** (ADR-0017). L'app démarre à vide
+> (sonde `/health`) ; la plomberie réutilisable par tous les domaines est en
+> place — **validation Zod** (bridge + primitives), **doc OpenAPI** (`/api/docs`),
+> patron **services/ + repositories/** découplé de Nitro. Aucune route métier
+> n'est encore portée (Phase 2).
 
 ## Structure
 
@@ -19,7 +22,9 @@ src/
   services/      logique métier (portée depuis server/utils/*Store + services)
   repositories/  accès données (Prisma)
   validation/
-    schemas/     schémas Zod (repris de server/utils/apiValidation*)
+    primitives.ts  briques Zod partagées (requiredTrimmed…), agnostiques du framework
+    validate.ts    pont schéma → route (parseSchema / validateBody / validateQuery), 400 iso Nitro
+    schemas/       schémas Zod par domaine (repris de server/utils/apiValidation*, Phase 2)
   middleware/    auth, erreurs, 404…
   utils/         helpers transverses (apiError…)
   types/         types partagés
@@ -57,6 +62,16 @@ npm run build && npm start
   Toujours lever une `HttpError` (`src/utils/apiError.ts`) — jamais un
   `res.status().json()` d'erreur ad hoc.
 - **Multi-clients** : CORS `credentials: true`, liste blanche via `CORS_ORIGINS`.
+- **Validation** : un schéma zod par payload, branché sur la route via
+  `validateBody`/`parseSchema` (`src/validation/validate.ts`) — premier message
+  du schéma → 400, iso `readSchemaBody` Nitro. Les schémas composent les
+  primitives partagées (`src/validation/primitives.ts`).
+- **Couches** : `routes → controllers → services → repositories`. Seuls les
+  **repositories** parlent à Prisma (client injecté, testables sans base) ; les
+  **services** portent la logique métier, sans dépendance framework (ADR-0015).
+- **Doc OpenAPI** : annotations `@openapi` en JSDoc au-dessus des routes, servies
+  sur **`/api/docs`** (UI) et `/api/docs.json` (spec). Exposée hors prod par
+  défaut (`API_DOCS_ENABLED`).
 - **Base : PostgreSQL `worktogo`** (conteneur Docker, `docker-compose.yml`
   racine, port **5433**, ADR-0015). **Le backend est propriétaire de Prisma** :
   schéma, migrations et config dans **`backend/prisma/`** (ADR-0017). Le client
@@ -76,7 +91,9 @@ npm run build && npm start
   > réelles des utilisateurs vivent encore dans la base **SQLite de l'app** :
   > l'auth n'authentifiera les vrais comptes qu'**après la convergence des bases**.
 - Workflows CI par section (`backend-code-quality.yml`, `backend-vitest.yml`).
-- ESLint/Prettier propres au sous-projet ; Swagger.
+- ESLint/Prettier propres au sous-projet.
+- ✅ **Doc OpenAPI** (Swagger) : `/api/docs`, générée depuis les annotations
+  `@openapi` des routes (`src/config/swagger.ts`).
 - Migration domaine par domaine, chaque domaine validé par `tests/contract`.
 - Convergence de la base : migration de l'app Nuxt SQLite → PostgreSQL (étape
   dédiée, avec cutover prod sous contrôle de l'équipe).

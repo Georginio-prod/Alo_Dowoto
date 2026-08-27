@@ -2,7 +2,9 @@ import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express, { type Express } from 'express'
 import rateLimit from 'express-rate-limit'
+import swaggerUi from 'swagger-ui-express'
 import { env } from './env'
+import { swaggerSpec } from './swagger'
 import { errorHandler } from '../middleware/errorHandler'
 import { notFoundHandler } from '../middleware/notFound'
 import { healthRoutes } from '../routes/health.routes'
@@ -45,6 +47,16 @@ export function createServer(): Express {
 
   app.use('/', healthRoutes)
   // ↑ Les routes /api/** métier seront montées ici (Phase 3).
+
+  // Doc OpenAPI (hors prod par défaut, cf. env.docsEnabled). Montée sous `/api`
+  // pour rester cohérente avec le reverse proxy `/api/* → backend` (ADR-0017) :
+  // `/api/docs` (UI) et `/api/docs.json` (spec brute).
+  if (env.docsEnabled) {
+    app.get('/api/docs.json', (_req, res) => {
+      res.json(swaggerSpec)
+    })
+    app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+  }
 
   app.use(notFoundHandler)
   app.use(errorHandler)
