@@ -55,11 +55,11 @@ export interface MatchedProvider {
 const requests = new Map<string, ServiceRequest>()
 const matchesByRequestId = new Map<string, MatchedProvider[]>()
 
-function toCandidate(provider: ProviderSearchResult): MatchCandidate {
+async function toCandidate(provider: ProviderSearchResult): Promise<MatchCandidate> {
   // Note effective (#61) : reflète la moyenne recalculée à partir des avis
   // dès qu'il y en a, sinon retombe sur la valeur figée de l'annuaire de
   // démo — voir providerDirectory.getEffectiveRating.
-  const { rating, reviewCount } = getEffectiveRating(provider.id)
+  const { rating, reviewCount } = await getEffectiveRating(provider.id)
   return {
     providerId: provider.id,
     skills: [provider.subSector],
@@ -119,10 +119,10 @@ export async function computeMatches(request: ServiceRequest, limit = 5): Promis
   const available = candidates.filter((provider) => !atQuotaFlags.get(provider.id))
   const atQuota = candidates.filter((provider) => atQuotaFlags.get(provider.id))
 
-  const rankedAvailable = rankProviders(matchRequest, available.map(toCandidate), DEFAULT_MATCH_WEIGHTS, limit)
+  const rankedAvailable = rankProviders(matchRequest, await Promise.all(available.map(toCandidate)), DEFAULT_MATCH_WEIGHTS, limit)
   const remainingSlots = limit - rankedAvailable.length
   const rankedAtQuota =
-    remainingSlots > 0 ? rankProviders(matchRequest, atQuota.map(toCandidate), DEFAULT_MATCH_WEIGHTS, remainingSlots) : []
+    remainingSlots > 0 ? rankProviders(matchRequest, await Promise.all(atQuota.map(toCandidate)), DEFAULT_MATCH_WEIGHTS, remainingSlots) : []
 
   const matches: MatchedProvider[] = []
   for (const result of [...rankedAvailable, ...rankedAtQuota]) {
@@ -130,7 +130,7 @@ export async function computeMatches(request: ServiceRequest, limit = 5): Promis
     if (!provider) continue
     // Même note effective que celle utilisée pour le scoring (#61) : la
     // maquette affiche donc la moyenne à jour, cohérente avec le classement.
-    const { rating, reviewCount } = getEffectiveRating(provider.id, { rating: provider.rating, reviewCount: provider.reviewCount })
+    const { rating, reviewCount } = await getEffectiveRating(provider.id, { rating: provider.rating, reviewCount: provider.reviewCount })
     matches.push({
       providerId: provider.id,
       displayName: provider.displayName,
