@@ -26,7 +26,7 @@ export interface AdminReviewRow extends Review {
 }
 
 export async function listAdminReviews(onlyFlagged: boolean): Promise<AdminReviewRow[]> {
-  const reviews = listAllReviews()
+  const reviews = await listAllReviews()
   const moderations = await prisma.reviewModeration.findMany({ where: { reviewId: { in: reviews.map((r) => r.id) } } })
   const moderationById = new Map(moderations.map((m) => [m.reviewId, m]))
 

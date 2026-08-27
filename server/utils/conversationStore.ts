@@ -361,7 +361,7 @@ export async function toConversationSummary(conversation: Conversation, viewerId
     lastMessage: last
       ? { body: last.body, createdAt: last.createdAt, translationKey: last.translationKey, translationParams: last.translationParams }
       : null,
-    alreadyReviewed: hasReviewed(conversation.id, viewerId),
+    alreadyReviewed: await hasReviewed(conversation.id, viewerId),
     unreadCount,
   }
 }

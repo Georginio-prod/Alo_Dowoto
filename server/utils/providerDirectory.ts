@@ -255,8 +255,10 @@ export async function searchProviders(filters: ProviderSearchFilters): Promise<P
   // une seule fois par résultat (pas à chaque comparaison du tri) —
   // getEffectiveRating peut retomber sur getProviderById, qui reconstruit
   // l'annuaire fusionné, coûteux à répéter en O(n log n).
-  return filtered
-    .map((provider) => ({ provider, score: scoreSearchResult(provider) }))
+  const scored = await Promise.all(
+    filtered.map(async (provider) => ({ provider, score: await scoreSearchResult(provider) })),
+  )
+  return scored
     .sort((a, b) => b.score - a.score)
     .map((entry) => entry.provider)
 }
@@ -316,10 +318,10 @@ function sortResults(results: ProviderSearchResult[], sort: ProviderSortOption):
 }
 
 /** Score multi-critères (0-100) d'un résultat de recherche, voir `searchProviders`. */
-function scoreSearchResult(provider: ProviderSearchResult): number {
+async function scoreSearchResult(provider: ProviderSearchResult): Promise<number> {
   // On passe le prestataire déjà en main comme repli : évite un re-fetch de
   // l'annuaire (coûteux, désormais une requête base) par résultat.
-  const { rating, reviewCount } = getEffectiveRating(provider.id, { rating: provider.rating, reviewCount: provider.reviewCount })
+  const { rating, reviewCount } = await getEffectiveRating(provider.id, { rating: provider.rating, reviewCount: provider.reviewCount })
   return scoreFeaturedProvider({
     providerId: provider.id,
     rating,
@@ -347,11 +349,11 @@ export async function countBySector(sector: string): Promise<number> {
  * le moteur de scoring (#54) reflète immédiatement les nouvelles
  * notations, sans dupliquer cette logique dans chaque appelant.
  */
-export function getEffectiveRating(
+export async function getEffectiveRating(
   providerId: string,
   fallback?: { rating: number; reviewCount: number },
-): { rating: number, reviewCount: number } {
-  const { average, count } = getAverageRating(providerId)
+): Promise<{ rating: number, reviewCount: number }> {
+  const { average, count } = await getAverageRating(providerId)
   if (count > 0) return { rating: average, reviewCount: count }
 
   // Repli sur la note figée du prestataire, fourni par l'appelant (qui l'a déjà
@@ -391,8 +393,8 @@ export function estimateExperienceYears(reviewCount: number): number {
  */
 export async function getFeaturedCandidates(sector?: string): Promise<FeaturedCandidate[]> {
   const providers = await searchProviders(sector ? { sector } : {})
-  return providers.map((provider) => {
-    const { rating, reviewCount } = getEffectiveRating(provider.id, { rating: provider.rating, reviewCount: provider.reviewCount })
+  return Promise.all(providers.map(async (provider) => {
+    const { rating, reviewCount } = await getEffectiveRating(provider.id, { rating: provider.rating, reviewCount: provider.reviewCount })
     return {
       providerId: provider.id,
       rating,
@@ -400,7 +402,7 @@ export async function getFeaturedCandidates(sector?: string): Promise<FeaturedCa
       verified: provider.verified,
       experienceYears: estimateExperienceYears(reviewCount),
     }
-  })
+  }))
 }
 
 /** Fiche prestataire enrichie du score de mise en avant (#187, accueil chercheur). */
@@ -455,7 +457,7 @@ export async function getProviderDetail(id: string, contactRevealed: boolean): P
   const provider = await getProviderById(id)
   if (!provider) return null
 
-  const { rating, reviewCount } = getEffectiveRating(id, { rating: provider.rating, reviewCount: provider.reviewCount })
+  const { rating, reviewCount } = await getEffectiveRating(id, { rating: provider.rating, reviewCount: provider.reviewCount })
   const experienceYears = estimateExperienceYears(reviewCount)
   const { phone, email } = derivedContact(provider)
 
