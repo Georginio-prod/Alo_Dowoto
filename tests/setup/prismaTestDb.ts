@@ -1,20 +1,21 @@
 import { execSync } from 'node:child_process'
-import { rmSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 /**
- * Global setup Vitest (#218) : crée une base SQLite jetable pour les tests
- * des stores branchés sur Prisma (userStore, otpStore, loginFlow). Le
- * fichier est supprimé puis recréé à chaque exécution, ce qui rend les
- * tests reproductibles. L'URL est injectée dans les workers via `test.env`
- * (voir vitest.config.ts) — les deux doivent rester alignées.
+ * Global setup Vitest : prépare une base PostgreSQL jetable pour les tests des
+ * stores branchés sur Prisma. Le schéma est **réinitialisé** (`--force-reset`,
+ * drop + recréation) à chaque exécution, ce qui rend les tests reproductibles.
+ *
+ * Nécessite le conteneur Docker démarré (`docker compose up -d postgres`).
+ * L'URL peut être surchargée via `TEST_DATABASE_URL` (utilisé en CI, où un
+ * service Postgres fournit la base). Doit rester alignée avec `test.env` de
+ * vitest.config.ts.
  */
-const TEST_DB_PATH = fileURLToPath(new URL('./test.db', import.meta.url))
-export const TEST_DATABASE_URL = `file:${TEST_DB_PATH}`
+export const TEST_DATABASE_URL =
+  process.env.TEST_DATABASE_URL ?? 'postgresql://worktogo:worktogo@localhost:5433/worktogo_test'
 
 export default function setup() {
-  rmSync(TEST_DB_PATH, { force: true })
-  execSync('npx prisma db push --skip-generate', {
+  execSync('npx prisma db push --force-reset --skip-generate', {
     cwd: fileURLToPath(new URL('../..', import.meta.url)),
     env: { ...process.env, DATABASE_URL: TEST_DATABASE_URL },
     stdio: 'inherit',

@@ -1,4 +1,3 @@
-import { fileURLToPath } from 'node:url'
 import { defineConfig, devices } from '@playwright/test'
 
 /**
@@ -21,7 +20,8 @@ import { defineConfig, devices } from '@playwright/test'
 const PORT = Number(process.env.E2E_PORT ?? 3101)
 const BASE_URL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${PORT}`
 
-export const E2E_DATABASE_URL = `file:${fileURLToPath(new URL('./e2e/.tmp/e2e.db', import.meta.url))}`
+export const E2E_DATABASE_URL =
+  process.env.E2E_DATABASE_URL ?? 'postgresql://worktogo:worktogo@localhost:5433/worktogo_e2e'
 
 export default defineConfig({
   testDir: './e2e',

@@ -34,12 +34,17 @@ src/
 docker compose up -d postgres
 
 cd backend
-cp .env.example .env       # DATABASE_URL pointe déjà sur le conteneur (port 5433)
+cp .env.example .env       # DATABASE_URL pointe sur la base partagée `worktogo` (port 5433)
 npm install
-npm run prisma:generate    # génère le client Prisma
-npm run prisma:push        # crée le schéma dans la base (aucun modèle pour l'instant)
+npm run prisma:generate    # génère le client Prisma (le backend ne migre PAS la base)
 npm run dev                # tsx watch, http://localhost:3001/health  (·/health/db pour la base)
 ```
+
+> Le **schéma de la base `worktogo` est géré par l'app Nuxt** (ses migrations
+> Prisma). Lance d'abord les migrations de l'app (`npm run db:migrate` à la
+> racine) : le backend ne fait que **générer son client** et interroger les
+> tables existantes — il ne doit **jamais** `db push` / `migrate` la base
+> partagée (il droperait les tables de l'app).
 
 Build de production :
 
@@ -53,11 +58,15 @@ npm run build && npm start
   Toujours lever une `HttpError` (`src/utils/apiError.ts`) — jamais un
   `res.status().json()` d'erreur ad hoc.
 - **Multi-clients** : CORS `credentials: true`, liste blanche via `CORS_ORIGINS`.
-- **Base : PostgreSQL** (conteneur Docker, `docker-compose.yml` racine, port
-  **5433**, ADR-0015). Le backend a son propre schéma
-  (`backend/prisma/schema.prisma`), **sans modèle pour l'instant** — les modèles
-  sont ajoutés domaine par domaine au portage. L'app Nuxt reste sur SQLite tant
-  qu'elle n'a pas migré (étape séparée).
+- **Base : PostgreSQL partagée `worktogo`** (conteneur Docker, `docker-compose.yml`
+  racine, port **5433**, ADR-0015), **propriété de l'app Nuxt** (schéma +
+  migrations). Le backend a un schéma **subset** (`backend/prisma/schema.prisma`,
+  actuellement `User` + `Session`) utilisé **uniquement pour générer son client**
+  et interroger les tables — jamais pour migrer/push la base partagée. Les modèles
+  du subset s'ajoutent domaine par domaine au portage.
+- **Tests isolés** : les tests backend tournent contre une base dédiée
+  `worktogo_backend_test` (préparée par `vitest.globalSetup.ts`), jamais contre
+  `worktogo`.
 
 ## Reste à faire (prochaines briques)
 
