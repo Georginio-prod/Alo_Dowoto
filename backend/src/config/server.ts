@@ -8,6 +8,8 @@ import { swaggerSpec } from './swagger'
 import { errorHandler } from '../middleware/errorHandler'
 import { notFoundHandler } from '../middleware/notFound'
 import { healthRoutes } from '../routes/health.routes'
+import { testimonialsRoutes } from '../routes/testimonials.routes'
+import { reclamationsRoutes } from '../routes/reclamations.routes'
 
 /**
  * Fabrique l'application Express. La plomberie transverse est posée ici —
@@ -15,7 +17,7 @@ import { healthRoutes } from '../routes/health.routes'
  * puis les routes, et enfin les gestionnaires 404 et d'erreurs.
  *
  * L'ORDRE est significatif : routes → 404 → erreurs. Les routes `/api/**`
- * métier viendront s'insérer avant le 404, domaine par domaine (Phase 3).
+ * métier s'insèrent avant le 404, domaine par domaine (Phase 2).
  *
  * `createServer` ne démarre pas l'écoute (c'est le rôle de `index.ts`) : cela
  * permet de l'instancier en test (supertest) sans ouvrir de port.
@@ -46,7 +48,12 @@ export function createServer(): Express {
   )
 
   app.use('/', healthRoutes)
-  // ↑ Les routes /api/** métier seront montées ici (Phase 3).
+
+  // Routes métier `/api/**`, portées depuis `server/api/**` domaine par domaine
+  // (Phase 2, ADR-0017). Montées sous `/api` → chemins identiques à Nitro, le
+  // reverse proxy reste passe-plat. Chaque domaine porté vient s'ajouter ici.
+  app.use('/api', testimonialsRoutes)
+  app.use('/api', reclamationsRoutes)
 
   // Doc OpenAPI (hors prod par défaut, cf. env.docsEnabled). Montée sous `/api`
   // pour rester cohérente avec le reverse proxy `/api/* → backend` (ADR-0017) :
