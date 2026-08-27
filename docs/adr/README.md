@@ -27,7 +27,8 @@ est fait ainsi, sans reconstituer l'historique depuis le code.
 | [0013](0013-migration-persistance-stores-escrow.md)       | Migration des stores métier en mémoire vers Prisma           | Accepté |
 | [0014](0014-extraction-backend-express.md)                | Extraction du backend Nitro vers un service Express autonome | Accepté |
 | [0015](0015-partage-logique-metier-et-donnees.md)         | Partage de la logique métier et de l'accès aux données       | Accepté |
-| [0016](0016-iso-fonctionnement-par-tests-de-contrat.md)   | Iso-fonctionnement garanti par des tests de contrat          | Accepté |
+| [0016](0016-iso-fonctionnement-par-tests-de-contrat.md)   | Iso-fonctionnement garanti par des tests de contrat          | Accepté (stratégie de bascule remplacée par 0017) |
+| [0017](0017-cutover-complet-vers-express.md)              | Cutover complet vers Express (abandon de l'API Nitro)        | Accepté |
 
 ## Le chantier d'extraction backend
 

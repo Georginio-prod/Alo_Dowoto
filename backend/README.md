@@ -33,18 +33,17 @@ src/
 # Depuis la racine du dépôt : démarrer la base PostgreSQL (conteneur Docker)
 docker compose up -d postgres
 
-cd backend
-cp .env.example .env       # DATABASE_URL pointe sur la base partagée `worktogo` (port 5433)
-npm install
-npm run prisma:generate    # génère le client Prisma (le backend ne migre PAS la base)
-npm run dev                # tsx watch, http://localhost:3001/health  (·/health/db pour la base)
+cp backend/.env.example backend/.env   # DATABASE_URL → base partagée `worktogo` (port 5433)
+npm install                            # workspaces : installe app + backend, mutualise les deps
+npm --prefix backend run prisma:generate   # génère le client (schéma backend/prisma)
+npm --prefix backend run prisma:migrate    # applique/crée les migrations (le backend en est propriétaire)
+npm --prefix backend run dev               # tsx watch, http://localhost:3001/health  (·/health/db)
 ```
 
-> Le **schéma de la base `worktogo` est géré par l'app Nuxt** (ses migrations
-> Prisma). Lance d'abord les migrations de l'app (`npm run db:migrate` à la
-> racine) : le backend ne fait que **générer son client** et interroger les
-> tables existantes — il ne doit **jamais** `db push` / `migrate` la base
-> partagée (il droperait les tables de l'app).
+> **Prisma appartient au backend** (ADR-0017) : schéma, migrations et config dans
+> `backend/prisma/`. Grâce aux **workspaces npm**, le client généré est mutualisé
+> (hoisté) et l'app l'importe tant que les routes Nitro subsistent. Depuis la
+> racine, `npm run db:generate` / `db:migrate` délèguent au backend.
 
 Build de production :
 
@@ -58,12 +57,11 @@ npm run build && npm start
   Toujours lever une `HttpError` (`src/utils/apiError.ts`) — jamais un
   `res.status().json()` d'erreur ad hoc.
 - **Multi-clients** : CORS `credentials: true`, liste blanche via `CORS_ORIGINS`.
-- **Base : PostgreSQL partagée `worktogo`** (conteneur Docker, `docker-compose.yml`
-  racine, port **5433**, ADR-0015), **propriété de l'app Nuxt** (schéma +
-  migrations). Le backend a un schéma **subset** (`backend/prisma/schema.prisma`,
-  actuellement `User` + `Session`) utilisé **uniquement pour générer son client**
-  et interroger les tables — jamais pour migrer/push la base partagée. Les modèles
-  du subset s'ajoutent domaine par domaine au portage.
+- **Base : PostgreSQL `worktogo`** (conteneur Docker, `docker-compose.yml`
+  racine, port **5433**, ADR-0015). **Le backend est propriétaire de Prisma** :
+  schéma, migrations et config dans **`backend/prisma/`** (ADR-0017). Le client
+  généré est mutualisé via les **workspaces npm** — l'app l'importe tant que les
+  routes Nitro subsistent. Migrations : `npm run prisma:migrate` (depuis `backend/`).
 - **Tests isolés** : les tests backend tournent contre une base dédiée
   `worktogo_backend_test` (préparée par `vitest.globalSetup.ts`), jamais contre
   `worktogo`.

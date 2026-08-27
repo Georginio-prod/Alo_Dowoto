@@ -2,6 +2,9 @@
   "name": "Alo_Dowoto",
   "type": "module",
   "private": true,
+  "workspaces": [
+    "backend"
+  ],
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
@@ -18,10 +21,10 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "db:migrate": "prisma migrate dev",
-    "db:generate": "prisma generate",
-    "db:studio": "prisma studio",
-    "db:seed": "vite-node prisma/seed.ts"
+    "db:migrate": "npm --prefix backend run prisma:migrate",
+    "db:generate": "npm --prefix backend run prisma:generate",
+    "db:studio": "npm --prefix backend run prisma:studio",
+    "db:seed": "vite-node scripts/seed.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
