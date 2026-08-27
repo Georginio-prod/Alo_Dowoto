@@ -6,11 +6,16 @@ Nitro** (`server/api/**`) de l'app Nuxt, sous la contrainte absolue du **zéro
 changement fonctionnel** — voir `docs/adr/` (ADR-0014/0015/0016) et le filet de
 sécurité `tests/contract/`.
 
-> État : **Phase 1 — couche transverse posée** (ADR-0017). L'app démarre à vide
-> (sonde `/health`) ; la plomberie réutilisable par tous les domaines est en
-> place — **validation Zod** (bridge + primitives), **doc OpenAPI** (`/api/docs`),
-> patron **services/ + repositories/** découplé de Nitro. Aucune route métier
-> n'est encore portée (Phase 2).
+> État : **Phase 2 — portage par domaine, en cours** (ADR-0017). La couche
+> transverse est posée (**validation Zod**, **doc OpenAPI** `/api/docs`, patron
+> **services/ + repositories/** découplé de Nitro). Domaines portés (gabarits
+> `routes → controller → service → repository`, validés iso par tests backend
+> **et rejeu de contrat** `tests/contract/replay/`) :
+> - **avis d'accueil** (`/api/testimonials`, public : lecture + écriture) ;
+> - **réclamations** (`/api/reclamations`, écriture, **auth optionnelle par
+>   cookie** — le compte est rattaché si présent, jamais exigé).
+>
+> Reste ~181 routes à porter.
 
 ## Structure
 
