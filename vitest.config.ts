@@ -55,7 +55,11 @@ export default defineConfig({
     globalSetup: ['tests/setup/prismaTestDb.ts'],
     setupFiles: ['tests/setup/i18n.ts'],
     env: {
-      DATABASE_URL: `file:${fileURLToPath(new URL('./tests/setup/test.db', import.meta.url))}`,
+      // Base PostgreSQL jetable (créée/réinitialisée par le globalSetup) —
+      // surchargée par TEST_DATABASE_URL en CI. Doit rester alignée avec
+      // tests/setup/prismaTestDb.ts.
+      DATABASE_URL:
+        process.env.TEST_DATABASE_URL ?? 'postgresql://worktogo:worktogo@localhost:5433/worktogo_test',
       // Les tests des prestataires ont été écrits pour le store en mémoire :
       // on les exécute en mode `memory` (les upserts alimentent la Map, la
       // persistance base est best-effort). La prod tourne en `db` par défaut.

@@ -83,7 +83,7 @@ le workflow).
 
 | Variable | Usage | Où |
 |---|---|---|
-| `DATABASE_URL` | Connexion Prisma (SQLite en dev ; peut pointer vers PostgreSQL en prod sans changer le schéma, voir [`docs/database-schema.md`](./database-schema.md)) | `prisma/schema.prisma`, `prisma.config.ts` |
+| `DATABASE_URL` | Connexion Prisma **PostgreSQL** (conteneur Docker en dev via `docker-compose.yml` ; base managée en prod) — voir [`docs/database-schema.md`](./database-schema.md) | `prisma/schema.prisma`, `prisma.config.ts` |
 | `PAYMENT_WEBHOOK_SECRET` | Signature/vérification HMAC du webhook de paiement (`#34`) | `server/utils/webhookSignature.ts` |
 
 ### Prévues, pas encore branchées (à ne pas oublier lors de l'intégration réelle)
