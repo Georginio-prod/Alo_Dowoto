@@ -75,6 +75,23 @@ export const swaggerSpec = swaggerJsdoc({
             createdAt: { type: 'integer', description: 'Horodatage ms (epoch).' },
           },
         },
+        /** Paiement d'abonnement Mobile Money (`repositories/paymentRepository.ts`). */
+        Payment: {
+          type: 'object',
+          required: ['id', 'userId', 'subscriptionId', 'provider', 'phone', 'amount', 'status', 'createdAt'],
+          properties: {
+            id: { type: 'string' },
+            userId: { type: 'string' },
+            subscriptionId: { type: 'string' },
+            provider: { type: 'string', enum: ['flooz', 'tmoney'] },
+            phone: { type: 'string' },
+            amount: { type: 'integer' },
+            status: { type: 'string', enum: ['pending', 'confirmed', 'failed'] },
+            operatorRef: { type: 'string', nullable: true },
+            createdAt: { type: 'integer', description: 'Horodatage ms (epoch).' },
+            resolvedAt: { type: 'integer', nullable: true },
+          },
+        },
         /** Recharge mobile money (`repositories/walletRechargeRepository.ts`). */
         WalletRecharge: {
           type: 'object',

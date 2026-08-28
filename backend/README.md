@@ -38,7 +38,13 @@ sécurité `tests/contract/`.
 > - **compte RGPD** (#286, auth requise) : `GET /api/account/export` (portabilité,
 >   jamais les images) et `POST /api/account/delete` (anonymisation +
 >   purge vérification + déconnexion). Débloqué par le portage de `wallet`
->   (`export` dépendait de `getBalance`).
+>   (`export` dépendait de `getBalance`) ;
+> - **paiements** (4/5 routes, #34) : `POST /api/payments/initiate` (rôle
+>   prestataire), `GET /api/payments/me`, `GET /api/payments/:id`,
+>   `POST /api/payments/webhook` (public, **HMAC + anti-rejeu**). À la
+>   confirmation : **activation de l'abonnement** + **récompense du parrainage**
+>   (#365, crédit portefeuille des deux côtés). Reste le **reçu PDF**
+>   `GET /api/payments/:id/receipt` (#363), différé (pdfkit + i18n) → lot séparé.
 >
 > **Annuaire prestataires : DÉBLOQUÉ.** Les trois stores dont il dépendait
 > (`reviewStore`, `verificationStore`, `providerAvailabilityStore`) sont désormais
@@ -51,7 +57,7 @@ sécurité `tests/contract/`.
 > **Restent bloqués** par leurs stores en mémoire respectifs : `quotas`,
 > `requests`, `assistant` (à persister le jour où ces domaines seront portés).
 >
-> Reste ~167 routes à porter (dont admin=101).
+> Reste ~163 routes à porter (dont admin=101).
 
 ## Structure
 
