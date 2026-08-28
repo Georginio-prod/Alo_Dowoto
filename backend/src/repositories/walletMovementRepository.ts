@@ -77,6 +77,12 @@ export interface WalletMovementRepository {
   getBalance(userId: string): Promise<number>
   /** Crédite une recharge confirmée (append-only, mouvement `recharge`). */
   creditRecharge(userId: string, amount: number, reference: string): Promise<WalletMovement>
+  /**
+   * Crédite un mouvement générique (append-only) — iso `walletStore.creditWallet`.
+   * Refuse un `escrow_debit` (débit) et un montant ≤ 0. Utilisé notamment par le
+   * bonus de parrainage (`referral_bonus`, #365) à la confirmation d'un paiement.
+   */
+  credit(input: { walletUserId: string; type: WalletMovementType; amount: number; reference: string; counterpartyUserId?: string | null }): Promise<WalletMovement>
   /** Débite un retrait `retrait` si le solde suffit — transaction atomique (#366). */
   requestWithdrawal(userId: string, amount: number): Promise<RequestWithdrawalResult>
 }
@@ -100,6 +106,22 @@ export function createWalletMovementRepository(db: PrismaClient): WalletMovement
       // même pour des insertions rapprochées, sensible à un mock de `Date.now`.
       const row = await db.walletMovement.create({
         data: { id: randomUUID(), walletUserId: userId, type: 'recharge', amount, reference, createdAt: new Date(Date.now()) },
+      })
+      return toMovement(row)
+    },
+    async credit(input) {
+      if (input.type === 'escrow_debit') throw new Error('credit ne doit pas recevoir de mouvement escrow_debit.')
+      if (input.amount <= 0) throw new Error('Le montant crédité doit être positif.')
+      const row = await db.walletMovement.create({
+        data: {
+          id: randomUUID(),
+          walletUserId: input.walletUserId,
+          type: input.type,
+          amount: input.amount,
+          reference: input.reference,
+          counterpartyUserId: input.counterpartyUserId ?? null,
+          createdAt: new Date(Date.now()),
+        },
       })
       return toMovement(row)
     },
