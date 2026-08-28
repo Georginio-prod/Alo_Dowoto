@@ -12,6 +12,8 @@ export interface AvailabilityRepository {
   remove(providerId: string, periodId: string): Promise<boolean>
   /** Périodes du prestataire, triées par date de début. */
   listByProvider(providerId: string): Promise<UnavailabilityPeriod[]>
+  /** Nombre de périodes d'indisponibilité couvrant `date` (bornes incluses). */
+  countCovering(providerId: string, date: string): Promise<number>
 }
 
 export function createAvailabilityRepository(db: PrismaClient): AvailabilityRepository {
@@ -25,6 +27,9 @@ export function createAvailabilityRepository(db: PrismaClient): AvailabilityRepo
     },
     listByProvider(providerId) {
       return db.unavailabilityPeriod.findMany({ where: { providerId }, orderBy: { startDate: 'asc' } })
+    },
+    countCovering(providerId, date) {
+      return db.unavailabilityPeriod.count({ where: { providerId, startDate: { lte: date }, endDate: { gte: date } } })
     },
   }
 }
