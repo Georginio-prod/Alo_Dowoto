@@ -24,7 +24,12 @@ concurrency:
 
 jobs:
   quality:
-    name: Lint · Typecheck · Build (frontend)
+    # NB : ce nom de job est le CONTEXTE de statut requis par le ruleset
+    # « Protéger develop » (check `Lint · Typecheck · Build`). Ne pas le suffixer
+    # (le workflow s'appelle déjà « Frontend CI », le backend a son propre job
+    # `Lint · Typecheck · Test · Build (backend)`) : le renommer casserait la
+    # barrière de merge sur develop.
+    name: Lint · Typecheck · Build
     runs-on: ubuntu-latest
     services:
       postgres:
