@@ -17,6 +17,7 @@ import { subscriptionsRoutes } from '../routes/subscriptions.routes'
 import { providersRoutes } from '../routes/providers.routes'
 import { reviewsRoutes } from '../routes/reviews.routes'
 import { verificationRoutes } from '../routes/verification.routes'
+import { walletRoutes } from '../routes/wallet.routes'
 
 /**
  * Fabrique l'application Express. La plomberie transverse est posée ici —
@@ -42,7 +43,18 @@ export function createServer(): Express {
     }),
   )
 
-  app.use(express.json({ limit: '1mb' }))
+  // `verify` conserve le corps brut sur `req.rawBody` : les webhooks opérateur
+  // (#34/#193) signent le texte exact reçu, qu'il faut vérifier AVANT toute
+  // re-sérialisation. Les routes `**/webhook` ne passent PAS par le parseur JSON
+  // (qui rejetterait un JSON malformé avant le handler) : elles reçoivent le
+  // corps brut et le parsent elles-mêmes, pour renvoyer le 400 « Corps webhook
+  // illisible » iso Nitro. Les deux parseurs stockent `req.rawBody`.
+  const captureRaw = (req: express.Request, _res: express.Response, buf: Buffer) => {
+    req.rawBody = buf
+  }
+  const jsonParser = express.json({ limit: '1mb', verify: captureRaw })
+  const rawParser = express.raw({ type: '*/*', limit: '1mb', verify: captureRaw })
+  app.use((req, res, next) => (req.path.endsWith('/webhook') ? rawParser : jsonParser)(req, res, next))
   app.use(cookieParser())
 
   app.use(
@@ -68,6 +80,7 @@ export function createServer(): Express {
   app.use('/api', providersRoutes)
   app.use('/api', reviewsRoutes)
   app.use('/api', verificationRoutes)
+  app.use('/api', walletRoutes)
 
   // Doc OpenAPI (hors prod par défaut, cf. env.docsEnabled). Montée sous `/api`
   // pour rester cohérente avec le reverse proxy `/api/* → backend` (ADR-0017) :
