@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express'
 import { badRequest } from '../utils/apiError'
+import { authUser } from '../utils/authUser'
 import { favoriteService } from '../services/favoriteService'
 import type { AddFavoriteInput } from '../validation/schemas/favorites'
 
@@ -16,7 +17,7 @@ import type { AddFavoriteInput } from '../validation/schemas/favorites'
 /** POST /api/favorites → 201 `{ favorite }`. Ajout idempotent. */
 export async function createFavorite(req: Request, res: Response): Promise<void> {
   const { providerId } = req.body as AddFavoriteInput
-  const favorite = await favoriteService.addFavorite(req.user!.id, providerId)
+  const favorite = await favoriteService.addFavorite(authUser(req).id, providerId)
   res.status(201).json({ favorite })
 }
 
@@ -24,6 +25,6 @@ export async function createFavorite(req: Request, res: Response): Promise<void>
 export async function deleteFavorite(req: Request, res: Response): Promise<void> {
   const providerId = req.params.providerId
   if (!providerId) badRequest('Identifiant du prestataire manquant.')
-  await favoriteService.removeFavorite(req.user!.id, providerId)
+  await favoriteService.removeFavorite(authUser(req).id, providerId)
   res.json({ ok: true })
 }

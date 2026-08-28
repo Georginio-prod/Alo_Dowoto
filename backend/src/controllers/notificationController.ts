@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express'
+import { authUser } from '../utils/authUser'
 import { notificationService } from '../services/notificationService'
 
 /**
@@ -9,7 +10,7 @@ import { notificationService } from '../services/notificationService'
 
 /** GET /api/notifications → { notifications, unreadCount } (30 plus récentes + compteur). */
 export async function listNotifications(req: Request, res: Response): Promise<void> {
-  const userId = req.user!.id
+  const userId = authUser(req).id
   const [notifications, unreadCount] = await Promise.all([
     notificationService.listNotifications(userId),
     notificationService.countUnread(userId),
@@ -19,6 +20,6 @@ export async function listNotifications(req: Request, res: Response): Promise<vo
 
 /** POST /api/notifications/read → { ok: true } (marque tout comme lu). */
 export async function markNotificationsRead(req: Request, res: Response): Promise<void> {
-  await notificationService.markAllRead(req.user!.id)
+  await notificationService.markAllRead(authUser(req).id)
   res.json({ ok: true })
 }

@@ -15,6 +15,8 @@ import { notificationsRoutes } from '../routes/notifications.routes'
 import { referralsRoutes } from '../routes/referrals.routes'
 import { subscriptionsRoutes } from '../routes/subscriptions.routes'
 import { providersRoutes } from '../routes/providers.routes'
+import { reviewsRoutes } from '../routes/reviews.routes'
+import { verificationRoutes } from '../routes/verification.routes'
 
 /**
  * Fabrique l'application Express. La plomberie transverse est posée ici —
@@ -64,6 +66,8 @@ export function createServer(): Express {
   app.use('/api', referralsRoutes)
   app.use('/api', subscriptionsRoutes)
   app.use('/api', providersRoutes)
+  app.use('/api', reviewsRoutes)
+  app.use('/api', verificationRoutes)
 
   // Doc OpenAPI (hors prod par défaut, cf. env.docsEnabled). Montée sous `/api`
   // pour rester cohérente avec le reverse proxy `/api/* → backend` (ADR-0017) :
