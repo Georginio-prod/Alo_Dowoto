@@ -5,17 +5,46 @@ import { validateBody } from '../validation/validate'
 import { addAvailabilitySchema, patchProviderSchema } from '../validation/schemas/providers'
 import { addAvailability, deleteAvailability, listAvailability } from '../controllers/availabilityController'
 import { deleteMyPosition, getMyProfile, patchMyProfile } from '../controllers/providerController'
+import { featuredProviders, searchProvidersHandler } from '../controllers/providerDirectoryController'
 
 /**
  * Domaine « prestataires » (#290 pour la partie disponibilité), porté depuis
  * `server/api/providers/*` (Phase 2, ADR-0017). Monté sous `/api` → `/api/providers/*`,
  * iso Nitro.
  *
- * Portées ici : le **profil `me`** (fiche prestataire) et le **calendrier de
- * disponibilité** (rôle prestataire). Restent à porter : la découverte publique
- * (`search`, `[id]`, `featured`), qui embarque l'annuaire complet.
+ * Portées ici : le **profil `me`** (fiche prestataire), le **calendrier de
+ * disponibilité** (rôle prestataire) et la **découverte publique** (`search`,
+ * `featured`). Reste à porter : `GET /providers/:id` (fiche détaillée), dont le
+ * démasquage des coordonnées dépend du domaine séquestre non encore porté
+ * (`hasReleasedOrderBetween` + validation tacite).
  */
 export const providersRoutes = Router()
+
+/**
+ * @openapi
+ * /providers/search:
+ *   get:
+ *     tags: [Providers]
+ *     summary: Recherche publique de prestataires (filtres, proximité, tri)
+ *     description: Route publique. Filtres par secteur/sous-secteur/ville/quartier/note/prix/date, recherche par proximité (`lat`/`lng`/`rayon_km`) avec élargissement automatique, tri explicite (`tri`), pagination.
+ *     responses:
+ *       200: { description: Résultats paginés + info proximité. }
+ *       400: { description: Paramètre de recherche invalide., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+ */
+providersRoutes.get('/providers/search', asyncHandler(searchProvidersHandler))
+
+/**
+ * @openapi
+ * /providers/featured:
+ *   get:
+ *     tags: [Providers]
+ *     summary: Prestataires mis en avant (accueil chercheur, #187)
+ *     description: Route publique. Classement dynamique par score de mise en avant (moyenne bayésienne des avis). `secteur` restreint la mise en avant ; `limit` (défaut 6, max 20).
+ *     responses:
+ *       200: { description: Prestataires mis en avant avec badge (`top`/`recommande`). }
+ *       400: { description: Secteur invalide., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+ */
+providersRoutes.get('/providers/featured', asyncHandler(featuredProviders))
 
 /**
  * @openapi
