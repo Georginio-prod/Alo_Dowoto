@@ -14,6 +14,10 @@ export interface VerificationRepository {
   upsert(userId: string, idCardImage: string, passportPhotoImage: string, submittedAt: Date): Promise<Verification>
   /** Efface les images et pose `purgedAt` (le statut « Vérifié » n'est jamais affecté). */
   purgeImages(userId: string): Promise<Verification>
+  /** Vrai si une soumission existe (statut « Vérifié »), sans charger les images. */
+  existsForUser(userId: string): Promise<boolean>
+  /** Effacement complet à la demande (#286, droit à l'effacement). `true` si une soumission existait. */
+  deleteByUser(userId: string): Promise<boolean>
 }
 
 export function createVerificationRepository(db: PrismaClient): VerificationRepository {
@@ -33,6 +37,14 @@ export function createVerificationRepository(db: PrismaClient): VerificationRepo
         where: { userId },
         data: { idCardImage: null, passportPhotoImage: null, purgedAt: new Date() },
       })
+    },
+    async existsForUser(userId) {
+      const count = await db.verification.count({ where: { userId } })
+      return count > 0
+    },
+    async deleteByUser(userId) {
+      const { count } = await db.verification.deleteMany({ where: { userId } })
+      return count > 0
     },
   }
 }

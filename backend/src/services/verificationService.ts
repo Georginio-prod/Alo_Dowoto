@@ -51,6 +51,16 @@ export function createVerificationService(repo: VerificationRepository = verific
       return toView(await applyRetentionPurge(row))
     },
 
+    /** Indique si le compte est certifié (existence d'une soumission). */
+    async isVerified(userId: string): Promise<boolean> {
+      return repo.existsForUser(userId)
+    },
+
+    /** Effacement complet à la demande (#286). `true` si une soumission existait. */
+    async deleteVerification(userId: string): Promise<boolean> {
+      return repo.deleteByUser(userId)
+    },
+
     /** Soumet (ou remplace) les deux pièces : certifie immédiatement le compte. */
     async submitVerification(userId: string, idCardImage: string, passportPhotoImage: string): Promise<VerificationView> {
       // `submittedAt` posé côté JS (et non via le défaut base) pour rester
