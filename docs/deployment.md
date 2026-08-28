@@ -25,33 +25,53 @@ d'infrastructure supplémentaire.
 
 ## Pipeline CI/CD
 
-Deux workflows GitHub Actions séparés, dans `.github/workflows/` :
+Workflows GitHub Actions dans `.github/workflows/` :
+
+| Workflow | Fichier | Rôle | Déclenchement |
+|---|---|---|---|
+| **Frontend CI** | `ci.yml` | lint ESLint + Markdown → prisma generate → typecheck (Nuxt) → tests → build | chaque PR + push `develop`/`master` |
+| **Backend CI** | `backend-ci.yml` | prisma generate → lint → typecheck (`tsc`) → tests d'intégration → build | PR/push **touchant `backend/**`** |
+| **Playwright** | `playwright.yml` | parcours E2E (vraie instance Nuxt) | chaque PR + push `develop`/`master` |
+| **Danger** | `danger.yml` | garde-fou sur la taille des PR | chaque PR |
+| **Deploy** | `deploy.yml` | déploiement Vercel (staging/prod) | après succès de `ci.yml` sur un push |
 
 ```
 push / pull_request
         │
-        ▼
-┌───────────────────┐
-│   ci.yml (CI)      │  lint → prisma generate → typecheck → tests → build
-└─────────┬─────────┘
-          │ workflow_run (uniquement si succès ET push, pas une PR)
-          ▼
+        ├─────────────┬──────────────┬───────────┐
+        ▼             ▼              ▼           ▼
+┌──────────────┐ ┌──────────────┐ ┌──────────┐ ┌────────┐
+│  ci.yml      │ │ backend-ci   │ │playwright│ │ danger │
+│ (Frontend)   │ │ (backend/**) │ │  (E2E)   │ │ (PR)   │
+└──────┬───────┘ └──────────────┘ └──────────┘ └────────┘
+       │ workflow_run (uniquement si succès ET push, pas une PR)
+       ▼
 ┌────────────────────────────┐
 │   deploy.yml (Deploy)       │
-│                             │
 │  head_branch == develop     │──▶ vercel deploy            (preview/staging)
 │  head_branch == master      │──▶ vercel deploy --prod     (production)
 └────────────────────────────┘
 ```
 
-### `ci.yml` — intégration continue
+### `ci.yml` — intégration continue (frontend Nuxt)
 
 Déclenché sur **chaque Pull Request** (quelle que soit la branche de
 base) et sur **chaque push** vers `develop`/`master`. Étapes : checkout,
-`setup-node` (Node 22, cohérent avec le CI existant), `npm ci`, `lint`,
-génération du client Prisma (`db:generate` — nécessaire dès maintenant
-car `prisma.config.ts` exige `DATABASE_URL`, même pour une simple
-génération de types sans connexion réelle), `typecheck`, `test`, `build`.
+`setup-node` (Node 22, cohérent avec le CI existant), `npm ci`, `lint`
+(ESLint), `lint:md` (markdownlint), génération du client Prisma
+(`db:generate` — nécessaire dès maintenant car `prisma.config.ts` exige
+`DATABASE_URL`, même pour une simple génération de types sans connexion
+réelle), `typecheck`, `test`, `build`.
+
+### `backend-ci.yml` — intégration continue (backend Express)
+
+CI dédiée au sous-projet `backend/` (chantier ADR-0014), **path-filtrée**
+sur `backend/**` pour ne pas doubler la CI front sur les PR purement
+frontend. Un service PostgreSQL (`postgres:16-alpine`) fournit la base de
+test isolée `worktogo_backend_test`. Étapes : `npm ci` (installe le
+workspace et relie les binaires hoistés), `prisma:generate`, `lint`
+(ESLint, config `backend/eslint.config.mjs`), `typecheck` (`tsc --noEmit`),
+`test` (Vitest + supertest, `db push` sur la base de test), `build` (`tsc`).
 
 ### `deploy.yml` — déploiement
 
