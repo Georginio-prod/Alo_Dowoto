@@ -14,7 +14,7 @@ import { signWebhookBody } from '../../utils/webhookSignature'
  */
 describe('Contrat — paiements (/api/payments)', () => {
   const app = createServer()
-  const mkUser = (role: string) => prisma.user.create({ data: { contact: `+228-${randomUUID()}`, role, username: `${role[0]}${randomUUID().slice(0, 8)}` } })
+  const mkUser = (role: 'client' | 'prestataire') => prisma.user.create({ data: { contact: `+228-${randomUUID()}`, role, username: `${role[0]}${randomUUID().slice(0, 8)}` } })
   const session = async (userId: string) => {
     const token = randomUUID()
     await prisma.session.create({ data: { token, userId, expiresAt: new Date(Date.now() + 3_600_000) } })
