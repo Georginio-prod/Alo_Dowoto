@@ -110,7 +110,7 @@ function normalize(value: string): string {
  * on retombe sur le nom du secteur, cohérent avec l'affichage
  * `{{ subSector }} · {{ city }}` de ProviderCard.vue.
  */
-function toSearchResult(profile: ProviderProfile): ProviderSearchResult {
+async function toSearchResult(profile: ProviderProfile): Promise<ProviderSearchResult> {
   const sectorName = SECTORS.find((sector) => sector.slug === profile.sector)?.name ?? profile.sector
 
   // Vie privée par défaut (#geoloc) : tant que le prestataire n'a pas
@@ -129,7 +129,7 @@ function toSearchResult(profile: ProviderProfile): ProviderSearchResult {
     sector: profile.sector,
     subSector: sectorName,
     city: profile.city ?? '',
-    verified: isVerified(profile.userId),
+    verified: await isVerified(profile.userId),
     rating: 0,
     reviewCount: 0,
     priceFrom: profile.rateFrom ?? 0,
@@ -160,7 +160,7 @@ const INCLUDE_DEMO_PROVIDERS = process.env.NUXT_PROVIDERS_DEMO
   : process.env.NODE_ENV !== 'production'
 
 async function allProviders(): Promise<ProviderSearchResult[]> {
-  const real = (await listProviderProfiles()).map(toSearchResult)
+  const real = await Promise.all((await listProviderProfiles()).map(toSearchResult))
   return INCLUDE_DEMO_PROVIDERS ? [...DIRECTORY, ...real] : real
 }
 
@@ -202,7 +202,7 @@ export async function searchProviders(filters: ProviderSearchFilters): Promise<P
     ? boundingBoxAround(searcherCoords, filters.radiusKm)
     : null
 
-  const filtered = (await allProviders())
+  const preFiltered = (await allProviders())
     .filter((provider) => {
       if (filters.sector && provider.sector !== filters.sector) return false
       if (filters.subSectors?.length && !filters.subSectors.includes(provider.subSector)) return false
@@ -210,7 +210,6 @@ export async function searchProviders(filters: ProviderSearchFilters): Promise<P
       if (filters.quartier && provider.quartier !== filters.quartier) return false
       if (filters.ratingMin !== undefined && provider.rating < filters.ratingMin) return false
       if (filters.priceMax !== undefined && provider.priceFrom > filters.priceMax) return false
-      if (!isProviderAvailableOn(provider.id, availabilityDate)) return false
       if (query) {
         const haystack = normalize(`${provider.displayName} ${provider.subSector} ${provider.city}`)
         if (!haystack.includes(query)) return false
@@ -221,6 +220,15 @@ export async function searchProviders(filters: ProviderSearchFilters): Promise<P
       }
       return true
     })
+
+  // Filtre de disponibilité (#290) — lecture base désormais asynchrone, donc
+  // hors du `.filter()` synchrone : disponibilités calculées en lot sur
+  // l'ensemble déjà réduit, puis filtrage.
+  const availabilityFlags = await Promise.all(
+    preFiltered.map((provider) => isProviderAvailableOn(provider.id, availabilityDate)),
+  )
+  const filtered = preFiltered
+    .filter((_provider, index) => availabilityFlags[index])
     .map((provider): ProviderSearchResult => {
       if (!searcherCoords || provider.latitude === null || provider.longitude === null) return provider
       const distanceKm = haversineDistanceKm(searcherCoords, { latitude: provider.latitude, longitude: provider.longitude })
