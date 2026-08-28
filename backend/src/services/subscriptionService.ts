@@ -46,6 +46,29 @@ export function createSubscriptionService(repo: SubscriptionRepository = subscri
       return row ? toSubscription(row) : null
     },
 
+    /** Un abonnement précis par id (#34, paiement) — `null` si inexistant. */
+    async getSubscriptionById(id: string): Promise<Subscription | null> {
+      const row = await repo.findById(id)
+      return row ? toSubscription(row) : null
+    },
+
+    /**
+     * Active un abonnement pour `durationDays` à partir de maintenant (#34, à la
+     * confirmation d'un paiement). Iso `subscriptionStore.activateSubscription`.
+     * `null` si l'abonnement n'existe pas.
+     */
+    async activateSubscription(id: string, durationDays: number): Promise<Subscription | null> {
+      const existing = await repo.findById(id)
+      if (!existing) return null
+      const now = Date.now()
+      const row = await repo.update(id, {
+        status: 'actif',
+        dateDebut: new Date(now),
+        dateFin: new Date(now + durationDays * 24 * 60 * 60 * 1000),
+      })
+      return toSubscription(row)
+    },
+
     /** Crée (ou remet en attente) l'abonnement ; 409 si un actif existe déjà. */
     async createPendingSubscription(userId: string, plan: PlanSlug): Promise<Subscription> {
       const existing = await repo.findByUserId(userId)
