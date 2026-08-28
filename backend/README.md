@@ -29,7 +29,12 @@ sécurité `tests/contract/`.
 > - **notations reçues** (`GET /api/reviews/me`, auth requise) — moyenne/nombre
 >   d'avis reçus ;
 > - **vérification d'identité** (`GET /api/verification/me`, `POST /api/verification`,
->   auth requise) — auto-certification + minimisation des données/rétention #286.
+>   auth requise) — auto-certification + minimisation des données/rétention #286 ;
+> - **portefeuille** (5/6 routes) : `GET /api/wallet/me`, `POST /api/wallet/recharge`,
+>   `GET /api/wallet/recharge/:id`, `POST /api/wallet/withdraw` (rôle prestataire),
+>   `POST /api/wallet/webhook` (public, **signature HMAC + anti-rejeu #355**).
+>   Reste le **reçu PDF** `GET /api/wallet/movements/:id/receipt` (#363), différé :
+>   il dépend de `pdfkit` + i18n côté backend (ajout de dépendances) → lot séparé.
 >
 > **Annuaire prestataires : DÉBLOQUÉ.** Les trois stores dont il dépendait
 > (`reviewStore`, `verificationStore`, `providerAvailabilityStore`) sont désormais
@@ -42,7 +47,7 @@ sécurité `tests/contract/`.
 > **Restent bloqués** par leurs stores en mémoire respectifs : `quotas`,
 > `requests`, `assistant` (à persister le jour où ces domaines seront portés).
 >
-> Reste ~174 routes à porter (dont admin=101).
+> Reste ~169 routes à porter (dont admin=101).
 
 ## Structure
 
