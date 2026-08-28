@@ -25,6 +25,7 @@ import { paymentsRoutes } from '../routes/payments.routes'
 import { quotasRoutes } from '../routes/quotas.routes'
 import { requestsRoutes } from '../routes/requests.routes'
 import { assistantRoutes } from '../routes/assistant.routes'
+import { sectorsRoutes } from '../routes/sectors.routes'
 
 /**
  * Fabrique l'application Express. La plomberie transverse est posée ici —
@@ -100,6 +101,7 @@ export function createServer(): Express {
   app.use('/api', quotasRoutes)
   app.use('/api', requestsRoutes)
   app.use('/api', assistantRoutes)
+  app.use('/api', sectorsRoutes)
 
   // Doc OpenAPI (hors prod par défaut, cf. env.docsEnabled). Montée sous `/api`
   // pour rester cohérente avec le reverse proxy `/api/* → backend` (ADR-0017) :
