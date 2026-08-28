@@ -65,5 +65,5 @@ export default defineEventHandler(async (event) => {
   })
 
   setResponseStatus(event, created ? 201 : 200)
-  return { user: toPublicUser(user), created }
+  return { user: await toPublicUser(user), created }
 })

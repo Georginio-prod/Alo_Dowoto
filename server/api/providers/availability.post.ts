@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   const user = await requireProviderRole(event)
   const { startDate, endDate } = await readSchemaBody(event, addAvailabilitySchema)
 
-  const result = addUnavailabilityPeriod(user.id, startDate, endDate)
+  const result = await addUnavailabilityPeriod(user.id, startDate, endDate)
 
   if (!result.ok) {
     if (result.error === 'invalid_date') badRequest('Format de date invalide (attendu : AAAA-MM-JJ).')
