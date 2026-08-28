@@ -35,7 +35,7 @@ export interface AdminProviderSummary {
 }
 
 async function resolveKycStatus(userId: string): Promise<{ status: KycStatus, decisions: KycDecisionRecord[] }> {
-  const submission = getVerification(userId)
+  const submission = await getVerification(userId)
   const decisions = await listKycDecisionsForUser(userId)
   if (decisions[0]?.status === 'rejected' && !submission) return { status: 'rejected', decisions }
   if (!submission) return { status: 'none', decisions }
@@ -142,7 +142,7 @@ export async function getAdminProviderDetail(userId: string): Promise<AdminProvi
     user,
     profile: await getProviderProfile(userId),
     subscription,
-    kyc: { status: kycInfo.status, decisions: kycInfo.decisions, hasSubmission: getVerification(userId) !== null },
+    kyc: { status: kycInfo.status, decisions: kycInfo.decisions, hasSubmission: (await getVerification(userId)) !== null },
     missions: missions.map((m) => ({ id: m.id, status: m.status, amount: m.amount, createdAt: m.createdAt.getTime(), clientId: m.clientId })),
     reviews: (await getReviewsForTarget(userId)).map((r) => ({ id: r.id, rating: r.rating, comment: r.comment, createdAt: r.createdAt, authorId: r.authorId })),
     revenueGenerated: revenueRows.reduce((sum, row) => sum + row.amount, 0),

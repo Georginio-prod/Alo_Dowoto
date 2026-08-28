@@ -4,5 +4,5 @@
  */
 export default defineEventHandler(async (event) => {
   const user = await requireProviderRole(event)
-  return { periods: listUnavailabilityPeriods(user.id) }
+  return { periods: await listUnavailabilityPeriods(user.id) }
 })

@@ -9,6 +9,6 @@ export default defineEventHandler(async (event) => {
   const user = await requireSessionUser(event)
   const { idCardImage, passportPhotoImage } = await readSchemaBody(event, submitVerificationSchema)
 
-  const verification = submitVerification(user.id, idCardImage, passportPhotoImage)
+  const verification = await submitVerification(user.id, idCardImage, passportPhotoImage)
   return { verified: true, submittedAt: verification.submittedAt }
 })
