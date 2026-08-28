@@ -53,3 +53,13 @@ export function tooManyRequests(message: string, data?: Record<string, unknown>)
 export function badGateway(message: string): never {
   throw new HttpError(502, message)
 }
+
+/**
+ * Erreur serveur explicite (500) portant un message destiné au client — à
+ * réserver aux défauts de configuration côté serveur (ex. relais de mise à jour
+ * non configuré). Une erreur 500 inattendue reste, elle, masquée par le
+ * `errorHandler` (message générique).
+ */
+export function serverError(message: string): never {
+  throw new HttpError(500, message)
+}
