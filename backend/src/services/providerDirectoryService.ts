@@ -2,7 +2,7 @@ import { SECTORS } from '../data/sectors'
 import { DEFAULT_RADIUS_KM, RADIUS_SLIDER_OPTIONS_KM } from '../data/searchRadius'
 import { isValidCoordinatePair } from '../validation/primitives'
 import { boundingBoxAround, fuzzCoordinate, haversineDistanceKm, isWithinBoundingBox } from '../utils/geo'
-import { scoreFeaturedProvider } from './matchingEngine'
+import { scoreFeaturedProvider, type FeaturedCandidate } from './matchingEngine'
 import { providerProfileService, type ProviderProfile } from './providerProfileService'
 import { verificationService } from './verificationService'
 import { reviewService } from './reviewService'
@@ -239,6 +239,39 @@ export async function searchProviders(filters: ProviderSearchFilters): Promise<P
 /** Retrouve une fiche par id, dans l'annuaire de démo ou parmi les vrais comptes. Iso Nitro. */
 export async function getProviderById(id: string): Promise<ProviderSearchResult | null> {
   return (await allProviders()).find((provider) => provider.id === id) ?? null
+}
+
+/**
+ * Nombre de prestataires de l'annuaire pour un secteur (#66, grille `/categories`).
+ * Repose sur `searchProviders` pour rester cohérent avec la recherche publique.
+ */
+export async function countBySector(sector: string): Promise<number> {
+  return (await searchProviders({ sector })).length
+}
+
+/**
+ * Candidats prêts à être classés par `rankFeaturedProviders` (#187) : reprend la
+ * note effective (#61) et approxime l'ancienneté. `sector` restreint la mise en
+ * avant à ce secteur. Iso Nitro.
+ */
+export async function getFeaturedCandidates(sector?: string): Promise<FeaturedCandidate[]> {
+  const providers = await searchProviders(sector ? { sector } : {})
+  return Promise.all(providers.map(async (provider) => {
+    const { rating, reviewCount } = await getEffectiveRating(provider.id, { rating: provider.rating, reviewCount: provider.reviewCount })
+    return {
+      providerId: provider.id,
+      rating,
+      reviewCount,
+      verified: provider.verified,
+      experienceYears: estimateExperienceYears(reviewCount),
+    }
+  }))
+}
+
+/** Fiche prestataire enrichie du score de mise en avant (#187, accueil chercheur). */
+export interface FeaturedProviderResult extends ProviderSearchResult {
+  featuredScore: number
+  badge: 'top' | 'recommande'
 }
 
 export interface NearbySearchResult {
