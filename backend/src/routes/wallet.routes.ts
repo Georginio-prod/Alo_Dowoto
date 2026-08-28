@@ -3,16 +3,13 @@ import { asyncHandler } from '../utils/asyncHandler'
 import { requireSessionUser, requireProviderRole } from '../middleware/auth'
 import { validateBody } from '../validation/validate'
 import { walletRechargeSchema, walletWithdrawSchema } from '../validation/schemas/wallet'
-import { getMyWallet, createRecharge, getRecharge, withdraw, walletWebhook } from '../controllers/walletController'
+import { getMyWallet, createRecharge, getRecharge, getMovementReceipt, withdraw, walletWebhook } from '../controllers/walletController'
 
 /**
  * Portefeuille interne (#192/#193), porté depuis `server/api/wallet/**` (Phase 2,
  * ADR-0017). Monté sous `/api` → chemins iso Nitro. Le webhook opérateur est
  * public (authentifié par signature HMAC) ; les autres routes exigent une
- * session (retrait : rôle prestataire).
- *
- * NB : le reçu PDF `GET /api/wallet/movements/:id/receipt` (#363) n'est pas
- * encore porté (dépend de pdfkit + i18n côté backend) — voir backend/README.md.
+ * session (retrait : rôle prestataire ; reçu PDF #363 : titulaire du mouvement).
  */
 export const walletRoutes = Router()
 
@@ -114,6 +111,35 @@ walletRoutes.get('/wallet/recharge/:id', requireSessionUser, asyncHandler(getRec
  *       403: { description: Réservé aux prestataires., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
  */
 walletRoutes.post('/wallet/withdraw', requireProviderRole, validateBody(walletWithdrawSchema), asyncHandler(withdraw))
+
+/**
+ * @openapi
+ * /wallet/movements/{id}/receipt:
+ *   get:
+ *     tags: [Wallet]
+ *     summary: Reçu PDF d'un mouvement d'escrow (#363)
+ *     description: Réservé au titulaire du mouvement, et seulement pour un débit ou une libération de séquestre. La langue suit `?locale=fr|en`.
+ *     security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: locale
+ *         required: false
+ *         schema: { type: string, enum: [fr, en] }
+ *     responses:
+ *       200:
+ *         description: Document PDF (téléchargement).
+ *         content:
+ *           application/pdf:
+ *             schema: { type: string, format: binary }
+ *       400: { description: Type de mouvement sans reçu., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+ *       401: { description: Non connecté., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+ *       404: { description: Mouvement introuvable., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+ */
+walletRoutes.get('/wallet/movements/:id/receipt', requireSessionUser, asyncHandler(getMovementReceipt))
 
 /**
  * @openapi

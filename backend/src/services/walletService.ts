@@ -65,6 +65,11 @@ export function createWalletService(
       return recharges.findById(id)
     },
 
+    /** Mouvement de portefeuille par id (reçu PDF #363), ou `null`. */
+    async getMovement(id: string): Promise<WalletMovement | null> {
+      return movements.findById(id)
+    },
+
     /** Crée une recharge `pending` ; hors prod, planifie la confirmation simulée. */
     async createRecharge(input: { userId: string; provider: WalletRechargeProvider; phone: string; amount: number }): Promise<WalletRecharge> {
       const recharge = await recharges.create(input)
