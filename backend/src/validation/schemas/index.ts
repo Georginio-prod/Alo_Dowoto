@@ -11,6 +11,8 @@
  */
 
 export * from './auth'
+export * from './assistant'
+export * from './requests'
 export * from './testimonials'
 export * from './reclamations'
 export * from './favorites'
