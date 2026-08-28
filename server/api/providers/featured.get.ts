@@ -48,7 +48,7 @@ export default defineEventHandler(async (event): Promise<{ results: FeaturedProv
       // Même note effective (#61) que celle utilisée pour le classement,
       // pour que la carte affichée reste cohérente avec le score qui l'a
       // sélectionnée (voir requestStore.computeMatches, même principe).
-      const { rating, reviewCount } = getEffectiveRating(provider.id, { rating: provider.rating, reviewCount: provider.reviewCount })
+      const { rating, reviewCount } = await getEffectiveRating(provider.id, { rating: provider.rating, reviewCount: provider.reviewCount })
       return {
         ...provider,
         rating,

@@ -6,7 +6,7 @@
  */
 export default defineEventHandler(async (event) => {
   const user = await requireClientRole(event)
-  if (!isVerified(user.id)) {
+  if (!(await isVerified(user.id))) {
     forbidden("Vérifiez votre identité avant de contacter un prestataire (carte d'identité + photo passeport).")
   }
   // #dashboard-admin (module anti-désintermédiation) : un compte restreint par
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
   // contacté : c'est le seul moment où sa vérification est réellement testable dans
   // ce prototype (le matching public reste branché sur l'annuaire de démo, #45/#46).
   const providerUser = await getUserById(providerId)
-  if (providerUser && !isVerified(providerUser.id)) {
+  if (providerUser && !(await isVerified(providerUser.id))) {
     forbidden("Ce prestataire n'a pas encore terminé sa vérification d'identité.")
   }
 

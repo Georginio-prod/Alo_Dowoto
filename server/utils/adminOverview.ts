@@ -53,7 +53,7 @@ export async function getOverviewKpis(): Promise<OverviewKpis> {
     prisma.escrowOrder.count({ where: { createdAt: { gte: monthStart }, status: 'refunded' } }),
   ])
 
-  const reviews = listAllReviews()
+  const reviews = await listAllReviews()
   const averageRating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0
 
   return {

@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     badRequest('Identifiant de période manquant.')
   }
 
-  const removed = removeUnavailabilityPeriod(user.id, id)
+  const removed = await removeUnavailabilityPeriod(user.id, id)
   if (!removed) {
     notFound('Aucune période d\'indisponibilité trouvée avec cet identifiant.')
   }

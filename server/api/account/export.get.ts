@@ -10,11 +10,11 @@ export default defineEventHandler(async (event) => {
 
   const providerProfile = user.role === 'prestataire' ? await getProviderProfile(user.id) : null
   const subscription = user.role === 'prestataire' ? await getSubscriptionByUserId(user.id) : null
-  const verification = getVerification(user.id)
+  const verification = await getVerification(user.id)
 
   return {
     exportedAt: Date.now(),
-    account: toPublicUser(user),
+    account: await toPublicUser(user),
     providerProfile,
     subscription,
     walletBalance: await getBalance(user.id),

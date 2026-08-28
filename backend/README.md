@@ -6,11 +6,39 @@ Nitro** (`server/api/**`) de l'app Nuxt, sous la contrainte absolue du **zéro
 changement fonctionnel** — voir `docs/adr/` (ADR-0014/0015/0016) et le filet de
 sécurité `tests/contract/`.
 
-> État : **Phase 1 — couche transverse posée** (ADR-0017). L'app démarre à vide
-> (sonde `/health`) ; la plomberie réutilisable par tous les domaines est en
-> place — **validation Zod** (bridge + primitives), **doc OpenAPI** (`/api/docs`),
-> patron **services/ + repositories/** découplé de Nitro. Aucune route métier
-> n'est encore portée (Phase 2).
+> État : **Phase 2 — portage par domaine, en cours** (ADR-0017). La couche
+> transverse est posée (**validation Zod**, **doc OpenAPI** `/api/docs`, patron
+> **services/ + repositories/** découplé de Nitro). Domaines portés (gabarits
+> `routes → controller → service → repository`, validés iso par tests backend
+> **et rejeu de contrat** `tests/contract/replay/`) :
+> - **avis d'accueil** (`/api/testimonials`, public : lecture + écriture) ;
+> - **réclamations** (`/api/reclamations`, écriture, **auth optionnelle par
+>   cookie** — le compte est rattaché si présent, jamais exigé) ;
+> - **favoris** (`POST`/`DELETE /api/favorites`, **auth obligatoire + rôle
+>   client** → 401/403). ⚠️ `GET /api/favorites` **différé** (voir plus bas) ;
+> - **notifications** (`GET`/`POST /api/notifications[/read]`, auth requise) ;
+> - **parrainage** (`GET /api/referrals/me`, auth requise) ;
+> - **abonnements** (`/api/subscriptions[...]`, **rôle prestataire**, 400/409) ;
+> - **prestataires — self-service** (6/9 routes, **rôle prestataire**) : profil
+>   `GET`/`PATCH /api/providers/me`, `DELETE /api/providers/me/position` (#356) +
+>   disponibilité `GET`/`POST /api/providers/availability`,
+>   `DELETE /api/providers/availability/:id` (#290). Reste la **découverte publique**
+>   `search`/`[id]`/`featured` (×3) : elle embarque l'annuaire complet
+>   (`providerDirectory` ~490 l + géo + `matchingEngine` + dataset démo) — gros
+>   morceau à porter séparément.
+>
+> **Annuaire prestataires : DÉBLOQUÉ.** Les trois stores dont il dépendait
+> (`reviewStore`, `verificationStore`, `providerAvailabilityStore`) sont désormais
+> **persistés en base** (Prisma, modèles `Review` / `Verification` /
+> `UnavailabilityPeriod`), leurs lectures passées en `async` (annuaire, matching,
+> escrow, `toPublicUser` auth/session adaptés). 765 tests app verts à chaque étape.
+> → `providers`, `sectors` et `GET /api/favorites` sont maintenant **portables iso**
+> vers Express.
+>
+> **Restent bloqués** par leurs stores en mémoire respectifs : `quotas`,
+> `requests`, `assistant` (à persister le jour où ces domaines seront portés).
+>
+> Reste ~177 routes à porter (dont admin=101).
 
 ## Structure
 

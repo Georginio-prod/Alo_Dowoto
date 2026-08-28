@@ -10,7 +10,7 @@
 export default defineEventHandler(async (event) => {
   const user = await requireSessionUser(event)
 
-  deleteVerification(user.id)
+  await deleteVerification(user.id)
   await anonymizeUser(user.id)
 
   deleteCookie(event, SESSION_COOKIE, { path: '/' })

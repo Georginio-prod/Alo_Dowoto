@@ -38,7 +38,7 @@ export async function rejectKyc(userId: string, reviewerId: string, reason: stri
   // Révocation réelle du badge : une soumission auto-certifie à l'envoi
   // (verificationStore.submitVerification), un refus admin doit donc pouvoir
   // le retirer pour de vrai plutôt que d'être purement déclaratif.
-  deleteVerification(userId)
+  await deleteVerification(userId)
   return { id: row.id, userId: row.userId, status: 'rejected', reason: row.reason, reviewedBy: row.reviewedBy, reviewedAt: row.reviewedAt.getTime() }
 }
 
@@ -65,7 +65,7 @@ export interface KycQueueEntry {
 /** File des soumissions KYC avec leur dernière décision, la plus récente en premier (#dashboard-admin). */
 export async function listKycQueue(): Promise<KycQueueEntry[]> {
   const { listAllVerifications } = await import('~~/server/utils/verificationStore')
-  const submissions = listAllVerifications()
+  const submissions = await listAllVerifications()
   const entries: KycQueueEntry[] = []
   for (const submission of submissions) {
     const decisions = await listKycDecisionsForUser(submission.userId)

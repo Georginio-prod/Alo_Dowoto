@@ -43,8 +43,9 @@ async function findNextAvailableProvider(currentProviderId: string): Promise<Pro
   )
   if (alternatives.length === 0) return null
 
-  const ranked = alternatives
-    .map((provider) => ({ provider, ...getEffectiveRating(provider.id, { rating: provider.rating, reviewCount: provider.reviewCount }) }))
+  const ranked = (await Promise.all(
+    alternatives.map(async (provider) => ({ provider, ...await getEffectiveRating(provider.id, { rating: provider.rating, reviewCount: provider.reviewCount }) })),
+  ))
     .sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount)
   return ranked[0]?.provider ?? null
 }

@@ -9,5 +9,5 @@ export default defineEventHandler(async (event) => {
   const { username, firstName, lastName, location } = await readSchemaBody(event, updateProfileSchema)
 
   const updated = await updateUserProfile(user.id, { username, firstName, lastName, location })
-  return { user: toPublicUser(updated) }
+  return { user: await toPublicUser(updated) }
 })

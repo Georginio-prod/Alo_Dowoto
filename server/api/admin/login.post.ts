@@ -58,5 +58,5 @@ export default defineEventHandler(async (event) => {
   // Connexion réussie : on remet le compteur anti brute-force à zéro pour cette IP.
   await resetRateLimit(rateKey)
 
-  return { token, user: toPublicUser(user), permissions, isSuperAdmin: permissions === null }
+  return { token, user: await toPublicUser(user), permissions, isSuperAdmin: permissions === null }
 })

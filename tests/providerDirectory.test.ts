@@ -243,7 +243,7 @@ describe('searchProviders — exclusion des prestataires indisponibles (#290)', 
   it('exclut un prestataire ayant déclaré une indisponibilité couvrant la date demandée', async () => {
     const providerId = randomUUID()
     await upsertProviderProfile(providerId, { displayName: 'Prestataire Dispo', sector: 'digital', city: 'Lomé' })
-    addUnavailabilityPeriod(providerId, '2026-08-01', '2026-08-10')
+    await addUnavailabilityPeriod(providerId, '2026-08-01', '2026-08-10')
 
     const results = await searchProviders({ sector: 'digital', date: '2026-08-05' })
     expect(results.some((p) => p.id === providerId)).toBe(false)
@@ -252,7 +252,7 @@ describe('searchProviders — exclusion des prestataires indisponibles (#290)', 
   it('n’exclut pas ce même prestataire pour une date hors de la période déclarée', async () => {
     const providerId = randomUUID()
     await upsertProviderProfile(providerId, { displayName: 'Prestataire Dispo 2', sector: 'digital', city: 'Lomé' })
-    addUnavailabilityPeriod(providerId, '2026-08-01', '2026-08-10')
+    await addUnavailabilityPeriod(providerId, '2026-08-01', '2026-08-10')
 
     const results = await searchProviders({ sector: 'digital', date: '2026-08-20' })
     expect(results.some((p) => p.id === providerId)).toBe(true)

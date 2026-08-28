@@ -38,5 +38,5 @@ export default defineEventHandler(async (event) => {
   const passwordHash = await hashPassword(password)
   await setPasswordHash(user.id, passwordHash)
 
-  return { user: toPublicUser({ ...user, passwordHash }) }
+  return { user: await toPublicUser({ ...user, passwordHash }) }
 })

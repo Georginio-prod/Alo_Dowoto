@@ -1,39 +1,35 @@
+import type { Verification as PrismaVerification } from '@prisma/client'
+import { prisma } from '~~/server/utils/prisma'
+
 /**
- * Store en mémoire pour la vérification d'identité (#180+1) : carte
- * d'identité + photo passeport (fond blanc, format international)
- * télé-versées par l'utilisateur — chercheur ou prestataire. Suffisant pour
- * ce lot (pas de base de données encore en place, voir #45/#46).
+ * Vérification d'identité (#180+1), désormais **persistée en base**
+ * (Prisma/Postgres) — l'ancien store en mémoire est remplacé, les soumissions
+ * survivent aux redémarrages et le badge « Vérifié » devient lisible par le
+ * backend Express (ADR-0015/0017). Comportement observable **iso** : mêmes
+ * règles, mêmes formes ; seules les lectures passent d'un accès synchrone à un
+ * accès `async` (source = base, comme providerStore/reviewStore).
  *
- * Pas d'équipe de modération dans ce prototype (aucune interface
- * d'administration ailleurs dans l'app, ex. complaintStore) : la
- * soumission des deux pièces certifie immédiatement le compte, dans le même
- * esprit que le badge « Vérifié » déjà décrit aux CGU comme reposant sur
- * les éléments déclaratifs fournis par l'utilisateur, sans garantie ni
- * contrôle d'antécédents.
+ * Auto-certification : la soumission des deux pièces certifie immédiatement le
+ * compte (pas d'équipe de modération dans ce prototype).
  *
- * Minimisation des données (#286, audit sécurité) : les images sont la
- * catégorie de donnée la plus sensible de l'application (pièce d'identité +
- * photo passeport). Une fois le compte certifié, leur conservation
- * indéfinie ne sert plus aucune finalité — seul le fait d'être vérifié
- * (`isVerified`) doit persister. `applyRetentionPurgeIfExpired` les efface
- * automatiquement passé `ID_DOCUMENT_RETENTION_MS`, sans jamais revenir sur
- * le statut « Vérifié » déjà acquis.
+ * Minimisation des données (#286) : les images (pièce d'identité + photo
+ * passeport) sont la catégorie la plus sensible. Une fois le compte certifié,
+ * elles sont effacées passé `ID_DOCUMENT_RETENTION_MS` (`applyRetentionPurge`),
+ * sans jamais revenir sur le statut « Vérifié » déjà acquis.
  */
 
 export interface Verification {
   userId: string
-  /** Image encodée en data URL (base64), ou `null` une fois purgée (voir `applyRetentionPurgeIfExpired`). */
+  /** Image encodée en data URL (base64), ou `null` une fois purgée. */
   idCardImage: string | null
   /** Photo passeport fond blanc, format international — même format de stockage. */
   passportPhotoImage: string | null
   submittedAt: number
-  /** Horodatage de la purge automatique des images, ou `null` tant qu'elles sont encore conservées. */
+  /** Horodatage de la purge automatique des images, ou `null` tant qu'elles sont conservées. */
   purgedAt: number | null
 }
 
-const verificationsByUserId = new Map<string, Verification>()
-
-/** Durée de conservation des images de pièce d'identité après vérification (#286) : 90 jours, cohérent avec la politique de confidentialité. */
+/** Durée de conservation des images de pièce d'identité après vérification (#286) : 90 jours. */
 export const ID_DOCUMENT_RETENTION_MS = 90 * 24 * 60 * 60 * 1000
 
 /**
@@ -43,48 +39,72 @@ export const ID_DOCUMENT_RETENTION_MS = 90 * 24 * 60 * 60 * 1000
  */
 export const isValidIdentityImage = isValidImageDataUrl
 
-/** Efface les images une fois le délai de conservation dépassé — le statut « Vérifié » (`isVerified`) n'est jamais affecté. */
-function applyRetentionPurgeIfExpired(verification: Verification): void {
-  if (verification.purgedAt !== null) return
-  if (Date.now() - verification.submittedAt < ID_DOCUMENT_RETENTION_MS) return
-
-  verification.idCardImage = null
-  verification.passportPhotoImage = null
-  verification.purgedAt = Date.now()
-}
-
-export function submitVerification(userId: string, idCardImage: string, passportPhotoImage: string): Verification {
-  const verification: Verification = { userId, idCardImage, passportPhotoImage, submittedAt: Date.now(), purgedAt: null }
-  verificationsByUserId.set(userId, verification)
-  return verification
-}
-
-export function getVerification(userId: string): Verification | null {
-  const verification = verificationsByUserId.get(userId) ?? null
-  if (verification) applyRetentionPurgeIfExpired(verification)
-  return verification
-}
-
-export function isVerified(userId: string): boolean {
-  return verificationsByUserId.has(userId)
-}
-
-/** Effacement complet à la demande de l'utilisateur (#286, droit à l'effacement — voir server/api/account/delete.post.ts). */
-export function deleteVerification(userId: string): boolean {
-  return verificationsByUserId.delete(userId)
+function toVerification(row: PrismaVerification): Verification {
+  return {
+    userId: row.userId,
+    idCardImage: row.idCardImage,
+    passportPhotoImage: row.passportPhotoImage,
+    submittedAt: row.submittedAt.getTime(),
+    purgedAt: row.purgedAt?.getTime() ?? null,
+  }
 }
 
 /**
- * Toutes les vérifications soumises, les plus récentes d'abord
- * (#dashboard-admin, module Prestataires/Chercheurs — file de KYC à traiter).
- * Lecture directe du store en mémoire — voir docs/admin-dashboard.md pour la
- * portée (soumissions réelles mais volatiles, perdues au redémarrage).
+ * Efface en base les images d'une soumission dont le délai de conservation est
+ * dépassé (le statut « Vérifié » n'est jamais affecté), et renvoie la version à
+ * jour. No-op si déjà purgée ou encore dans le délai.
  */
-export function listAllVerifications(): Verification[] {
-  return [...verificationsByUserId.values()]
-    .map((verification) => {
-      applyRetentionPurgeIfExpired(verification)
-      return verification
-    })
-    .sort((a, b) => b.submittedAt - a.submittedAt)
+async function applyRetentionPurge(row: PrismaVerification): Promise<PrismaVerification> {
+  if (row.purgedAt !== null) return row
+  if (Date.now() - row.submittedAt.getTime() < ID_DOCUMENT_RETENTION_MS) return row
+
+  return prisma.verification.update({
+    where: { userId: row.userId },
+    data: { idCardImage: null, passportPhotoImage: null, purgedAt: new Date() },
+  })
+}
+
+export async function submitVerification(userId: string, idCardImage: string, passportPhotoImage: string): Promise<Verification> {
+  // Une nouvelle soumission remplace la précédente et repart d'un état non purgé.
+  // `submittedAt` posé côté JS (et non via le défaut base) pour rester cohérent
+  // avec la comparaison de rétention (`Date.now()`), y compris quand un test fige
+  // l'horloge.
+  const submittedAt = new Date(Date.now())
+  const row = await prisma.verification.upsert({
+    where: { userId },
+    create: { userId, idCardImage, passportPhotoImage, submittedAt },
+    update: { idCardImage, passportPhotoImage, submittedAt, purgedAt: null },
+  })
+  return toVerification(row)
+}
+
+export async function getVerification(userId: string): Promise<Verification | null> {
+  const row = await prisma.verification.findUnique({ where: { userId } })
+  if (!row) return null
+  return toVerification(await applyRetentionPurge(row))
+}
+
+export async function isVerified(userId: string): Promise<boolean> {
+  const count = await prisma.verification.count({ where: { userId } })
+  return count > 0
+}
+
+/** Effacement complet à la demande de l'utilisateur (#286, droit à l'effacement). Renvoie `true` si une soumission existait. */
+export async function deleteVerification(userId: string): Promise<boolean> {
+  const { count } = await prisma.verification.deleteMany({ where: { userId } })
+  return count > 0
+}
+
+/**
+ * Toutes les vérifications soumises, les plus récentes d'abord (#dashboard-admin,
+ * file de KYC à traiter). Purge d'abord les images expirées (en lot), puis liste.
+ */
+export async function listAllVerifications(): Promise<Verification[]> {
+  const cutoff = new Date(Date.now() - ID_DOCUMENT_RETENTION_MS)
+  await prisma.verification.updateMany({
+    where: { purgedAt: null, submittedAt: { lt: cutoff } },
+    data: { idCardImage: null, passportPhotoImage: null, purgedAt: new Date() },
+  })
+  const rows = await prisma.verification.findMany({ orderBy: { submittedAt: 'desc' } })
+  return rows.map(toVerification)
 }

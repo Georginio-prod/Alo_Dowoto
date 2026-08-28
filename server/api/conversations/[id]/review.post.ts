@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
 
   const targetId = user.id === conversation.clientId ? conversation.providerId : conversation.clientId
 
-  const review = submitReview(conversation.id, user.id, targetId, rating, comment)
+  const review = await submitReview(conversation.id, user.id, targetId, rating, comment)
   setResponseStatus(event, 201)
   return { review }
 })

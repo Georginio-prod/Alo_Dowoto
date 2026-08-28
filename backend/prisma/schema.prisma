@@ -168,7 +168,6 @@ model User {
   providerProfile   ProviderProfile?
   subscriptions     Subscription[]
   payments          Payment[]
-  reviewsWritten    Review[]         @relation("ReviewAuthor")
   referralsMade     Referral[]       @relation("ReferralsMade")
   referralReceived  Referral?        @relation("ReferralReceived")
 }
@@ -314,24 +313,28 @@ model ProviderProfile {
   formations     String?
   certifications String?
 
-  reviews Review[]
-
   @@index([sectorId, city])
 }
 
 /// Avis client sur un prestataire — nouveau modèle, pas encore d'équivalent
 /// en mémoire (aucune route API d'avis dans le lot actuel).
+/// Notation mutuelle client/prestataire après collaboration (#61) — voir
+/// server/utils/reviewStore.ts. Rattachée à une conversation (unique par
+/// (conversationId, authorId) : chaque partie note une fois, dans un sens).
+/// Pas de clé étrangère : `targetId` (le noté) peut référencer une fiche de
+/// l'annuaire de démonstration et non un compte réel — même choix que
+/// Favorite/Complaint/Notification.
 model Review {
-  id         String          @id @default(uuid())
-  providerId String
-  provider   ProviderProfile @relation(fields: [providerId], references: [id])
-  authorId   String
-  author     User            @relation("ReviewAuthor", fields: [authorId], references: [id])
-  rating     Int
-  comment    String?
-  createdAt  DateTime        @default(now())
+  id             String   @id @default(uuid())
+  conversationId String
+  authorId       String
+  targetId       String
+  rating         Int
+  comment        String?
+  createdAt      DateTime @default(now())
 
-  @@index([providerId])
+  @@unique([conversationId, authorId])
+  @@index([targetId])
 }
 
 /// Abonnement prestataire — voir server/utils/subscriptionStore.ts (#29, #30).
@@ -679,6 +682,33 @@ model AuditLog {
 
   @@index([targetType, targetId])
   @@index([createdAt])
+}
+
+/// Période d'indisponibilité déclarée par un prestataire (#290) — voir
+/// server/utils/providerAvailabilityStore.ts. Sans période, le prestataire est
+/// disponible par défaut. Dates ISO `AAAA-MM-JJ`, bornes incluses. Pas de clé
+/// étrangère (`providerId` peut être un id d'annuaire de démo).
+model UnavailabilityPeriod {
+  id         String   @id @default(uuid())
+  providerId String
+  startDate  String
+  endDate    String
+  createdAt  DateTime @default(now())
+
+  @@index([providerId])
+}
+
+/// Vérification d'identité (#180+1) — voir server/utils/verificationStore.ts.
+/// Une soumission par utilisateur (clé = `userId`), auto-certifiante. Pas de clé
+/// étrangère (même choix que Favorite/Complaint/Review). Minimisation des données
+/// (#286) : les images (data URL base64) sont effacées passé le délai de
+/// conservation (`purgedAt` renseigné), sans jamais retirer le statut « Vérifié ».
+model Verification {
+  userId             String    @id
+  idCardImage        String?
+  passportPhotoImage String?
+  submittedAt        DateTime  @default(now())
+  purgedAt           DateTime?
 }
 
 /// Décision admin sur une vérification d'identité (#dashboard-admin, module

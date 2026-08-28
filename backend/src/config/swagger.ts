@@ -58,6 +58,19 @@ export const swaggerSpec = swaggerJsdoc({
             data: { type: 'object', additionalProperties: true, nullable: true },
           },
         },
+        /** Avis d'accueil (`services/testimonialService.ts`). `createdAt` en ms epoch. */
+        Testimonial: {
+          type: 'object',
+          required: ['id', 'name', 'role', 'message', 'rating', 'createdAt'],
+          properties: {
+            id: { type: 'string' },
+            name: { type: 'string' },
+            role: { type: 'string', enum: ['client', 'prestataire'] },
+            message: { type: 'string' },
+            rating: { type: 'integer', minimum: 1, maximum: 5 },
+            createdAt: { type: 'integer', description: 'Horodatage ms (epoch).' },
+          },
+        },
       },
     },
   },

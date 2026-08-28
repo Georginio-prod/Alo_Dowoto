@@ -392,7 +392,7 @@ export async function promoteToAdmin(userId: string, adminLevel: string): Promis
 }
 
 /** Vue publique d'un utilisateur : ne jamais exposer `passwordHash` au client. */
-export function toPublicUser(user: User): PublicUser {
+export async function toPublicUser(user: User): Promise<PublicUser> {
   return {
     id: user.id,
     contact: user.contact,
@@ -405,6 +405,6 @@ export function toPublicUser(user: User): PublicUser {
     location: user.location,
     ...(user.latitude !== undefined ? { latitude: user.latitude } : {}),
     ...(user.longitude !== undefined ? { longitude: user.longitude } : {}),
-    verified: isVerified(user.id),
+    verified: await isVerified(user.id),
   }
 }

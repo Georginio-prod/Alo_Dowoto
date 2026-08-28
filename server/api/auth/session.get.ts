@@ -1,3 +1,3 @@
 export default defineEventHandler(async (event) => {
-  return { user: toPublicUser(await requireSessionUser(event)) }
+  return { user: await toPublicUser(await requireSessionUser(event)) }
 })

@@ -6,5 +6,5 @@
 export default defineEventHandler(async (event) => {
   const user = await requireAdminRole(event)
   const permissions = await getAdminPermissions(user.id)
-  return { user: toPublicUser(user), permissions, isSuperAdmin: permissions === null }
+  return { user: await toPublicUser(user), permissions, isSuperAdmin: permissions === null }
 })
