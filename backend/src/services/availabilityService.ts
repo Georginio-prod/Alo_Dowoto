@@ -37,7 +37,21 @@ export function createAvailabilityService(repo: AvailabilityRepository = availab
     async listUnavailabilityPeriods(providerId: string): Promise<UnavailabilityPeriod[]> {
       return (await repo.listByProvider(providerId)).map(toPeriod)
     },
+
+    /**
+     * Le prestataire apparaît-il dans les propositions pour cette date (#290) ?
+     * `true` par défaut (aucune période déclarée), ce qui préserve le
+     * comportement existant. Iso `providerAvailabilityStore.isProviderAvailableOn`.
+     */
+    async isProviderAvailableOn(providerId: string, date: string): Promise<boolean> {
+      return (await repo.countCovering(providerId, date)) === 0
+    },
   }
+}
+
+/** Date du jour au format ISO `AAAA-MM-JJ` (iso `providerAvailabilityStore.todayIsoDate`). */
+export function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10)
 }
 
 /** Instance par défaut, liée au repository partagé. */
