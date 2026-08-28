@@ -684,6 +684,33 @@ model AuditLog {
   @@index([createdAt])
 }
 
+/// Période d'indisponibilité déclarée par un prestataire (#290) — voir
+/// server/utils/providerAvailabilityStore.ts. Sans période, le prestataire est
+/// disponible par défaut. Dates ISO `AAAA-MM-JJ`, bornes incluses. Pas de clé
+/// étrangère (`providerId` peut être un id d'annuaire de démo).
+model UnavailabilityPeriod {
+  id         String   @id @default(uuid())
+  providerId String
+  startDate  String
+  endDate    String
+  createdAt  DateTime @default(now())
+
+  @@index([providerId])
+}
+
+/// Vérification d'identité (#180+1) — voir server/utils/verificationStore.ts.
+/// Une soumission par utilisateur (clé = `userId`), auto-certifiante. Pas de clé
+/// étrangère (même choix que Favorite/Complaint/Review). Minimisation des données
+/// (#286) : les images (data URL base64) sont effacées passé le délai de
+/// conservation (`purgedAt` renseigné), sans jamais retirer le statut « Vérifié ».
+model Verification {
+  userId             String    @id
+  idCardImage        String?
+  passportPhotoImage String?
+  submittedAt        DateTime  @default(now())
+  purgedAt           DateTime?
+}
+
 /// Décision admin sur une vérification d'identité (#dashboard-admin, module
 /// Prestataires/Chercheurs) — un refus révoque réellement le badge vérifié
 /// (voir server/utils/verificationStore.ts:deleteVerification), une validation
