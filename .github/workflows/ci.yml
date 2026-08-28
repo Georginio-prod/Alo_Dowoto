@@ -1,6 +1,8 @@
-name: CI
+name: Frontend CI
 
-# Le CI vérifie tout : dépendances, lint (ESLint strict + règle des 300 lignes),
+# CI du front Nuxt (app/, server/, i18n/…). Le backend Express a sa propre CI
+# (.github/workflows/backend-ci.yml). Ce workflow vérifie : dépendances, lint
+# (ESLint strict + règle des 300 lignes), lint Markdown (markdownlint-cli2),
 # typage TypeScript (nuxt typecheck / vue-tsc), génération du client Prisma,
 # tests unitaires (Vitest) et build de production.
 # Il tourne sur CHAQUE Pull Request (quelle que soit la branche de base, ce qui
@@ -22,7 +24,7 @@ concurrency:
 
 jobs:
   quality:
-    name: Lint · Typecheck · Build
+    name: Lint · Typecheck · Build (frontend)
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -57,6 +59,9 @@ jobs:
 
       - name: Lint (ESLint)
         run: npm run lint
+
+      - name: Lint Markdown (markdownlint-cli2)
+        run: npm run lint:md
 
       - name: Générer le client Prisma
         run: npm run db:generate

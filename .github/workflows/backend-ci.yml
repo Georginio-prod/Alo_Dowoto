@@ -1,0 +1,81 @@
+name: Backend CI
+
+# CI dédiée au sous-projet backend Express (backend/**, chantier ADR-0014).
+# Reproduit pour le backend ce que .github/workflows/ci.yml fait pour le front :
+# lint (ESLint strict + règle des 300 lignes, config backend/eslint.config.mjs),
+# génération du client Prisma, typage TypeScript (tsc --noEmit), tests
+# d'intégration HTTP (Vitest + supertest sur une base Postgres isolée) et build
+# de production (tsc). Voir backend/README.md et docs/deployment.md.
+#
+# Path-filtré : ne tourne que quand le backend (ou ce workflow) change, pour ne
+# pas doubler inutilement la CI front sur les PR purement frontend.
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  push:
+    branches: [develop, master]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+
+# Annule les exécutions précédentes encore en cours sur la même réf.
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint · Typecheck · Test · Build (backend)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: worktogo
+          POSTGRES_PASSWORD: worktogo
+          # Base de test ISOLÉE du backend (jamais la base partagée `worktogo`).
+          # Alignée avec backend/vitest.globalSetup.ts (`db push` dessus).
+          POSTGRES_DB: worktogo_backend_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U worktogo" --health-interval 5s
+          --health-timeout 5s --health-retries 15
+    env:
+      # Les tests d'intégration lisent TEST_DATABASE_URL (voir
+      # backend/vitest.config.ts + vitest.globalSetup.ts). `prisma db push` y
+      # synchronise le schéma backend avant la suite.
+      TEST_DATABASE_URL: 'postgresql://worktogo:worktogo@localhost:5432/worktogo_backend_test'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # Installation à la racine : le backend est un workspace npm ; `npm ci`
+      # installe ses dépendances ET relie les binaires hoistés (ESLint, tsc,
+      # vitest, prisma) utilisés par les scripts `npm --prefix backend`.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Générer le client Prisma (backend)
+        run: npm --prefix backend run prisma:generate
+
+      - name: Lint (ESLint, config backend)
+        run: npm --prefix backend run lint
+
+      - name: Typecheck (tsc --noEmit)
+        run: npm --prefix backend run typecheck
+
+      - name: Tests d'intégration (Vitest + supertest)
+        run: npm --prefix backend run test
+
+      - name: Build (tsc)
+        run: npm --prefix backend run build
