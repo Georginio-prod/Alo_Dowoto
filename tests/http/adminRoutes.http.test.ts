@@ -199,11 +199,11 @@ describe('Décision KYC (#dashboard-admin, module Prestataires)', () => {
     const admin = await createAuthedUser('admin')
     const provider = await createAuthedUser('prestataire')
 
-    submitVerification(provider.user.id, 'data:image/png;base64,AAAA', 'data:image/png;base64,BBBB')
-    expect(getVerification(provider.user.id)).not.toBeNull()
+    await submitVerification(provider.user.id, 'data:image/png;base64,AAAA', 'data:image/png;base64,BBBB')
+    expect(await getVerification(provider.user.id)).not.toBeNull()
 
     const { status } = await postJson(`/admin/providers/${provider.user.id}/kyc-reject`, admin.cookieHeader, { reason: 'Documents illisibles.' })
     expect(status).toBe(200)
-    expect(getVerification(provider.user.id)).toBeNull()
+    expect(await getVerification(provider.user.id)).toBeNull()
   })
 })

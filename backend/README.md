@@ -18,19 +18,25 @@ sécurité `tests/contract/`.
 >   client** → 401/403). ⚠️ `GET /api/favorites` **différé** (voir plus bas) ;
 > - **notifications** (`GET`/`POST /api/notifications[/read]`, auth requise) ;
 > - **parrainage** (`GET /api/referrals/me`, auth requise) ;
-> - **abonnements** (`/api/subscriptions[...]`, **rôle prestataire**, 400/409).
+> - **abonnements** (`/api/subscriptions[...]`, **rôle prestataire**, 400/409) ;
+> - **prestataires — self-service** (6/9 routes, **rôle prestataire**) : profil
+>   `GET`/`PATCH /api/providers/me`, `DELETE /api/providers/me/position` (#356) +
+>   disponibilité `GET`/`POST /api/providers/availability`,
+>   `DELETE /api/providers/availability/:id` (#290). Reste la **découverte publique**
+>   `search`/`[id]`/`featured` (×3) : elle embarque l'annuaire complet
+>   (`providerDirectory` ~490 l + géo + `matchingEngine` + dataset démo) — gros
+>   morceau à porter séparément.
 >
-> **Bloqués — dépendent de stores encore EN MÉMOIRE** (un backend séparé aurait
-> ces Map vides → divergence en prod). À persister en base avant portage :
-> - `providers`, `sectors`, `GET /api/favorites` → l'annuaire lit ~~`reviewStore`
->   (notes, ✅ **persisté**)~~ + `verificationStore` (badge vérifié) +
->   `providerAvailabilityStore` (encore à persister) ;
-> - `account`, `verification` → `verificationStore` ;
-> - `quotas`, `requests`, `assistant` → stores en mémoire respectifs.
+> **Annuaire prestataires : DÉBLOQUÉ.** Les trois stores dont il dépendait
+> (`reviewStore`, `verificationStore`, `providerAvailabilityStore`) sont désormais
+> **persistés en base** (Prisma, modèles `Review` / `Verification` /
+> `UnavailabilityPeriod`), leurs lectures passées en `async` (annuaire, matching,
+> escrow, `toPublicUser` auth/session adaptés). 765 tests app verts à chaque étape.
+> → `providers`, `sectors` et `GET /api/favorites` sont maintenant **portables iso**
+> vers Express.
 >
-> **`reviewStore` persisté** (Prisma, modèle `Review` branché) : ses lectures
-> sont passées en `async` (annuaire/matching/escrow adaptés), 765 tests app verts.
-> Restent `verificationStore` + `providerAvailabilityStore` avant de porter `providers`.
+> **Restent bloqués** par leurs stores en mémoire respectifs : `quotas`,
+> `requests`, `assistant` (à persister le jour où ces domaines seront portés).
 >
 > Reste ~177 routes à porter (dont admin=101).
 
