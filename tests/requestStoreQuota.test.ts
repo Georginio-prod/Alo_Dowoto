@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { prisma } from '~~/server/utils/prisma'
 import { addUnavailabilityPeriod, todayIsoDate } from '~~/server/utils/providerAvailabilityStore'
 import { incrementProviderRequestsReceived } from '~~/server/utils/quotaStore'
@@ -97,9 +97,15 @@ describe('computeMatches — quota de demandes reçues (#63)', () => {
 })
 
 describe('computeMatches — disponibilité en temps réel (#290)', () => {
+  // `p06` est un id réel de l'annuaire de démo : on nettoie la période créée
+  // pour ne pas rendre p06 indisponible dans d'autres tests (base partagée).
+  afterEach(async () => {
+    await prisma.unavailabilityPeriod.deleteMany({ where: { providerId: 'p06' } }).catch(() => undefined)
+  })
+
   it('exclut un prestataire indisponible aujourd’hui (les candidats viennent de searchProviders)', async () => {
     const today = todayIsoDate()
-    addUnavailabilityPeriod('p06', today, today)
+    await addUnavailabilityPeriod('p06', today, today)
 
     const matches = await computeMatches(baseRequest(), 20)
     expect(matches.find((m) => m.providerId === 'p06')).toBeUndefined()
