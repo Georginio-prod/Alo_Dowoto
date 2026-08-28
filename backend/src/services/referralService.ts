@@ -67,6 +67,19 @@ export function createReferralService(
     getOrCreateReferralCode,
 
     /**
+     * Lie un nouveau compte à son parrain à l'inscription (#365), à partir du
+     * code saisi. Silencieux si le code est absent ou invalide : un code erroné
+     * ne doit jamais bloquer une inscription. Iso `userStore.findOrCreateUser`
+     * (bloc parrainage) + `referralStore.findUserIdByReferralCode`.
+     */
+    async linkReferralAtSignup(referredByCode: string | undefined, referredId: string): Promise<void> {
+      const trimmed = referredByCode?.trim().toUpperCase()
+      if (!trimmed) return
+      const referrer = await users.findByReferralCode(trimmed)
+      if (referrer) await repo.create(referrer.id, referredId)
+    },
+
+    /**
      * Récompense le parrainage d'un filleul à son **premier paiement réel**
      * (#365) : crédite le bonus au parrain ET au filleul, une seule fois
      * (idempotent). Sans effet si l'utilisateur n'a pas été parrainé ou si son
