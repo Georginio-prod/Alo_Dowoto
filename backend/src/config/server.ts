@@ -8,6 +8,8 @@ import { swaggerSpec } from './swagger'
 import { errorHandler } from '../middleware/errorHandler'
 import { notFoundHandler } from '../middleware/notFound'
 import { healthRoutes } from '../routes/health.routes'
+import { updatesRoutes } from '../routes/updates.routes'
+import { authRoutes } from '../routes/auth.routes'
 import { testimonialsRoutes } from '../routes/testimonials.routes'
 import { reclamationsRoutes } from '../routes/reclamations.routes'
 import { favoritesRoutes } from '../routes/favorites.routes'
@@ -65,14 +67,21 @@ export function createServer(): Express {
       limit: 300,
       standardHeaders: true,
       legacyHeaders: false,
+      // Le relais de mises à jour Electron (#auto-update) est exempté : un
+      // téléchargement différentiel émet de nombreuses requêtes `Range`
+      // rapprochées qui dépasseraient la fenêtre. Iso Nitro (aucune limite là-bas).
+      skip: (req) => req.path.startsWith('/api/updates/'),
     }),
   )
 
   app.use('/', healthRoutes)
+  // Monté tôt et hors métier : relais public sans session ni corps JSON.
+  app.use('/api', updatesRoutes)
 
   // Routes métier `/api/**`, portées depuis `server/api/**` domaine par domaine
   // (Phase 2, ADR-0017). Montées sous `/api` → chemins identiques à Nitro, le
   // reverse proxy reste passe-plat. Chaque domaine porté vient s'ajouter ici.
+  app.use('/api', authRoutes)
   app.use('/api', testimonialsRoutes)
   app.use('/api', reclamationsRoutes)
   app.use('/api', favoritesRoutes)

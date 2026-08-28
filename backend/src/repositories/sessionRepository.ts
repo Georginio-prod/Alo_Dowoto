@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import type { PrismaClient, Session, User } from '@prisma/client'
 import { prisma } from '../config/prisma'
 
@@ -19,6 +20,8 @@ import { prisma } from '../config/prisma'
 export interface SessionRepository {
   /** Session + utilisateur associé, ou `null` si le jeton est inconnu. */
   findByToken(token: string): Promise<(Session & { user: User }) | null>
+  /** Crée une session pour un compte et renvoie son jeton (connexion, #24). */
+  create(userId: string, expiresAt: Date): Promise<string>
   /** Supprime une session (au mieux : une absence n'est pas une erreur). */
   deleteByToken(token: string): Promise<void>
   /** Supprime toutes les sessions d'un compte (déconnexion globale, effacement #286). */
@@ -29,6 +32,11 @@ export function createSessionRepository(db: PrismaClient): SessionRepository {
   return {
     findByToken(token) {
       return db.session.findUnique({ where: { token }, include: { user: true } })
+    },
+    async create(userId, expiresAt) {
+      const token = randomUUID()
+      await db.session.create({ data: { token, userId, expiresAt } })
+      return token
     },
     async deleteByToken(token) {
       await db.session.delete({ where: { token } }).catch(() => undefined)
