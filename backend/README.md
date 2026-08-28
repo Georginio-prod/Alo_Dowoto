@@ -34,7 +34,11 @@ sécurité `tests/contract/`.
 >   `GET /api/wallet/recharge/:id`, `POST /api/wallet/withdraw` (rôle prestataire),
 >   `POST /api/wallet/webhook` (public, **signature HMAC + anti-rejeu #355**).
 >   Reste le **reçu PDF** `GET /api/wallet/movements/:id/receipt` (#363), différé :
->   il dépend de `pdfkit` + i18n côté backend (ajout de dépendances) → lot séparé.
+>   il dépend de `pdfkit` + i18n côté backend (ajout de dépendances) → lot séparé ;
+> - **compte RGPD** (#286, auth requise) : `GET /api/account/export` (portabilité,
+>   jamais les images) et `POST /api/account/delete` (anonymisation +
+>   purge vérification + déconnexion). Débloqué par le portage de `wallet`
+>   (`export` dépendait de `getBalance`).
 >
 > **Annuaire prestataires : DÉBLOQUÉ.** Les trois stores dont il dépendait
 > (`reviewStore`, `verificationStore`, `providerAvailabilityStore`) sont désormais
@@ -47,7 +51,7 @@ sécurité `tests/contract/`.
 > **Restent bloqués** par leurs stores en mémoire respectifs : `quotas`,
 > `requests`, `assistant` (à persister le jour où ces domaines seront portés).
 >
-> Reste ~169 routes à porter (dont admin=101).
+> Reste ~167 routes à porter (dont admin=101).
 
 ## Structure
 

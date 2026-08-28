@@ -12,6 +12,13 @@ export interface UserRepository {
   findByReferralCode(code: string): Promise<User | null>
   /** Fixe le code de parrainage d'un compte. */
   setReferralCode(id: string, referralCode: string): Promise<void>
+  /**
+   * Anonymise les données personnelles d'un compte (droit à l'effacement #286).
+   * L'historique financier (rattaché par `userId`) est conservé mais n'est plus
+   * rattachable à une identité réelle. Iso `userStore.anonymizeUser` (partie
+   * compte ; la suppression des sessions relève de `sessionRepository`).
+   */
+  anonymize(id: string): Promise<void>
 }
 
 export function createUserRepository(db: PrismaClient): UserRepository {
@@ -24,6 +31,22 @@ export function createUserRepository(db: PrismaClient): UserRepository {
     },
     async setReferralCode(id, referralCode) {
       await db.user.update({ where: { id }, data: { referralCode } })
+    },
+    async anonymize(id) {
+      await db.user.update({
+        where: { id },
+        data: {
+          contact: `compte-supprime-${id}@worktogo.invalid`,
+          passwordHash: null,
+          googleId: null,
+          username: '',
+          firstName: '',
+          lastName: 'Compte supprimé',
+          location: '',
+          latitude: null,
+          longitude: null,
+        },
+      })
     },
   }
 }

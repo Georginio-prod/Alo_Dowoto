@@ -21,6 +21,8 @@ export interface SessionRepository {
   findByToken(token: string): Promise<(Session & { user: User }) | null>
   /** Supprime une session (au mieux : une absence n'est pas une erreur). */
   deleteByToken(token: string): Promise<void>
+  /** Supprime toutes les sessions d'un compte (déconnexion globale, effacement #286). */
+  deleteByUser(userId: string): Promise<void>
 }
 
 export function createSessionRepository(db: PrismaClient): SessionRepository {
@@ -30,6 +32,9 @@ export function createSessionRepository(db: PrismaClient): SessionRepository {
     },
     async deleteByToken(token) {
       await db.session.delete({ where: { token } }).catch(() => undefined)
+    },
+    async deleteByUser(userId) {
+      await db.session.deleteMany({ where: { userId } })
     },
   }
 }
