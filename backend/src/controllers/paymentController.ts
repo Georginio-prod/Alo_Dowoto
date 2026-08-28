@@ -4,6 +4,8 @@ import { authUser } from '../utils/authUser'
 import { normalizeContact } from '../utils/contact'
 import { paymentService } from '../services/paymentService'
 import { subscriptionService } from '../services/subscriptionService'
+import { receiptService } from '../services/receiptService'
+import { receiptLocaleFromQuery } from '../utils/receiptPdf'
 import type { InitiatePaymentInput } from '../validation/schemas/payments'
 
 /**
@@ -37,6 +39,15 @@ export async function getPayment(req: Request, res: Response): Promise<void> {
   const payment = id ? await paymentService.getPayment(id) : null
   if (!payment || payment.userId !== authUser(req).id) notFound('Paiement introuvable.')
   res.json({ payment })
+}
+
+/** GET /api/payments/:id/receipt → PDF (reçu d'un paiement confirmé, #363). */
+export async function getPaymentReceipt(req: Request, res: Response): Promise<void> {
+  const locale = receiptLocaleFromQuery(req.query.locale)
+  const { pdf, filename } = await receiptService.paymentReceipt(authUser(req), req.params.id, locale)
+  res.setHeader('Content-Type', 'application/pdf')
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+  res.send(pdf)
 }
 
 /** POST /api/payments/webhook → { payment } — confirmation opérateur (signature HMAC + anti-rejeu). */

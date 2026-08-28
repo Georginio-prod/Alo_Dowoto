@@ -4,6 +4,8 @@ import { authUser } from '../utils/authUser'
 import { normalizeContact } from '../utils/contact'
 import { walletService, MIN_WITHDRAWAL_AMOUNT } from '../services/walletService'
 import { providerProfileService } from '../services/providerProfileService'
+import { receiptService } from '../services/receiptService'
+import { receiptLocaleFromQuery } from '../utils/receiptPdf'
 import type { WalletRechargeInput, WalletWithdrawInput } from '../validation/schemas/wallet'
 
 /**
@@ -50,6 +52,15 @@ export async function withdraw(req: Request, res: Response): Promise<void> {
     paymentRequired('Solde insuffisant pour ce retrait.')
   }
   res.json({ movement: result.movement })
+}
+
+/** GET /api/wallet/movements/:id/receipt → PDF (reçu d'un mouvement d'escrow, #363). */
+export async function getMovementReceipt(req: Request, res: Response): Promise<void> {
+  const locale = receiptLocaleFromQuery(req.query.locale)
+  const { pdf, filename } = await receiptService.movementReceipt(authUser(req), req.params.id, locale)
+  res.setHeader('Content-Type', 'application/pdf')
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+  res.send(pdf)
 }
 
 /** POST /api/wallet/webhook → { recharge } — confirmation opérateur (signature HMAC + anti-rejeu). */

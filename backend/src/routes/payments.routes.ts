@@ -3,15 +3,13 @@ import { asyncHandler } from '../utils/asyncHandler'
 import { requireSessionUser, requireProviderRole } from '../middleware/auth'
 import { validateBody } from '../validation/validate'
 import { initiatePaymentSchema } from '../validation/schemas/payments'
-import { initiatePayment, getMyPayments, getPayment, paymentWebhook } from '../controllers/paymentController'
+import { initiatePayment, getMyPayments, getPayment, getPaymentReceipt, paymentWebhook } from '../controllers/paymentController'
 
 /**
  * Paiement d'abonnement Mobile Money (#34), porté depuis `server/api/payments/**`
  * (Phase 2, ADR-0017). Monté sous `/api` → chemins iso Nitro. Le webhook est
- * public (signature HMAC) ; initiate/me exigent le rôle prestataire.
- *
- * NB : le reçu PDF `GET /api/payments/:id/receipt` (#363) n'est pas encore porté
- * (dépend de pdfkit + i18n côté backend) — voir backend/README.md.
+ * public (signature HMAC) ; initiate/me exigent le rôle prestataire ; le reçu PDF
+ * (#363) est réservé au titulaire.
  */
 export const paymentsRoutes = Router()
 
@@ -91,6 +89,35 @@ paymentsRoutes.get('/payments/me', requireProviderRole, asyncHandler(getMyPaymen
  *       404: { description: Paiement introuvable., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
  */
 paymentsRoutes.get('/payments/:id', requireSessionUser, asyncHandler(getPayment))
+
+/**
+ * @openapi
+ * /payments/{id}/receipt:
+ *   get:
+ *     tags: [Payments]
+ *     summary: Reçu PDF d'un paiement d'abonnement confirmé (#363)
+ *     description: Réservé au titulaire du paiement. Aucun reçu pour un paiement non confirmé. La langue du document suit `?locale=fr|en`.
+ *     security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: locale
+ *         required: false
+ *         schema: { type: string, enum: [fr, en] }
+ *     responses:
+ *       200:
+ *         description: Document PDF (téléchargement).
+ *         content:
+ *           application/pdf:
+ *             schema: { type: string, format: binary }
+ *       400: { description: Paiement non confirmé., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+ *       401: { description: Non connecté., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+ *       404: { description: Paiement ou abonnement introuvable., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+ */
+paymentsRoutes.get('/payments/:id/receipt', requireSessionUser, asyncHandler(getPaymentReceipt))
 
 /**
  * @openapi
