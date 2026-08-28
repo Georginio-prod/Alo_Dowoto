@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
   if (!id) badRequest('Identifiant requis.')
   const body = await readSchemaBody(event, optionalReasonBodySchema)
 
-  deleteVerification(id)
+  await deleteVerification(id)
   await anonymizeUser(id)
   await recordAuditLog({ actor: admin, action: 'user.delete', targetType: 'user', targetId: id, metadata: { reason: body.reason } })
   return { ok: true }

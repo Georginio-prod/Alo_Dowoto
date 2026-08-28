@@ -7,5 +7,5 @@
 export default defineEventHandler(async (event) => {
   const user = await requireSessionUser(event)
   const updated = await clearUserPosition(user.id)
-  return { user: toPublicUser(updated) }
+  return { user: await toPublicUser(updated) }
 })
