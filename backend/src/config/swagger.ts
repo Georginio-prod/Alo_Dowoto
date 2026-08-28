@@ -58,6 +58,66 @@ export const swaggerSpec = swaggerJsdoc({
             data: { type: 'object', additionalProperties: true, nullable: true },
           },
         },
+        /** Usage d'un compteur de quota mensuel (`services/quotaService.ts`). `limit` `null` = illimité. */
+        QuotaUsage: {
+          type: 'object',
+          required: ['count', 'month'],
+          properties: {
+            count: { type: 'integer' },
+            limit: { type: 'integer', nullable: true },
+            month: { type: 'string', example: '2026-08' },
+          },
+        },
+        /** Mouvement de portefeuille (`repositories/walletMovementRepository.ts`). `amount` toujours positif ; sens selon `type`. */
+        WalletMovement: {
+          type: 'object',
+          required: ['id', 'walletUserId', 'type', 'amount', 'reference', 'createdAt'],
+          properties: {
+            id: { type: 'string' },
+            walletUserId: { type: 'string' },
+            type: {
+              type: 'string',
+              enum: ['recharge', 'escrow_debit', 'escrow_release', 'escrow_refund', 'commission', 'retrait', 'cancellation_compensation', 'dispute_penalty', 'dispute_compensation', 'referral_bonus'],
+            },
+            amount: { type: 'integer' },
+            reference: { type: 'string' },
+            counterpartyUserId: { type: 'string', nullable: true },
+            createdAt: { type: 'integer', description: 'Horodatage ms (epoch).' },
+          },
+        },
+        /** Paiement d'abonnement Mobile Money (`repositories/paymentRepository.ts`). */
+        Payment: {
+          type: 'object',
+          required: ['id', 'userId', 'subscriptionId', 'provider', 'phone', 'amount', 'status', 'createdAt'],
+          properties: {
+            id: { type: 'string' },
+            userId: { type: 'string' },
+            subscriptionId: { type: 'string' },
+            provider: { type: 'string', enum: ['flooz', 'tmoney'] },
+            phone: { type: 'string' },
+            amount: { type: 'integer' },
+            status: { type: 'string', enum: ['pending', 'confirmed', 'failed'] },
+            operatorRef: { type: 'string', nullable: true },
+            createdAt: { type: 'integer', description: 'Horodatage ms (epoch).' },
+            resolvedAt: { type: 'integer', nullable: true },
+          },
+        },
+        /** Recharge mobile money (`repositories/walletRechargeRepository.ts`). */
+        WalletRecharge: {
+          type: 'object',
+          required: ['id', 'userId', 'provider', 'phone', 'amount', 'status', 'createdAt'],
+          properties: {
+            id: { type: 'string' },
+            userId: { type: 'string' },
+            provider: { type: 'string', enum: ['flooz', 'tmoney'] },
+            phone: { type: 'string' },
+            amount: { type: 'integer' },
+            status: { type: 'string', enum: ['pending', 'confirmed', 'failed'] },
+            operatorRef: { type: 'string', nullable: true },
+            createdAt: { type: 'integer', description: 'Horodatage ms (epoch).' },
+            resolvedAt: { type: 'integer', nullable: true },
+          },
+        },
         /** Avis d'accueil (`services/testimonialService.ts`). `createdAt` en ms epoch. */
         Testimonial: {
           type: 'object',

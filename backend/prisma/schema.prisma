@@ -1,14 +1,5 @@
-// Schéma de persistance WorkTogo (#45).
-//
-// Depuis #218, la partie authentification (User, Session, OtpCode,
-// VerifiedContact) est réellement branchée à l'application via
-// server/utils/prisma.ts : les comptes, sessions et codes OTP survivent aux
-// redémarrages du serveur. Les autres modèles (secteurs, profils
-// prestataires, abonnements, paiements) documentent et préparent la bascule
-// des stores en mémoire restants (chantier #46).
-//
-// Un aperçu du schéma sous forme de diagramme se trouve dans
-// docs/database-schema.md.
+/// Schéma de persistance de WorkTogo.
+/// Les modèles documentent les données métier et leurs contraintes.
 
 generator client {
   provider = "prisma-client-js"
@@ -22,27 +13,17 @@ datasource db {
 enum Role {
   client
   prestataire
-  /// Compte administrateur du dashboard desktop (#admin). Jamais créé via
-  /// l'inscription publique — uniquement par le script scripts/create-admin.mjs
-  /// ou par promotion d'un compte existant. SQLite ne contraint pas les enums
-  /// au niveau base : ajouter cette valeur ne nécessite aucune migration SQL.
+  /// Compte administrateur, créé uniquement par un flux d'administration.
   admin
 }
 
-/// Statut de compte (#dashboard-admin) — suspension appliquée dès
-/// server/utils/userStore.ts:getSessionUser (une session dont le compte est
-/// suspendu est refusée comme si elle n'existait pas), pas seulement caché
-/// côté client.
+/// Statut du compte utilisateur.
 enum UserStatus {
   active
   suspended
 }
 
-/// Décision de vérification d'identité (#dashboard-admin), en plus de
-/// l'auto-certification existante de server/utils/verificationStore.ts : un
-/// refus révoque réellement le badge (verificationStore.deleteVerification),
-/// une validation confirme/trace la décision sans changer le comportement
-/// existant (le badge est déjà accordé à la soumission).
+/// Décision administrative concernant une vérification d'identité.
 enum KycDecisionStatus {
   approved
   rejected
@@ -65,7 +46,7 @@ enum PaymentStatus {
   failed
 }
 
-/// Type de mouvement du portefeuille interne — voir server/utils/walletStore.ts (#192).
+/// Type de mouvement du portefeuille interne.
 enum WalletMovementType {
   recharge
   escrow_debit
@@ -73,29 +54,25 @@ enum WalletMovementType {
   escrow_refund
   commission
   retrait
-  /// Indemnisation du prestataire en cas d'annulation client après le délai
-  /// de grâce (#275) — présent dans le store mais manquait à l'enum.
+  /// Indemnisation du prestataire après une annulation client tardive.
   cancellation_compensation
-  /// Pénalité prélevée sur le solde du prestataire (débit) quand un litige
-  /// se résout en sa défaveur — voir escrowDisputeResolution.ts.
+  /// Pénalité prélevée sur le solde du prestataire après un litige perdu.
   dispute_penalty
-  /// Contrepartie (crédit) de dispute_penalty : versée au chercheur en plus
-  /// du remboursement intégral du séquestre.
+  /// Crédit versé au chercheur en contrepartie de la pénalité.
   dispute_compensation
-  /// Bonus de parrainage (#365), crédité au parrain ET au filleul au premier
-  /// paiement réel du filleul — jamais à l'inscription (anti-fraude).
+  /// Bonus crédité au parrain et au filleul lors du premier paiement réel.
   referral_bonus
 }
 
-/// Statut d'un parrainage — voir server/utils/referralStore.ts (#365).
+/// Statut d'un parrainage.
 enum ReferralStatus {
-  /// Filleul inscrit, mais n'a encore fait aucun paiement réel.
+  /// Filleul inscrit, sans paiement réel.
   pending
-  /// Bonus crédité aux deux comptes (parrain + filleul) — état terminal.
+  /// Bonus crédité aux deux comptes, état terminal.
   rewarded
 }
 
-/// Cycle de vie d'une commande en séquestre — voir server/utils/escrowOrderStore.ts (#194-#197).
+/// Cycle de vie d'une commande en séquestre.
 enum EscrowOrderStatus {
   awaiting_payment
   in_escrow
@@ -105,77 +82,58 @@ enum EscrowOrderStatus {
   disputed
 }
 
-/// Compte utilisateur (client ou prestataire) — voir server/utils/userStore.ts.
+/// Compte utilisateur.
 model User {
   id        String   @id @default(uuid())
   contact   String   @unique
   role      Role
   createdAt DateTime @default(now())
 
-  /// Hash scrypt (server/utils/password.ts) — null tant que l'inscription
-  /// n'est pas finalisée (#125).
+  /// Hash scrypt du mot de passe, absent tant que l'inscription n'est pas finalisée.
   passwordHash String?
 
-  /// Identifiant Google (`sub` OpenID Connect) lié au compte — permet la
-  /// connexion « Continuer avec Google » (#219). Lié automatiquement au
-  /// premier login Google d'un compte existant avec le même email.
+  /// Identifiant Google OpenID Connect, lorsqu'un compte est lié à Google.
   googleId String? @unique
 
-  /// Profil collecté dès la première page d'inscription (#125).
+  /// Informations de profil collectées lors de l'inscription.
   username  String @default("")
   firstName String @default("")
   lastName  String @default("")
   location  String @default("")
 
-  /// Coordonnées GPS réelles, capturées en option à l'inscription via la
-  /// géolocalisation du navigateur (bouton « Utiliser ma position actuelle »)
-  /// — contrairement à `location` (ville en texte libre, saisie ou déduite
-  /// par géocodage inverse), ce sont des coordonnées exactes. `null` si
-  /// l'utilisateur n'a pas utilisé/autorisé l'option.
+  /// Coordonnées GPS précises, facultatives et distinctes de la ville textuelle.
   latitude  Float?
   longitude Float?
 
-  /// Permissions granulaires d'un compte administrateur du dashboard desktop
-  /// (#admin), sérialisées en JSON (tableau de clés, voir
-  /// server/utils/adminPermissions.ts). `null` = super-administrateur (accès
-  /// total, cas de l'admin racine créé par scripts/create-admin.mjs). Sans
-  /// effet pour les comptes client/prestataire. Additif et non-breaking : le
-  /// site et l'APK ne lisent jamais ce champ.
+  /// Permissions d'administration sérialisées en JSON.
+  /// `null` représente un administrateur sans restriction.
   adminPermissions String?
 
-  /// Code de parrainage (#365) — `null` pour les comptes créés avant cette
-  /// fonctionnalité, générés à la volée au premier accès (voir
-  /// server/utils/referralStore.ts:getOrCreateReferralCode) plutôt que par
-  /// une migration de données rétroactive.
+  /// Code de parrainage, généré à la demande pour les anciens comptes.
   referralCode String? @unique
 
-  /// Statut de compte (#dashboard-admin) — voir UserStatus. Suspension : la
-  /// connexion est refusée dès getSessionUser (web) ET session.post.ts (OTP /
-  /// mot de passe) + callback Google (desktop #admin), et les sessions actives
-  /// sont supprimées au moment de la suspension.
-  status           UserStatus @default(active)
-  suspendedAt      DateTime?
-  suspendedReason  String?
-  /// Compte à risque (#dashboard-admin, module Chercheurs/Prestataires), marqué manuellement par un admin.
-  riskFlag         Boolean    @default(false)
-  riskNote         String?
-  /// Messagerie restreinte (#dashboard-admin, module anti-désintermédiation) : le prestataire/chercheur ne peut plus initier de nouveaux fils.
-  messagingRestricted Boolean @default(false)
-  /// Niveau d'accès équipe (#dashboard-admin, module Paramètres) — significatif seulement quand `role = admin` : admin (tout), moderateur, support.
-  adminLevel       String?
+  /// Statut de compte et informations liées à une suspension.
+  status              UserStatus @default(active)
+  suspendedAt         DateTime?
+  suspendedReason     String?
+  /// Compte signalé comme présentant un risque.
+  riskFlag            Boolean    @default(false)
+  riskNote            String?
+  /// Interdit l'initialisation de nouveaux fils de messagerie.
+  messagingRestricted Boolean    @default(false)
+  /// Niveau d'accès d'un administrateur.
+  adminLevel          String?
 
-  sessions          Session[]
-  providerProfile   ProviderProfile?
-  subscriptions     Subscription[]
-  payments          Payment[]
-  referralsMade     Referral[]       @relation("ReferralsMade")
-  referralReceived  Referral?        @relation("ReferralReceived")
+  sessions         Session[]
+  providerProfile  ProviderProfile?
+  subscriptions    Subscription[]
+  payments         Payment[]
+  referralsMade    Referral[]       @relation("ReferralsMade")
+  referralReceived Referral?        @relation("ReferralReceived")
 }
 
-/// Parrainage (#365) : un filleul n'a jamais qu'un seul parrain
-/// (`referredId` unique), un parrain peut avoir plusieurs filleuls.
-/// Récompense différée au premier paiement réel du filleul (décision
-/// produit anti-fraude) — voir server/utils/referralStore.ts.
+/// Parrainage : un filleul a un seul parrain, tandis qu'un parrain peut
+/// avoir plusieurs filleuls. La récompense intervient au premier paiement réel.
 model Referral {
   id         String         @id @default(uuid())
   referrerId String
@@ -189,7 +147,7 @@ model Referral {
   @@index([referrerId])
 }
 
-/// Session authentifiée (cookie wt_session) — voir server/utils/userStore.ts (#218).
+/// Session authentifiée.
 model Session {
   token     String   @id
   userId    String
@@ -200,8 +158,7 @@ model Session {
   @@index([userId])
 }
 
-/// Code OTP en attente de vérification pour un contact (téléphone/email
-/// normalisé) — voir server/utils/otpStore.ts (#23, #218).
+/// Code OTP en attente de vérification pour un contact normalisé.
 model OtpCode {
   contact    String   @id
   code       String
@@ -210,22 +167,13 @@ model OtpCode {
   lastSentAt DateTime
 }
 
-/// Preuve (à usage unique) qu'un contact vient de valider son code OTP,
-/// consommée à la création de session — voir server/utils/otpStore.ts (#24, #218).
+/// Preuve à usage unique de validation d'un code OTP.
 model VerifiedContact {
   contact   String   @id
   expiresAt DateTime
 }
 
-/// Secteur d'activité — voir app/data/sectors.ts (#8).
-///
-/// NB (#dashboard-admin, module Catégories) : la recherche publique, la page
-/// /categories et le formulaire d'inscription prestataire lisent aujourd'hui
-/// app/data/sectors.ts (liste statique), pas cette table — comme ProviderProfile
-/// avant elle, ce modèle documentait une bascule pas encore faite (#46). Le CRUD
-/// admin écrit ici pour de vrai (table jusque-là vide), mais ne pilote pas encore
-/// le site public : rebrancher app/data/sectors.ts sur Prisma est un chantier
-/// séparé (le site public en dépend en lecture synchrone à de nombreux endroits).
+/// Secteur d'activité.
 model Sector {
   id     String  @id @default(uuid())
   slug   String  @unique
@@ -233,17 +181,17 @@ model Sector {
   emoji  String
   color  String
   ink    String
-  /// Catégorie désactivée : n'apparaît plus dans les nouvelles fiches (#dashboard-admin).
+  /// Une catégorie inactive n'est plus proposée dans les nouvelles fiches.
   active Boolean @default(true)
-  /// Ordre d'affichage (#dashboard-admin) — croissant.
+  /// Ordre d'affichage croissant.
   order  Int     @default(0)
 
-  subSectors       SubSector[]
-  providerProfiles ProviderProfile[]
+  subSectors         SubSector[]
+  providerProfiles   ProviderProfile[]
   prealableQuestions PrealableQuestion[]
 }
 
-/// Sous-secteur rattaché à un secteur — voir app/data/sectors.ts (#8).
+/// Sous-secteur rattaché à un secteur.
 model SubSector {
   id       String  @id @default(uuid())
   name     String
@@ -256,7 +204,7 @@ model SubSector {
   @@unique([sectorId, name])
 }
 
-/// Profil public d'un prestataire — voir server/utils/providerStore.ts (#26, #27).
+/// Profil public d'un prestataire.
 model ProviderProfile {
   id            String     @id @default(uuid())
   userId        String     @unique
@@ -275,40 +223,34 @@ model ProviderProfile {
   reviewCount   Int        @default(0)
   updatedAt     DateTime   @updatedAt
 
-  /// Coordonnées réelles de la zone d'intervention (#263) — déjà présentes côté
-  /// store en mémoire (server/utils/providerStore.ts), ajoutées ici pour que ce
-  /// modèle préparatoire ne diverge plus du store qu'il documente.
-  latitude  Float?
-  longitude Float?
-  /// Slug d'un quartier de app/data/regions.ts (#geoloc), complète `city`.
-  quartier  String?
-  /// Texte libre, jamais une adresse postale fiable au Togo (voir app/data/regions.ts).
-  adresse   String?
-  /// Repère local en texte libre (« près du grand marché »...), affiché sur le profil.
-  pointsDeRepere      String?
-  /// Distance maximale (km) que le prestataire accepte de parcourir pour intervenir.
-  rayonInterventionKm Int?
-  /// `true` (défaut) : seule une position floutée est exposée publiquement — voir
-  /// server/utils/geo.ts#fuzzCoordinate et providerDirectory.ts#toSearchResult.
+  /// Coordonnées réelles de la zone d'intervention.
+  latitude              Float?
+  longitude             Float?
+  /// Slug du quartier, en complément de `city`.
+  quartier              String?
+  /// Adresse libre, qui ne constitue pas une adresse postale fiable.
+  adresse               String?
+  /// Repère local affiché sur le profil.
+  pointsDeRepere        String?
+  /// Distance maximale d'intervention, en kilomètres.
+  rayonInterventionKm   Int?
+  /// `true` par défaut : seule une position approximative est exposée publiquement.
   positionApproximative Boolean @default(true)
 
-  // --- Profil complet (migration base = source de vérité, approche A) ---
-  // Champs additifs miroir de server/utils/providerStore.ts:ProviderProfile,
-  // pour que la base porte l'intégralité du profil (et plus seulement les
-  // champs d'affichage écrits par l'approche B). Tous nullables/non-breaking.
-  /// Mode de rémunération WorkTogo : flooz | tmoney | virement.
+  /// Champs complémentaires du profil professionnel.
+  /// Mode de rémunération : flooz, tmoney ou virement.
   payoutMethod   String?
-  /// Tarif haut de fourchette (FCFA), complète `rateFrom`.
+  /// Tarif maximal en FCFA, en complément de `rateFrom`.
   rateTo         Int?
-  /// Mobilité : client | atelier | les_deux.
+  /// Mobilité : client, atelier ou les deux.
   mobility       String?
-  /// Disponibilité (texte libre).
+  /// Disponibilité en texte libre.
   availability   String?
   cvUrl          String?
   cvFileName     String?
   whatsapp       String?
   website        String?
-  /// Listes sérialisées en JSON (SQLite n'a pas de type tableau natif).
+  /// Listes sérialisées en JSON.
   languages      String?
   formations     String?
   certifications String?
@@ -316,14 +258,8 @@ model ProviderProfile {
   @@index([sectorId, city])
 }
 
-/// Avis client sur un prestataire — nouveau modèle, pas encore d'équivalent
-/// en mémoire (aucune route API d'avis dans le lot actuel).
-/// Notation mutuelle client/prestataire après collaboration (#61) — voir
-/// server/utils/reviewStore.ts. Rattachée à une conversation (unique par
-/// (conversationId, authorId) : chaque partie note une fois, dans un sens).
-/// Pas de clé étrangère : `targetId` (le noté) peut référencer une fiche de
-/// l'annuaire de démonstration et non un compte réel — même choix que
-/// Favorite/Complaint/Notification.
+/// Avis laissé après une collaboration.
+/// Chaque auteur ne peut noter qu'une fois une conversation.
 model Review {
   id             String   @id @default(uuid())
   conversationId String
@@ -337,7 +273,7 @@ model Review {
   @@index([targetId])
 }
 
-/// Abonnement prestataire — voir server/utils/subscriptionStore.ts (#29, #30).
+/// Abonnement d'un prestataire.
 model Subscription {
   id        String             @id @default(uuid())
   userId    String
@@ -347,14 +283,13 @@ model Subscription {
   dateDebut DateTime?
   dateFin   DateTime?
   createdAt DateTime           @default(now())
-  /// `true` si la période active courante est l'essai gratuit (#281), pas une
-  /// période payée — voir server/utils/subscriptionStore.ts.
+  /// `true` si la période active est un essai gratuit.
   isTrial   Boolean            @default(false)
 
   payments Payment[]
 }
 
-/// Paiement Mobile Money lié à un abonnement — voir server/utils/paymentStore.ts (#32, #34).
+/// Paiement Mobile Money lié à un abonnement.
 model Payment {
   id             String          @id @default(uuid())
   subscriptionId String
@@ -372,72 +307,62 @@ model Payment {
   @@index([subscriptionId])
 }
 
-// ---------------------------------------------------------------------------
-// Cœur métier encore en mémoire (#46) : portefeuille, séquestre et messagerie.
-//
-// Ces modèles préparent la bascule des stores en mémoire correspondants
-// (walletStore, escrowOrderStore, conversationStore) vers la base — ils ne
-// sont pas encore lus/écrits par l'application (le wiring est un chantier de
-// suivi, à réaliser une fois la cible d'hébergement/base tranchée). Ils sont
-// modélisés fidèlement à la forme actuelle des stores pour servir de socle.
-// ---------------------------------------------------------------------------
+/// Portefeuille, séquestre et messagerie.
 
-/// Mouvement (append-only) du portefeuille interne — voir server/utils/walletStore.ts (#192).
-/// Le solde n'est jamais stocké : il se recalcule à partir de ces mouvements.
+/// Mouvement append-only du portefeuille interne.
+/// Le solde se recalcule à partir de ces mouvements.
 model WalletMovement {
   id                 String             @id @default(uuid())
-  /// Titulaire du portefeuille (id utilisateur, ou PLATFORM_WALLET_USER_ID pour la plateforme).
+  /// Titulaire du portefeuille, ou identifiant du portefeuille de la plateforme.
   walletUserId       String
   type               WalletMovementType
-  /// Toujours positif ; le sens (crédit/débit) dépend uniquement de `type`.
+  /// Montant toujours positif ; le sens dépend de `type`.
   amount             Int
-  /// Référence externe (id paiement mobile money) ou interne (id commande séquestre).
+  /// Référence d'un paiement externe ou d'une commande interne.
   reference          String
-  /// Autre utilisateur concerné quand pertinent (ex. le prestataire payé).
+  /// Autre utilisateur concerné, le cas échéant.
   counterpartyUserId String?
   createdAt          DateTime           @default(now())
 
   @@index([walletUserId])
 }
 
-/// Commande en séquestre liée à une conversation — voir server/utils/escrowOrderStore.ts (#194-#197).
+/// Commande en séquestre liée à une conversation.
 model EscrowOrder {
-  id            String            @id @default(uuid())
-  conversationId String           @unique
-  clientId      String
-  providerId    String
-  amount        Int
-  status        EscrowOrderStatus @default(awaiting_payment)
-  createdAt     DateTime          @default(now())
-  paidAt        DateTime?
-  deliveredAt   DateTime?
-  releasedAt    DateTime?
-  cancelledAt   DateTime?
-  /// Motif obligatoire de l'annulation prestataire (#196).
-  cancelReason  String?
-  disputedAt    DateTime?
-  /// Motif du litige ouvert par le chercheur (#197).
-  disputeReason String?
-  /// Preuves fournies par le chercheur à l'ouverture du litige (#274).
+  id                 String            @id @default(uuid())
+  conversationId     String            @unique
+  clientId           String
+  providerId         String
+  amount             Int
+  status             EscrowOrderStatus @default(awaiting_payment)
+  createdAt          DateTime          @default(now())
+  paidAt             DateTime?
+  deliveredAt        DateTime?
+  releasedAt         DateTime?
+  cancelledAt        DateTime?
+  /// Motif de l'annulation par le prestataire.
+  cancelReason       String?
+  disputedAt         DateTime?
+  /// Motif du litige ouvert par le chercheur.
+  disputeReason      String?
+  /// Preuves fournies à l'ouverture du litige.
   disputeEvidence    String?
-  /// Réponse du prestataire au litige (#274, « en médiation »).
+  /// Réponse du prestataire au litige.
   disputeResponse    String?
   disputeRespondedAt DateTime?
-  /// Preuve d'intervention in-app (#268) : arrivée puis départ du lieu.
-  /// La géolocalisation (lat/lng) est enregistrée quand le navigateur
-  /// l'autorise, sinon null — c'est l'existence des horodatages qui fait foi.
-  checkInAt     DateTime?
-  checkInLat    Float?
-  checkInLng    Float?
-  checkOutAt    DateTime?
-  checkOutLat   Float?
-  checkOutLng   Float?
+  /// Preuve d'intervention : arrivée puis départ du lieu.
+  /// Les coordonnées sont facultatives ; les horodatages font foi.
+  checkInAt          DateTime?
+  checkInLat         Float?
+  checkInLng         Float?
+  checkOutAt         DateTime?
+  checkOutLat        Float?
+  checkOutLng        Float?
 
   @@index([status])
 }
 
-/// Recharge du portefeuille via mobile money — voir server/utils/walletRechargeStore.ts (#193).
-/// Réutilise les enums PaymentProvider/PaymentStatus (mêmes valeurs que les paiements).
+/// Recharge du portefeuille via Mobile Money.
 model WalletRecharge {
   id          String          @id @default(uuid())
   userId      String
@@ -452,10 +377,8 @@ model WalletRecharge {
   @@index([userId])
 }
 
-/// Type de message d'un fil — voir server/utils/conversationStore.ts (#357, ADR 0013 étape 6).
-/// `order_confirmation`/`location_request`/`reschedule_request` sont des messages
-/// actionnables (voir Message.resolvedAt) ; `location_shared` porte des coordonnées
-/// (Message.locationLat/Lng) ; `text` est un message classique.
+/// Type de message d'un fil.
+/// Certains messages sont actionnables ou portent des coordonnées.
 enum MessageKind {
   text
   order_confirmation
@@ -464,26 +387,25 @@ enum MessageKind {
   reschedule_request
 }
 
-/// Émetteur d'un message — distinct de `Role` (User.role) : `system` désigne un
-/// message automatique WorkTogo, jamais un vrai compte (voir WORKTOGO_SYSTEM_SENDER_ID).
+/// Émetteur d'un message.
+/// `system` désigne un message automatique, jamais un compte utilisateur.
 enum MessageSenderRole {
   client
   prestataire
   system
 }
 
-/// Fil de messagerie entre un client et un prestataire — voir server/utils/conversationStore.ts (#59, #129).
+/// Fil de messagerie entre un client et un prestataire.
 model Conversation {
-  id               String    @id @default(uuid())
+  id               String   @id @default(uuid())
   clientId         String
   providerId       String
-  /// Formulaire obligatoire de première prise de contact déjà soumis (#129) ?
-  firstContactDone Boolean   @default(false)
-  /// Coordonnées brutes du chercheur transmises au premier contact (#129),
-  /// jamais exposées telles quelles dans un message avant validation finale
-  /// (`released`, #264 anti-fuite).
+  /// Indique si le formulaire de premier contact a été soumis.
+  firstContactDone Boolean  @default(false)
+  /// Coordonnées transmises au premier contact, masquées dans les messages
+  /// jusqu'à la validation finale.
   clientContact    String?
-  createdAt        DateTime  @default(now())
+  createdAt        DateTime @default(now())
 
   messages Message[]
   reads    ConversationRead[]
@@ -491,37 +413,33 @@ model Conversation {
   @@unique([clientId, providerId])
 }
 
-/// Message d'un fil de conversation — voir server/utils/conversationStore.ts (#59).
+/// Message d'un fil de conversation.
 model Message {
-  id             String            @id @default(uuid())
-  conversationId String
-  conversation   Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  senderId       String
-  senderRole     MessageSenderRole
-  /// Rendu tel quel pour un message libre (jamais traduit) ; pour un message
-  /// généré (`translationKey` non nul), sert de repli français si la clé ne
-  /// résout pas côté client — voir server/utils/conversationStore.ts.
-  body           String
-  kind           MessageKind       @default(text)
-  /// Clé i18n (#i18n) pour un message généré par WorkTogo ou par un modèle —
-  /// `null` pour un message libre tapé par un utilisateur, jamais traduit.
+  id                String            @id @default(uuid())
+  conversationId    String
+  conversation      Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId          String
+  senderRole        MessageSenderRole
+  /// Texte libre ou texte de repli français pour un message généré.
+  body              String
+  kind              MessageKind       @default(text)
+  /// Clé i18n d'un message généré ; `null` pour un message libre.
   translationKey    String?
-  /// Paramètres d'interpolation (JSON), significatifs seulement si
-  /// `translationKey` est non nul.
+  /// Paramètres d'interpolation sérialisés en JSON.
   translationParams String?
-  /// Coordonnées d'un message `location_shared`, sinon `null`.
-  locationLat    Float?
-  locationLng    Float?
-  /// Horodatage du créneau proposé pour un message `reschedule_request` (#270), sinon `null`.
-  proposedAt     DateTime?
-  /// Horodatage de la réponse à un message actionnable, sinon `null` (non résolu).
-  resolvedAt     DateTime?
-  createdAt      DateTime          @default(now())
+  /// Coordonnées d'un message `location_shared`.
+  locationLat       Float?
+  locationLng       Float?
+  /// Créneau proposé pour un message `reschedule_request`.
+  proposedAt        DateTime?
+  /// Date de résolution d'un message actionnable.
+  resolvedAt        DateTime?
+  createdAt         DateTime          @default(now())
 
   @@index([conversationId])
 }
 
-/// Dernière lecture d'un fil par un utilisateur (compteur de non-lus, #225).
+/// Dernière lecture d'un fil par un utilisateur.
 model ConversationRead {
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -531,9 +449,8 @@ model ConversationRead {
   @@id([conversationId, userId])
 }
 
-/// Favori client → prestataire (#65, #357). Pas de clé étrangère : un
-/// prestataire peut être une fiche de l'annuaire de démonstration (pas un
-/// compte User). La clé primaire composite garantit l'idempotence.
+/// Favori client-prestataire.
+/// La clé primaire composite garantit l'idempotence.
 model Favorite {
   clientId   String
   providerId String
@@ -543,8 +460,8 @@ model Favorite {
   @@index([clientId])
 }
 
-/// Réclamation déposée depuis /reclamation (#357). Pas de clé étrangère :
-/// `userId` est null pour une réclamation déposée sans compte connecté.
+/// Réclamation déposée depuis le formulaire public.
+/// `userId` est nul lorsqu'elle est déposée sans compte connecté.
 model Complaint {
   id           String   @id @default(uuid())
   category     String
@@ -554,34 +471,28 @@ model Complaint {
   userId       String?
   createdAt    DateTime @default(now())
 
-  /// Suivi support depuis le dashboard admin (#admin). Additif et non-breaking :
-  /// la page publique /reclamation ne lit jamais ces champs. `status` ∈
-  /// nouveau | en_cours | resolu. `adminNote` = note interne (jamais exposée
-  /// publiquement). `handledAt`/`handledById` renseignés à la résolution.
+  /// Suivi interne du traitement de la réclamation.
+  /// `adminNote` n'est jamais exposée publiquement.
   status      String    @default("nouveau")
   adminNote   String?
   handledAt   DateTime?
   handledById String?
 }
 
-/// Journal des tentatives de contournement détectées dans la messagerie
-/// (#265, #357) — pour identifier des comptes récidivistes côté support.
+/// Journal des tentatives de contournement détectées dans la messagerie.
 model ContournementAttempt {
   id             String   @id @default(uuid())
   conversationId String
   userId         String
   reason         String
-  /// Extrait tronqué du message bloqué (audit) — jamais le message intégral.
+  /// Extrait tronqué du message bloqué, jamais le message intégral.
   excerpt        String
   createdAt      DateTime @default(now())
 
   @@index([userId])
 }
 
-/// Avis libre affiché sur la page d'accueil (#357). Distinct des notations de
-/// collaboration (modèle Review) : n'importe quel visiteur peut partager son
-/// expérience générale, sans compte ni conversation. Les avis d'exemple
-/// (seeds) restent des constantes de code, fusionnés à la lecture.
+/// Avis libre affiché sur la page d'accueil, sans compte ni conversation.
 model Testimonial {
   id        String   @id @default(uuid())
   name      String
@@ -590,70 +501,51 @@ model Testimonial {
   rating    Int
   createdAt DateTime @default(now())
 
-  /// Modération admin (#admin) : masque l'avis de la page d'accueil sans le
-  /// supprimer. Additif et non-breaking (défaut `false` = visible comme avant).
-  /// Filtré par server/utils/testimonialStore.ts#listTestimonials.
-  hidden    Boolean  @default(false)
+  /// Masque l'avis de la page d'accueil sans le supprimer.
+  hidden Boolean @default(false)
 }
 
-/// Type d'événement notifié — un seul cas pour l'instant (#360, premier
-/// incrément) ; les événements paiement/escrow/litige de l'issue restent à
-/// ajouter dans un incrément ultérieur, même patron que les autres enums
-/// d'événement (MessageKind).
+/// Type d'événement notifié.
 enum NotificationType {
   new_message
-  /// Mise à jour d'un litige escrow (réponse du prestataire, résolution) — voir escrowDisputeResolution.ts.
+  /// Mise à jour d'un litige (réponse du prestataire ou résolution).
   dispute_update
-  /// Message/annonce de l'équipe WorkTogo depuis un dashboard admin (desktop
-  /// #admin ou web #dashboard-admin) — sans conversation liée (conversationId null).
+  /// Message ou annonce de l'équipe WorkTogo, sans conversation liée.
   admin_message
 }
 
-/// Notification in-app (#360, centre de notifications — premier incrément :
-/// nouveau message reçu, côté chercheur comme prestataire). Pas de clé
-/// étrangère vers User (même choix que Favorite/Complaint) : `userId` peut
-/// référencer un compte réel ou, côté prestataire, un id de l'annuaire de
-/// démo tant que ce dernier n'est pas remplacé par de vrais comptes (voir
-/// conversationStore.ts).
+/// Notification in-app.
 model Notification {
   id             String           @id @default(uuid())
   userId         String
   type           NotificationType
   title          String
   body           String
-  /// Conversation à ouvrir au clic, quand pertinent (toujours le cas pour `new_message`).
+  /// Conversation à ouvrir au clic, le cas échéant.
   conversationId String?
-  /// `null` tant que non lue.
+  /// `null` tant que la notification n'est pas lue.
   readAt         DateTime?
   createdAt      DateTime         @default(now())
 
   @@index([userId, readAt])
 }
 
-/// Nonces de webhook déjà consommés (#355, audit M3). Persistés en base pour
-/// que l'anti-rejeu des paiements/recharges survive aux redémarrages et reste
-/// valable en multi-process (l'ancien registre en mémoire supposait un unique
-/// process PM2). Le `nonce` en clé primaire fait de la détection de rejeu une
-/// simple insertion : un doublon échoue sur la contrainte d'unicité. Les
-/// entrées expirées (au-delà de la fenêtre de fraîcheur) sont purgées à chaque
-/// consommation — voir server/utils/webhookSignature.ts.
+/// Nonce de webhook déjà consommé.
+/// La clé primaire permet de détecter les rejeux par insertion unique.
 model WebhookNonce {
   nonce     String   @id
-  /// Instant au-delà duquel le nonce peut être purgé (fin de la fenêtre anti-rejeu).
+  /// Instant à partir duquel le nonce peut être purgé.
   expiresAt DateTime
 
   @@index([expiresAt])
 }
 
-/// Compteur de débit de l'assistant IA par fenêtre fixe (#geoloc 2.2, audit
-/// M4). Remplace le registre en mémoire pour que la limite soit partagée entre
-/// instances et survive aux déploiements. Une ligne par (clé, début de
-/// fenêtre) ; `count` est incrémenté atomiquement à chaque requête. Les
-/// fenêtres périmées sont purgées à la volée — voir server/utils/aiRateLimiter.ts.
+/// Compteur de débit de l'assistant IA par fenêtre fixe.
+/// Une ligne est créée par clé et début de fenêtre.
 model AiRateWindow {
-  /// Utilisateur connecté (`userId`) ou visiteur anonyme (`anon:<ip>`).
+  /// Utilisateur connecté ou visiteur anonyme.
   key         String
-  /// Début de la fenêtre fixe (aligné sur `WINDOW_MS`).
+  /// Début de la fenêtre fixe.
   windowStart DateTime
   count       Int      @default(0)
 
@@ -661,14 +553,9 @@ model AiRateWindow {
   @@index([windowStart])
 }
 
-// ---------------------------------------------------------------------------
-// Dashboard admin (#dashboard-admin) — modèles entièrement nouveaux, propriété
-// exclusive de l'espace /admin. Voir docs/admin-dashboard.md pour le détail des
-// modules et de ce qui est réellement branché vs isolé en attente de bascule.
-// ---------------------------------------------------------------------------
+/// Données du dashboard d'administration.
 
-/// Journal d'audit horodaté de toute action sensible effectuée depuis /admin
-/// (qui, quoi, quand, sur quelle ressource) — module Paramètres.
+/// Journal horodaté des actions sensibles effectuées par un administrateur.
 model AuditLog {
   id         String   @id @default(uuid())
   actorId    String
@@ -676,7 +563,7 @@ model AuditLog {
   action     String
   targetType String
   targetId   String?
-  /// Détail libre (JSON sérialisé) : motif, montant, ancien/nouveau statut...
+  /// Détail complémentaire sérialisé en JSON.
   metadata   String?
   createdAt  DateTime @default(now())
 
@@ -684,10 +571,8 @@ model AuditLog {
   @@index([createdAt])
 }
 
-/// Période d'indisponibilité déclarée par un prestataire (#290) — voir
-/// server/utils/providerAvailabilityStore.ts. Sans période, le prestataire est
-/// disponible par défaut. Dates ISO `AAAA-MM-JJ`, bornes incluses. Pas de clé
-/// étrangère (`providerId` peut être un id d'annuaire de démo).
+/// Période d'indisponibilité déclarée par un prestataire.
+/// Les dates sont au format ISO `AAAA-MM-JJ`, bornes incluses.
 model UnavailabilityPeriod {
   id         String   @id @default(uuid())
   providerId String
@@ -698,11 +583,8 @@ model UnavailabilityPeriod {
   @@index([providerId])
 }
 
-/// Vérification d'identité (#180+1) — voir server/utils/verificationStore.ts.
-/// Une soumission par utilisateur (clé = `userId`), auto-certifiante. Pas de clé
-/// étrangère (même choix que Favorite/Complaint/Review). Minimisation des données
-/// (#286) : les images (data URL base64) sont effacées passé le délai de
-/// conservation (`purgedAt` renseigné), sans jamais retirer le statut « Vérifié ».
+/// Vérification d'identité, limitée à une soumission par utilisateur.
+/// Les images sont supprimées après la période de conservation.
 model Verification {
   userId             String    @id
   idCardImage        String?
@@ -711,11 +593,8 @@ model Verification {
   purgedAt           DateTime?
 }
 
-/// Décision admin sur une vérification d'identité (#dashboard-admin, module
-/// Prestataires/Chercheurs) — un refus révoque réellement le badge vérifié
-/// (voir server/utils/verificationStore.ts:deleteVerification), une validation
-/// trace la confirmation sans changer le comportement d'auto-certification
-/// existant. Historique conservé (plusieurs décisions possibles par utilisateur).
+/// Décision administrative sur une vérification d'identité.
+/// Plusieurs décisions peuvent être conservées pour un même utilisateur.
 model KycDecision {
   id         String            @id @default(uuid())
   userId     String
@@ -727,8 +606,7 @@ model KycDecision {
   @@index([userId])
 }
 
-/// Note interne visible seulement par l'équipe WorkTogo (#dashboard-admin,
-/// modules Missions/Prestataires/Chercheurs) — jamais exposée aux utilisateurs.
+/// Note interne, jamais exposée aux utilisateurs.
 model AdminNote {
   id          String   @id @default(uuid())
   targetType  String
@@ -741,13 +619,7 @@ model AdminNote {
   @@index([targetType, targetId])
 }
 
-/// Formule d'abonnement prestataire éditable depuis /admin (#dashboard-admin,
-/// module Abonnements & tarification) — table jusque-là inexistante : les
-/// formules réellement proposées au checkout restent app/data/plans.ts
-/// (PLANS, statique, lu de façon synchrone par server/api/subscriptions et par
-/// /abonnement). Ce modèle donne un vrai CRUD admin ; le rebranchement du
-/// checkout dessus est un chantier séparé (rendrait `findPlan` asynchrone,
-/// utilisé en synchrone à plusieurs endroits).
+/// Formule d'abonnement éditable par l'administration.
 model SubscriptionPlanConfig {
   id             String   @id @default(uuid())
   slug           String   @unique
@@ -755,16 +627,14 @@ model SubscriptionPlanConfig {
   priceAmount    Int
   durationDays   Int
   commissionRate Float    @default(0.10)
-  /// Avantages affichés, un par ligne (texte libre).
+  /// Avantages affichés, un par ligne.
   features       String
   active         Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
 
-/// Code promo (#dashboard-admin, module Abonnements & tarification) — pas encore
-/// consommé par le flux de paiement existant (server/api/payments), qui n'a
-/// aucune notion de remise ; CRUD admin réel en attendant le branchement.
+/// Code promotionnel.
 model Coupon {
   id            String    @id @default(uuid())
   code          String    @unique
@@ -777,10 +647,8 @@ model Coupon {
   createdAt     DateTime  @default(now())
 }
 
-/// Réglages généraux de la plateforme (#dashboard-admin, module Paramètres) —
-/// ligne unique (`id = 1`). Lus par le dashboard admin ; pas encore branchés
-/// sur les valeurs actuellement codées en dur ailleurs (ex. ESCROW_COMMISSION_RATE,
-/// TACIT_VALIDATION_DELAY_MS) — voir docs/admin-dashboard.md.
+/// Réglages généraux de la plateforme.
+/// Une seule ligne est conservée (`id = 1`).
 model PlatformSettings {
   id                       Int      @id @default(1)
   geoRadiusKm              Int      @default(15)
@@ -793,9 +661,7 @@ model PlatformSettings {
   updatedAt                DateTime @updatedAt
 }
 
-/// État de modération d'un avis (#dashboard-admin, module Avis) — clé sur
-/// `reviewId` (id du store en mémoire server/utils/reviewStore.ts, stable pour
-/// la durée de vie du process ; voir docs/admin-dashboard.md pour la portée).
+/// État de modération d'un avis.
 model ReviewModeration {
   reviewId     String    @id
   hidden       Boolean   @default(false)
@@ -806,9 +672,7 @@ model ReviewModeration {
   updatedAt    DateTime  @updatedAt
 }
 
-/// Signalement anti-désintermédiation marqué comme faux positif par un admin
-/// (#dashboard-admin, module Anti-désintermédiation) — exclu du score de risque
-/// calculé à la volée à partir de ContournementAttempt.
+/// Signalement anti-désintermédiation marqué comme faux positif.
 model RiskFalsePositive {
   userId   String   @id
   markedBy String
@@ -816,10 +680,7 @@ model RiskFalsePositive {
   note     String?
 }
 
-/// Bloc de contenu éditable des pages publiques (accueil, FAQ, CGU) —
-/// (#dashboard-admin, module Catégories & contenu). CRUD admin réel ; les pages
-/// publiques concernées (app/data/legalPages, /faq) restent statiques pour
-/// l'instant — voir docs/admin-dashboard.md.
+/// Bloc de contenu éditable des pages publiques.
 model SiteContent {
   key       String   @id
   label     String
@@ -827,11 +688,7 @@ model SiteContent {
   updatedAt DateTime @updatedAt
 }
 
-/// Question de fiche préalable propre à une catégorie de service
-/// (#dashboard-admin, module Catégories & contenu). CRUD admin réel ; le
-/// formulaire de première prise de contact (server/utils/requestStore.ts,
-/// conversationStore.ts) reste générique pour l'instant — voir
-/// docs/admin-dashboard.md.
+/// Question préalable propre à une catégorie de service.
 model PrealableQuestion {
   id       String  @id @default(uuid())
   sectorId String
@@ -843,11 +700,7 @@ model PrealableQuestion {
   @@index([sectorId])
 }
 
-/// Modèle de message automatique éditable (#dashboard-admin, module
-/// Notifications & campagnes) — ex. confirmation de paiement, rappel de
-/// validation, expiration d'abonnement. CRUD admin réel ; les messages
-/// système actuellement envoyés (ex. server/utils/escrowOrderStore.ts) restent
-/// des chaînes en dur — voir docs/admin-dashboard.md.
+/// Modèle de message automatique éditable.
 model MessageTemplate {
   key       String   @id
   label     String
@@ -857,12 +710,7 @@ model MessageTemplate {
   updatedAt DateTime @updatedAt
 }
 
-/// Campagne de notification envoyée à un segment d'utilisateurs
-/// (#dashboard-admin, module Notifications & campagnes). Le canal `in_app`
-/// crée réellement des lignes Notification (server/utils/notificationStore.ts)
-/// pour chaque destinataire du segment ; `email`/`sms`/`push` et le taux
-/// d'ouverture sont enregistrés mais non délivrés (aucun fournisseur externe
-/// intégré dans ce lot) — voir docs/admin-dashboard.md.
+/// Campagne de notification envoyée à un segment d'utilisateurs.
 model NotificationCampaign {
   id             String    @id @default(uuid())
   segment        String

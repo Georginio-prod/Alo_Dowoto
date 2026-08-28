@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express'
 import { badRequest, notFound } from '../utils/apiError'
 import { providerProfileService, resolveRequiredOnboardingFields } from '../services/providerProfileService'
+import { authUser } from '../utils/authUser'
 import type { PatchProviderInput } from '../validation/schemas/providers'
 
 /**
@@ -11,12 +12,12 @@ import type { PatchProviderInput } from '../validation/schemas/providers'
 
 /** GET /api/providers/me → { profile } (ou null). */
 export async function getMyProfile(req: Request, res: Response): Promise<void> {
-  res.json({ profile: await providerProfileService.getProviderProfile(req.user!.id) })
+  res.json({ profile: await providerProfileService.getProviderProfile(authUser(req).id) })
 }
 
 /** PATCH /api/providers/me → { profile }. Secteur/onboarding obligatoires validés ici. */
 export async function patchMyProfile(req: Request, res: Response): Promise<void> {
-  const user = req.user!
+  const user = authUser(req)
   const body = req.body as PatchProviderInput
 
   const existing = await providerProfileService.getProviderProfile(user.id)
@@ -62,7 +63,7 @@ export async function patchMyProfile(req: Request, res: Response): Promise<void>
 
 /** DELETE /api/providers/me/position → { profile } (404 si pas de profil). */
 export async function deleteMyPosition(req: Request, res: Response): Promise<void> {
-  const updated = await providerProfileService.clearProviderPosition(req.user!.id)
+  const updated = await providerProfileService.clearProviderPosition(authUser(req).id)
   if (!updated) notFound('Profil prestataire introuvable.')
   res.json({ profile: updated })
 }

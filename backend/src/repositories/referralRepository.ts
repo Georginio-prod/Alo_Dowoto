@@ -7,14 +7,42 @@ import { prisma } from '../config/prisma'
  * au compte (code de parrainage, filleul) passent par `userRepository`.
  */
 export interface ReferralRepository {
+  /**
+   * Enregistre un parrainage à l'inscription (#365) — appelé uniquement à la
+   * création d'un compte quand un code de parrainage valide a été fourni.
+   * Auto-parrainage impossible par construction : le compte n'existe pas encore
+   * quand son propre code serait vérifié. Iso `referralStore.createReferral`.
+   */
+  create(referrerId: string, referredId: string): Promise<void>
   /** Filleuls d'un parrain, du plus récent au plus ancien. */
   findByReferrer(referrerId: string): Promise<Referral[]>
+  /** Parrainage dont `referredId` est le filleul (relation 1-1), ou `null`. */
+  findByReferred(referredId: string): Promise<Referral | null>
+  /**
+   * Passe un parrainage `pending` à `rewarded` (idempotent via
+   * `where: { status: 'pending' }`) et renvoie le nombre de lignes affectées :
+   * 0 = déjà récompensé (double confirmation concurrente).
+   */
+  markRewarded(id: string): Promise<number>
 }
 
 export function createReferralRepository(db: PrismaClient): ReferralRepository {
   return {
+    async create(referrerId, referredId) {
+      await db.referral.create({ data: { referrerId, referredId } })
+    },
     findByReferrer(referrerId) {
       return db.referral.findMany({ where: { referrerId }, orderBy: { createdAt: 'desc' } })
+    },
+    findByReferred(referredId) {
+      return db.referral.findUnique({ where: { referredId } })
+    },
+    async markRewarded(id) {
+      const result = await db.referral.updateMany({
+        where: { id, status: 'pending' },
+        data: { status: 'rewarded', rewardedAt: new Date() },
+      })
+      return result.count
     },
   }
 }

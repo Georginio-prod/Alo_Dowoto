@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { referralRepository, type ReferralRepository } from '../repositories/referralRepository'
 import { userRepository, type UserRepository } from '../repositories/userRepository'
+import { walletMovementRepository, type WalletMovementRepository } from '../repositories/walletMovementRepository'
 
 /**
  * Programme de parrainage (#365). Logique **portée iso** depuis
@@ -35,9 +36,14 @@ export interface ReferralDashboard {
   referrals: ReferralDashboardItem[]
 }
 
+export type RewardReferralResult =
+  | { rewarded: false }
+  | { rewarded: true; referrerId: string }
+
 export function createReferralService(
   repo: ReferralRepository = referralRepository,
   users: UserRepository = userRepository,
+  wallet: WalletMovementRepository = walletMovementRepository,
 ) {
   async function generateUniqueReferralCode(): Promise<string> {
     for (let attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt++) {
@@ -59,6 +65,38 @@ export function createReferralService(
 
   return {
     getOrCreateReferralCode,
+
+    /**
+     * Lie un nouveau compte à son parrain à l'inscription (#365), à partir du
+     * code saisi. Silencieux si le code est absent ou invalide : un code erroné
+     * ne doit jamais bloquer une inscription. Iso `userStore.findOrCreateUser`
+     * (bloc parrainage) + `referralStore.findUserIdByReferralCode`.
+     */
+    async linkReferralAtSignup(referredByCode: string | undefined, referredId: string): Promise<void> {
+      const trimmed = referredByCode?.trim().toUpperCase()
+      if (!trimmed) return
+      const referrer = await users.findByReferralCode(trimmed)
+      if (referrer) await repo.create(referrer.id, referredId)
+    },
+
+    /**
+     * Récompense le parrainage d'un filleul à son **premier paiement réel**
+     * (#365) : crédite le bonus au parrain ET au filleul, une seule fois
+     * (idempotent). Sans effet si l'utilisateur n'a pas été parrainé ou si son
+     * parrainage est déjà récompensé. Iso `referralStore.rewardReferralIfPending`.
+     */
+    async rewardReferralIfPending(referredUserId: string): Promise<RewardReferralResult> {
+      const referral = await repo.findByReferred(referredUserId)
+      if (!referral || referral.status !== 'pending') return { rewarded: false }
+
+      const count = await repo.markRewarded(referral.id)
+      if (count === 0) return { rewarded: false }
+
+      await wallet.credit({ walletUserId: referral.referrerId, type: 'referral_bonus', amount: REFERRAL_BONUS_AMOUNT, reference: referral.id, counterpartyUserId: referral.referredId })
+      await wallet.credit({ walletUserId: referral.referredId, type: 'referral_bonus', amount: REFERRAL_BONUS_AMOUNT, reference: referral.id, counterpartyUserId: referral.referrerId })
+
+      return { rewarded: true, referrerId: referral.referrerId }
+    },
     /** Réponse complète de `GET /api/referrals/me`, iso au handler Nitro. */
     async getDashboard(userId: string): Promise<ReferralDashboard> {
       const [referralCode, referrals] = await Promise.all([

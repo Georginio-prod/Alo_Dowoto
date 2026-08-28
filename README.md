@@ -61,8 +61,8 @@ cd backend
 cp .env.example .env         # DATABASE_URL pointe déjà sur le conteneur (port 5433)
 npm install
 npm run prisma:generate      # génère le client Prisma
-npm run prisma:push          # applique le schéma à la base (aucun modèle pour l'instant)
-npm run dev                  # http://localhost:3001/health  (et /health/db pour la base)
+npm run prisma:push          # applique le schéma backend à la base
+npm run dev                  # http://localhost:3001/health (et /api/docs pour la doc OpenAPI)
 ```
 
 ## Bases de données (état transitoire)
@@ -99,8 +99,9 @@ instantanément à Nitro (rollback sans redéploiement).
 npm test                 # unitaires Vitest (dont tests/http/** et tests/contract/**)
 npm run test:e2e         # parcours Playwright (vraie instance Nuxt, base SQLite jetable)
 
-# Backend
-npm --prefix backend test   # Vitest (santé + connexion Prisma si Postgres démarré)
+# Backend (nécessite le conteneur Postgres démarré — cf. étape 2)
+npm --prefix backend run lint       # ESLint (config backend, règle des 300 lignes)
+npm --prefix backend test           # Vitest + supertest (tests d'intégration HTTP)
 ```
 
 Le harnais [`tests/contract/`](tests/contract/README.md) fige le comportement de
@@ -119,7 +120,8 @@ l'API Nitro actuelle et sera rejoué contre le backend pour garantir l'iso-fonct
 | Commande (`backend/`) | Rôle |
 | --- | --- |
 | `npm run dev` / `build` / `start` | Dev (tsx watch) / build tsc / lancer le build |
-| `npm run typecheck` / `test` | Types / tests Vitest |
+| `npm run lint` / `lint:fix` | ESLint (config `backend/eslint.config.mjs`, règle des 300 lignes) |
+| `npm run typecheck` / `test` | Types (`tsc --noEmit`) / tests Vitest + supertest |
 | `npm run prisma:generate` / `prisma:push` / `prisma:migrate` | Prisma (Postgres) |
 
 ## Structure du dépôt
@@ -152,6 +154,8 @@ docs/
   `fix/…`, `chore/…`, `docs/…`) — jamais de travail directement sur `develop`.
 - **Commits** : [Conventional Commits + gitmoji](.github/commit-conventions.md)
   (ex. `feat: ✨ …`, `fix: 🐛 …`), atomiques.
-- Ouvrir une **Pull Request vers `develop`**. La CI (lint, typecheck, tests,
-  build, Danger sur la taille de PR) doit être verte avant fusion ; `develop`
-  déploie en staging, `master` en production.
+- Ouvrir une **Pull Request vers `develop`**. Les CI doivent être vertes avant
+  fusion : **Frontend CI** (`ci.yml` — lint ESLint + Markdown, typecheck, tests,
+  build Nuxt), **Backend CI** (`backend-ci.yml` — lint, typecheck, tests
+  d'intégration, build, path-filtrée sur `backend/**`), **Playwright** (E2E) et
+  **Danger** (taille de PR). `develop` déploie en staging, `master` en production.

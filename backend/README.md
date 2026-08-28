@@ -25,7 +25,26 @@ sécurité `tests/contract/`.
 >   `DELETE /api/providers/availability/:id` (#290). Reste la **découverte publique**
 >   `search`/`[id]`/`featured` (×3) : elle embarque l'annuaire complet
 >   (`providerDirectory` ~490 l + géo + `matchingEngine` + dataset démo) — gros
->   morceau à porter séparément.
+>   morceau à porter séparément ;
+> - **notations reçues** (`GET /api/reviews/me`, auth requise) — moyenne/nombre
+>   d'avis reçus ;
+> - **vérification d'identité** (`GET /api/verification/me`, `POST /api/verification`,
+>   auth requise) — auto-certification + minimisation des données/rétention #286 ;
+> - **portefeuille** (5/6 routes) : `GET /api/wallet/me`, `POST /api/wallet/recharge`,
+>   `GET /api/wallet/recharge/:id`, `POST /api/wallet/withdraw` (rôle prestataire),
+>   `POST /api/wallet/webhook` (public, **signature HMAC + anti-rejeu #355**).
+>   Reste le **reçu PDF** `GET /api/wallet/movements/:id/receipt` (#363), différé :
+>   il dépend de `pdfkit` + i18n côté backend (ajout de dépendances) → lot séparé ;
+> - **compte RGPD** (#286, auth requise) : `GET /api/account/export` (portabilité,
+>   jamais les images) et `POST /api/account/delete` (anonymisation +
+>   purge vérification + déconnexion). Débloqué par le portage de `wallet`
+>   (`export` dépendait de `getBalance`) ;
+> - **paiements** (4/5 routes, #34) : `POST /api/payments/initiate` (rôle
+>   prestataire), `GET /api/payments/me`, `GET /api/payments/:id`,
+>   `POST /api/payments/webhook` (public, **HMAC + anti-rejeu**). À la
+>   confirmation : **activation de l'abonnement** + **récompense du parrainage**
+>   (#365, crédit portefeuille des deux côtés). Reste le **reçu PDF**
+>   `GET /api/payments/:id/receipt` (#363), différé (pdfkit + i18n) → lot séparé.
 >
 > **Annuaire prestataires : DÉBLOQUÉ.** Les trois stores dont il dépendait
 > (`reviewStore`, `verificationStore`, `providerAvailabilityStore`) sont désormais
@@ -38,7 +57,7 @@ sécurité `tests/contract/`.
 > **Restent bloqués** par leurs stores en mémoire respectifs : `quotas`,
 > `requests`, `assistant` (à persister le jour où ces domaines seront portés).
 >
-> Reste ~177 routes à porter (dont admin=101).
+> Reste ~163 routes à porter (dont admin=101).
 
 ## Structure
 
@@ -118,8 +137,12 @@ npm run build && npm start
   > ⚠️ Ces gardes interrogent la base **du backend** (Postgres). Les sessions
   > réelles des utilisateurs vivent encore dans la base **SQLite de l'app** :
   > l'auth n'authentifiera les vrais comptes qu'**après la convergence des bases**.
-- Workflows CI par section (`backend-code-quality.yml`, `backend-vitest.yml`).
-- ESLint/Prettier propres au sous-projet.
+- ✅ **CI dédiée** : `.github/workflows/backend-ci.yml` (lint → typecheck → tests
+  d'intégration → build), path-filtrée sur `backend/**`, avec service PostgreSQL
+  pour la base de test isolée (voir `docs/deployment.md`).
+- ✅ **ESLint propre au sous-projet** : `backend/eslint.config.mjs` (flat config
+  Node/TS, sans Nuxt/Vue ; règle des 300 lignes, `no-explicit-any`,
+  `no-non-null-assertion`… alignées sur la racine). `npm --prefix backend run lint`.
 - ✅ **Doc OpenAPI** (Swagger) : `/api/docs`, générée depuis les annotations
   `@openapi` des routes (`src/config/swagger.ts`).
 - Migration domaine par domaine, chaque domaine validé par `tests/contract`.

@@ -13,6 +13,14 @@ export interface AppEnv {
   isProd: boolean
   /** Expose la doc OpenAPI (`/api/docs`). Par défaut : activée hors production. */
   docsEnabled: boolean
+  /**
+   * Relais de mises à jour du dashboard desktop (#Electron auto-update) : jeton
+   * GitHub lecture seule et dépôt privé des releases. Noms d'env conservés
+   * depuis Nitro (`NUXT_GITHUB_UPDATE_*`) pour une migration sans reconfiguration,
+   * avec repli sur les noms non préfixés.
+   */
+  githubUpdateToken: string
+  githubUpdateRepo: string
 }
 
 function parseBool(raw: string | undefined, fallback: boolean): boolean {
@@ -37,4 +45,7 @@ export const env: AppEnv = {
   sentryDsn: process.env.SENTRY_DSN || undefined,
   isProd: nodeEnv === 'production',
   docsEnabled: parseBool(process.env.API_DOCS_ENABLED, nodeEnv !== 'production'),
+  githubUpdateToken: process.env.NUXT_GITHUB_UPDATE_TOKEN ?? process.env.GITHUB_UPDATE_TOKEN ?? '',
+  githubUpdateRepo:
+    process.env.NUXT_GITHUB_UPDATE_REPO ?? process.env.GITHUB_UPDATE_REPO ?? 'Nova2026-graphik/worktogo-admin',
 }

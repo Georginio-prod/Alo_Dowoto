@@ -21,8 +21,9 @@
 - **Husky** : `pre-commit` lance `lint-staged` (ESLint + markdownlint sur les
   fichiers indexés) ; `pre-push` lance `npm run lint:md` (lint de la doc — le
   lint du code est assuré par la CI et le `pre-commit`).
-- **Un workflow par section** (filtré par chemin) une fois le dépôt découpé en
-  `app/` + `backend/`.
+- **Un workflow par section** : `ci.yml` (frontend Nuxt) et `backend-ci.yml`
+  (backend Express, **path-filtré sur `backend/**`**). Chacun lance ses propres
+  lint / typecheck / test / build. Voir [`docs/deployment.md`](docs/deployment.md).
 
 ## Commandes de validation
 
@@ -41,5 +42,12 @@ Markdown / documentation :
 npm run lint:md
 ```
 
-Après le découpage, chaque section (`app/`, `backend/`) exécute ses propres
-`lint` / `typecheck` (ou `tsc`) / `test` / `build` depuis son dossier.
+Backend Express (sous-projet `backend/`, nécessite le conteneur Postgres pour
+les tests — `docker compose up -d postgres`) :
+
+```bash
+npm --prefix backend run lint
+npm --prefix backend run typecheck
+npm --prefix backend run test
+npm --prefix backend run build
+```

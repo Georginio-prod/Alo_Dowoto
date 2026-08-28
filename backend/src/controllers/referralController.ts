@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express'
+import { authUser } from '../utils/authUser'
 import { referralService } from '../services/referralService'
 
 /**
@@ -8,5 +9,5 @@ import { referralService } from '../services/referralService'
  * à la volée s'il n'existe pas), le montant du bonus et le tableau de suivi.
  */
 export async function getMyReferrals(req: Request, res: Response): Promise<void> {
-  res.json(await referralService.getDashboard(req.user!.id))
+  res.json(await referralService.getDashboard(authUser(req).id))
 }
