@@ -9,6 +9,7 @@ import { prisma } from '../config/prisma'
  */
 export interface SubscriptionRepository {
   findByUserId(userId: string): Promise<Subscription | null>
+  findById(id: string): Promise<Subscription | null>
   update(id: string, data: Parameters<PrismaClient['subscription']['update']>[0]['data']): Promise<Subscription>
   create(data: Parameters<PrismaClient['subscription']['create']>[0]['data']): Promise<Subscription>
 }
@@ -17,6 +18,9 @@ export function createSubscriptionRepository(db: PrismaClient): SubscriptionRepo
   return {
     findByUserId(userId) {
       return db.subscription.findFirst({ where: { userId } })
+    },
+    findById(id) {
+      return db.subscription.findUnique({ where: { id } })
     },
     update(id, data) {
       return db.subscription.update({ where: { id }, data })
