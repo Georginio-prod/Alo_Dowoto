@@ -58,6 +58,16 @@ export const swaggerSpec = swaggerJsdoc({
             data: { type: 'object', additionalProperties: true, nullable: true },
           },
         },
+        /** Usage d'un compteur de quota mensuel (`services/quotaService.ts`). `limit` `null` = illimité. */
+        QuotaUsage: {
+          type: 'object',
+          required: ['count', 'month'],
+          properties: {
+            count: { type: 'integer' },
+            limit: { type: 'integer', nullable: true },
+            month: { type: 'string', example: '2026-08' },
+          },
+        },
         /** Mouvement de portefeuille (`repositories/walletMovementRepository.ts`). `amount` toujours positif ; sens selon `type`. */
         WalletMovement: {
           type: 'object',
