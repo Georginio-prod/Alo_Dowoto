@@ -1,3 +1,5 @@
+import type { Review as PrismaReview } from '@prisma/client'
+import { conflict } from '../utils/apiError'
 import { reviewRepository, type ReviewRepository } from '../repositories/reviewRepository'
 
 /**
@@ -10,6 +12,28 @@ export interface RatingSummary {
   count: number
 }
 
+export interface Review {
+  id: string
+  conversationId: string
+  authorId: string
+  targetId: string
+  rating: number
+  comment: string | null
+  createdAt: number
+}
+
+function toReview(row: PrismaReview): Review {
+  return {
+    id: row.id,
+    conversationId: row.conversationId,
+    authorId: row.authorId,
+    targetId: row.targetId,
+    rating: row.rating,
+    comment: row.comment,
+    createdAt: row.createdAt.getTime(),
+  }
+}
+
 export function createReviewService(repo: ReviewRepository = reviewRepository) {
   return {
     /** Moyenne et nombre d'avis reçus par `targetId` (0/0 si aucun avis). */
@@ -19,6 +43,22 @@ export function createReviewService(repo: ReviewRepository = reviewRepository) {
 
       const total = reviews.reduce((sum, review) => sum + review.rating, 0)
       return { average: total / reviews.length, count: reviews.length }
+    },
+
+    /**
+     * Soumet une notation pour la collaboration `conversationId`. Refuse une
+     * seconde notation du même auteur (409, unicité #61). Iso `submitReview`.
+     */
+    async submitReview(conversationId: string, authorId: string, targetId: string, rating: number, comment?: string): Promise<Review> {
+      const existing = await repo.findByConversationAuthor(conversationId, authorId)
+      if (existing) conflict('Vous avez déjà noté cette collaboration.')
+      const row = await repo.create({ conversationId, authorId, targetId, rating, comment: comment?.trim() || null })
+      return toReview(row)
+    },
+
+    /** Indique si `authorId` a déjà noté la collaboration `conversationId`. */
+    async hasReviewed(conversationId: string, authorId: string): Promise<boolean> {
+      return (await repo.findByConversationAuthor(conversationId, authorId)) !== null
     },
   }
 }
