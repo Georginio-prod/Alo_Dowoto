@@ -5,7 +5,7 @@ import { validateBody } from '../validation/validate'
 import { addAvailabilitySchema, patchProviderSchema } from '../validation/schemas/providers'
 import { addAvailability, deleteAvailability, listAvailability } from '../controllers/availabilityController'
 import { deleteMyPosition, getMyProfile, patchMyProfile } from '../controllers/providerController'
-import { featuredProviders, searchProvidersHandler } from '../controllers/providerDirectoryController'
+import { featuredProviders, providerDetail, searchProvidersHandler } from '../controllers/providerDirectoryController'
 
 /**
  * Domaine « prestataires » (#290 pour la partie disponibilité), porté depuis
@@ -140,3 +140,26 @@ providersRoutes.post('/providers/availability', requireProviderRole, validateBod
  *       404: { description: Période introuvable., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
  */
 providersRoutes.delete('/providers/availability/:id', requireProviderRole, asyncHandler(deleteAvailability))
+
+/**
+ * @openapi
+ * /providers/{id}:
+ *   get:
+ *     tags: [Providers]
+ *     summary: Fiche détaillée d'un prestataire (#127, publique)
+ *     description: >-
+ *       Route publique. Les coordonnées ne sont démasquées (#264) que si le
+ *       viewer connecté est le client ayant déjà validé une prestation
+ *       (`released`) avec ce prestataire. Déclarée en dernier pour ne pas
+ *       capturer `/providers/search`, `/providers/featured`, `/providers/me`,
+ *       `/providers/availability`.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Fiche détaillée du prestataire. }
+ *       404: { description: Prestataire introuvable., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+ */
+providersRoutes.get('/providers/:id', asyncHandler(providerDetail))

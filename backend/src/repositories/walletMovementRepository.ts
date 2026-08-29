@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { PrismaClient, WalletMovement as PrismaWalletMovement } from '@prisma/client'
+import type { Prisma, PrismaClient, WalletMovement as PrismaWalletMovement } from '@prisma/client'
 import { prisma } from '../config/prisma'
 
 /**
@@ -9,12 +9,17 @@ import { prisma } from '../config/prisma'
  * (critère #192). Journal append-only : aucune fonction ne modifie/supprime un
  * mouvement existant. Client Prisma injecté (testable sans base).
  *
- * Le backend ne porte pour l'instant que les ROUTES du portefeuille (solde,
- * mouvements, recharge, retrait) ; l'écriture des mouvements d'escrow reste côté
- * Nitro tant que ce domaine n'est pas porté. Seuls les mouvements utiles à ces
- * routes sont exposés ici — mais `getBalance` somme bien **tous** les types
- * (un solde inclut escrow_release, commission, etc. écrits par ailleurs).
+ * Depuis le portage du domaine séquestre (conversations/escrow), ce journal
+ * porte aussi les primitives de crédit/débit utilisées par les commandes en
+ * séquestre (`creditWallet`/`debitWallet`/`debitWalletForPenalty` iso Nitro).
+ * `getBalance` somme **tous** les types (escrow_release, commission, etc.).
+ * Un `tx` optionnel (#366) permet de composer un mouvement et un changement de
+ * statut de commande dans une **seule** transaction atomique (jamais de
+ * double-débit / double-paiement sur panne).
  */
+
+/** Identifiant conventionnel du portefeuille interne WorkTogo (commissions) — iso `walletStore`. */
+export const PLATFORM_WALLET_USER_ID = 'worktogo-platform'
 export type WalletMovementType =
   | 'recharge'
   | 'escrow_debit'
@@ -67,9 +72,42 @@ function sumBalance(rows: Pick<PrismaWalletMovement, 'amount' | 'type'>[]): numb
   return rows.reduce((total, m) => total + m.amount * MOVEMENT_SIGN[m.type as WalletMovementType], 0)
 }
 
+/**
+ * Construit les données d'un mouvement. Horodatage applicatif (et non
+ * `@default(now())` base) : ordre déterministe même pour des insertions
+ * rapprochées, sensible à un mock de `Date.now` dans les tests. Iso `walletStore`.
+ */
+function buildMovementData(input: RecordMovementInput): Prisma.WalletMovementCreateInput {
+  return {
+    id: randomUUID(),
+    walletUserId: input.walletUserId,
+    type: input.type,
+    amount: input.amount,
+    reference: input.reference,
+    counterpartyUserId: input.counterpartyUserId ?? null,
+    createdAt: new Date(Date.now()),
+  }
+}
+
 export type RequestWithdrawalResult =
   | { ok: true; movement: WalletMovement }
   | { ok: false; error: 'insufficient_funds' }
+
+/**
+ * Client Prisma accepté par les primitives de portefeuille : soit le singleton
+ * partagé, soit le client transactionnel `tx` fourni par un `$transaction`
+ * appelant (voir `escrowOrderRepository.transaction`). Permet d'écrire un
+ * mouvement dans la transaction d'une opération métier composite (#366).
+ */
+export type WalletDb = Prisma.TransactionClient
+
+export interface RecordMovementInput {
+  walletUserId: string
+  type: WalletMovementType
+  amount: number
+  reference: string
+  counterpartyUserId?: string | null
+}
 
 export interface WalletMovementRepository {
   listByUser(userId: string): Promise<WalletMovement[]>
@@ -80,9 +118,25 @@ export interface WalletMovementRepository {
   /**
    * Crédite un mouvement générique (append-only) — iso `walletStore.creditWallet`.
    * Refuse un `escrow_debit` (débit) et un montant ≤ 0. Utilisé notamment par le
-   * bonus de parrainage (`referral_bonus`, #365) à la confirmation d'un paiement.
+   * bonus de parrainage (`referral_bonus`, #365) à la confirmation d'un paiement,
+   * et par le séquestre (libération, remboursement, compensation). `tx` (#366)
+   * permet de l'inscrire dans la transaction d'une opération métier composite.
    */
-  credit(input: { walletUserId: string; type: WalletMovementType; amount: number; reference: string; counterpartyUserId?: string | null }): Promise<WalletMovement>
+  credit(input: RecordMovementInput, tx?: WalletDb): Promise<WalletMovement>
+  /**
+   * Débite le portefeuille (mise en séquestre, `escrow_debit`). Renvoie `null`
+   * si le solde est insuffisant — le mouvement n'est alors pas journalisé. La
+   * vérification du solde et l'écriture sont encadrées par une transaction (ou
+   * réutilisent `tx` s'il est fourni). Iso `walletStore.debitWallet`.
+   */
+  debit(input: Omit<RecordMovementInput, 'type'>, tx?: WalletDb): Promise<WalletMovement | null>
+  /**
+   * Débite au titre d'une pénalité (`dispute_penalty`) — ne renvoie jamais
+   * `null` sur solde insuffisant : le montant est plafonné au solde disponible
+   * (jamais de découvert) et le mouvement effectif est renvoyé, ou `null` si le
+   * solde est nul. Iso `walletStore.debitWalletForPenalty`.
+   */
+  debitForPenalty(input: Omit<RecordMovementInput, 'type'>, tx?: WalletDb): Promise<WalletMovement | null>
   /** Débite un retrait `retrait` si le solde suffit — transaction atomique (#366). */
   requestWithdrawal(userId: string, amount: number): Promise<RequestWithdrawalResult>
 }
@@ -109,21 +163,40 @@ export function createWalletMovementRepository(db: PrismaClient): WalletMovement
       })
       return toMovement(row)
     },
-    async credit(input) {
+    async credit(input, tx) {
       if (input.type === 'escrow_debit') throw new Error('credit ne doit pas recevoir de mouvement escrow_debit.')
       if (input.amount <= 0) throw new Error('Le montant crédité doit être positif.')
-      const row = await db.walletMovement.create({
-        data: {
-          id: randomUUID(),
-          walletUserId: input.walletUserId,
-          type: input.type,
-          amount: input.amount,
-          reference: input.reference,
-          counterpartyUserId: input.counterpartyUserId ?? null,
-          createdAt: new Date(Date.now()),
-        },
-      })
+      const client = tx ?? db
+      const row = await client.walletMovement.create({ data: buildMovementData(input) })
       return toMovement(row)
+    },
+    async debit(input, tx) {
+      if (input.amount <= 0) throw new Error('Le montant débité doit être positif.')
+      const movementInput: RecordMovementInput = { ...input, type: 'escrow_debit' }
+      // Vérifie le solde puis journalise le débit sur le client fourni. Encadré
+      // par une transaction quand aucune n'est déjà en cours : deux débits
+      // concurrents ne peuvent plus créer de découvert (iso `walletStore`).
+      const performDebit = async (client: WalletDb): Promise<WalletMovement | null> => {
+        const rows = await client.walletMovement.findMany({ where: { walletUserId: input.walletUserId }, select: { amount: true, type: true } })
+        if (sumBalance(rows) < input.amount) return null
+        const row = await client.walletMovement.create({ data: buildMovementData(movementInput) })
+        return toMovement(row)
+      }
+      if (tx) return performDebit(tx)
+      return db.$transaction((client) => performDebit(client))
+    },
+    async debitForPenalty(input, tx) {
+      if (input.amount <= 0) throw new Error('Le montant de la pénalité doit être positif.')
+      const applyPenalty = async (client: WalletDb): Promise<WalletMovement | null> => {
+        const rows = await client.walletMovement.findMany({ where: { walletUserId: input.walletUserId }, select: { amount: true, type: true } })
+        const balance = sumBalance(rows)
+        if (balance <= 0) return null
+        const amount = Math.min(input.amount, balance)
+        const row = await client.walletMovement.create({ data: buildMovementData({ ...input, type: 'dispute_penalty', amount }) })
+        return toMovement(row)
+      }
+      if (tx) return applyPenalty(tx)
+      return db.$transaction((client) => applyPenalty(client))
     },
     async requestWithdrawal(userId, amount) {
       const movement = await db.$transaction(async (tx) => {
