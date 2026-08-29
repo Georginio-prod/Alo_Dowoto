@@ -21,7 +21,7 @@ async function resolveSegment(segment: SegmentFilter): Promise<string[]> {
   const rows = await prisma.user.findMany({
     where: {
       ...(segment.role ? { role: segment.role } : {}),
-      ...(segment.city ? { location: { contains: segment.city } } : {}),
+      ...(segment.city ? { location: { contains: segment.city, mode: 'insensitive' } } : {}),
       status: 'active',
     },
     select: { id: true },

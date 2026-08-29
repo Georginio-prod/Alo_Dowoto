@@ -66,7 +66,7 @@ export async function listAuditLog(filters: AuditLogFilters, page: number, pageS
     ...(filters.targetType ? { targetType: filters.targetType } : {}),
     ...(filters.targetId ? { targetId: filters.targetId } : {}),
     ...(filters.query
-      ? { OR: [{ action: { contains: filters.query } }, { actorLabel: { contains: filters.query } }] }
+      ? { OR: [{ action: { contains: filters.query, mode: 'insensitive' as const } }, { actorLabel: { contains: filters.query, mode: 'insensitive' as const } }] }
       : {}),
   }
   const [rows, total] = await Promise.all([

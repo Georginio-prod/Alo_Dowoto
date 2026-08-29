@@ -64,6 +64,16 @@ export interface NewUserProfile {
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000
 
+/**
+ * TTL de session pour les comptes admin (#dashboard-admin, audit D-02) :
+ * volontairement bien plus court que les 30 jours du grand public. Une session
+ * d'administration donne accès aux remboursements, arbitrages de litiges et
+ * promotions d'admins — la fenêtre d'exploitation d'un jeton volé doit rester
+ * étroite. 12 h couvre une journée de travail ; l'app desktop redemande alors
+ * simplement la connexion.
+ */
+export const ADMIN_SESSION_TTL_MS = 12 * 60 * 60 * 1000
+
 export const SESSION_COOKIE = 'wt_session'
 
 /** Exportée pour les vues admin (#dashboard-admin) qui reconstituent un `User` à partir d'une ligne Prisma déjà chargée (évite un aller-retour DB superflu). */
@@ -168,6 +178,22 @@ export async function getUserByContact(contact: string): Promise<User | null> {
   return row ? toUser(row) : null
 }
 
+/**
+ * Secret TOTP (base32) d'un compte, ou `null` si la MFA n'est pas activée
+ * (audit D-02). Jamais inclus dans `toUser`/`toPublicUser` : ce secret ne doit
+ * quitter le serveur sous aucune forme. Lu uniquement par la connexion admin
+ * pour vérifier le code à six chiffres.
+ */
+export async function getUserTotpSecret(userId: string): Promise<string | null> {
+  const row = await prisma.user.findUnique({ where: { id: userId }, select: { totpSecret: true } })
+  return row?.totpSecret ?? null
+}
+
+/** Active (secret base32) ou désactive (`null`) la MFA d'un compte — voir scripts/enable-admin-totp.mjs. */
+export async function setUserTotpSecret(userId: string, secret: string | null): Promise<void> {
+  await prisma.user.updateMany({ where: { id: userId }, data: { totpSecret: secret } })
+}
+
 /** Retrouve un utilisateur par identifiant Google (`sub` OpenID Connect, #219). */
 export async function getUserByGoogleId(googleId: string): Promise<User | null> {
   const row = await prisma.user.findUnique({ where: { googleId } })
@@ -214,10 +240,10 @@ export async function clearUserPosition(userId: string): Promise<User> {
   return toUser(row)
 }
 
-export async function createSession(userId: string): Promise<string> {
+export async function createSession(userId: string, ttlMs: number = SESSION_TTL_MS): Promise<string> {
   const token = randomUUID()
   await prisma.session.create({
-    data: { token, userId, expiresAt: new Date(Date.now() + SESSION_TTL_MS) },
+    data: { token, userId, expiresAt: new Date(Date.now() + ttlMs) },
   })
   return token
 }
@@ -329,11 +355,11 @@ export async function listUsersForAdmin(
     ...(filters.query
       ? {
           OR: [
-            { username: { contains: filters.query } },
-            { firstName: { contains: filters.query } },
-            { lastName: { contains: filters.query } },
-            { contact: { contains: filters.query } },
-            { location: { contains: filters.query } },
+            { username: { contains: filters.query, mode: 'insensitive' } },
+            { firstName: { contains: filters.query, mode: 'insensitive' } },
+            { lastName: { contains: filters.query, mode: 'insensitive' } },
+            { contact: { contains: filters.query, mode: 'insensitive' } },
+            { location: { contains: filters.query, mode: 'insensitive' } },
           ],
         }
       : {}),

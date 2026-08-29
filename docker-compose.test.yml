@@ -1,0 +1,31 @@
+# PostgreSQL LOCAL et jetable pour la suite de tests (migration S-02).
+#
+# Pourquoi : la suite peut tourner contre le schéma `test` de Supabase (zéro
+# installation) mais chaque requête paie alors un aller-retour réseau, ce qui
+# rend les tests d'intégration lents. Un Postgres local supprime cette latence.
+#
+# Utilisation :
+#   1. Lancer Docker Desktop.
+#   2. npm run db:test:up          # démarre ce Postgres local (port 5433)
+#   3. Dans .env, décommenter :
+#        TEST_DATABASE_URL="postgresql://worktogo:worktogo@localhost:5434/worktogo_test"
+#        TEST_DIRECT_URL="postgresql://worktogo:worktogo@localhost:5434/worktogo_test"
+#   4. npm test  /  npm run test:e2e     # rapides, isolés, hors production
+#   5. npm run db:test:down         # arrête et supprime le conteneur
+services:
+  worktogo-test-db:
+    image: postgres:16-alpine
+    container_name: worktogo-test-db
+    environment:
+      POSTGRES_USER: worktogo
+      POSTGRES_PASSWORD: worktogo
+      POSTGRES_DB: worktogo_test
+    ports:
+      - "5434:5432" # 5434 en local pour ne pas entrer en conflit avec un Postgres déjà présent
+    tmpfs:
+      - /var/lib/postgresql/data # données en RAM : démarrage instantané, tout est jetable
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U worktogo -d worktogo_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 15

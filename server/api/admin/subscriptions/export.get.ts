@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
     where.status = status
   }
   if (search) {
-    where.plan = { contains: search }
+    where.plan = { contains: search, mode: 'insensitive' }
   }
 
   const rows = await prisma.subscription.findMany({

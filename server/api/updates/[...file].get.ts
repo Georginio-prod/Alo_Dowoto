@@ -18,6 +18,7 @@
  * exige ensuite une session admin), et l'auto-update doit fonctionner avant
  * même la connexion.
  */
+import { isRateLimited } from '~~/server/utils/aiRateLimiter'
 
 interface GhAsset {
   id: number
@@ -51,8 +52,29 @@ async function getLatestRelease(repo: string, token: string): Promise<GhRelease>
   return release
 }
 
+// Anti-abus par IP (audit S-06) : ce point d'entrée est public et proxifie des
+// binaires (installeur de plusieurs dizaines de Mo). Sans garde-fou, un tiers
+// peut boucler des téléchargements pour épuiser la bande passante du PC hôte et
+// le quota du jeton GitHub. Le plafond est LARGE : une vraie mise à jour
+// différentielle d'electron-updater génère de nombreuses requêtes Range (une par
+// plage de blocs modifiée) qu'il ne faut pas casser ; on ne bloque donc que le
+// bouclage soutenu, pas une session de mise à jour normale. Correctif de fond =
+// hébergement managé + CDN (voir audit S-01/S-06).
+const MAX_UPDATE_REQ_PER_IP = 400
+const UPDATE_WINDOW_MS = 10 * 60 * 1000
+
 export default defineEventHandler(async (event) => {
   const file = getRouterParam(event, 'file') || ''
+
+  // Actif en production uniquement (comme la CSP/HSTS et le rate-limit OTP) : en
+  // dev, l'auto-update est désactivé côté client et l'instance n'est pas exposée.
+  if (process.env.NODE_ENV === 'production') {
+    const ip = getRequestIP(event, { xForwardedFor: true }) ?? 'unknown'
+    if (await isRateLimited(`updates:${ip}`, MAX_UPDATE_REQ_PER_IP, UPDATE_WINDOW_MS)) {
+      throw createError({ statusCode: 429, statusMessage: 'Trop de requêtes de mise à jour. Réessayez plus tard.' })
+    }
+  }
+
   const cfg = useRuntimeConfig(event)
   const token = cfg.githubUpdateToken as string
   const repo = cfg.githubUpdateRepo as string

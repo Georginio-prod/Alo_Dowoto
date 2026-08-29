@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
     where.status = status
   }
   if (search) {
-    where.OR = [{ phone: { contains: search } }, { operatorRef: { contains: search } }]
+    where.OR = [{ phone: { contains: search, mode: 'insensitive' } }, { operatorRef: { contains: search, mode: 'insensitive' } }]
   }
 
   const rows = await prisma.payment.findMany({

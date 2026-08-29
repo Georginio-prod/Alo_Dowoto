@@ -27,11 +27,11 @@ export default defineEventHandler(async (event) => {
   }
   if (params.search) {
     where.OR = [
-      { username: { contains: params.search } },
-      { firstName: { contains: params.search } },
-      { lastName: { contains: params.search } },
-      { contact: { contains: params.search } },
-      { location: { contains: params.search } },
+      { username: { contains: params.search, mode: 'insensitive' } },
+      { firstName: { contains: params.search, mode: 'insensitive' } },
+      { lastName: { contains: params.search, mode: 'insensitive' } },
+      { contact: { contains: params.search, mode: 'insensitive' } },
+      { location: { contains: params.search, mode: 'insensitive' } },
     ]
   }
 

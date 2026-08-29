@@ -17,8 +17,8 @@ export default defineEventHandler(async (event) => {
   }
   if (params.search) {
     where.OR = [
-      { phone: { contains: params.search } },
-      { operatorRef: { contains: params.search } },
+      { phone: { contains: params.search, mode: 'insensitive' } },
+      { operatorRef: { contains: params.search, mode: 'insensitive' } },
     ]
   }
 

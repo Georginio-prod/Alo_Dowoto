@@ -91,10 +91,10 @@ export async function listAdminProviders(
       ...(filters.query
         ? {
             OR: [
-              { username: { contains: filters.query } },
-              { firstName: { contains: filters.query } },
-              { lastName: { contains: filters.query } },
-              { contact: { contains: filters.query } },
+              { username: { contains: filters.query, mode: 'insensitive' } },
+              { firstName: { contains: filters.query, mode: 'insensitive' } },
+              { lastName: { contains: filters.query, mode: 'insensitive' } },
+              { contact: { contains: filters.query, mode: 'insensitive' } },
             ],
           }
         : {}),

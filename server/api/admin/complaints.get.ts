@@ -18,9 +18,9 @@ export default defineEventHandler(async (event) => {
   if (status === 'nouveau' || status === 'en_cours' || status === 'resolu') where.status = status
   if (params.search) {
     where.OR = [
-      { subject: { contains: params.search } },
-      { message: { contains: params.search } },
-      { contactEmail: { contains: params.search } },
+      { subject: { contains: params.search, mode: 'insensitive' } },
+      { message: { contains: params.search, mode: 'insensitive' } },
+      { contactEmail: { contains: params.search, mode: 'insensitive' } },
     ]
   }
 

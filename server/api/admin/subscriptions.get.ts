@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
     where.status = status
   }
   if (params.search) {
-    where.plan = { contains: params.search }
+    where.plan = { contains: params.search, mode: 'insensitive' }
   }
 
   const [rows, total] = await Promise.all([

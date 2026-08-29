@@ -11,6 +11,11 @@ export default defineConfig({
   },
   engine: "classic",
   datasource: {
-    url: env("DATABASE_URL"),
+    // Les commandes Prisma CLI (migrate, db push, studio) doivent passer par la
+    // connexion DIRECTE (Supabase session pooler, port 5432), et surtout PAS par
+    // le pooler transactionnel (pgbouncer, port 6543) qui fait échouer les
+    // migrations (« prepared statement "s1" already exists »). L'application, elle,
+    // continue d'utiliser DATABASE_URL (pooler 6543) via prisma/schema.prisma.
+    url: env("DIRECT_URL"),
   },
 });

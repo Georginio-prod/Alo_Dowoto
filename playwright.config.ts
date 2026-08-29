@@ -1,5 +1,6 @@
-import { fileURLToPath } from 'node:url'
 import { defineConfig, devices } from '@playwright/test'
+// Base de test PostgreSQL (schéma `test` isolé de la production), voir tests/setup/testDatabase.ts.
+import { TEST_DATABASE_URL, TEST_DIRECT_URL } from './tests/setup/testDatabase'
 
 /**
  * Tests de parcours (end-to-end) du site — voir e2e/.
@@ -9,9 +10,9 @@ import { defineConfig, devices } from '@playwright/test'
  * navigateur : ils valident les parcours complets (inscription, recherche,
  * messagerie…) tels qu'un visiteur les vit.
  *
- * Base de données : une base SQLite jetable, recréée à chaque exécution par
- * e2e/global-setup.ts (même principe que tests/setup/prismaTestDb.ts) — les
- * tests ne touchent jamais prisma/dev.db.
+ * Base de données : le schéma PostgreSQL `test` jetable (Supabase), recréé à
+ * chaque exécution par e2e/global-setup.ts (même helper que Vitest) — les tests
+ * ne touchent jamais la production (`public`). Voir tests/setup/testDatabase.ts.
  *
  * OTP : `BREVO_API_KEY`/`TWILIO_*` sont volontairement vidés pour l'instance
  * de test, ce qui fait retomber /api/auth/otp/send sur son mode développement
@@ -21,7 +22,7 @@ import { defineConfig, devices } from '@playwright/test'
 const PORT = Number(process.env.E2E_PORT ?? 3101)
 const BASE_URL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${PORT}`
 
-export const E2E_DATABASE_URL = `file:${fileURLToPath(new URL('./e2e/.tmp/e2e.db', import.meta.url))}`
+export const E2E_DATABASE_URL = TEST_DATABASE_URL
 
 export default defineConfig({
   testDir: './e2e',
@@ -61,6 +62,7 @@ export default defineConfig({
       // nuxt.config.ts).
       E2E: 'true',
       DATABASE_URL: E2E_DATABASE_URL,
+      DIRECT_URL: TEST_DIRECT_URL,
       // Pas d'envoi réel d'OTP depuis l'instance de test (voir en-tête).
       BREVO_API_KEY: '',
       BREVO_SMS_SENDER: '',

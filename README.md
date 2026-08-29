@@ -16,7 +16,7 @@ remboursement et gestion de litige.
 - **API :** routes serveur [Nitro](https://nitro.build) intégrées (`server/api/**`) — voir [docs/architecture-api.md](docs/architecture-api.md)
 - **Langage :** TypeScript strict
 - **Style :** Tailwind CSS v4
-- **ORM / base :** [Prisma](https://www.prisma.io) (SQLite en développement) — voir [docs/database-schema.md](docs/database-schema.md)
+- **ORM / base :** [Prisma](https://www.prisma.io) — **PostgreSQL** (hébergé sur Supabase) ; l'app se connecte via le pooler (`DATABASE_URL`, port 6543) et les migrations via la connexion directe (`DIRECT_URL`, port 5432) — voir [docs/database-schema.md](docs/database-schema.md)
 - **Tests :** [Vitest](https://vitest.dev) + @vue/test-utils (unitaires) et [Playwright](https://playwright.dev) (parcours de bout en bout)
 - **Hébergement / CI :** Vercel + GitHub Actions — voir [docs/deployment.md](docs/deployment.md)
 

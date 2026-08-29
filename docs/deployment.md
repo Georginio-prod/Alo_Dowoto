@@ -83,7 +83,8 @@ le workflow).
 
 | Variable | Usage | Où |
 |---|---|---|
-| `DATABASE_URL` | Connexion Prisma (SQLite en dev ; peut pointer vers PostgreSQL en prod sans changer le schéma, voir [`docs/database-schema.md`](./database-schema.md)) | `prisma/schema.prisma`, `prisma.config.ts` |
+| `DATABASE_URL` | Connexion Prisma applicative — **PostgreSQL via le pooler Supabase** (port 6543, `pgbouncer=true`) | `prisma/schema.prisma` |
+| `DIRECT_URL` | Connexion **directe** PostgreSQL (Supabase session pooler, port 5432) réservée aux migrations Prisma (`migrate deploy`) — le pooler transactionnel 6543 ne les supporte pas | `prisma/schema.prisma`, `prisma.config.ts` |
 | `PAYMENT_WEBHOOK_SECRET` | Signature/vérification HMAC du webhook de paiement (`#34`) | `server/utils/webhookSignature.ts` |
 
 ### Prévues, pas encore branchées (à ne pas oublier lors de l'intégration réelle)

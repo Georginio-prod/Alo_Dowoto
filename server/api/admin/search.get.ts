@@ -11,10 +11,10 @@ export default defineEventHandler(async (event) => {
   const rows = await prisma.user.findMany({
     where: {
       OR: [
-        { username: { contains: q } },
-        { firstName: { contains: q } },
-        { lastName: { contains: q } },
-        { contact: { contains: q } },
+        { username: { contains: q, mode: 'insensitive' } },
+        { firstName: { contains: q, mode: 'insensitive' } },
+        { lastName: { contains: q, mode: 'insensitive' } },
+        { contact: { contains: q, mode: 'insensitive' } },
       ],
     },
     take: 8,

@@ -28,9 +28,9 @@ export default defineEventHandler(async (event) => {
   }
   if (search) {
     where.OR = [
-      { id: { contains: search } },
-      { clientId: { contains: search } },
-      { providerId: { contains: search } },
+      { id: { contains: search, mode: 'insensitive' } },
+      { clientId: { contains: search, mode: 'insensitive' } },
+      { providerId: { contains: search, mode: 'insensitive' } },
     ]
   }
 

@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto'
 import { prisma } from '~~/server/utils/prisma'
 
 /**
@@ -26,7 +27,11 @@ export async function generateOtp(contact: string): Promise<GenerateOtpResult> {
     }
   }
 
-  const code = Math.floor(100000 + Math.random() * 900000).toString()
+  // Code à 6 chiffres tiré d'un générateur cryptographiquement sûr (audit
+  // S-04) : `randomInt` évite le biais de `Math.floor(Math.random()*…)` et
+  // n'est pas prédictible à partir d'un état PRNG observé. Borne haute
+  // exclusive → plage [100000, 999999].
+  const code = randomInt(100000, 1000000).toString()
   const data = { code, expiresAt: new Date(now + OTP_TTL_MS), attempts: 0, lastSentAt: new Date(now) }
   await prisma.otpCode.upsert({ where: { contact }, create: { contact, ...data }, update: data })
   return { ok: true, code, expiresInSeconds: OTP_TTL_MS / 1000 }

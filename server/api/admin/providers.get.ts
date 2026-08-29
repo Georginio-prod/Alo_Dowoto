@@ -17,8 +17,8 @@ export default defineEventHandler(async (event) => {
   if (verified === 'false') where.verified = false
   if (params.search) {
     where.OR = [
-      { displayName: { contains: params.search } },
-      { city: { contains: params.search } },
+      { displayName: { contains: params.search, mode: 'insensitive' } },
+      { city: { contains: params.search, mode: 'insensitive' } },
     ]
   }
 

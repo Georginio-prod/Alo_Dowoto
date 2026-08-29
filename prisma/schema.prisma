@@ -15,8 +15,12 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // Connexion applicative via le pooler Supabase (pgbouncer, port 6543).
+  url       = env("DATABASE_URL")
+  // Connexion directe (port 5432) réservée aux migrations Prisma, qui ont
+  // besoin d'une session non-poolée (verrous consultatifs, prepared statements).
+  directUrl = env("DIRECT_URL")
 }
 
 enum Role {
@@ -163,6 +167,12 @@ model User {
   messagingRestricted Boolean @default(false)
   /// Niveau d'accès équipe (#dashboard-admin, module Paramètres) — significatif seulement quand `role = admin` : admin (tout), moderateur, support.
   adminLevel       String?
+
+  /// Secret TOTP (base32) de la double authentification admin (audit D-02) —
+  /// `null` = MFA non activée (comportement historique). Opt-in : seul un compte
+  /// admin dont ce champ est renseigné (via scripts/enable-admin-totp.mjs) se
+  /// voit exiger un code à 6 chiffres à la connexion. Jamais lu par le site/APK.
+  totpSecret       String?
 
   sessions          Session[]
   providerProfile   ProviderProfile?

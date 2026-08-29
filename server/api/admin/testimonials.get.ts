@@ -18,8 +18,8 @@ export default defineEventHandler(async (event) => {
   else if (hiddenFilter === 'no') where.hidden = false
   if (params.search) {
     where.OR = [
-      { name: { contains: params.search } },
-      { message: { contains: params.search } },
+      { name: { contains: params.search, mode: 'insensitive' } },
+      { message: { contains: params.search, mode: 'insensitive' } },
     ]
   }
 

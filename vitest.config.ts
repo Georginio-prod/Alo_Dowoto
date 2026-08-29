@@ -2,6 +2,8 @@ import { fileURLToPath } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import autoImport from 'unplugin-auto-import/vite'
 import { defineConfig } from 'vitest/config'
+// URL de la base de test PostgreSQL (schéma `test` isolé, voir tests/setup/testDatabase.ts).
+import { TEST_DATABASE_URL } from './tests/setup/testDatabase'
 
 export default defineConfig({
   plugins: [
@@ -50,12 +52,23 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     include: ['tests/**/*.test.ts'],
-    // Base SQLite jetable pour les stores branchés sur Prisma (#218) — créée
-    // par le globalSetup, URL partagée avec les workers via `env`.
+    // Schéma PostgreSQL `test` jetable pour les stores branchés sur Prisma
+    // (migration S-02) — remis à zéro par le globalSetup, URL partagée avec les
+    // workers via `env`. Isolé de la production (`public`), voir testDatabase.ts.
     globalSetup: ['tests/setup/prismaTestDb.ts'],
     setupFiles: ['tests/setup/i18n.ts'],
+    // Les workers partagent une base PostgreSQL distante (Supabase) au lieu d'un
+    // fichier SQLite local : on borne le parallélisme pour ne pas épuiser les
+    // connexions du pooler (chaque client ouvre connection_limit=1 connexion).
+    poolOptions: { forks: { minForks: 1, maxForks: 4 } },
+    // Délai large : en repli Supabase (base distante) chaque requête paie un
+    // aller-retour réseau et les tests qui en enchaînent beaucoup sont lents.
+    // Avec un PostgreSQL LOCAL (TEST_DATABASE_URL, cf. testDatabase.ts) ces délais
+    // ne sont jamais atteints — la suite tourne vite.
+    testTimeout: 60000,
+    hookTimeout: 60000,
     env: {
-      DATABASE_URL: `file:${fileURLToPath(new URL('./tests/setup/test.db', import.meta.url))}`,
+      DATABASE_URL: TEST_DATABASE_URL,
       // Les tests des prestataires ont été écrits pour le store en mémoire :
       // on les exécute en mode `memory` (les upserts alimentent la Map, la
       // persistance base est best-effort). La prod tourne en `db` par défaut.
