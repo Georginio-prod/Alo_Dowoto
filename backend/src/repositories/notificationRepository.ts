@@ -1,4 +1,4 @@
-import type { Notification, PrismaClient } from '@prisma/client'
+import type { Notification, NotificationType, PrismaClient } from '@prisma/client'
 import { prisma } from '../config/prisma'
 
 /**
@@ -9,11 +9,22 @@ import { prisma } from '../config/prisma'
  */
 const LIST_LIMIT = 30
 
+export interface CreateNotificationInput {
+  userId: string
+  type: NotificationType
+  title: string
+  body: string
+  conversationId?: string
+}
+
 export interface NotificationRepository {
   /** Les plus récentes d'abord, plafonné à 30 (centre, pas historique complet). */
   listRecent(userId: string): Promise<Notification[]>
   countUnread(userId: string): Promise<number>
   markAllRead(userId: string): Promise<void>
+  create(input: CreateNotificationInput): Promise<Notification>
+  /** Une notification non lue existe-t-elle déjà pour cette conversation (#360) ? */
+  hasUnreadForConversation(userId: string, conversationId: string): Promise<boolean>
 }
 
 export function createNotificationRepository(db: PrismaClient): NotificationRepository {
@@ -26,6 +37,21 @@ export function createNotificationRepository(db: PrismaClient): NotificationRepo
     },
     async markAllRead(userId) {
       await db.notification.updateMany({ where: { userId, readAt: null }, data: { readAt: new Date() } })
+    },
+    create(input) {
+      return db.notification.create({
+        data: {
+          userId: input.userId,
+          type: input.type,
+          title: input.title,
+          body: input.body,
+          conversationId: input.conversationId ?? null,
+        },
+      })
+    },
+    async hasUnreadForConversation(userId, conversationId) {
+      const existing = await db.notification.findFirst({ where: { userId, conversationId, readAt: null }, select: { id: true } })
+      return existing !== null
     },
   }
 }
