@@ -38,6 +38,9 @@ export function createPaymentService(
   }
 
   return {
+    /** Résolution atomique et idempotente d'un paiement (admin : marquage échoué, rejeu). Iso `resolvePayment`. */
+    resolvePayment,
+
     async getPayment(id: string): Promise<Payment | null> {
       return payments.findById(id)
     },
