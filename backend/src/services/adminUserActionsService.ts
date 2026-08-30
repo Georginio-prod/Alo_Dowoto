@@ -36,3 +36,9 @@ export async function setUserRiskFlag(userId: string, riskFlag: boolean, note?: 
   })
   return toUser(row)
 }
+
+/** Change le niveau d'accès d'un membre de l'équipe admin (#dashboard-admin, module 12). Iso `setAdminLevel`. */
+export async function setAdminLevel(userId: string, adminLevel: string | null): Promise<AdminUserView> {
+  const row = await prisma.user.update({ where: { id: userId }, data: { adminLevel } })
+  return toUser(row)
+}

@@ -5,9 +5,9 @@ import { badRequest, notFound } from '../utils/apiError'
 import { authUser } from '../utils/authUser'
 import { hashPassword } from '../utils/password'
 import { getPlanConfig } from '../data/plans'
-import { reactivateUser, setUserRiskFlag, suspendUser } from '../services/adminUserActionsService'
+import { reactivateUser, setAdminLevel, setUserRiskFlag, suspendUser } from '../services/adminUserActionsService'
 import { auditLogService } from '../services/auditLogService'
-import type { riskFlagSchema } from '../validation/schemas/admin'
+import type { riskFlagSchema, teamLevelSchema } from '../validation/schemas/admin'
 
 /**
  * Dashboard admin (#admin) — sous-lot 3 : actions MUTANTES sur les comptes.
@@ -95,6 +95,18 @@ export async function adminSetRiskFlag(req: Request, res: Response): Promise<voi
     targetId: id,
     metadata: { note: body.note },
   })
+  res.json({ user })
+}
+
+/** POST /api/admin/team/:id/level — change le niveau d'accès d'un membre de l'équipe (rôle admin, tracé). */
+export async function adminTeamSetLevel(req: Request, res: Response): Promise<void> {
+  const admin = authUser(req)
+  const id = req.params.id
+  if (!id) badRequest('Identifiant requis.')
+  const body = req.body as z.infer<typeof teamLevelSchema>
+
+  const user = await setAdminLevel(id, body.level)
+  await auditLogService.recordAuditLog({ actor: admin, action: 'team.level.update', targetType: 'user', targetId: id, metadata: { level: body.level } })
   res.json({ user })
 }
 
