@@ -22,6 +22,10 @@ export interface ReviewRepository {
   /** Avis déposé par `authorId` sur la collaboration `conversationId`, ou `null` (unicité #61). */
   findByConversationAuthor(conversationId: string, authorId: string): Promise<Review | null>
   create(input: CreateReviewInput): Promise<Review>
+  /** Un avis par id (modération admin), ou `null`. */
+  findById(id: string): Promise<Review | null>
+  /** Tous les avis (vue admin de modération, #dashboard-admin module 8). */
+  listAll(): Promise<Review[]>
 }
 
 export function createReviewRepository(db: PrismaClient): ReviewRepository {
@@ -34,6 +38,12 @@ export function createReviewRepository(db: PrismaClient): ReviewRepository {
     },
     create(input) {
       return db.review.create({ data: input })
+    },
+    findById(id) {
+      return db.review.findUnique({ where: { id } })
+    },
+    listAll() {
+      return db.review.findMany({ orderBy: { createdAt: 'desc' } })
     },
   }
 }

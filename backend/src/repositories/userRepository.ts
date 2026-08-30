@@ -43,6 +43,12 @@ export interface UserRepository {
    * compte ; la suppression des sessions relève de `sessionRepository`).
    */
   anonymize(id: string): Promise<void>
+  /** Comptes admin, du plus ancien au plus récent (#admin, gestion des admins/équipe). */
+  listAdmins(): Promise<User[]>
+  /** Crée un compte administrateur restreint (#admin). Le hash et les permissions sont fournis par le service. */
+  createAdmin(input: { contact: string; passwordHash: string; adminPermissions: string; username: string; firstName: string; lastName: string }): Promise<User>
+  /** Promeut un compte existant au rôle admin avec un niveau d'accès (#admin, module 12). */
+  promoteToAdmin(userId: string, adminLevel: string): Promise<User>
 }
 
 export function createUserRepository(db: PrismaClient): UserRepository {
@@ -111,6 +117,26 @@ export function createUserRepository(db: PrismaClient): UserRepository {
           longitude: null,
         },
       })
+    },
+    listAdmins() {
+      return db.user.findMany({ where: { role: 'admin' }, orderBy: { createdAt: 'asc' } })
+    },
+    createAdmin(input) {
+      return db.user.create({
+        data: {
+          contact: input.contact,
+          role: 'admin',
+          passwordHash: input.passwordHash,
+          adminPermissions: input.adminPermissions,
+          username: input.username,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          location: 'Lomé',
+        },
+      })
+    },
+    promoteToAdmin(userId, adminLevel) {
+      return db.user.update({ where: { id: userId }, data: { role: 'admin', adminLevel } })
     },
   }
 }
