@@ -61,6 +61,16 @@ export function createVerificationService(repo: VerificationRepository = verific
       return repo.deleteByUser(userId)
     },
 
+    /**
+     * Toutes les vérifications soumises, les plus récentes d'abord (#dashboard-admin,
+     * file de KYC à traiter). Purge d'abord les images expirées (en lot), puis liste.
+     * Iso `verificationStore.listAllVerifications`.
+     */
+    async listAllVerifications(): Promise<VerificationView[]> {
+      await repo.purgeImagesOlderThan(new Date(Date.now() - ID_DOCUMENT_RETENTION_MS))
+      return (await repo.listAll()).map(toView)
+    },
+
     /** Soumet (ou remplace) les deux pièces : certifie immédiatement le compte. */
     async submitVerification(userId: string, idCardImage: string, passportPhotoImage: string): Promise<VerificationView> {
       // `submittedAt` posé côté JS (et non via le défaut base) pour rester
