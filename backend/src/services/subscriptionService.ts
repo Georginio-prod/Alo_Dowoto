@@ -81,6 +81,32 @@ export function createSubscriptionService(repo: SubscriptionRepository = subscri
       return toSubscription(row)
     },
 
+    /**
+     * Prolonge manuellement l'abonnement d'un prestataire (#admin) : ajoute
+     * `extraDays` à `dateFin` si déjà actif dans le futur, sinon (re)part de
+     * maintenant. `null` si aucun abonnement. Iso `adminExtendSubscription`.
+     */
+    async adminExtendSubscription(userId: string, extraDays: number): Promise<Subscription | null> {
+      const existing = await repo.findByUserId(userId)
+      if (!existing) return null
+      const now = Date.now()
+      const base = existing.status === 'actif' && existing.dateFin && existing.dateFin.getTime() > now ? existing.dateFin.getTime() : now
+      const row = await repo.update(existing.id, {
+        status: 'actif',
+        dateDebut: existing.dateDebut ?? new Date(now),
+        dateFin: new Date(base + extraDays * 24 * 60 * 60 * 1000),
+      })
+      return toSubscription(row)
+    },
+
+    /** Annule manuellement l'abonnement d'un prestataire : passe `expire` immédiatement. Iso `adminCancelSubscription`. */
+    async adminCancelSubscription(userId: string): Promise<Subscription | null> {
+      const existing = await repo.findByUserId(userId)
+      if (!existing) return null
+      const row = await repo.update(existing.id, { status: 'expire', dateFin: new Date() })
+      return toSubscription(row)
+    },
+
     /** Active l'essai gratuit de 14 jours — refusé si un abonnement existe déjà. */
     async activateTrialSubscription(userId: string, plan: PlanSlug): Promise<ActivateTrialResult> {
       const existing = await repo.findByUserId(userId)

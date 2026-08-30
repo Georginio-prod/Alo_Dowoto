@@ -242,6 +242,20 @@ export async function getProviderById(id: string): Promise<ProviderSearchResult 
 }
 
 /**
+ * Tarif fixe d'un prestataire pour le paiement bloquant en séquestre (#194) :
+ * priorité à la fiche de démo (`p01…p14`), puis au tarif renseigné par un vrai
+ * compte prestataire. `null` si aucun tarif n'est disponible — vérifie
+ * directement le profil (dont `rateFrom` peut être absent) plutôt que la fiche
+ * fusionnée de `getProviderById`, qui retombe sur `0` et masquerait ce cas.
+ * Iso `providerDirectory.resolveProviderRate`.
+ */
+export async function resolveProviderRate(providerId: string): Promise<number | null> {
+  const directoryEntry = DIRECTORY.find((provider) => provider.id === providerId)
+  if (directoryEntry) return directoryEntry.priceFrom
+  return (await providerProfileService.getProviderProfile(providerId))?.rateFrom ?? null
+}
+
+/**
  * Nombre de prestataires de l'annuaire pour un secteur (#66, grille `/categories`).
  * Repose sur `searchProviders` pour rester cohérent avec la recherche publique.
  */

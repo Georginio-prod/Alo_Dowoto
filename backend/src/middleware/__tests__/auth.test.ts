@@ -93,6 +93,6 @@ describe('Gardes d’auth du backend', () => {
   it('rôle insuffisant (client sur /admin) → 403 avec message exact', async () => {
     const res = await request(app).get('/admin').set('Cookie', `wt_session=${state.token}`)
     expect(res.status).toBe(403)
-    expect(res.body).toMatchObject({ error: true, statusCode: 403, message: 'Réservé à l’équipe WorkTogo.' })
+    expect(res.body).toMatchObject({ error: true, statusCode: 403, message: 'Réservé aux administrateurs.' })
   })
 })

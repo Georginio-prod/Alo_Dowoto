@@ -1,12 +1,15 @@
 import type { Request, Response } from 'express'
-import { badRequest } from '../utils/apiError'
+import { badRequest, notFound } from '../utils/apiError'
 import { SECTORS } from '../data/sectors'
 import { listAllQuartiers } from '../data/regions'
 import { rankFeaturedProviders } from '../services/matchingEngine'
+import { extractSessionToken, getSessionUser } from '../services/authService'
+import { hasReleasedOrderBetween } from '../services/escrowOrderService'
 import {
   getEffectiveRating,
   getFeaturedCandidates,
   getProviderById,
+  getProviderDetail,
   searchProviders,
   searchProvidersNearby,
   type FeaturedProviderResult,
@@ -138,4 +141,23 @@ export async function featuredProviders(req: Request, res: Response): Promise<vo
   )).filter((provider): provider is FeaturedProviderResult => provider !== null)
 
   res.json({ results })
+}
+
+/**
+ * GET /api/providers/:id — fiche détaillée (#127). Route **publique** : la
+ * session est optionnelle (pas de 401). Les coordonnées ne sont démasquées que
+ * si le viewer connecté est le client qui a déjà validé intégralement une
+ * prestation avec ce prestataire (#264, commande `released`). Iso Nitro.
+ */
+export async function providerDetail(req: Request, res: Response): Promise<void> {
+  const id = req.params.id
+  if (!id) badRequest('Identifiant prestataire manquant.')
+
+  const viewer = await getSessionUser(extractSessionToken(req))
+  const contactRevealed = !!viewer && viewer.role === 'client' && (await hasReleasedOrderBetween(viewer.id, id))
+
+  const provider = await getProviderDetail(id, contactRevealed)
+  if (!provider) notFound('Prestataire introuvable.')
+
+  res.json({ provider })
 }

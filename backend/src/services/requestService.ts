@@ -172,6 +172,15 @@ export function listRequestsByUser(userId: string): ServiceRequest[] {
     .sort((a, b) => b.createdAt - a.createdAt)
 }
 
+/**
+ * Toutes les fiches préalables en mémoire, la plus récente d'abord — brouillons
+ * de missions pour le dashboard admin (#dashboard-admin, module 4). Volatile
+ * (store en mémoire), comme côté Nitro. Iso `requestStore.listAllServiceRequests`.
+ */
+export function listAllServiceRequests(): ServiceRequest[] {
+  return [...requests.values()].sort((a, b) => b.createdAt - a.createdAt)
+}
+
 export function getStoredMatches(requestId: string): MatchedProvider[] | null {
   return matchesByRequestId.get(requestId) ?? null
 }
