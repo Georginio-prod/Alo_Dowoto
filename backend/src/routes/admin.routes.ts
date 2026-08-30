@@ -20,6 +20,10 @@ import {
   sectorPatchSchema,
   prealableQuestionSchema,
   siteContentSchema,
+  adminMessageSchema,
+  disputeResolveSchema,
+  missionNoteSchema,
+  missionReassignSchema,
 } from '../validation/schemas/admin'
 import {
   adminLogin,
@@ -74,6 +78,27 @@ import {
   adminUpdateCategory,
   adminUpsertContent,
 } from '../controllers/adminCategoryController'
+import {
+  adminListDisputes,
+  adminRequestEvidence,
+  adminResolveDispute,
+} from '../controllers/adminDisputeController'
+import {
+  adminContactReviewAuthor,
+  adminDeleteReview,
+  adminHideReview,
+  adminListReviews,
+  adminRestoreReview,
+} from '../controllers/adminReviewController'
+import {
+  adminListMissions,
+  adminMissionCancel,
+  adminMissionDetail,
+  adminMissionForceValidate,
+  adminMissionNote,
+  adminMissionNudge,
+  adminMissionReassign,
+} from '../controllers/adminMissionController'
 import {
   adminDeleteUser,
   adminManageSubscription,
@@ -812,3 +837,111 @@ adminRoutes.delete('/admin/questions/:id', requireAdminRole, asyncHandler(adminD
  */
 adminRoutes.get('/admin/content', requireAdminRole, asyncHandler(adminListContent))
 adminRoutes.post('/admin/content', requireAdminRole, validateBody(siteContentSchema), asyncHandler(adminUpsertContent))
+
+/**
+ * Sous-lot 3 — litiges, avis, missions (dashboard web, modules 4/6/8). Rôle
+ * admin, actions tracées. Portés depuis `server/api/admin/{disputes,reviews,missions}/**`.
+ *
+ * @openapi
+ * /admin/disputes:
+ *   get: { tags: [Admin], summary: File des litiges ouverts (rôle admin), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: Litiges ouverts. } } }
+ */
+adminRoutes.get('/admin/disputes', requireAdminRole, asyncHandler(adminListDisputes))
+
+/**
+ * @openapi
+ * /admin/disputes/{id}/resolve:
+ *   post: { tags: [Admin], summary: Tranche un litige — client/provider/split (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Litige tranché. }, 400: { description: Décision invalide ou litige clos., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.post('/admin/disputes/:id/resolve', requireAdminRole, validateBody(disputeResolveSchema), asyncHandler(adminResolveDispute))
+
+/**
+ * @openapi
+ * /admin/disputes/{id}/request-evidence:
+ *   post: { tags: [Admin], summary: Demande des preuves complémentaires aux deux parties (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Demande envoyée. }, 404: { description: Litige introuvable., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.post('/admin/disputes/:id/request-evidence', requireAdminRole, asyncHandler(adminRequestEvidence))
+
+/**
+ * @openapi
+ * /admin/reviews:
+ *   get: { tags: [Admin], summary: Avis, signalés en tête (?flagged=1) (rôle admin), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: Avis avec état de modération. } } }
+ */
+adminRoutes.get('/admin/reviews', requireAdminRole, asyncHandler(adminListReviews))
+
+/**
+ * @openapi
+ * /admin/reviews/{id}/hide:
+ *   post: { tags: [Admin], summary: Masque un avis, motif requis (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Avis masqué. }, 400: { description: Motif manquant., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.post('/admin/reviews/:id/hide', requireAdminRole, validateBody(reasonBodySchema), asyncHandler(adminHideReview))
+
+/**
+ * @openapi
+ * /admin/reviews/{id}/restore:
+ *   post: { tags: [Admin], summary: Restaure un avis masqué (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Avis restauré. } } }
+ */
+adminRoutes.post('/admin/reviews/:id/restore', requireAdminRole, asyncHandler(adminRestoreReview))
+
+/**
+ * @openapi
+ * /admin/reviews/{id}/delete:
+ *   post: { tags: [Admin], summary: Supprime un avis, motif requis (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Avis supprimé. }, 400: { description: Motif manquant., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.post('/admin/reviews/:id/delete', requireAdminRole, validateBody(reasonBodySchema), asyncHandler(adminDeleteReview))
+
+/**
+ * @openapi
+ * /admin/reviews/{id}/contact-author:
+ *   post: { tags: [Admin], summary: Contacte l'auteur d'un avis (message in-app) (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Message envoyé. }, 404: { description: Avis introuvable., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.post('/admin/reviews/:id/contact-author', requireAdminRole, validateBody(adminMessageSchema), asyncHandler(adminContactReviewAuthor))
+
+/**
+ * @openapi
+ * /admin/missions:
+ *   get: { tags: [Admin], summary: Missions paginées + brouillons (rôle admin), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: Missions et brouillons. } } }
+ */
+adminRoutes.get('/admin/missions', requireAdminRole, asyncHandler(adminListMissions))
+
+/**
+ * @openapi
+ * /admin/missions/{id}:
+ *   get: { tags: [Admin], summary: Fiche détaillée d'une mission (rôle admin), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Détail mission. }, 404: { description: Mission introuvable., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.get('/admin/missions/:id', requireAdminRole, asyncHandler(adminMissionDetail))
+
+/**
+ * @openapi
+ * /admin/missions/{id}/cancel:
+ *   post: { tags: [Admin], summary: Annule une mission (remboursement intégral), motif requis (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Mission annulée. }, 400: { description: Introuvable ou statut incompatible., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.post('/admin/missions/:id/cancel', requireAdminRole, validateBody(reasonBodySchema), asyncHandler(adminMissionCancel))
+
+/**
+ * @openapi
+ * /admin/missions/{id}/force-validate:
+ *   post: { tags: [Admin], summary: Force la libération des fonds d'une mission (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Fonds libérés. }, 400: { description: Introuvable ou statut incompatible., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.post('/admin/missions/:id/force-validate', requireAdminRole, asyncHandler(adminMissionForceValidate))
+
+/**
+ * @openapi
+ * /admin/missions/{id}/note:
+ *   post: { tags: [Admin], summary: Ajoute une note interne à une mission (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Note ajoutée. }, 400: { description: Note vide., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.post('/admin/missions/:id/note', requireAdminRole, validateBody(missionNoteSchema), asyncHandler(adminMissionNote))
+
+/**
+ * @openapi
+ * /admin/missions/{id}/nudge:
+ *   post: { tags: [Admin], summary: Relance les deux parties d'une mission (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Relance envoyée. }, 404: { description: Mission introuvable., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.post('/admin/missions/:id/nudge', requireAdminRole, asyncHandler(adminMissionNudge))
+
+/**
+ * @openapi
+ * /admin/missions/{id}/reassign:
+ *   post: { tags: [Admin], summary: Réassigne une mission à un autre prestataire (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Mission réassignée. }, 400: { description: Introuvable ou statut incompatible., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.post('/admin/missions/:id/reassign', requireAdminRole, validateBody(missionReassignSchema), asyncHandler(adminMissionReassign))
