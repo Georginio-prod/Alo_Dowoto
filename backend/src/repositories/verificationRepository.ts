@@ -18,6 +18,10 @@ export interface VerificationRepository {
   existsForUser(userId: string): Promise<boolean>
   /** Effacement complet à la demande (#286, droit à l'effacement). `true` si une soumission existait. */
   deleteByUser(userId: string): Promise<boolean>
+  /** Efface en lot les images des soumissions certifiées avant `cutoff` (#286, purge de rétention). */
+  purgeImagesOlderThan(cutoff: Date): Promise<void>
+  /** Toutes les soumissions, les plus récentes d'abord (file de KYC admin). */
+  listAll(): Promise<Verification[]>
 }
 
 export function createVerificationRepository(db: PrismaClient): VerificationRepository {
@@ -45,6 +49,15 @@ export function createVerificationRepository(db: PrismaClient): VerificationRepo
     async deleteByUser(userId) {
       const { count } = await db.verification.deleteMany({ where: { userId } })
       return count > 0
+    },
+    async purgeImagesOlderThan(cutoff) {
+      await db.verification.updateMany({
+        where: { purgedAt: null, submittedAt: { lt: cutoff } },
+        data: { idCardImage: null, passportPhotoImage: null, purgedAt: new Date() },
+      })
+    },
+    listAll() {
+      return db.verification.findMany({ orderBy: { submittedAt: 'desc' } })
     },
   }
 }
