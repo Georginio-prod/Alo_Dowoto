@@ -60,6 +60,17 @@ export function createReviewService(repo: ReviewRepository = reviewRepository) {
     async hasReviewed(conversationId: string, authorId: string): Promise<boolean> {
       return (await repo.findByConversationAuthor(conversationId, authorId)) !== null
     },
+
+    /** Un avis par id (modération admin), ou `null`. Iso `reviewStore.getReviewById`. */
+    async getReviewById(id: string): Promise<Review | null> {
+      const row = await repo.findById(id)
+      return row ? toReview(row) : null
+    },
+
+    /** Tous les avis, vue de modération admin (#dashboard-admin, module 8). Iso `listAllReviews`. */
+    async listAll(): Promise<Review[]> {
+      return (await repo.listAll()).map(toReview)
+    },
   }
 }
 
