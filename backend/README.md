@@ -6,58 +6,41 @@ Nitro** (`server/api/**`) de l'app Nuxt, sous la contrainte absolue du **zéro
 changement fonctionnel** — voir `docs/adr/` (ADR-0014/0015/0016) et le filet de
 sécurité `tests/contract/`.
 
-> État : **Phase 2 — portage par domaine, en cours** (ADR-0017). La couche
+> État : **Phase 2 — portage par domaine, quasi terminée** (ADR-0017). La couche
 > transverse est posée (**validation Zod**, **doc OpenAPI** `/api/docs`, patron
-> **services/ + repositories/** découplé de Nitro). Domaines portés (gabarits
-> `routes → controller → service → repository`, validés iso par tests backend
-> **et rejeu de contrat** `tests/contract/replay/`) :
-> - **avis d'accueil** (`/api/testimonials`, public : lecture + écriture) ;
-> - **réclamations** (`/api/reclamations`, écriture, **auth optionnelle par
->   cookie** — le compte est rattaché si présent, jamais exigé) ;
-> - **favoris** (`POST`/`DELETE /api/favorites`, **auth obligatoire + rôle
->   client** → 401/403). ⚠️ `GET /api/favorites` **différé** (voir plus bas) ;
-> - **notifications** (`GET`/`POST /api/notifications[/read]`, auth requise) ;
-> - **parrainage** (`GET /api/referrals/me`, auth requise) ;
-> - **abonnements** (`/api/subscriptions[...]`, **rôle prestataire**, 400/409) ;
-> - **prestataires — self-service** (6/9 routes, **rôle prestataire**) : profil
->   `GET`/`PATCH /api/providers/me`, `DELETE /api/providers/me/position` (#356) +
->   disponibilité `GET`/`POST /api/providers/availability`,
->   `DELETE /api/providers/availability/:id` (#290). Reste la **découverte publique**
->   `search`/`[id]`/`featured` (×3) : elle embarque l'annuaire complet
->   (`providerDirectory` ~490 l + géo + `matchingEngine` + dataset démo) — gros
->   morceau à porter séparément ;
-> - **notations reçues** (`GET /api/reviews/me`, auth requise) — moyenne/nombre
->   d'avis reçus ;
-> - **vérification d'identité** (`GET /api/verification/me`, `POST /api/verification`,
->   auth requise) — auto-certification + minimisation des données/rétention #286 ;
-> - **portefeuille** (5/6 routes) : `GET /api/wallet/me`, `POST /api/wallet/recharge`,
->   `GET /api/wallet/recharge/:id`, `POST /api/wallet/withdraw` (rôle prestataire),
->   `POST /api/wallet/webhook` (public, **signature HMAC + anti-rejeu #355**).
->   Reste le **reçu PDF** `GET /api/wallet/movements/:id/receipt` (#363), différé :
->   il dépend de `pdfkit` + i18n côté backend (ajout de dépendances) → lot séparé ;
-> - **compte RGPD** (#286, auth requise) : `GET /api/account/export` (portabilité,
->   jamais les images) et `POST /api/account/delete` (anonymisation +
->   purge vérification + déconnexion). Débloqué par le portage de `wallet`
->   (`export` dépendait de `getBalance`) ;
-> - **paiements** (4/5 routes, #34) : `POST /api/payments/initiate` (rôle
->   prestataire), `GET /api/payments/me`, `GET /api/payments/:id`,
->   `POST /api/payments/webhook` (public, **HMAC + anti-rejeu**). À la
->   confirmation : **activation de l'abonnement** + **récompense du parrainage**
->   (#365, crédit portefeuille des deux côtés). Reste le **reçu PDF**
->   `GET /api/payments/:id/receipt` (#363), différé (pdfkit + i18n) → lot séparé.
+> **routes → controller → service → repository** découplé de Nitro). **~167/183
+> routes portées**, chaque domaine validé iso par les tests backend **et le rejeu
+> de contrat** (`tests/contract/replay/`).
 >
-> **Annuaire prestataires : DÉBLOQUÉ.** Les trois stores dont il dépendait
-> (`reviewStore`, `verificationStore`, `providerAvailabilityStore`) sont désormais
-> **persistés en base** (Prisma, modèles `Review` / `Verification` /
-> `UnavailabilityPeriod`), leurs lectures passées en `async` (annuaire, matching,
-> escrow, `toPublicUser` auth/session adaptés). 765 tests app verts à chaque étape.
-> → `providers`, `sectors` et `GET /api/favorites` sont maintenant **portables iso**
-> vers Express.
+> **Domaines entièrement portés** : `account` (RGPD, #286), `assistant`, `auth`,
+> `conversations`, `notifications`, `parrainage`, `payments` (reçus PDF inclus,
+> #363 ; activation d'abonnement + récompense parrainage #365 à la confirmation),
+> `providers` (self-service **et** découverte publique `search`/`featured`/`:id`),
+> `quotas`, `reclamations`, `requests`, `reviews`, `sectors`, `subscriptions`,
+> `testimonials`, `updates`, `verification` (#286), `wallet` (reçus PDF inclus,
+> HMAC + anti-rejeu #355). `favoris` : `POST`/`DELETE` portés — **`GET
+> /api/favorites` reste à porter**.
 >
-> **Restent bloqués** par leurs stores en mémoire respectifs : `quotas`,
-> `requests`, `assistant` (à persister le jour où ces domaines seront portés).
+> **Dashboard admin** : **86/101 routes** (`/api/admin/**`, Bearer + rôle admin,
+> permissions granulaires, actions tracées au journal d'audit). Modules portés :
+> auth/session/équipe, vue d'ensemble & listes en lecture, comptes (suspension,
+> réactivation, mot de passe, risque, abonnement manuel, suppression), KYC &
+> vérification prestataire, paiements & séquestre (échec/remboursement/libération/
+> rejeu, arbitrage), catalogue tarifaire & éditorial (formules/coupons/réglages/
+> catégories/questions/contenu), litiges/avis/missions, modération
+> (témoignages/réclamations/annonces), **anti-désintermédiation (module 9)**,
+> **campagnes & modèles de messages (module 11)** et **journal d'audit (module 12)**.
 >
-> Reste ~163 routes à porter (dont admin=101).
+> **Reste à porter (~14 routes)** :
+> - `GET /api/favorites` (liste des favoris du client) ;
+> - **admin (13)** : listes `GET /admin/clients`, `GET /admin/clients/:id`,
+>   `GET /admin/conversations` ; fiche `GET /admin/providers/:id` ; éditions
+>   prestataire `PATCH /admin/providers/:id/{zone,categories}` ; comptes
+>   `PATCH /admin/users/:id`, `POST /admin/users/:id/{delete,message}` ; exports
+>   CSV `GET /admin/{users,payments,escrow,subscriptions}/export`.
+>
+> Puis **Phase 3** (SPA Nuxt + reverse proxy `/api/* → backend` + suppression de
+> `server/api` & `server/utils`) et **Phase 4** (déploiement + cutover prod).
 
 ## Structure
 
