@@ -1,14 +1,15 @@
 import type { Request, Response } from 'express'
 import type { z } from 'zod'
 import { authUser } from '../utils/authUser'
-import { createAndSendCampaign, listCampaigns, scheduleCampaign } from '../services/adminCampaignService'
+import { createAndSendCampaign, listCampaigns, listMessageTemplates, scheduleCampaign, upsertMessageTemplate } from '../services/adminCampaignService'
 import { auditLogService } from '../services/auditLogService'
-import type { campaignSchema } from '../validation/schemas/admin'
+import type { campaignSchema, messageTemplateSchema } from '../validation/schemas/admin'
 
 /**
- * Dashboard admin (#admin) — module 11 : campagnes de notification. Portées iso
- * depuis `server/api/admin/campaigns/**` (ADR-0017) : historique et création
- * (envoi immédiat ou programmé) d'une campagne ciblée sur un segment.
+ * Dashboard admin (#admin) — module 11 : campagnes de notification et modèles de
+ * messages automatiques. Portées iso depuis `server/api/admin/{campaigns,templates}/**`
+ * (ADR-0017) : historique et création (envoi immédiat ou programmé) d'une
+ * campagne ciblée sur un segment, plus la gestion des modèles réutilisables.
  */
 
 /** Libellé lisible du segment ciblé (iso `segmentLabel` Nitro). */
@@ -45,4 +46,19 @@ export async function adminCreateCampaign(req: Request, res: Response): Promise<
     metadata: { segment: label, channel: body.channel },
   })
   res.json({ campaign })
+}
+
+/** GET /api/admin/templates — modèles de messages automatiques (rôle admin). */
+export async function adminListTemplates(_req: Request, res: Response): Promise<void> {
+  res.json({ templates: await listMessageTemplates() })
+}
+
+/** POST /api/admin/templates — crée ou met à jour un modèle de message automatique (rôle admin, tracé). */
+export async function adminUpsertTemplate(req: Request, res: Response): Promise<void> {
+  const admin = authUser(req)
+  const body = req.body as z.infer<typeof messageTemplateSchema>
+
+  const template = await upsertMessageTemplate(body.key, body.label, body.channel, body.body, body.subject)
+  await auditLogService.recordAuditLog({ actor: admin, action: 'template.upsert', targetType: 'message_template', targetId: body.key })
+  res.json({ template })
 }

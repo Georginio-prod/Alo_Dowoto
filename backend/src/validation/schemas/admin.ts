@@ -184,3 +184,12 @@ export const campaignSchema = z.object({
   body: requiredTrimmed('Le message est requis.'),
   scheduledAt: z.number().optional(),
 })
+
+/** Création/mise à jour d'un modèle de message automatique. Iso le schéma local de `templates/index.post`. */
+export const messageTemplateSchema = z.object({
+  key: requiredTrimmed('La clé est requise.'),
+  label: requiredTrimmed('Le libellé est requis.'),
+  channel: requiredTrimmed('Le canal est requis.'),
+  body: requiredTrimmed('Le contenu est requis.'),
+  subject: z.string().trim().optional(),
+})
