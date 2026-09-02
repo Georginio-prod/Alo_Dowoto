@@ -134,6 +134,7 @@ import {
   adminAntiCircumventionRestrictMessaging,
   adminAntiCircumventionWarn,
 } from '../controllers/adminAntiCircumventionController'
+import { adminAuditLog } from '../controllers/adminAuditLogController'
 
 /**
  * Dashboard admin desktop (#admin) — sous-lot 1 : authentification, session,
@@ -984,3 +985,13 @@ adminRoutes.post('/admin/anti-circumvention/:userId/restrict-messaging', require
  *   post: { tags: [Admin], summary: Marque les signaux d'un compte comme faux positif — exclu du score de risque (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: userId, required: true, schema: { type: string } }], responses: { 200: { description: Faux positif enregistré. } } }
  */
 adminRoutes.post('/admin/anti-circumvention/:userId/false-positive', requireAdminRole, validateBody(antiCircumventionFalsePositiveSchema), asyncHandler(adminAntiCircumventionFalsePositive))
+
+/**
+ * Module 12 — journal d'audit (rôle admin, lecture seule). Porté depuis
+ * `server/api/admin/audit-log/index.get.ts`.
+ *
+ * @openapi
+ * /admin/audit-log:
+ *   get: { tags: [Admin], summary: Journal d'audit horodaté des actions sensibles, paginé et filtrable (rôle admin), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: Entrées d'audit paginées (targetType, q). } } }
+ */
+adminRoutes.get('/admin/audit-log', requireAdminRole, asyncHandler(adminAuditLog))
