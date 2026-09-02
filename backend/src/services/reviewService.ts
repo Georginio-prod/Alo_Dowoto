@@ -71,6 +71,16 @@ export function createReviewService(repo: ReviewRepository = reviewRepository) {
     async listAll(): Promise<Review[]> {
       return (await repo.listAll()).map(toReview)
     },
+
+    /** Avis reçus par `targetId` (fiche prestataire admin). Iso `getReviewsForTarget`. */
+    async getReviewsForTarget(targetId: string): Promise<Review[]> {
+      return (await repo.findByTarget(targetId)).map(toReview)
+    },
+
+    /** Avis déposés par `authorId` (fiche chercheur admin). Iso `listReviewsByAuthor`. */
+    async listReviewsByAuthor(authorId: string): Promise<Review[]> {
+      return (await repo.findByAuthor(authorId)).map(toReview)
+    },
   }
 }
 
