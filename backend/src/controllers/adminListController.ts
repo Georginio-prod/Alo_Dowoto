@@ -2,6 +2,8 @@ import type { Request, Response } from 'express'
 import type { Prisma } from '@prisma/client'
 import { prisma } from '../config/prisma'
 import { paginated, readAdminListParams, readAdminQueryString } from '../utils/adminList'
+import { userRepository } from '../repositories/userRepository'
+import { resolveProviderIdentity } from '../services/adminProviderResolveService'
 
 /**
  * Dashboard admin desktop (#admin) — sous-lot 2 : listes paginées « annuaire »
@@ -171,6 +173,79 @@ export async function adminTestimonials(req: Request, res: Response): Promise<vo
     hidden: r.hidden,
     createdAt: r.createdAt.getTime(),
   }))
+
+  res.json(paginated(items, total, params))
+}
+
+/** GET /api/admin/conversations — liste paginée des mises en relation (conversations.view). */
+export async function adminConversations(req: Request, res: Response): Promise<void> {
+  const params = readAdminListParams(req)
+
+  const where: Prisma.ConversationWhereInput = {}
+  if (params.search) {
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { firstName: { contains: params.search } },
+          { lastName: { contains: params.search } },
+          { contact: { contains: params.search } },
+          { location: { contains: params.search } },
+        ],
+      },
+      select: { id: true },
+    })
+    where.clientId = { in: users.map((u) => u.id) }
+  }
+
+  const [rows, total] = await Promise.all([
+    prisma.conversation.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: params.skip,
+      take: params.take,
+      select: {
+        id: true,
+        clientId: true,
+        providerId: true,
+        firstContactDone: true,
+        createdAt: true,
+        _count: { select: { messages: true } },
+        messages: { orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true } },
+      },
+    }),
+    prisma.conversation.count({ where }),
+  ])
+
+  const items = await Promise.all(
+    rows.map(async (r) => {
+      const client = await userRepository.findById(r.clientId)
+      const provider = await resolveProviderIdentity(r.providerId)
+      return {
+        id: r.id,
+        firstContactDone: r.firstContactDone,
+        createdAt: r.createdAt.getTime(),
+        messageCount: r._count.messages,
+        lastMessageAt: r.messages[0]?.createdAt.getTime() ?? null,
+        client: client
+          ? {
+              id: client.id,
+              name: `${client.firstName} ${client.lastName}`.trim() || client.username || client.contact,
+              contact: client.contact,
+              city: client.location,
+            }
+          : { id: r.clientId, name: 'Compte supprimé', contact: null, city: null, missing: true },
+        provider: {
+          id: provider.id,
+          name: provider.name,
+          sector: provider.sector,
+          city: provider.city,
+          photoUrl: provider.photoUrl,
+          isRealAccount: provider.isRealAccount,
+          missing: provider.missing ?? false,
+        },
+      }
+    }),
+  )
 
   res.json(paginated(items, total, params))
 }

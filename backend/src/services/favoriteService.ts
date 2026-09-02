@@ -26,6 +26,9 @@ export function createFavoriteService(repo: FavoriteRepository = favoriteReposit
     async removeFavorite(clientId: string, providerId: string): Promise<void> {
       await repo.remove(clientId, providerId)
     },
+    async listFavorites(clientId: string): Promise<Favorite[]> {
+      return (await repo.list(clientId)).map(toFavorite)
+    },
   }
 }
 

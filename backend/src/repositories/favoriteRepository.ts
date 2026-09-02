@@ -14,6 +14,8 @@ export interface FavoriteRepository {
   add(clientId: string, providerId: string): Promise<Favorite>
   /** Retire un favori. **Idempotent** : retirer un favori absent ne lève pas d'erreur. */
   remove(clientId: string, providerId: string): Promise<void>
+  /** Favoris d'un client, les plus récents d'abord (#65, `GET /api/favorites`). */
+  list(clientId: string): Promise<Favorite[]>
 }
 
 export function createFavoriteRepository(db: PrismaClient): FavoriteRepository {
@@ -27,6 +29,9 @@ export function createFavoriteRepository(db: PrismaClient): FavoriteRepository {
     },
     async remove(clientId, providerId) {
       await db.favorite.deleteMany({ where: { clientId, providerId } })
+    },
+    list(clientId) {
+      return db.favorite.findMany({ where: { clientId }, orderBy: { createdAt: 'desc' } })
     },
   }
 }

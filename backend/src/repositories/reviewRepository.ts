@@ -19,6 +19,8 @@ export interface CreateReviewInput {
 export interface ReviewRepository {
   /** Avis reçus par `targetId`, dans l'ordre chronologique de dépôt. */
   findByTarget(targetId: string): Promise<Review[]>
+  /** Avis déposés par `authorId` (fiche chercheur admin, #dashboard-admin module 3). */
+  findByAuthor(authorId: string): Promise<Review[]>
   /** Avis déposé par `authorId` sur la collaboration `conversationId`, ou `null` (unicité #61). */
   findByConversationAuthor(conversationId: string, authorId: string): Promise<Review | null>
   create(input: CreateReviewInput): Promise<Review>
@@ -32,6 +34,9 @@ export function createReviewRepository(db: PrismaClient): ReviewRepository {
   return {
     findByTarget(targetId) {
       return db.review.findMany({ where: { targetId }, orderBy: { createdAt: 'asc' } })
+    },
+    findByAuthor(authorId) {
+      return db.review.findMany({ where: { authorId }, orderBy: { createdAt: 'desc' } })
     },
     findByConversationAuthor(conversationId, authorId) {
       return db.review.findUnique({ where: { conversationId_authorId: { conversationId, authorId } } })

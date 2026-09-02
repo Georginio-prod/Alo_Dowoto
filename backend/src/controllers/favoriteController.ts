@@ -2,6 +2,7 @@ import type { Request, Response } from 'express'
 import { badRequest } from '../utils/apiError'
 import { authUser } from '../utils/authUser'
 import { favoriteService } from '../services/favoriteService'
+import { getProviderById } from '../services/providerDirectoryService'
 import type { AddFavoriteInput } from '../validation/schemas/favorites'
 
 /**
@@ -9,10 +10,20 @@ import type { AddFavoriteInput } from '../validation/schemas/favorites'
  * Réservés au rôle **client** — la garde `requireClientRole` (montée sur la route)
  * a déjà résolu `req.user` (401 sinon, 403 si mauvais rôle). Le corps du POST est
  * validé/normalisé en amont par `validateBody`.
- *
- * GET /api/favorites n'est PAS encore porté : il enrichit chaque favori via
- * l'annuaire prestataires (`getProviderById`), domaine non encore extrait.
  */
+
+/** GET /api/favorites → `{ favorites }`. Chaque favori est enrichi de sa fiche annuaire (ou `provider: null` si hors annuaire, #43). */
+export async function listFavorites(req: Request, res: Response): Promise<void> {
+  const clientId = authUser(req).id
+  const favorites = await Promise.all(
+    (await favoriteService.listFavorites(clientId)).map(async (favorite) => ({
+      providerId: favorite.providerId,
+      createdAt: favorite.createdAt,
+      provider: await getProviderById(favorite.providerId),
+    })),
+  )
+  res.json({ favorites })
+}
 
 /** POST /api/favorites → 201 `{ favorite }`. Ajout idempotent. */
 export async function createFavorite(req: Request, res: Response): Promise<void> {

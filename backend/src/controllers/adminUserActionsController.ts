@@ -6,8 +6,11 @@ import { authUser } from '../utils/authUser'
 import { hashPassword } from '../utils/password'
 import { getPlanConfig } from '../data/plans'
 import { reactivateUser, setAdminLevel, setUserRiskFlag, suspendUser } from '../services/adminUserActionsService'
+import { userService } from '../services/userService'
+import { verificationService } from '../services/verificationService'
+import { sendAdminMessage } from '../services/adminMessagingService'
 import { auditLogService } from '../services/auditLogService'
-import type { riskFlagSchema, teamLevelSchema } from '../validation/schemas/admin'
+import type { adminMessageSchema, optionalReasonBodySchema, riskFlagSchema, teamLevelSchema } from '../validation/schemas/admin'
 
 /**
  * Dashboard admin (#admin) — sous-lot 3 : actions MUTANTES sur les comptes.
@@ -193,6 +196,68 @@ export async function adminManageSubscription(req: Request, res: Response): Prom
   }
 
   badRequest('Action invalide (grant, extend ou cancel).')
+}
+
+/** PATCH /api/admin/users/:id — édite un compte non-admin : prénom/nom/username/ville/rôle (users.edit). */
+export async function adminEditUser(req: Request, res: Response): Promise<void> {
+  const id = req.params.id
+  if (!id) badRequest('Identifiant utilisateur manquant.')
+
+  const target = await prisma.user.findUnique({ where: { id }, select: { id: true, role: true } })
+  if (!target) notFound('Utilisateur introuvable.')
+  if ((target.role as string) === 'admin') {
+    badRequest('Les comptes administrateurs se gèrent depuis la section Administrateurs.')
+  }
+
+  const body = req.body as { firstName?: unknown; lastName?: unknown; username?: unknown; location?: unknown; role?: unknown }
+  const data: { firstName?: string; lastName?: string; username?: string; location?: string; role?: 'client' | 'prestataire' } = {}
+
+  if (typeof body?.firstName === 'string') data.firstName = body.firstName.trim()
+  if (typeof body?.lastName === 'string') data.lastName = body.lastName.trim()
+  if (typeof body?.username === 'string') data.username = body.username.trim()
+  if (typeof body?.location === 'string') data.location = body.location.trim()
+
+  if (body?.role !== undefined) {
+    if (body.role !== 'client' && body.role !== 'prestataire') {
+      badRequest('Rôle invalide (client ou prestataire uniquement).')
+    }
+    data.role = body.role
+  }
+
+  if (Object.keys(data).length === 0) badRequest('Aucune modification fournie.')
+
+  const updated = await prisma.user.update({
+    where: { id },
+    data,
+    select: { id: true, contact: true, role: true, username: true, firstName: true, lastName: true, location: true },
+  })
+
+  res.json({ ok: true, user: updated })
+}
+
+/** POST /api/admin/users/:id/delete — supprime un compte par anonymisation (rôle admin, tracé, #286). */
+export async function adminAnonymizeUser(req: Request, res: Response): Promise<void> {
+  const admin = authUser(req)
+  const id = req.params.id
+  if (!id) badRequest('Identifiant requis.')
+  const body = req.body as z.infer<typeof optionalReasonBodySchema>
+
+  await verificationService.deleteVerification(id)
+  await userService.anonymizeUser(id)
+  await auditLogService.recordAuditLog({ actor: admin, action: 'user.delete', targetType: 'user', targetId: id, metadata: { reason: body.reason } })
+  res.json({ ok: true })
+}
+
+/** POST /api/admin/users/:id/message — envoie un message direct in-app à un compte (rôle admin, tracé). */
+export async function adminMessageUser(req: Request, res: Response): Promise<void> {
+  const admin = authUser(req)
+  const id = req.params.id
+  if (!id) badRequest('Identifiant requis.')
+  const body = req.body as z.infer<typeof adminMessageSchema>
+
+  await sendAdminMessage(id, body.subject, body.body)
+  await auditLogService.recordAuditLog({ actor: admin, action: 'user.message', targetType: 'user', targetId: id, metadata: { subject: body.subject } })
+  res.json({ ok: true })
 }
 
 function serializeSubscription(row: { id: string; plan: string; status: string; isTrial: boolean; dateDebut: Date | null; dateFin: Date | null }) {

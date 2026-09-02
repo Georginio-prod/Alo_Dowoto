@@ -3,17 +3,31 @@ import { asyncHandler } from '../utils/asyncHandler'
 import { requireClientRole } from '../middleware/auth'
 import { validateBody } from '../validation/validate'
 import { addFavoriteSchema } from '../validation/schemas/favorites'
-import { createFavorite, deleteFavorite } from '../controllers/favoriteController'
+import { createFavorite, deleteFavorite, listFavorites } from '../controllers/favoriteController'
 
 /**
  * Favoris client → prestataire (#65), portés depuis `server/api/favorites/*`
  * (Phase 2, ADR-0017). Monté sous `/api` → `/api/favorites`, iso Nitro.
  *
  * Toutes réservées au **rôle client** (`requireClientRole` : 401 sans session,
- * 403 si mauvais rôle — mêmes codes/messages que Nitro). **GET /api/favorites
- * est différé** (enrichissement via l'annuaire prestataires non encore porté).
+ * 403 si mauvais rôle — mêmes codes/messages que Nitro).
  */
 export const favoritesRoutes = Router()
+
+/**
+ * @openapi
+ * /favorites:
+ *   get:
+ *     tags: [Favorites]
+ *     summary: Lister les favoris du client (enrichis de la fiche annuaire)
+ *     security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Favoris, les plus récents d'abord (`provider: null` si hors annuaire).
+ *       401: { description: Non connecté., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+ *       403: { description: Réservé aux comptes client., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+ */
+favoritesRoutes.get('/favorites', requireClientRole, asyncHandler(listFavorites))
 
 /**
  * @openapi

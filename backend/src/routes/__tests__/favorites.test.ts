@@ -7,8 +7,8 @@ import { createServer } from '../../config/server'
 /**
  * Contrat du domaine « favoris » porté vers Express (Phase 2, ADR-0016) :
  * réservé au **rôle client** (401 sans session, 403 si mauvais rôle — mêmes
- * codes/messages que Nitro), ajout/retrait **idempotents**, validation iso.
- * GET /api/favorites non porté (différé, cf. la route).
+ * codes/messages que Nitro), ajout/retrait **idempotents**, validation iso,
+ * liste enrichie de la fiche annuaire (`provider: null` si hors annuaire).
  *
  * Base de test ISOLÉE (globalSetup). Comptes/favoris créés puis nettoyés.
  */
@@ -83,6 +83,27 @@ describe('Contrat — favoris (/api/favorites)', () => {
       const res = await asClient(request(app).post('/api/favorites')).send({ providerId: '   ' })
       expect(res.status).toBe(400)
       expect(res.body).toMatchObject({ error: true, statusCode: 400, message: "L'identifiant du prestataire est requis." })
+    })
+  })
+
+  describe('GET /api/favorites', () => {
+    it('sans session → 401', async () => {
+      expect((await request(app).get('/api/favorites')).status).toBe(401)
+    })
+
+    it('compte prestataire → 403', async () => {
+      const res = await request(app).get('/api/favorites').set('Cookie', `wt_session=${provider.token}`)
+      expect(res.status).toBe(403)
+    })
+
+    it('client → 200 { favorites } enrichis (provider null hors annuaire)', async () => {
+      await asClient(request(app).post('/api/favorites')).send({ providerId: PROVIDER_ID })
+      const res = await asClient(request(app).get('/api/favorites'))
+      expect(res.status).toBe(200)
+      const item = res.body.favorites.find((f: { providerId: string }) => f.providerId === PROVIDER_ID)
+      expect(item).toBeTruthy()
+      expect(typeof item.createdAt).toBe('number')
+      expect(item.provider).toBeNull()
     })
   })
 })
