@@ -42,3 +42,9 @@ export async function setAdminLevel(userId: string, adminLevel: string | null): 
   const row = await prisma.user.update({ where: { id: userId }, data: { adminLevel } })
   return toUser(row)
 }
+
+/** Restreint (ou lève la restriction de) la messagerie d'un compte (#dashboard-admin, module 9). Iso `setMessagingRestricted`. */
+export async function setMessagingRestricted(userId: string, restricted: boolean): Promise<AdminUserView> {
+  const row = await prisma.user.update({ where: { id: userId }, data: { messagingRestricted: restricted } })
+  return toUser(row)
+}
