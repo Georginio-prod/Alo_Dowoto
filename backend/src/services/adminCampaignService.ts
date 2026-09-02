@@ -91,3 +91,17 @@ export async function scheduleCampaign(input: ScheduleCampaignInput) {
 export async function listCampaigns() {
   return prisma.notificationCampaign.findMany({ orderBy: { createdAt: 'desc' } })
 }
+
+// --- Modèles de messages automatiques (#dashboard-admin, module 11) ---
+
+export async function listMessageTemplates() {
+  return prisma.messageTemplate.findMany({ orderBy: { key: 'asc' } })
+}
+
+export async function upsertMessageTemplate(key: string, label: string, channel: string, body: string, subject?: string) {
+  return prisma.messageTemplate.upsert({
+    where: { key },
+    create: { key, label, channel, body, subject: subject ?? null },
+    update: { label, channel, body, subject: subject ?? null },
+  })
+}
