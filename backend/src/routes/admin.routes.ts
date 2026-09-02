@@ -27,6 +27,7 @@ import {
   antiCircumventionRestrictSchema,
   antiCircumventionFalsePositiveSchema,
   campaignSchema,
+  messageTemplateSchema,
 } from '../validation/schemas/admin'
 import {
   adminLogin,
@@ -136,7 +137,7 @@ import {
   adminAntiCircumventionWarn,
 } from '../controllers/adminAntiCircumventionController'
 import { adminAuditLog } from '../controllers/adminAuditLogController'
-import { adminCreateCampaign, adminListCampaigns } from '../controllers/adminCampaignController'
+import { adminCreateCampaign, adminListCampaigns, adminListTemplates, adminUpsertTemplate } from '../controllers/adminCampaignController'
 
 /**
  * Dashboard admin desktop (#admin) — sous-lot 1 : authentification, session,
@@ -1009,3 +1010,15 @@ adminRoutes.get('/admin/audit-log', requireAdminRole, asyncHandler(adminAuditLog
  */
 adminRoutes.get('/admin/campaigns', requireAdminRole, asyncHandler(adminListCampaigns))
 adminRoutes.post('/admin/campaigns', requireAdminRole, validateBody(campaignSchema), asyncHandler(adminCreateCampaign))
+
+/**
+ * Module 11 — modèles de messages automatiques (rôle admin, upsert tracé). Portés
+ * depuis `server/api/admin/templates/**`.
+ *
+ * @openapi
+ * /admin/templates:
+ *   get: { tags: [Admin], summary: Modèles de messages automatiques (rôle admin), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: Modèles, triés par clé. } } }
+ *   post: { tags: [Admin], summary: Crée ou met à jour un modèle de message (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: Modèle enregistré. }, 400: { description: Corps invalide., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.get('/admin/templates', requireAdminRole, asyncHandler(adminListTemplates))
+adminRoutes.post('/admin/templates', requireAdminRole, validateBody(messageTemplateSchema), asyncHandler(adminUpsertTemplate))
