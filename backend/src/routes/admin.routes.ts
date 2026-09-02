@@ -28,6 +28,9 @@ import {
   antiCircumventionFalsePositiveSchema,
   campaignSchema,
   messageTemplateSchema,
+  optionalReasonBodySchema,
+  providerZoneSchema,
+  providerCategorySchema,
 } from '../validation/schemas/admin'
 import {
   adminLogin,
@@ -104,8 +107,11 @@ import {
   adminMissionReassign,
 } from '../controllers/adminMissionController'
 import {
+  adminAnonymizeUser,
   adminDeleteUser,
+  adminEditUser,
   adminManageSubscription,
+  adminMessageUser,
   adminReactivateUser,
   adminResetPassword,
   adminSetRiskFlag,
@@ -121,6 +127,7 @@ import {
 } from '../controllers/adminPaymentActionsController'
 import {
   adminComplaints,
+  adminConversations,
   adminProviders,
   adminTestimonials,
   adminUsers,
@@ -130,6 +137,14 @@ import {
   adminPayments,
   adminSubscriptions,
 } from '../controllers/adminFinanceController'
+import {
+  adminEscrowExport,
+  adminPaymentsExport,
+  adminSubscriptionsExport,
+  adminUsersExport,
+} from '../controllers/adminExportController'
+import { adminClientDetail, adminListClients } from '../controllers/adminClientController'
+import { adminProviderDetail, adminSetProviderCategories, adminSetProviderZone } from '../controllers/adminProviderController'
 import {
   adminAntiCircumventionDashboard,
   adminAntiCircumventionFalsePositive,
@@ -353,7 +368,22 @@ adminRoutes.get('/admin/users', requireAdminPermission('users.view'), asyncHandl
  *       200: { description: Fiche compte détaillée (jamais de hash de mot de passe). }
  *       404: { description: Utilisateur introuvable., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
  */
+/**
+ * @openapi
+ * /admin/users/export:
+ *   get: { tags: [Admin], summary: Export de tous les comptes filtrés, pour CSV côté client (users.view), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: Lignes de comptes (jamais de hash de mot de passe). } } }
+ */
+// ⚠️ Doit précéder `/admin/users/:id` : sinon Express capterait « export » comme un id.
+adminRoutes.get('/admin/users/export', requireAdminPermission('users.view'), asyncHandler(adminUsersExport))
+
 adminRoutes.get('/admin/users/:id', requireAdminPermission('users.view'), asyncHandler(adminUserDetail))
+
+/**
+ * @openapi
+ * /admin/users/{id}:
+ *   patch: { tags: [Admin], summary: Édite un compte non-admin — prénom/nom/username/ville/rôle (users.edit), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Compte mis à jour. }, 400: { description: Rôle invalide ou aucune modification., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }, 404: { description: Utilisateur introuvable., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.patch('/admin/users/:id', requireAdminPermission('users.edit'), asyncHandler(adminEditUser))
 
 /**
  * @openapi
@@ -1022,3 +1052,91 @@ adminRoutes.post('/admin/campaigns', requireAdminRole, validateBody(campaignSche
  */
 adminRoutes.get('/admin/templates', requireAdminRole, asyncHandler(adminListTemplates))
 adminRoutes.post('/admin/templates', requireAdminRole, validateBody(messageTemplateSchema), asyncHandler(adminUpsertTemplate))
+
+/**
+ * Fin de Phase 2 — routes admin restantes. Portées depuis `server/api/admin/**`.
+ *
+ * @openapi
+ * /admin/users/{id}/delete:
+ *   post: { tags: [Admin], summary: Supprime un compte par anonymisation (rôle admin, tracé, #286), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Compte anonymisé. } } }
+ */
+adminRoutes.post('/admin/users/:id/delete', requireAdminRole, validateBody(optionalReasonBodySchema), asyncHandler(adminAnonymizeUser))
+
+/**
+ * @openapi
+ * /admin/users/{id}/message:
+ *   post: { tags: [Admin], summary: Message direct in-app à un compte (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Message envoyé. }, 400: { description: Objet/message manquant., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.post('/admin/users/:id/message', requireAdminRole, validateBody(adminMessageSchema), asyncHandler(adminMessageUser))
+
+/**
+ * Module 3 — comptes chercheur (rôle admin, lecture). Portées depuis
+ * `server/api/admin/clients/**`.
+ *
+ * @openapi
+ * /admin/clients:
+ *   get: { tags: [Admin], summary: Liste paginée et filtrable des chercheurs (rôle admin), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: Chercheurs paginés. } } }
+ */
+adminRoutes.get('/admin/clients', requireAdminRole, asyncHandler(adminListClients))
+
+/**
+ * @openapi
+ * /admin/clients/{id}:
+ *   get: { tags: [Admin], summary: Fiche détaillée d'un chercheur — demandes, missions, litiges, remboursements, avis (rôle admin), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Fiche chercheur. }, 404: { description: Chercheur introuvable., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.get('/admin/clients/:id', requireAdminRole, asyncHandler(adminClientDetail))
+
+/**
+ * Module 2 — fiche & forçage prestataire (rôle admin). Portées depuis
+ * `server/api/admin/providers/{[id].get,[id]/zone.patch,[id]/categories.patch}`.
+ *
+ * @openapi
+ * /admin/providers/{id}:
+ *   get: { tags: [Admin], summary: Fiche détaillée d'un prestataire — profil, abonnement, KYC, missions, avis (rôle admin), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Fiche prestataire. }, 404: { description: Prestataire introuvable., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.get('/admin/providers/:id', requireAdminRole, asyncHandler(adminProviderDetail))
+
+/**
+ * @openapi
+ * /admin/providers/{id}/zone:
+ *   patch: { tags: [Admin], summary: Force la zone géographique d'intervention d'un prestataire (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Zone mise à jour. }, 404: { description: Profil prestataire introuvable., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.patch('/admin/providers/:id/zone', requireAdminRole, validateBody(providerZoneSchema), asyncHandler(adminSetProviderZone))
+
+/**
+ * @openapi
+ * /admin/providers/{id}/categories:
+ *   patch: { tags: [Admin], summary: Force la catégorie de service autorisée d'un prestataire (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Catégorie mise à jour. }, 400: { description: Secteur manquant., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }, 404: { description: Profil prestataire introuvable., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.patch('/admin/providers/:id/categories', requireAdminRole, validateBody(providerCategorySchema), asyncHandler(adminSetProviderCategories))
+
+/**
+ * @openapi
+ * /admin/conversations:
+ *   get: { tags: [Admin], summary: Liste paginée des mises en relation client ↔ prestataire (conversations.view), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: Conversations paginées (client et prestataire résolus). } } }
+ */
+adminRoutes.get('/admin/conversations', requireAdminPermission('conversations.view'), asyncHandler(adminConversations))
+
+/**
+ * Exports CSV (toutes lignes filtrées) — JSON `{ items, total }`, CSV généré côté
+ * client. Portés depuis `server/api/admin/{payments,escrow,subscriptions}/export.get.ts`.
+ *
+ * @openapi
+ * /admin/payments/export:
+ *   get: { tags: [Admin], summary: Export des mouvements/paiements — CSV (?format=csv, rôle admin, tracé) ou JSON (payments.view), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: CSV en pièce jointe, ou JSON { items, total }. } } }
+ */
+adminRoutes.get('/admin/payments/export', requireAdminRole, asyncHandler(adminPaymentsExport))
+
+/**
+ * @openapi
+ * /admin/escrow/export:
+ *   get: { tags: [Admin], summary: Export des commandes en séquestre filtrées, pour CSV côté client (escrow.view), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: JSON { items, total }. } } }
+ */
+adminRoutes.get('/admin/escrow/export', requireAdminPermission('escrow.view'), asyncHandler(adminEscrowExport))
+
+/**
+ * @openapi
+ * /admin/subscriptions/export:
+ *   get: { tags: [Admin], summary: Export des abonnements filtrés, pour CSV côté client (subscriptions.view), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: JSON { items, total }. } } }
+ */
+adminRoutes.get('/admin/subscriptions/export', requireAdminPermission('subscriptions.view'), asyncHandler(adminSubscriptionsExport))
