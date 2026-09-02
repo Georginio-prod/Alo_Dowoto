@@ -171,3 +171,16 @@ export const antiCircumventionRestrictSchema = z.object({
 export const antiCircumventionFalsePositiveSchema = z.object({
   note: z.string().trim().optional(),
 })
+
+// ---- Campagnes de notification (#dashboard-admin, module 11) ----
+
+/** Création (envoi immédiat ou programmé) d'une campagne. Iso `campaignSchema` (campaigns/index.post). */
+export const campaignSchema = z.object({
+  role: z.enum(['client', 'prestataire']).optional(),
+  city: z.string().trim().optional(),
+  inactiveDays: z.number().int().positive().optional(),
+  channel: z.enum(['in_app', 'email', 'sms', 'push']),
+  subject: z.string().trim().optional(),
+  body: requiredTrimmed('Le message est requis.'),
+  scheduledAt: z.number().optional(),
+})
