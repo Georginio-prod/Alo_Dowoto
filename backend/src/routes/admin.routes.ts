@@ -26,6 +26,7 @@ import {
   missionReassignSchema,
   antiCircumventionRestrictSchema,
   antiCircumventionFalsePositiveSchema,
+  campaignSchema,
 } from '../validation/schemas/admin'
 import {
   adminLogin,
@@ -135,6 +136,7 @@ import {
   adminAntiCircumventionWarn,
 } from '../controllers/adminAntiCircumventionController'
 import { adminAuditLog } from '../controllers/adminAuditLogController'
+import { adminCreateCampaign, adminListCampaigns } from '../controllers/adminCampaignController'
 
 /**
  * Dashboard admin desktop (#admin) — sous-lot 1 : authentification, session,
@@ -995,3 +997,15 @@ adminRoutes.post('/admin/anti-circumvention/:userId/false-positive', requireAdmi
  *   get: { tags: [Admin], summary: Journal d'audit horodaté des actions sensibles, paginé et filtrable (rôle admin), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: Entrées d'audit paginées (targetType, q). } } }
  */
 adminRoutes.get('/admin/audit-log', requireAdminRole, asyncHandler(adminAuditLog))
+
+/**
+ * Module 11 — campagnes de notification (rôle admin, création tracée). Portées
+ * depuis `server/api/admin/campaigns/**`.
+ *
+ * @openapi
+ * /admin/campaigns:
+ *   get: { tags: [Admin], summary: Historique des campagnes de notification (rôle admin), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: Campagnes, les plus récentes d'abord. } } }
+ *   post: { tags: [Admin], summary: Crée une campagne — envoi immédiat ou programmé, segment ciblé (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: Campagne créée. }, 400: { description: Corps invalide., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.get('/admin/campaigns', requireAdminRole, asyncHandler(adminListCampaigns))
+adminRoutes.post('/admin/campaigns', requireAdminRole, validateBody(campaignSchema), asyncHandler(adminCreateCampaign))
