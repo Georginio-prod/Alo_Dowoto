@@ -193,3 +193,19 @@ export const messageTemplateSchema = z.object({
   body: requiredTrimmed('Le contenu est requis.'),
   subject: z.string().trim().optional(),
 })
+
+// ---- Prestataires — forçage admin (#dashboard-admin, module 2) ----
+
+/** Catégorie de service autorisée forcée par l'admin. Iso `providerCategorySchema`. */
+export const providerCategorySchema = z.object({
+  sector: requiredTrimmed('Le secteur est requis.'),
+})
+
+/** Zone géographique d'intervention forcée par l'admin. Iso `providerZoneSchema`. */
+export const providerZoneSchema = z.object({
+  city: z.string().trim().optional(),
+  quartier: z.string().trim().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  rayonInterventionKm: z.number().int().positive().optional(),
+})
