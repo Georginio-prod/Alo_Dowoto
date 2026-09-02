@@ -24,6 +24,8 @@ import {
   disputeResolveSchema,
   missionNoteSchema,
   missionReassignSchema,
+  antiCircumventionRestrictSchema,
+  antiCircumventionFalsePositiveSchema,
 } from '../validation/schemas/admin'
 import {
   adminLogin,
@@ -126,6 +128,12 @@ import {
   adminPayments,
   adminSubscriptions,
 } from '../controllers/adminFinanceController'
+import {
+  adminAntiCircumventionDashboard,
+  adminAntiCircumventionFalsePositive,
+  adminAntiCircumventionRestrictMessaging,
+  adminAntiCircumventionWarn,
+} from '../controllers/adminAntiCircumventionController'
 
 /**
  * Dashboard admin desktop (#admin) — sous-lot 1 : authentification, session,
@@ -945,3 +953,34 @@ adminRoutes.post('/admin/missions/:id/nudge', requireAdminRole, asyncHandler(adm
  *   post: { tags: [Admin], summary: Réassigne une mission à un autre prestataire (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Mission réassignée. }, 400: { description: Introuvable ou statut incompatible., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
  */
 adminRoutes.post('/admin/missions/:id/reassign', requireAdminRole, validateBody(missionReassignSchema), asyncHandler(adminMissionReassign))
+
+/**
+ * Module 9 — anti-désintermédiation (rôle admin, actions tracées). Portées depuis
+ * `server/api/admin/anti-circumvention/**`.
+ *
+ * @openapi
+ * /admin/anti-circumvention:
+ *   get: { tags: [Admin], summary: Tableau de bord des signaux anti-désintermédiation (rôle admin), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: Signaux de contournement, chutes de missions, scores de risque, signal démo. } } }
+ */
+adminRoutes.get('/admin/anti-circumvention', requireAdminRole, asyncHandler(adminAntiCircumventionDashboard))
+
+/**
+ * @openapi
+ * /admin/anti-circumvention/{userId}/warn:
+ *   post: { tags: [Admin], summary: Envoie un avertissement anti-désintermédiation (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: userId, required: true, schema: { type: string } }], responses: { 200: { description: Avertissement envoyé. } } }
+ */
+adminRoutes.post('/admin/anti-circumvention/:userId/warn', requireAdminRole, asyncHandler(adminAntiCircumventionWarn))
+
+/**
+ * @openapi
+ * /admin/anti-circumvention/{userId}/restrict-messaging:
+ *   post: { tags: [Admin], summary: Restreint ou lève la restriction de messagerie d'un compte (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: userId, required: true, schema: { type: string } }], responses: { 200: { description: Compte mis à jour. }, 400: { description: Valeur invalide., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } } } }
+ */
+adminRoutes.post('/admin/anti-circumvention/:userId/restrict-messaging', requireAdminRole, validateBody(antiCircumventionRestrictSchema), asyncHandler(adminAntiCircumventionRestrictMessaging))
+
+/**
+ * @openapi
+ * /admin/anti-circumvention/{userId}/false-positive:
+ *   post: { tags: [Admin], summary: Marque les signaux d'un compte comme faux positif — exclu du score de risque (rôle admin, tracé), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: userId, required: true, schema: { type: string } }], responses: { 200: { description: Faux positif enregistré. } } }
+ */
+adminRoutes.post('/admin/anti-circumvention/:userId/false-positive', requireAdminRole, validateBody(antiCircumventionFalsePositiveSchema), asyncHandler(adminAntiCircumventionFalsePositive))
