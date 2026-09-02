@@ -159,3 +159,15 @@ export const missionNoteSchema = z.object({
 export const missionReassignSchema = z.object({
   providerId: requiredTrimmed('Le prestataire de remplacement est requis.'),
 })
+
+// ---- Anti-désintermédiation (#dashboard-admin, module 9) ----
+
+/** Bascule de restriction de messagerie d'un compte. Iso le schéma local de `anti-circumvention/[userId]/restrict-messaging`. */
+export const antiCircumventionRestrictSchema = z.object({
+  restricted: z.boolean(),
+})
+
+/** Note interne facultative accompagnant un marquage faux positif. Iso le schéma local de `anti-circumvention/[userId]/false-positive`. */
+export const antiCircumventionFalsePositiveSchema = z.object({
+  note: z.string().trim().optional(),
+})
