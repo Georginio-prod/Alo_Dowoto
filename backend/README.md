@@ -6,41 +6,37 @@ Nitro** (`server/api/**`) de l'app Nuxt, sous la contrainte absolue du **zéro
 changement fonctionnel** — voir `docs/adr/` (ADR-0014/0015/0016) et le filet de
 sécurité `tests/contract/`.
 
-> État : **Phase 2 — portage par domaine, quasi terminée** (ADR-0017). La couche
+> État : **Phase 2 — portage par domaine, TERMINÉE** (ADR-0017). La couche
 > transverse est posée (**validation Zod**, **doc OpenAPI** `/api/docs`, patron
-> **routes → controller → service → repository** découplé de Nitro). **~167/183
-> routes portées**, chaque domaine validé iso par les tests backend **et le rejeu
-> de contrat** (`tests/contract/replay/`).
+> **routes → controller → service → repository** découplé de Nitro). **183/183
+> routes `server/api/**` portées**, chaque domaine validé iso par les tests
+> backend **et le rejeu de contrat** (`tests/contract/replay/`).
 >
 > **Domaines entièrement portés** : `account` (RGPD, #286), `assistant`, `auth`,
-> `conversations`, `notifications`, `parrainage`, `payments` (reçus PDF inclus,
-> #363 ; activation d'abonnement + récompense parrainage #365 à la confirmation),
-> `providers` (self-service **et** découverte publique `search`/`featured`/`:id`),
-> `quotas`, `reclamations`, `requests`, `reviews`, `sectors`, `subscriptions`,
-> `testimonials`, `updates`, `verification` (#286), `wallet` (reçus PDF inclus,
-> HMAC + anti-rejeu #355). `favoris` : `POST`/`DELETE` portés — **`GET
-> /api/favorites` reste à porter**.
+> `conversations`, `favoris` (liste incluse), `notifications`, `parrainage`,
+> `payments` (reçus PDF inclus, #363 ; activation d'abonnement + récompense
+> parrainage #365 à la confirmation), `providers` (self-service **et** découverte
+> publique `search`/`featured`/`:id`), `quotas`, `reclamations`, `requests`,
+> `reviews`, `sectors`, `subscriptions`, `testimonials`, `updates`,
+> `verification` (#286), `wallet` (reçus PDF inclus, HMAC + anti-rejeu #355).
 >
-> **Dashboard admin** : **86/101 routes** (`/api/admin/**`, Bearer + rôle admin,
-> permissions granulaires, actions tracées au journal d'audit). Modules portés :
-> auth/session/équipe, vue d'ensemble & listes en lecture, comptes (suspension,
-> réactivation, mot de passe, risque, abonnement manuel, suppression), KYC &
-> vérification prestataire, paiements & séquestre (échec/remboursement/libération/
-> rejeu, arbitrage), catalogue tarifaire & éditorial (formules/coupons/réglages/
-> catégories/questions/contenu), litiges/avis/missions, modération
-> (témoignages/réclamations/annonces), **anti-désintermédiation (module 9)**,
+> **Dashboard admin : 101/101 routes** (`/api/admin/**`, Bearer + rôle admin,
+> permissions granulaires, actions tracées au journal d'audit). Tous les modules
+> sont portés : auth/session/équipe, vue d'ensemble & listes, comptes (suspension,
+> réactivation, mot de passe, risque, abonnement manuel, édition, suppression/
+> anonymisation, message direct), fiches chercheur (module 3) & prestataire
+> (module 2, dont forçage zone/catégories), mises en relation, KYC & vérification,
+> paiements & séquestre (actions + exports CSV), catalogue tarifaire & éditorial,
+> litiges/avis/missions, modération, **anti-désintermédiation (module 9)**,
 > **campagnes & modèles de messages (module 11)** et **journal d'audit (module 12)**.
 >
-> **Reste à porter (~14 routes)** :
-> - `GET /api/favorites` (liste des favoris du client) ;
-> - **admin (13)** : listes `GET /admin/clients`, `GET /admin/clients/:id`,
->   `GET /admin/conversations` ; fiche `GET /admin/providers/:id` ; éditions
->   prestataire `PATCH /admin/providers/:id/{zone,categories}` ; comptes
->   `PATCH /admin/users/:id`, `POST /admin/users/:id/{delete,message}` ; exports
->   CSV `GET /admin/{users,payments,escrow,subscriptions}/export`.
->
-> Puis **Phase 3** (SPA Nuxt + reverse proxy `/api/* → backend` + suppression de
-> `server/api` & `server/utils`) et **Phase 4** (déploiement + cutover prod).
+> **Reste (hors portage de routes)** :
+> - **Phase 3** : passage du front Nuxt en **SPA** (`ssr: false`), **reverse
+>   proxy** `/api/* → backend` (dev + prod), **convergence des bases** (l'app Nuxt
+>   SQLite → PostgreSQL, prérequis pour que l'auth backend authentifie les vrais
+>   comptes), puis **suppression** de `server/api` & `server/utils` et de la
+>   bascule `useApi`/`NUXT_PUBLIC_MIGRATED_API_PREFIXES`.
+> - **Phase 4** : déploiement des deux artefacts derrière le proxy + cutover prod.
 
 ## Structure
 
