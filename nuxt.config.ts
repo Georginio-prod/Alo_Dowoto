@@ -103,6 +103,24 @@ export default defineNuxtConfig({
       ]
     }
   },
+  // Reverse proxy de développement `/api/* → backend Express` (Phase 3, ADR-0017).
+  // En dev, le serveur Nitro relaie toutes les requêtes `/api` vers le backend
+  // (par défaut http://localhost:3001) : le web reste **same-origin** (cookies
+  // `wt_session` OK, aucun souci CORS) et consomme la vraie API Express. Les
+  // handlers `server/api/**` restants ne sont donc plus sollicités en dev — ils
+  // seront supprimés en fin de Phase 3. En PROD, ce relais est assuré par le
+  // reverse proxy d'infrastructure (nginx/Caddy), pas par Nitro.
+  // Cible surchargeable via NUXT_DEV_API_PROXY_TARGET (ex. tunnel ngrok).
+  $development: {
+    nitro: {
+      devProxy: {
+        '/api': {
+          target: `${process.env.NUXT_DEV_API_PROXY_TARGET ?? 'http://localhost:3001'}/api`,
+          changeOrigin: true,
+        },
+      },
+    },
+  },
   vite: {
     plugins: [tailwindcss()],
     // Le serveur de dev Vite refuse par défaut les requêtes dont l'en-tête Host
