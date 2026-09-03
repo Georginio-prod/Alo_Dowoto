@@ -111,14 +111,23 @@ export default defineNuxtConfig({
   // seront supprimés en fin de Phase 3. En PROD, ce relais est assuré par le
   // reverse proxy d'infrastructure (nginx/Caddy), pas par Nitro.
   // Cible surchargeable via NUXT_DEV_API_PROXY_TARGET (ex. tunnel ngrok).
+  //
+  // ⚠️ Désactivé pendant les tests de parcours (E2E=true) : Playwright lance
+  // `nuxt dev` et exerce les vrais `/api` — tant que Nitro existe, l'E2E doit
+  // continuer à taper les handlers `server/api/**` (pas un backend Express qui
+  // n'est pas démarré par le harnais E2E). Le proxy sera rendu inconditionnel
+  // quand Nitro sera retiré (et l'E2E adapté pour démarrer le backend).
   $development: {
     nitro: {
-      devProxy: {
-        '/api': {
-          target: `${process.env.NUXT_DEV_API_PROXY_TARGET ?? 'http://localhost:3001'}/api`,
-          changeOrigin: true,
-        },
-      },
+      devProxy:
+        process.env.E2E === 'true'
+          ? {}
+          : {
+              '/api': {
+                target: `${process.env.NUXT_DEV_API_PROXY_TARGET ?? 'http://localhost:3001'}/api`,
+                changeOrigin: true,
+              },
+            },
     },
   },
   vite: {
