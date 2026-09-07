@@ -25,6 +25,7 @@ Créer `backend/.env` à partir de `backend/.env.example` et fournir au minimum 
 PAYMENT_WEBHOOK_SECRET=une-valeur-longue-et-aleatoire
 DATABASE_URL=postgresql://worktogo:mot-de-passe@postgres:5432/worktogo?schema=public
 CORS_ORIGINS=https://votre-domaine.tg
+APP_ORIGIN=https://votre-domaine.tg
 ```
 
 Avec Compose, `DATABASE_URL` est automatiquement remplacée par
@@ -34,6 +35,12 @@ d'images.
 
 Les variables optionnelles sont documentées dans `backend/.env.example` :
 Google OAuth, Twilio/Brevo, Sentry, assistant IA et mises à jour desktop.
+
+Pour Google OAuth, `APP_ORIGIN` doit être l'URL publique exacte du front et
+l'URI enregistrée dans Google Cloud doit être
+`<APP_ORIGIN>/api/auth/google/callback`. En local avec le port 3100 :
+`APP_ORIGIN=http://localhost:3100` et
+`http://localhost:3100/api/auth/google/callback`.
 
 ## Lancement
 

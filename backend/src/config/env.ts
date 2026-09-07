@@ -7,6 +7,8 @@ import 'dotenv/config'
 export interface AppEnv {
   nodeEnv: string
   port: number
+  /** URL publique du front, utilisée pour les retours OAuth hors du proxy. */
+  appOrigin: string | undefined
   /** Origines autorisées pour CORS (web, dashboard, mobile). */
   corsOrigins: string[]
   sentryDsn: string | undefined
@@ -44,6 +46,7 @@ const isProd = nodeEnv === 'production'
 export const env: AppEnv = {
   nodeEnv,
   port: Number(process.env.PORT ?? 3001),
+  appOrigin: process.env.APP_ORIGIN?.trim().replace(/\/+$/, '') || undefined,
   corsOrigins: parseOrigins(process.env.CORS_ORIGINS),
   sentryDsn: process.env.SENTRY_DSN || undefined,
   isProd,

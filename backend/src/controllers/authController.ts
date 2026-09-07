@@ -42,9 +42,18 @@ const baseCookieOptions: CookieOptions = {
   path: '/',
 }
 
-/** Origine de la requête (`https://host`) — pour construire le `redirect_uri` Google. */
+/**
+ * URL publique de l'application — pour construire le `redirect_uri` Google et
+ * les retours de callback. `APP_ORIGIN` évite qu'un proxy ne perde le port ou
+ * le domaine public ; l'origine de la requête reste le repli pour le dev.
+ */
 function requestOrigin(req: Request): string {
-  return `${req.protocol}://${req.get('host')}`
+  return env.appOrigin ?? `${req.protocol}://${req.get('host')}`
+}
+
+/** Redirection absolue : le navigateur conserve toujours l'hôte et le port du front. */
+function redirectToApp(req: Request, res: Response, path: string): void {
+  res.redirect(`${requestOrigin(req)}${path}`)
 }
 
 // --- Sessions --------------------------------------------------------------
@@ -117,7 +126,7 @@ export async function deletePosition(req: Request, res: Response): Promise<void>
 export function googleStart(req: Request, res: Response): void {
   const config = googleOauthConfig()
   if (!config) {
-    res.redirect('/auth?error=google_config')
+    redirectToApp(req, res, '/auth?error=google_config')
     return
   }
 
@@ -141,7 +150,7 @@ export function googleStart(req: Request, res: Response): void {
 export async function googleCallback(req: Request, res: Response): Promise<void> {
   const config = googleOauthConfig()
   if (!config) {
-    res.redirect('/auth?error=google_config')
+    redirectToApp(req, res, '/auth?error=google_config')
     return
   }
 
@@ -154,25 +163,25 @@ export async function googleCallback(req: Request, res: Response): Promise<void>
   // Le callback reste nécessaire : il permet aussi de supprimer les cookies OAuth
   // temporaires avant la redirection.
   if (typeof req.query.error === 'string' && req.query.error) {
-    res.redirect('/')
+    redirectToApp(req, res, '/')
     return
   }
 
   const code = typeof req.query.code === 'string' ? req.query.code : ''
   const state = typeof req.query.state === 'string' ? req.query.state : ''
   if (!code || !state || !stateCookie || state !== stateCookie) {
-    res.redirect('/auth?error=google_state')
+    redirectToApp(req, res, '/auth?error=google_state')
     return
   }
 
   const redirectUri = `${requestOrigin(req)}/api/auth/google/callback`
   const profile = await fetchGoogleProfile(config, code, redirectUri)
   if (!profile) {
-    res.redirect('/auth?error=google_failed')
+    redirectToApp(req, res, '/auth?error=google_failed')
     return
   }
   if (!profile.emailVerified) {
-    res.redirect('/auth?error=google_email')
+    redirectToApp(req, res, '/auth?error=google_email')
     return
   }
 
@@ -181,12 +190,12 @@ export async function googleCallback(req: Request, res: Response): Promise<void>
   if (user) {
     // Compte suspendu par un admin : connexion Google refusée (iso session.post).
     if (user.suspendedAt != null) {
-      res.redirect('/auth?error=google_suspended')
+      redirectToApp(req, res, '/auth?error=google_suspended')
       return
     }
     const token = await createSession(user.id)
     res.cookie(SESSION_COOKIE, token, { ...baseCookieOptions, maxAge: SESSION_MAX_AGE_MS })
-    res.redirect(user.role === 'prestataire' ? '/prestataire' : '/resultats')
+    redirectToApp(req, res, user.role === 'prestataire' ? '/prestataire' : '/resultats')
     return
   }
 
@@ -199,7 +208,7 @@ export async function googleCallback(req: Request, res: Response): Promise<void>
     { ...baseCookieOptions, maxAge: 15 * 60 * 1000 },
   )
   const roleQuery = roleCookie === 'client' || roleCookie === 'prestataire' ? `&role=${roleCookie}` : ''
-  res.redirect(`/auth?google=1${roleQuery}`)
+  redirectToApp(req, res, `/auth?google=1${roleQuery}`)
 }
 
 interface PendingGoogleSignup {

@@ -193,16 +193,16 @@ describe('Contrat — authentification (/api/auth)', () => {
       if (saved.secret !== undefined) process.env.GOOGLE_CLIENT_SECRET = saved.secret
     })
 
-    it('GET /auth/google → 302 vers /auth?error=google_config', async () => {
-      const res = await request(app).get('/api/auth/google')
+    it('GET /auth/google → 302 vers le front avec google_config', async () => {
+      const res = await request(app).get('/api/auth/google').set('Host', 'localhost:3100')
       expect(res.status).toBe(302)
-      expect(res.headers.location).toBe('/auth?error=google_config')
+      expect(res.headers.location).toBe('http://localhost:3100/auth?error=google_config')
     })
 
-    it('GET /auth/google/callback → 302 vers /auth?error=google_config', async () => {
-      const res = await request(app).get('/api/auth/google/callback')
+    it('GET /auth/google/callback → 302 vers le front avec google_config', async () => {
+      const res = await request(app).get('/api/auth/google/callback').set('Host', 'localhost:3100')
       expect(res.status).toBe(302)
-      expect(res.headers.location).toBe('/auth?error=google_config')
+      expect(res.headers.location).toBe('http://localhost:3100/auth?error=google_config')
     })
 
     it('GET /auth/google/pending sans cookie → { pending: null }', async () => {
@@ -227,10 +227,13 @@ describe('Contrat — authentification (/api/auth)', () => {
       else process.env.GOOGLE_CLIENT_SECRET = saved.secret
     })
 
-    it('GET /auth/google/callback annulé → 302 vers l’accueil', async () => {
-      const res = await request(app).get('/api/auth/google/callback').query({ error: 'access_denied' })
+    it('GET /auth/google/callback annulé → 302 vers l’accueil avec le bon port', async () => {
+      const res = await request(app)
+        .get('/api/auth/google/callback')
+        .set('Host', 'localhost:3100')
+        .query({ error: 'access_denied' })
       expect(res.status).toBe(302)
-      expect(res.headers.location).toBe('/')
+      expect(res.headers.location).toBe('http://localhost:3100/')
     })
   })
 
@@ -277,14 +280,20 @@ describe('Contrat — authentification (/api/auth)', () => {
       vi.stubGlobal('fetch', fetchMock)
 
       const agent = request.agent(app)
-      const start = await agent.get('/api/auth/google')
+      const start = await agent.get('/api/auth/google').set('Host', 'localhost:3100')
       expect(start.status).toBe(302)
+      expect(new URL(start.headers.location).searchParams.get('redirect_uri')).toBe(
+        'http://localhost:3100/api/auth/google/callback',
+      )
       const state = new URL(start.headers.location).searchParams.get('state')
       expect(state).toBeTruthy()
 
-      const callback = await agent.get('/api/auth/google/callback').query({ code: 'fake-code', state })
+      const callback = await agent
+        .get('/api/auth/google/callback')
+        .set('Host', 'localhost:3100')
+        .query({ code: 'fake-code', state })
       expect(callback.status).toBe(302)
-      expect(callback.headers.location).toBe('/resultats')
+      expect(callback.headers.location).toBe('http://localhost:3100/resultats')
       expect(fetchMock).toHaveBeenCalledTimes(2)
 
       const session = await agent.get('/api/auth/session')
