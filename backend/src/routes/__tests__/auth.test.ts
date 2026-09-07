@@ -125,6 +125,12 @@ describe('Contrat — authentification (/api/auth)', () => {
       expect((await request(app).get('/api/auth/session')).status).toBe(401)
     })
 
+    it('GET /auth/session/status sans session → { user: null }', async () => {
+      const res = await request(app).get('/api/auth/session/status')
+      expect(res.status).toBe(200)
+      expect(res.body).toEqual({ user: null })
+    })
+
     it('inscription → récupère le cookie de session', async () => {
       track(email)
       await verifyContact(email)
@@ -137,6 +143,12 @@ describe('Contrat — authentification (/api/auth)', () => {
 
     it('GET /auth/session avec cookie → { user }', async () => {
       const res = await request(app).get('/api/auth/session').set('Cookie', cookie)
+      expect(res.status).toBe(200)
+      expect(res.body.user.id).toBe(userId)
+    })
+
+    it('GET /auth/session/status avec cookie → { user }', async () => {
+      const res = await request(app).get('/api/auth/session/status').set('Cookie', cookie)
       expect(res.status).toBe(200)
       expect(res.body.user.id).toBe(userId)
     })

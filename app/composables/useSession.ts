@@ -20,7 +20,10 @@ export function useSession() {
 
   async function refresh() {
     try {
-      const { user: fetched } = await apiFetch<{ user: PublicUser }>('/api/auth/session')
+      // L'en-tête est rendu aussi pour les visiteurs. Une route publique renvoie
+      // donc `{ user: null }` plutôt qu'un 401 normal mais bruyant dans la
+      // console du navigateur à chaque page publique.
+      const { user: fetched } = await apiFetch<{ user: PublicUser | null }>('/api/auth/session/status')
       user.value = fetched
     } catch {
       user.value = null

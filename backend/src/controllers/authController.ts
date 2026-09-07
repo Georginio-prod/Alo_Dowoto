@@ -10,6 +10,8 @@ import {
   clearPosition,
   createSession,
   destroySession,
+  extractSessionToken,
+  getSessionUser,
   loginOrRegister,
   resolveOrLinkGoogleUser,
   setPassword,
@@ -61,6 +63,19 @@ function redirectToApp(req: Request, res: Response, path: string): void {
 /** GET /api/auth/session → { user } du compte connecté. */
 export async function getSession(req: Request, res: Response): Promise<void> {
   res.json({ user: await userService.toPublicUser(authUser(req)) })
+}
+
+/**
+ * GET /api/auth/session/status → utilisateur courant ou `null`.
+ *
+ * Cette variante publique sert au chrome de l'application (en-tête, accueil)
+ * sans transformer l'absence normale de session d'un visiteur en réponse 401.
+ * La route `/auth/session` reste strictement protégée pour les consommateurs
+ * qui ont besoin de distinguer une session absente d'une session valide.
+ */
+export async function getSessionStatus(req: Request, res: Response): Promise<void> {
+  const user = await getSessionUser(extractSessionToken(req))
+  res.json({ user: user ? await userService.toPublicUser(user) : null })
 }
 
 /** POST /api/auth/session → connexion/inscription : ouvre une session (cookie). */

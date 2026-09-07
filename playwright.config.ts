@@ -77,6 +77,7 @@ export default defineConfig({
       env: {
         PORT: String(PORT),
         HOST: '127.0.0.1',
+        E2E: 'true',
         NUXT_DEV_API_PROXY_TARGET: `http://127.0.0.1:${BACKEND_PORT}`,
       },
     },

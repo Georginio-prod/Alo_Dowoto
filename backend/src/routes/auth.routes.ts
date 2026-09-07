@@ -8,6 +8,7 @@ import {
   deletePosition,
   deleteSession,
   getSession,
+  getSessionStatus,
   googleCallback,
   googlePending,
   googleStart,
@@ -37,6 +38,17 @@ export const authRoutes = Router()
  *       401: { description: Non connecté., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
  */
 authRoutes.get('/auth/session', requireSessionUser, asyncHandler(getSession))
+
+/**
+ * @openapi
+ * /auth/session/status:
+ *   get:
+ *     tags: [Auth]
+ *     summary: État de la session courante pour le chrome public
+ *     responses:
+ *       200: { description: Utilisateur connecté ou `null` pour un visiteur. }
+ */
+authRoutes.get('/auth/session/status', asyncHandler(getSessionStatus))
 
 /**
  * @openapi

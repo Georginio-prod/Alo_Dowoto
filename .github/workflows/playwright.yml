@@ -18,7 +18,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U worktogo" --health-interval 5s
+          --health-cmd "pg_isready -U worktogo -d worktogo_e2e" --health-interval 5s
           --health-timeout 5s --health-retries 15
     env:
       # Base PostgreSQL fournie par le service ci-dessus. `prisma generate` ne
