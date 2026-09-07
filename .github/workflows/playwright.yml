@@ -43,7 +43,7 @@ jobs:
         run: npm run db:generate
       - name: Installer les navigateurs Playwright
         run: npx playwright install --with-deps chromium
-      # La base SQLite jetable et le serveur Nuxt sont pris en charge par
+      # La base PostgreSQL jetable, Express et Nuxt sont pris en charge par
       # playwright.config.ts (globalSetup + webServer).
       - name: Lancer les tests de parcours
         run: npx playwright test --project=chromium
