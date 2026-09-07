@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import request from 'supertest'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { prisma } from '../../config/prisma'
 import { createServer } from '../../config/server'
 import { hashPassword } from '../../utils/password'
@@ -231,6 +231,65 @@ describe('Contrat — authentification (/api/auth)', () => {
       const res = await request(app).get('/api/auth/google/callback').query({ error: 'access_denied' })
       expect(res.status).toBe(302)
       expect(res.headers.location).toBe('/')
+    })
+  })
+
+  describe('Google OAuth (fournisseur simulé)', () => {
+    const saved = { id: process.env.GOOGLE_CLIENT_ID, secret: process.env.GOOGLE_CLIENT_SECRET }
+
+    beforeAll(() => {
+      process.env.GOOGLE_CLIENT_ID = 'test-google-client-id'
+      process.env.GOOGLE_CLIENT_SECRET = 'test-google-client-secret'
+    })
+
+    afterAll(() => {
+      vi.unstubAllGlobals()
+      if (saved.id === undefined) delete process.env.GOOGLE_CLIENT_ID
+      else process.env.GOOGLE_CLIENT_ID = saved.id
+      if (saved.secret === undefined) delete process.env.GOOGLE_CLIENT_SECRET
+      else process.env.GOOGLE_CLIENT_SECRET = saved.secret
+    })
+
+    it('compte Google existant → session ouverte puis redirection finale', async () => {
+      const email = track(`google-fake-${randomUUID()}@test.dev`)
+      await prisma.user.create({
+        data: {
+          contact: email,
+          googleId: `google-fake-${randomUUID()}`,
+          role: 'client',
+          username: 'google-fake',
+          firstName: 'Google',
+          lastName: 'Test',
+          location: 'Lomé',
+        },
+      })
+
+      const user = await prisma.user.findUniqueOrThrow({ where: { contact: email } })
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: 'fake-access-token' }), { status: 200 }))
+        .mockResolvedValueOnce(new Response(JSON.stringify({
+          sub: user.googleId,
+          email,
+          email_verified: true,
+          given_name: 'Google',
+          family_name: 'Test',
+        }), { status: 200 }))
+      vi.stubGlobal('fetch', fetchMock)
+
+      const agent = request.agent(app)
+      const start = await agent.get('/api/auth/google')
+      expect(start.status).toBe(302)
+      const state = new URL(start.headers.location).searchParams.get('state')
+      expect(state).toBeTruthy()
+
+      const callback = await agent.get('/api/auth/google/callback').query({ code: 'fake-code', state })
+      expect(callback.status).toBe(302)
+      expect(callback.headers.location).toBe('/resultats')
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+
+      const session = await agent.get('/api/auth/session')
+      expect(session.status).toBe(200)
+      expect(session.body.user).toMatchObject({ contact: email, role: 'client' })
     })
   })
 })
