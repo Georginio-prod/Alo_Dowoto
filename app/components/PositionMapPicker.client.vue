@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
 import iconUrl from 'leaflet/dist/images/marker-icon.png'
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
-import { getRegionBySlug } from '~~/app/data/regions'
+import { getRegionBySlug } from '#domain-data/regions'
 
 /**
  * Sélection de position par glisser-déposer (#geoloc, 1.2/1.4) : « la

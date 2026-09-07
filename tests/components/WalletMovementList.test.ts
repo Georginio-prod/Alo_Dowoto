@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import WalletMovementList from '~/components/WalletMovementList.vue'
-import type { WalletMovement } from '~~/server/utils/walletStore'
+import type { WalletMovement } from '~/types/api'
 
 function movement(overrides: Partial<WalletMovement> = {}): WalletMovement {
   return {

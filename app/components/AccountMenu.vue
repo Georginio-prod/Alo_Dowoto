@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PublicUser } from '~~/server/utils/userStore'
+import type { PublicUser } from '~/types/api'
 
 /**
  * Icône de statut de compte + menu déroulant d'actions rapides (#130),

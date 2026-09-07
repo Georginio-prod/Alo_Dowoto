@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FormationEntry, ProviderProfile } from '~~/server/utils/providerStore'
+import type { FormationEntry, ProviderProfile } from '~/types/api'
 
 /**
  * Parcours de formation du prestataire — extrait de

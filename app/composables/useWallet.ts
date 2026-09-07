@@ -1,4 +1,4 @@
-import type { WalletMovement } from '~~/server/utils/walletStore'
+import type { WalletMovement } from '~/types/api'
 
 interface WalletResponse {
   balance: number
@@ -17,11 +17,11 @@ export function useWallet() {
   const movements = useState<WalletMovement[]>('wallet-movements', () => [])
   const minWithdrawal = useState<number | null>('wallet-min-withdrawal', () => null)
   const loaded = useState('wallet-loaded', () => false)
-  const requestFetch = useRequestFetch()
+  const { apiFetch } = useApi()
 
   async function refresh() {
     try {
-      const response = await requestFetch<WalletResponse>('/api/wallet/me')
+      const response = await apiFetch<WalletResponse>('/api/wallet/me')
       balance.value = response.balance
       movements.value = response.movements
       minWithdrawal.value = response.minWithdrawal

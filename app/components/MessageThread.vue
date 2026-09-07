@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ConversationSummary, Message } from '~~/server/utils/conversationStore'
+import type { ConversationSummary, Message } from '~/types/api'
 
 /**
  * Fil de discussion (extrait de app/pages/messages/[id].vue pour rester sous

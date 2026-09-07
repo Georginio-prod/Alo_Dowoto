@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { EscrowOrder } from '~~/server/utils/escrowOrderStore'
+import type { EscrowOrder } from '~/types/api'
 
 // Valeur d'affichage seulement, dupliquée depuis CLIENT_LATE_CANCELLATION_PENALTY_RATE
-// (server/utils/escrowClientCancellation.ts, #275) : les imports app/ → server/utils
-// se limitent aux types (voir tous les autres composants de ce dossier), pas
+// (le service de séquestre de l'API, #275) : les imports frontend → backend
+// se limitent aux types, pas
 // aux valeurs, pour ne pas embarquer de code serveur (node:crypto, etc.)
 // dans le bundle client.
 const CLIENT_LATE_CANCELLATION_PENALTY_DISPLAY_PERCENT = 20

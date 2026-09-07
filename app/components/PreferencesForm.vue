@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Mobility, ProviderProfile } from '~~/server/utils/providerStore'
+import type { Mobility, ProviderProfile } from '~/types/api'
 
 /**
  * Préférences prestataire (tarifs, mobilité, disponibilité) — extrait de

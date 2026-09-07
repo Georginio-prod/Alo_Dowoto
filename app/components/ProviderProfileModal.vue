@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ConversationSummary } from '~~/server/utils/conversationStore'
-import type { ProviderDetail } from '~~/server/utils/providerDirectory'
+import type { ConversationSummary, ProviderDetail  } from '~/types/api'
+
 
 /**
  * Fenêtre « Voir le profil » d'un prestataire (#127), ouverte depuis

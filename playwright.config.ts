@@ -8,9 +8,8 @@ import { defineConfig, devices } from '@playwright/test'
  * navigateur : ils valident les parcours complets (inscription, recherche,
  * messagerie…) tels qu'un visiteur les vit.
  *
- * Base de données : une base SQLite jetable, recréée à chaque exécution par
- * e2e/global-setup.ts (même principe que tests/setup/prismaTestDb.ts) — les
- * tests ne touchent jamais prisma/dev.db.
+ * Base de données : une base PostgreSQL jetable, préparée par
+ * e2e/global-setup.ts. Les deux processus (Express et Nuxt) pointent vers elle.
  *
  * OTP : `BREVO_API_KEY`/`TWILIO_*` sont volontairement vidés pour l'instance
  * de test, ce qui fait retomber /api/auth/otp/send sur son mode développement
@@ -18,6 +17,7 @@ import { defineConfig, devices } from '@playwright/test'
  * bout en bout sans envoyer de vrai SMS ni de vrai email.
  */
 const PORT = Number(process.env.E2E_PORT ?? 3101)
+const BACKEND_PORT = Number(process.env.E2E_BACKEND_PORT ?? 3102)
 const BASE_URL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${PORT}`
 
 export const E2E_DATABASE_URL =
@@ -47,27 +47,38 @@ export default defineConfig({
     { name: 'mobile', use: { ...devices['Pixel 5'] } },
   ],
 
-  webServer: {
-    command: 'npm run dev',
-    url: BASE_URL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-    stdout: 'pipe',
-    stderr: 'pipe',
-    env: {
-      PORT: String(PORT),
-      HOST: '127.0.0.1',
-      // Coupe les DevTools Nuxt : leur overlay intercepte les clics (voir
-      // nuxt.config.ts).
-      E2E: 'true',
-      DATABASE_URL: E2E_DATABASE_URL,
-      // Pas d'envoi réel d'OTP depuis l'instance de test (voir en-tête).
-      BREVO_API_KEY: '',
-      BREVO_SMS_SENDER: '',
-      TWILIO_ACCOUNT_SID: '',
-      TWILIO_AUTH_TOKEN: '',
-      TWILIO_FROM: '',
-      EMAIL_FROM: '',
+  webServer: [
+    {
+      command: 'npm --prefix backend run dev',
+      url: `http://127.0.0.1:${BACKEND_PORT}/health`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+      env: {
+        PORT: String(BACKEND_PORT),
+        NODE_ENV: 'test',
+        DATABASE_URL: E2E_DATABASE_URL,
+        PAYMENT_WEBHOOK_SECRET: 'e2e-webhook-secret',
+        BREVO_API_KEY: '',
+        BREVO_SMS_SENDER: '',
+        TWILIO_ACCOUNT_SID: '',
+        TWILIO_AUTH_TOKEN: '',
+        EMAIL_FROM: '',
+      },
     },
-  },
+    {
+      command: 'npm run dev',
+      url: BASE_URL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+      env: {
+        PORT: String(PORT),
+        HOST: '127.0.0.1',
+        NUXT_DEV_API_PROXY_TARGET: `http://127.0.0.1:${BACKEND_PORT}`,
+      },
+    },
+  ],
 })

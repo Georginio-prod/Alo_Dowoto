@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { WalletMovement, WalletMovementType } from '~~/server/utils/walletStore'
+import type { WalletMovement, WalletMovementType } from '~/types/api'
 
 /**
  * Historique des mouvements du portefeuille (#190, epic #191), filtrable

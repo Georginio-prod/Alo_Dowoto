@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { SECTORS } from '~~/app/data/sectors'
+import { SECTORS } from '#domain-data/sectors'
 
 /** Liste des prestataires (#dashboard-admin, module 2). */
 definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })

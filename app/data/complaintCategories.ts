@@ -1,6 +1,6 @@
 export type ComplaintCategory = 'prestataire' | 'chercheur' | 'paiement' | 'compte' | 'technique' | 'autre'
 
-/** Valeurs brutes (validation serveur, server/utils/apiValidationMisc.ts) — jamais affichées telles quelles, donc non concernées par la traduction des libellés ci-dessous. */
+/** Valeurs brutes (validation serveur, les schémas de validation de l'API) — jamais affichées telles quelles, donc non concernées par la traduction des libellés ci-dessous. */
 export const COMPLAINT_CATEGORY_VALUES: ComplaintCategory[] = [
   'prestataire', 'chercheur', 'paiement', 'compte', 'technique', 'autre',
 ]

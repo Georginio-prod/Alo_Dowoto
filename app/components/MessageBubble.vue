@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Message } from '~~/server/utils/conversationStore'
+import type { Message } from '~/types/api'
 import { resolveMessageLines } from '~/utils/messageTranslation'
 
 /**

@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { SECTORS } from '~/data/sectors'
-import type { ProviderProfile } from '~~/server/utils/providerStore'
-import type { ProviderMatchedRequest } from '~~/server/utils/requestStore'
+import { SECTORS } from '#domain-data/sectors'
+import type { ProviderProfile, ProviderMatchedRequest  } from '~/types/api'
+
 
 /**
  * « Demandes reçues » prestataire (#hub-profil-prestataire) : liste des
  * demandes clientes où ce prestataire figure dans le top de correspondances
- * (server/utils/requestStore.ts, listRequestsForProvider) — pas de flux
+ * (le service de demandes de l'API, listRequestsForProvider) — pas de flux
  * d'acceptation/refus dans ce lot, uniquement la visibilité sur ce qui a
  * déjà compté dans son quota mensuel (voir la carte quota ci-dessous). Le
  * bandeau d'explication ci-dessous et le lien vers /messages existent parce

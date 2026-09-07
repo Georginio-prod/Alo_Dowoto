@@ -76,7 +76,7 @@ const TINY_JPEG = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP////
  * Une demande n'est transmise au prestataire qu'une fois payée en séquestre
  * (#194) : sans solde, le parcours de messagerie s'arrête à l'écran de
  * paiement. Hors production, l'opérateur mobile money est simulé et confirme
- * la recharge au bout de ~3 s (voir server/api/wallet/recharge.post.ts).
+ * la recharge au bout de ~3 s (voir l'API portefeuille).
  */
 export async function rechargeWalletViaApi(page: Page, amount = 50_000): Promise<void> {
   const response = await page.request.post('/api/wallet/recharge', {

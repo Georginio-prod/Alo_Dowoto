@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { PayoutMethod, ProviderProfile } from '~~/server/utils/providerStore'
-import type { Payment } from '~~/server/utils/paymentStore'
+import type { PayoutMethod, ProviderProfile, Payment  } from '~/types/api'
+
 import type { PlanSlug } from '~/data/plans'
 
 /**
  * « Solde » prestataire (#hub-profil-prestataire) : solde disponible, moyen
  * de retrait (réutilise `payoutMethod` déjà collecté à l'inscription, voir
- * server/utils/providerStore.ts), retrait minimum et historique des
+ * le service de profils de l'API), retrait minimum et historique des
  * mouvements — même bloc `WalletMovementList` que le panneau générique
  * /solde.vue (chercheur), sur le layout dashboard-prestataire.
  */

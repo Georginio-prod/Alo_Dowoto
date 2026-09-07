@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ProviderSearchResult } from '~~/server/utils/providerDirectory'
+import type { ProviderSearchResult } from '~/types/api'
 
 /**
  * Zone de résultats de /resultats.vue (compteur, bascule liste/carte, tri,

@@ -4,7 +4,7 @@
  * carte d'identité puis d'une photo passeport (fond blanc, format
  * international). Réutilisé par AuthIdentityStep.vue (étape facultative de
  * l'inscription) et par profil.vue (complétion après coup) — voir
- * server/utils/verificationStore.ts pour la certification côté serveur.
+ * le service de vérification de l'API pour la certification côté serveur.
  */
 
 const emit = defineEmits<{ submitted: [] }>()

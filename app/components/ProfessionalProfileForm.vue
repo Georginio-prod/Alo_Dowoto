@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { SECTORS } from '~/data/sectors'
-import type { PayoutMethod, ProviderProfile } from '~~/server/utils/providerStore'
+import { SECTORS } from '#domain-data/sectors'
+import type { PayoutMethod, ProviderProfile } from '~/types/api'
 
 /**
  * Édition du profil professionnel prestataire (secteur, localisation, mode

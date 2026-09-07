@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { SECTORS } from '~/data/sectors'
-import type { ProviderProfile } from '~~/server/utils/providerStore'
-import type { ProviderMatchedRequest } from '~~/server/utils/requestStore'
-import type { Subscription } from '~~/server/utils/subscriptionStore'
+import { SECTORS } from '#domain-data/sectors'
+import type { ProviderProfile, ProviderMatchedRequest , Subscription  } from '~/types/api'
+
+
 
 /**
  * « Mon espace » prestataire — accueil du dashboard prestataire, atteint

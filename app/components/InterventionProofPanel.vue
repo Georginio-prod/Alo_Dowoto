@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EscrowOrder } from '~~/server/utils/escrowOrderStore'
+import type { EscrowOrder } from '~/types/api'
 
 /**
  * Preuve d'intervention in-app (#268, anti-fuite) : le prestataire enregistre

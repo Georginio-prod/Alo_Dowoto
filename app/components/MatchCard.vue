@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ConversationSummary } from '~~/server/utils/conversationStore'
-import type { MatchedProvider } from '~~/server/utils/requestStore'
+import type { ConversationSummary, MatchedProvider  } from '~/types/api'
+
 
 const props = withDefaults(
   defineProps<{

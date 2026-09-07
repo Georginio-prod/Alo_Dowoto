@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EscrowOrder } from '~~/server/utils/escrowOrderStore'
+import type { EscrowOrder } from '~/types/api'
 
 /**
  * Affichage et réponse à un litige ouvert (#197/#274, statut `disputed`) —

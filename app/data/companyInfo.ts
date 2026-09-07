@@ -2,7 +2,7 @@
  * Coordonnées affichées dans le footer, la page contact et les pages
  * légales (#132). Aucune coordonnée officielle n'existe encore pour ce
  * prototype : valeurs de démonstration (même domaine que les fiches
- * prestataires de démo, server/utils/providerDirectory.ts) à remplacer par
+ * prestataires de démo, l'annuaire de démonstration) à remplacer par
  * les informations réelles de la société avant mise en production.
  *
  * Les champs marqués « [à compléter] » correspondent à des informations

@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import InterventionProofPanel from '~/components/InterventionProofPanel.vue'
-import type { EscrowOrder } from '~~/server/utils/escrowOrderStore'
+import type { EscrowOrder } from '~/types/api'
 
 const fetchMock = vi.fn().mockResolvedValue({})
 vi.stubGlobal('$fetch', fetchMock)

@@ -6,18 +6,15 @@
  *
  * Contenu piloté par les clés `firstContactSectorFields.*` (#i18n), comme
  * app/data/plans.ts et app/data/faq.ts — `getSectorFields` prend le `t`
- * réactif de useI18n en paramètre plutôt que du texte français en dur.
- * `getSectorFieldsFr` sert à server/api/conversations/[id]/first-contact.post.ts
- * (util serveur Nitro pur, sans contexte vue-i18n, qui valide/journalise
- * toujours en français) exactement comme `getFaqCategoriesFr` pour la FAQ.
+ * réactif de useI18n en paramètre plutôt que du texte français en dur. La
+ * validation et les libellés français de référence sont portés par l'API
+ * Express, afin que le frontend reste indépendant du backend.
  */
-import frMessages from '~~/i18n/locales/fr.json'
 
 export interface SectorFieldOption {
   value: string
   label: string
 }
-
 export interface SectorField {
   key: string
   label: string
@@ -105,16 +102,4 @@ export function getSectorFields(sectorSlug: string | null | undefined, t: (key: 
 
   if (!sectorSlug) return []
   return builders[sectorSlug]?.() ?? []
-}
-
-function frLookup(key: string): string {
-  const value = key.split('.').reduce<unknown>((node, segment) => {
-    return typeof node === 'object' && node !== null ? (node as Record<string, unknown>)[segment] : undefined
-  }, frMessages)
-  return typeof value === 'string' ? value : key
-}
-
-/** Champs toujours en français, pour le serveur (voir server/api/conversations/[id]/first-contact.post.ts). */
-export function getSectorFieldsFr(sectorSlug: string | null | undefined): SectorField[] {
-  return getSectorFields(sectorSlug, frLookup)
 }

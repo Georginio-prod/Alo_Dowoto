@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Testimonial } from '~~/server/utils/testimonialStore'
+import type { Testimonial } from '~/types/api'
 
 const { t, locale, locales } = useI18n({ useScope: 'global' })
 

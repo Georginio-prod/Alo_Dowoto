@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { SECTORS } from '~/data/sectors'
+import { SECTORS } from '#domain-data/sectors'
 import { SECTOR_ICONS } from '~/utils/sectorIcons'
-import type { SectorCount } from '~~/server/api/sectors/counts.get'
+import type { SectorCount } from '~/types/api'
 
 const { t } = useI18n({ useScope: 'global' })
 

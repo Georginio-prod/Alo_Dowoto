@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Sector } from '~/data/sectors'
+import type { Sector } from '#domain-data/sectors'
 
 const { open: openChoiceModal } = useChoiceModal()
 const { user: sessionUser, ensure } = useSession()

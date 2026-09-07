@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { listQuartiers } from '~~/app/data/regions'
+import { listQuartiers } from '#domain-data/regions'
 
 /**
  * Localisation complète du prestataire (#geoloc, 1.2) : ville (existant),

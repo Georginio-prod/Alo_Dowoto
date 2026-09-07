@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { PLANS, findPlan, type PlanSlug } from '~/data/plans'
-import type { Subscription } from '~~/server/utils/subscriptionStore'
+import type { Subscription } from '~/types/api'
 
 const { t } = useI18n({ useScope: 'global' })
 

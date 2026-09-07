@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { SECTORS } from '~~/app/data/sectors'
-import type { ProviderSearchResult } from '~~/server/utils/providerDirectory'
+import { SECTORS } from '#domain-data/sectors'
+import type { ProviderSearchResult } from '~/types/api'
 
 /** Catégorie & zone d'intervention d'un prestataire (#dashboard-admin, module 2) — panneau autonome, extrait de la fiche prestataire. */
 const props = defineProps<{

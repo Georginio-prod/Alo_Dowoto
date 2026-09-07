@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { RADIUS_SLIDER_OPTIONS_KM } from '~~/app/data/searchRadius'
-import { listQuartiers } from '~~/app/data/regions'
+import { RADIUS_SLIDER_OPTIONS_KM } from '#domain-data/searchRadius'
+import { listQuartiers } from '#domain-data/regions'
 
 /**
  * Position et rayon de recherche (#geoloc, 1.1/1.3) : géolocalisation

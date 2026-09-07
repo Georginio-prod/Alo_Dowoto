@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { UnavailabilityPeriod } from '~~/server/utils/providerAvailabilityStore'
+import type { UnavailabilityPeriod } from '~/types/api'
 
 /**
  * Calendrier de disponibilité en temps réel (#290) : le prestataire déclare
  * des périodes où il n'est pas disponible plutôt que l'inverse — sans
  * période déclarée, il reste visible dans les propositions de recherche.
- * Voir `server/utils/providerAvailabilityStore.ts` (consommé par
+ * Voir `le service de disponibilité de l'API` (consommé par
  * `providerDirectory.searchProviders`, donc aussi par le moteur de matching
  * de la demande) pour la règle d'exclusion appliquée côté serveur.
  */

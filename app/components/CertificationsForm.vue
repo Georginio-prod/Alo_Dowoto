@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CertificationEntry, ProviderProfile } from '~~/server/utils/providerStore'
+import type { CertificationEntry, ProviderProfile } from '~/types/api'
 
 /**
  * Certification des aptitudes du prestataire — extrait de

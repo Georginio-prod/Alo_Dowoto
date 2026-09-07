@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ProviderProfile } from '~~/server/utils/providerStore'
+import type { ProviderProfile } from '~/types/api'
 
 /**
  * Langues maîtrisées par le prestataire — extrait de

@@ -1,4 +1,4 @@
-import type { PublicUser } from '~~/server/utils/userStore'
+import type { PublicUser } from '~/types/api'
 
 /**
  * État de session partagé (#session-flow) : avant, chaque composant qui
@@ -16,16 +16,11 @@ import type { PublicUser } from '~~/server/utils/userStore'
 export function useSession() {
   const user = useState<PublicUser | null>('session-user', () => null)
   const loaded = useState('session-loaded', () => false)
-  // Le `$fetch` global ne transmet pas le cookie de la requête entrante
-  // pendant le SSR (seul le navigateur le fait automatiquement côté client)
-  // — sans `useRequestFetch()`, un rechargement complet d'une page protégée
-  // par un utilisateur pourtant connecté voyait toujours une session vide et
-  // se faisait renvoyer vers /auth.
-  const requestFetch = useRequestFetch()
+  const { apiFetch } = useApi()
 
   async function refresh() {
     try {
-      const { user: fetched } = await requestFetch<{ user: PublicUser }>('/api/auth/session')
+      const { user: fetched } = await apiFetch<{ user: PublicUser }>('/api/auth/session')
       user.value = fetched
     } catch {
       user.value = null

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ProviderProfile } from '~~/server/utils/providerStore'
+import type { ProviderProfile } from '~/types/api'
 
 /**
  * Dépôt du CV prestataire — extrait de app/pages/prestataire/cv.vue

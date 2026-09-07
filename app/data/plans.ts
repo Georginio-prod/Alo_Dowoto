@@ -25,12 +25,12 @@ function features(
   return [
     { labelKey: 'profileVisible', included: profilVisible },
     // Le nombre exact de demandes reçues par mois diffère par formule (voir
-    // PROVIDER_REQUESTS_MONTHLY_LIMIT, server/utils/quotaStore.ts) — cette
+    // PROVIDER_REQUESTS_MONTHLY_LIMIT, le service de quotas de l'API) — cette
     // ligne dit seulement "vous en recevez", le détail chiffré est dans
     // PLAN_COMPARISON ci-dessous plutôt que de promettre "illimité" à tort.
     { labelKey: 'requestReception', included: receptionDemandes },
     // Le badge « Vérifié » vient de la vérification d'identité
-    // (server/utils/verificationStore.ts), pas de la formule choisie : il
+    // (le service de vérification de l'API), pas de la formule choisie : il
     // est donc identique quelle que soit la formule, et n'est plus un
     // paramètre de cette fonction.
     { labelKey: 'verifiedBadge', included: true },
@@ -93,7 +93,7 @@ export interface PlanComparisonCategory {
  * Reprend les fonctionnalités réellement livrées (recherche, messagerie,
  * avis, paiement Mobile Money…) — les quotas de demandes reçues par mois
  * reflètent exactement PROVIDER_REQUESTS_MONTHLY_LIMIT
- * (server/utils/quotaStore.ts) plutôt qu'une promesse marketing
+ * (le service de quotas de l'API) plutôt qu'une promesse marketing
  * déconnectée de ce qui est effectivement appliqué.
  */
 export const PLAN_COMPARISON: PlanComparisonCategory[] = [

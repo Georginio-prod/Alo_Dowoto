@@ -3,7 +3,7 @@
  * Confirmation explicite pour toute action destructrice du dashboard admin
  * (#dashboard-admin) — suppression, remboursement, libération de fonds,
  * suspension... Un motif peut être exigé (`requireReason`) : consommé par le
- * journal d'audit (server/utils/auditLog.ts) côté route appelante.
+ * journal d'audit (le journal d'audit de l'API) côté route appelante.
  */
 const props = withDefaults(defineProps<{
   open: boolean
