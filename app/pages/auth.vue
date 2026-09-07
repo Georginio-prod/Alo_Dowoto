@@ -63,7 +63,10 @@ function startGoogle() {
   // Redirection plein écran (pas un appel API) : le serveur pose le cookie
   // `state` puis renvoie vers l'écran de consentement Google.
   const target = activeTab.value === 'signup' ? `/api/auth/google?role=${role.value}` : '/api/auth/google'
-  navigateTo(target, { external: true })
+  // La page d'authentification ne doit pas rester dans l'historique entre
+  // l'accueil et Google. Ainsi, un Retour avant la sélection d'un compte
+  // revient à l'accueil au lieu de revisiter une URL de callback obsolète.
+  navigateTo(target, { external: true, replace: true })
 }
 
 const contactMethod = ref<Method>('phone')
