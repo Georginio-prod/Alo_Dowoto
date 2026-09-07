@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /**
  * Formulaire d'ouverture d'un litige (#197/#274), avec preuves optionnelles
  * — extrait de EscrowStatusPanel.vue pour rester sous la limite de lignes
@@ -23,7 +24,7 @@ async function handleSubmit() {
   isSubmitting.value = true
   error.value = ''
   try {
-    await $fetch(`/api/conversations/${props.conversationId}/dispute`, {
+    await apiFetch(`/api/conversations/${props.conversationId}/dispute`, {
       method: 'POST',
       body: { reason: reason.value.trim(), evidence: evidence.value.trim() || undefined },
     })

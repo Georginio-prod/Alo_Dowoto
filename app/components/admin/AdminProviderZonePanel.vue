@@ -2,6 +2,7 @@
 import { SECTORS } from '#domain-data/sectors'
 import type { ProviderSearchResult } from '~/types/api'
 
+const { apiFetch } = useApi()
 /** Catégorie & zone d'intervention d'un prestataire (#dashboard-admin, module 2) — panneau autonome, extrait de la fiche prestataire. */
 const props = defineProps<{
   providerId: string
@@ -34,7 +35,7 @@ watchEffect(() => {
 async function saveSector() {
   busy.value = true
   try {
-    await $fetch(`/api/admin/providers/${props.providerId}/categories`, { method: 'PATCH', body: { sector: sectorEdit.value } })
+    await apiFetch(`/api/admin/providers/${props.providerId}/categories`, { method: 'PATCH', body: { sector: sectorEdit.value } })
     emit('saved')
   } finally {
     busy.value = false
@@ -44,7 +45,7 @@ async function saveSector() {
 async function saveZone() {
   busy.value = true
   try {
-    await $fetch(`/api/admin/providers/${props.providerId}/zone`, {
+    await apiFetch(`/api/admin/providers/${props.providerId}/zone`, {
       method: 'PATCH',
       body: { city: zoneCity.value || undefined, quartier: zoneQuartier.value || undefined, latitude: zoneLat.value, longitude: zoneLng.value, rayonInterventionKm: zoneRadius.value },
     })

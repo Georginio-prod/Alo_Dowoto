@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /**
  * Socle de navigation du dashboard prestataire (#37).
  *
@@ -67,7 +68,7 @@ async function logout() {
   if (isLoggingOut.value) return
   isLoggingOut.value = true
   try {
-    await $fetch('/api/auth/session', { method: 'DELETE' })
+    await apiFetch('/api/auth/session', { method: 'DELETE' })
     clearSession()
   } finally {
     isLoggingOut.value = false

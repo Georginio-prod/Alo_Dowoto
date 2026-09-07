@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ProviderProfile } from '~/types/api'
 
+const { apiFetch } = useApi()
 /**
  * Dépôt du CV prestataire — extrait de app/pages/prestataire/cv.vue
  * (#hub-profil-modales) pour être réutilisé à la fois par cette page dédiée
@@ -64,7 +65,7 @@ async function submit() {
 
   isSubmitting.value = true
   try {
-    await $fetch('/api/providers/me', {
+    await apiFetch('/api/providers/me', {
       method: 'PATCH',
       body: {
         cvUrl: cvUrl.value,

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /** Fiche détaillée d'un prestataire (#dashboard-admin, module 2). */
 definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
@@ -46,12 +47,12 @@ async function withBusy(action: () => Promise<void>) {
 // KYC
 const kycRejectOpen = ref(false)
 async function approveKyc() {
-  await withBusy(async () => { await $fetch(`/api/admin/providers/${id}/kyc-approve`, { method: 'POST', body: {} }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/providers/${id}/kyc-approve`, { method: 'POST', body: {} }) })
 }
 async function rejectKyc(reason?: string) {
   kycRejectOpen.value = false
   if (!reason) return
-  await withBusy(async () => { await $fetch(`/api/admin/providers/${id}/kyc-reject`, { method: 'POST', body: { reason } }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/providers/${id}/kyc-reject`, { method: 'POST', body: { reason } }) })
 }
 
 // Suspend / reactivate
@@ -59,28 +60,28 @@ const suspendOpen = ref(false)
 async function suspend(reason?: string) {
   suspendOpen.value = false
   if (!reason) return
-  await withBusy(async () => { await $fetch(`/api/admin/users/${id}/suspend`, { method: 'POST', body: { reason } }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/users/${id}/suspend`, { method: 'POST', body: { reason } }) })
 }
 async function reactivate() {
-  await withBusy(async () => { await $fetch(`/api/admin/users/${id}/reactivate`, { method: 'POST' }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/users/${id}/reactivate`, { method: 'POST' }) })
 }
 
 // Subscription
 const extendDays = ref(30)
 async function extendSubscription() {
-  await withBusy(async () => { await $fetch(`/api/admin/providers/${id}/subscription-extend`, { method: 'POST', body: { durationDays: extendDays.value } }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/providers/${id}/subscription-extend`, { method: 'POST', body: { durationDays: extendDays.value } }) })
 }
 const cancelSubOpen = ref(false)
 async function cancelSubscription() {
   cancelSubOpen.value = false
-  await withBusy(async () => { await $fetch(`/api/admin/providers/${id}/subscription-cancel`, { method: 'POST' }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/providers/${id}/subscription-cancel`, { method: 'POST' }) })
 }
 
 // Message
 const messageOpen = ref(false)
 async function sendMessage(subject: string, body: string) {
   await withBusy(async () => {
-    await $fetch(`/api/admin/users/${id}/message`, { method: 'POST', body: { subject, body } })
+    await apiFetch(`/api/admin/users/${id}/message`, { method: 'POST', body: { subject, body } })
     messageOpen.value = false
   })
 }
@@ -89,7 +90,7 @@ async function sendMessage(subject: string, body: string) {
 const deleteOpen = ref(false)
 async function deleteAccount() {
   deleteOpen.value = false
-  await withBusy(async () => { await $fetch(`/api/admin/users/${id}/delete`, { method: 'POST', body: {} }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/users/${id}/delete`, { method: 'POST', body: {} }) })
   navigateTo('/admin/prestataires')
 }
 

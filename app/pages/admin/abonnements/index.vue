@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /** Abonnements & tarification (#dashboard-admin, module 7). */
 definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
@@ -27,26 +28,26 @@ function money(amount: number): string {
 const newPlan = ref({ slug: '', name: '', priceAmount: 5000, durationDays: 30, commissionRate: 0.1, features: '' })
 async function createPlan() {
   await withBusy(async () => {
-    await $fetch('/api/admin/plans', { method: 'POST', body: newPlan.value })
+    await apiFetch('/api/admin/plans', { method: 'POST', body: newPlan.value })
     newPlan.value = { slug: '', name: '', priceAmount: 5000, durationDays: 30, commissionRate: 0.1, features: '' }
     await refreshPlans()
   })
 }
 async function togglePlan(plan: Plan) {
-  await withBusy(async () => { await $fetch(`/api/admin/plans/${plan.id}/toggle`, { method: 'POST', body: { active: !plan.active } }); await refreshPlans() })
+  await withBusy(async () => { await apiFetch(`/api/admin/plans/${plan.id}/toggle`, { method: 'POST', body: { active: !plan.active } }); await refreshPlans() })
 }
 
 // New coupon
 const newCoupon = ref({ code: '', discountType: 'percent' as 'percent' | 'amount', discountValue: 10 })
 async function createCoupon() {
   await withBusy(async () => {
-    await $fetch('/api/admin/coupons', { method: 'POST', body: newCoupon.value })
+    await apiFetch('/api/admin/coupons', { method: 'POST', body: newCoupon.value })
     newCoupon.value = { code: '', discountType: 'percent', discountValue: 10 }
     await refreshCoupons()
   })
 }
 async function toggleCoupon(coupon: Coupon) {
-  await withBusy(async () => { await $fetch(`/api/admin/coupons/${coupon.id}/toggle`, { method: 'POST', body: { active: !coupon.active } }); await refreshCoupons() })
+  await withBusy(async () => { await apiFetch(`/api/admin/coupons/${coupon.id}/toggle`, { method: 'POST', body: { active: !coupon.active } }); await refreshCoupons() })
 }
 
 // Settings (commission + min advance)
@@ -60,7 +61,7 @@ watchEffect(() => {
 })
 async function saveSettings() {
   await withBusy(async () => {
-    await $fetch('/api/admin/settings', { method: 'PATCH', body: { commissionRate: commissionPercent.value / 100, minAdvanceAmount: minAdvance.value } })
+    await apiFetch('/api/admin/settings', { method: 'PATCH', body: { commissionRate: commissionPercent.value / 100, minAdvanceAmount: minAdvance.value } })
     await refreshSettings()
   })
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /** Paramètres & administration (#dashboard-admin, module 12). */
 definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
@@ -21,14 +22,14 @@ async function withBusy(action: () => Promise<void>) {
 }
 
 async function changeLevel(member: TeamMember, level: string) {
-  await withBusy(async () => { await $fetch(`/api/admin/team/${member.id}/level`, { method: 'POST', body: { level } }); await refreshTeam() })
+  await withBusy(async () => { await apiFetch(`/api/admin/team/${member.id}/level`, { method: 'POST', body: { level } }); await refreshTeam() })
 }
 
 const promoteUserId = ref('')
 const promoteLevel = ref('support')
 async function promote() {
   await withBusy(async () => {
-    await $fetch('/api/admin/team/promote', { method: 'POST', body: { userId: promoteUserId.value, level: promoteLevel.value } })
+    await apiFetch('/api/admin/team/promote', { method: 'POST', body: { userId: promoteUserId.value, level: promoteLevel.value } })
     promoteUserId.value = ''
     await refreshTeam()
   })
@@ -50,7 +51,7 @@ watchEffect(() => {
 })
 async function saveSettings() {
   await withBusy(async () => {
-    await $fetch('/api/admin/settings', { method: 'PATCH', body: { geoRadiusKm: geoRadiusKm.value, autoValidationDelayHours: autoValidationDelayHours.value, retractationDelayHours: retractationDelayHours.value, currency: currency.value, language: language.value } })
+    await apiFetch('/api/admin/settings', { method: 'PATCH', body: { geoRadiusKm: geoRadiusKm.value, autoValidationDelayHours: autoValidationDelayHours.value, retractationDelayHours: retractationDelayHours.value, currency: currency.value, language: language.value } })
     await refreshSettings()
   })
 }

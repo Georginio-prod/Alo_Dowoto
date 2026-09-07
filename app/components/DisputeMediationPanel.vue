@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EscrowOrder } from '~/types/api'
 
+const { apiFetch } = useApi()
 /**
  * Affichage et réponse à un litige ouvert (#197/#274, statut `disputed`) —
  * extrait de EscrowStatusPanel.vue pour rester sous la limite de lignes par
@@ -28,7 +29,7 @@ async function handleRespondToDispute() {
   isRespondingToDispute.value = true
   respondToDisputeError.value = ''
   try {
-    await $fetch(`/api/conversations/${props.conversationId}/respond-dispute`, {
+    await apiFetch(`/api/conversations/${props.conversationId}/respond-dispute`, {
       method: 'POST',
       body: { response: disputeResponseDraft.value.trim() },
     })
@@ -49,7 +50,7 @@ async function handleConfirmDisputeResolution(confirmed: boolean) {
   isConfirmingDisputeResolution.value = true
   confirmDisputeResolutionError.value = ''
   try {
-    await $fetch(`/api/conversations/${props.conversationId}/confirm-dispute-resolution`, {
+    await apiFetch(`/api/conversations/${props.conversationId}/confirm-dispute-resolution`, {
       method: 'POST',
       body: { confirmed },
     })

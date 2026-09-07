@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /** Anti-désintermédiation (#dashboard-admin, module 9). */
 definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
@@ -22,20 +23,20 @@ async function withBusy(action: () => Promise<void>) {
 }
 
 async function warn(userId: string) {
-  await withBusy(async () => { await $fetch(`/api/admin/anti-circumvention/${userId}/warn`, { method: 'POST' }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/anti-circumvention/${userId}/warn`, { method: 'POST' }) })
 }
 async function restrict(userId: string) {
-  await withBusy(async () => { await $fetch(`/api/admin/anti-circumvention/${userId}/restrict-messaging`, { method: 'POST', body: { restricted: true } }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/anti-circumvention/${userId}/restrict-messaging`, { method: 'POST', body: { restricted: true } }) })
 }
 const suspendTarget = ref<string | null>(null)
 async function suspend(reason?: string) {
   const userId = suspendTarget.value
   suspendTarget.value = null
   if (!userId || !reason) return
-  await withBusy(async () => { await $fetch(`/api/admin/users/${userId}/suspend`, { method: 'POST', body: { reason } }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/users/${userId}/suspend`, { method: 'POST', body: { reason } }) })
 }
 async function markFalsePositive(userId: string) {
-  await withBusy(async () => { await $fetch(`/api/admin/anti-circumvention/${userId}/false-positive`, { method: 'POST', body: {} }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/anti-circumvention/${userId}/false-positive`, { method: 'POST', body: {} }) })
 }
 
 function riskTone(score: number): 'neutral' | 'warning' | 'danger' {

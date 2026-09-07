@@ -2,6 +2,7 @@
 import { SECTORS } from '#domain-data/sectors'
 import type { PayoutMethod, ProviderProfile } from '~/types/api'
 
+const { apiFetch } = useApi()
 /**
  * Édition du profil professionnel prestataire (secteur, localisation, mode
  * de rémunération, description, photo) — extrait de
@@ -86,7 +87,7 @@ async function submit() {
 
   isSubmitting.value = true
   try {
-    await $fetch('/api/providers/me', {
+    await apiFetch('/api/providers/me', {
       method: 'PATCH',
       body: {
         sector: sector.value,

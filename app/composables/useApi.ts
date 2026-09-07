@@ -10,11 +10,17 @@ type ApiFetch = <T>(path: string, options?: FetchOptions) => Promise<T>
  * navigateur ni logique de bascule par domaine.
  */
 export function useApi() {
-  const rawFetch = $fetch as unknown as ApiFetch
-
-  function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T> {
-    return rawFetch<T>(path, { credentials: 'include', ...options })
-  }
-
   return { apiFetch }
+}
+
+/**
+ * Point d'entrée unique des appels HTTP du navigateur.
+ *
+ * Les composants peuvent l'obtenir via `useApi()`. Le garder exporté séparément
+ * évite de recréer une fonction pour chaque composant tout en restant facile à
+ * remplacer ou à enrichir (instrumentation, traduction d'erreurs) plus tard.
+ */
+export function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T> {
+  const rawFetch = $fetch as unknown as ApiFetch
+  return rawFetch<T>(path, { ...options, credentials: 'include' })
 }

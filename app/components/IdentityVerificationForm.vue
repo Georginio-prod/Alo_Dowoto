@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /**
  * Formulaire de vérification d'identité (#180+1) : télé-versement de la
  * carte d'identité puis d'une photo passeport (fond blanc, format
@@ -69,7 +70,7 @@ async function submit() {
   isSubmitting.value = true
   error.value = ''
   try {
-    await $fetch('/api/verification', {
+    await apiFetch('/api/verification', {
       method: 'POST',
       body: { idCardImage: idCardImage.value, passportPhotoImage: passportPhotoImage.value },
     })

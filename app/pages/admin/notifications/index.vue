@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /** Notifications & campagnes (#dashboard-admin, module 11). */
 definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
@@ -21,7 +22,7 @@ const form = ref({ role: '' as '' | 'client' | 'prestataire', city: '', inactive
 
 async function sendCampaign() {
   await withBusy(async () => {
-    await $fetch('/api/admin/campaigns', {
+    await apiFetch('/api/admin/campaigns', {
       method: 'POST',
       body: {
         role: form.value.role || undefined,
@@ -42,7 +43,7 @@ async function sendCampaign() {
 const newTemplate = ref({ key: '', label: '', channel: 'in_app', subject: '', body: '' })
 async function saveTemplate() {
   await withBusy(async () => {
-    await $fetch('/api/admin/templates', { method: 'POST', body: newTemplate.value })
+    await apiFetch('/api/admin/templates', { method: 'POST', body: newTemplate.value })
     newTemplate.value = { key: '', label: '', channel: 'in_app', subject: '', body: '' }
     await refreshTemplates()
   })

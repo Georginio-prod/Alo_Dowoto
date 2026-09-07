@@ -2,6 +2,7 @@
 import { PLANS, findPlan, type PlanSlug } from '~/data/plans'
 import type { Subscription } from '~/types/api'
 
+const { apiFetch } = useApi()
 const { t } = useI18n({ useScope: 'global' })
 
 const { trialDays = 14 } = defineProps<{ trialDays?: number }>()
@@ -28,7 +29,7 @@ async function startFreeTrial() {
   if (isSubmitting.value) return
   isSubmitting.value = true
   try {
-    await $fetch('/api/subscriptions/trial', {
+    await apiFetch('/api/subscriptions/trial', {
       method: 'POST',
       body: { plan: selectedSlug.value },
     })
@@ -48,7 +49,7 @@ async function continueToPayment() {
   if (isSubmitting.value) return
   isSubmitting.value = true
   try {
-    await $fetch('/api/subscriptions', {
+    await apiFetch('/api/subscriptions', {
       method: 'POST',
       body: { plan: selectedSlug.value },
     })

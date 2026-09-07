@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /**
  * En-tête persistant du dashboard admin (#dashboard-admin) : recherche
  * globale (comptes), alertes (litiges/KYC/paiements bloqués) et compte
@@ -49,7 +50,7 @@ const alerts = computed(() => alertsData.value ?? { disputesOpen: 0, kycPending:
 
 const { clear: clearSession } = useSession()
 async function logout() {
-  await $fetch('/api/auth/session', { method: 'DELETE' })
+  await apiFetch('/api/auth/session', { method: 'DELETE' })
   clearSession()
   navigateTo('/')
 }

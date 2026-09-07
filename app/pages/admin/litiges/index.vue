@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /** Litiges & médiation (#dashboard-admin, module 6). */
 definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
@@ -43,7 +44,7 @@ async function submitResolve() {
   const target = resolveTarget.value
   if (!target) return
   await withBusy(async () => {
-    await $fetch(`/api/admin/disputes/${target.id}/resolve`, {
+    await apiFetch(`/api/admin/disputes/${target.id}/resolve`, {
       method: 'POST',
       body: { outcome: resolveOutcome.value, providerSharePercent: resolveOutcome.value === 'split' ? splitPercent.value : undefined, note: resolveNote.value || undefined },
     })
@@ -53,7 +54,7 @@ async function submitResolve() {
 }
 
 async function requestEvidence(dispute: Dispute) {
-  await withBusy(async () => { await $fetch(`/api/admin/disputes/${dispute.id}/request-evidence`, { method: 'POST' }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/disputes/${dispute.id}/request-evidence`, { method: 'POST' }) })
 }
 </script>
 

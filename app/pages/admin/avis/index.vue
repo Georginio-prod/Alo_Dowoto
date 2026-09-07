@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /** Avis & modération (#dashboard-admin, module 8). */
 definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
@@ -43,7 +44,7 @@ async function hideReview(reason?: string) {
   const id = hideTarget.value
   hideTarget.value = null
   if (!id || !reason) return
-  await withBusy(async () => { await $fetch(`/api/admin/reviews/${id}/hide`, { method: 'POST', body: { reason } }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/reviews/${id}/hide`, { method: 'POST', body: { reason } }) })
 }
 
 const deleteTarget = ref<string | null>(null)
@@ -51,11 +52,11 @@ async function deleteReview(reason?: string) {
   const id = deleteTarget.value
   deleteTarget.value = null
   if (!id || !reason) return
-  await withBusy(async () => { await $fetch(`/api/admin/reviews/${id}/delete`, { method: 'POST', body: { reason } }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/reviews/${id}/delete`, { method: 'POST', body: { reason } }) })
 }
 
 async function restoreReview(id: string) {
-  await withBusy(async () => { await $fetch(`/api/admin/reviews/${id}/restore`, { method: 'POST' }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/reviews/${id}/restore`, { method: 'POST' }) })
 }
 
 const contactTarget = ref<ReviewRow | null>(null)
@@ -65,7 +66,7 @@ async function contactAuthor() {
   const review = contactTarget.value
   if (!review) return
   await withBusy(async () => {
-    await $fetch(`/api/admin/reviews/${review.id}/contact-author`, { method: 'POST', body: { subject: contactSubject.value, body: contactBody.value } })
+    await apiFetch(`/api/admin/reviews/${review.id}/contact-author`, { method: 'POST', body: { subject: contactSubject.value, body: contactBody.value } })
     contactTarget.value = null
     contactSubject.value = ''
     contactBody.value = ''

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { listQuartiers } from '#domain-data/regions'
 
+const { apiFetch } = useApi()
 /**
  * Localisation complète du prestataire (#geoloc, 1.2) : ville (existant),
  * quartier, position précise (carte + géolocalisation), rayon
@@ -37,7 +38,7 @@ async function clearStoredPosition() {
   isClearingPosition.value = true
   clearPositionError.value = ''
   try {
-    await $fetch('/api/providers/me/position', { method: 'DELETE' })
+    await apiFetch('/api/providers/me/position', { method: 'DELETE' })
     latitude.value = undefined
     longitude.value = undefined
   } catch (fetchError) {

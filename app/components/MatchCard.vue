@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ConversationSummary, MatchedProvider  } from '~/types/api'
 
+const { apiFetch } = useApi()
 
 const props = withDefaults(
   defineProps<{
@@ -52,7 +53,7 @@ async function contact() {
   isContacting.value = true
   contactError.value = ''
   try {
-    await $fetch('/api/quotas/contacts', { method: 'POST' })
+    await apiFetch('/api/quotas/contacts', { method: 'POST' })
     // Le compteur de contacts a bougé : on prévient le parent pour qu'il
     // resynchronise l'affichage du quota.
     emit('contacted')
@@ -91,10 +92,10 @@ async function toggleFavorite() {
   isTogglingFavorite.value = true
   try {
     if (favorite.value) {
-      await $fetch(`/api/favorites/${props.match.providerId}`, { method: 'DELETE' })
+      await apiFetch(`/api/favorites/${props.match.providerId}`, { method: 'DELETE' })
       favorite.value = false
     } else {
-      await $fetch('/api/favorites', { method: 'POST', body: { providerId: props.match.providerId } })
+      await apiFetch('/api/favorites', { method: 'POST', body: { providerId: props.match.providerId } })
       favorite.value = true
     }
     emit('favorite-changed')

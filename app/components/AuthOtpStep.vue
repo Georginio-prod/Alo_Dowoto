@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /** Étape « vérification OTP » du parcours d'authentification — vérifie le code réel (#125). */
 
 type Method = 'phone' | 'email'
@@ -71,7 +72,7 @@ async function verify() {
   const code = otp.value.join('')
 
   try {
-    await $fetch('/api/auth/otp/verify', { method: 'POST', body: { method: props.method, value: props.contactValue, code } })
+    await apiFetch('/api/auth/otp/verify', { method: 'POST', body: { method: props.method, value: props.contactValue, code } })
     stopResendTimer()
     emit('verified')
   } catch (error) {

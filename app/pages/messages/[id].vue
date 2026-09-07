@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ConversationSummary, Message, EscrowOrder , RecurringService  } from '~/types/api'
 
+const { apiFetch } = useApi()
 
 
 interface MessagesResponse {
@@ -68,7 +69,7 @@ async function handlePayEscrowOrder() {
   isPaying.value = true
   payError.value = ''
   try {
-    await $fetch(`/api/conversations/${conversationId.value}/pay`, { method: 'POST' })
+    await apiFetch(`/api/conversations/${conversationId.value}/pay`, { method: 'POST' })
     await refresh()
     refreshConversationList()
   } catch (fetchError) {
@@ -154,7 +155,7 @@ async function submitReview() {
   isSubmittingReview.value = true
   reviewError.value = ''
   try {
-    await $fetch(`/api/conversations/${conversationId.value}/review`, {
+    await apiFetch(`/api/conversations/${conversationId.value}/review`, {
       method: 'POST',
       body: { rating: reviewRating.value, comment: reviewComment.value.trim() || undefined },
     })

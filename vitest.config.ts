@@ -12,7 +12,14 @@ export default defineConfig({
     // @nuxtjs/i18n en production, sans laquelle le formatage de date localisé
     // (ex. ConversationList.vue) plante sous Vitest — voir tests/setup/i18n.ts
     // pour le plugin qui fournit le contexte global vue-i18n lui-même.
-    autoImport({ imports: ['vue', { '~~/tests/setup/useI18nShim': ['useI18n'] }], dts: false }),
+    autoImport({
+      imports: [
+        'vue',
+        { '~~/tests/setup/useI18nShim': ['useI18n'] },
+        { '~/composables/useApi': ['useApi'] },
+      ],
+      dts: false,
+    }),
     vue(),
   ],
   resolve: {

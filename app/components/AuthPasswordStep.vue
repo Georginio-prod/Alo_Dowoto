@@ -2,6 +2,7 @@
 import type { SignupProfile } from '~/components/AuthContactStep.vue'
 import type { PublicUser } from '~/types/api'
 
+const { apiFetch } = useApi()
 /**
  * Étape « mot de passe » du parcours d'authentification (#125 création à
  * l'inscription, #126 saisie obligatoire à la connexion). Extrait de
@@ -89,7 +90,7 @@ async function submitSignupPassword() {
         referralCode: props.referralCode,
       },
     })
-    await $fetch('/api/auth/password', {
+    await apiFetch('/api/auth/password', {
       method: 'POST',
       body: { password: signupPassword.value, confirmPassword: signupConfirmPassword.value },
     })

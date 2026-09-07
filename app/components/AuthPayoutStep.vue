@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PayoutMethod } from '~/types/api'
 
+const { apiFetch } = useApi()
 /**
  * Étape « Localisation & mode de rémunération » de l'inscription
  * prestataire (#123 : composant fonctionnel et persisté ; #124 : les deux
@@ -46,7 +47,7 @@ async function submit() {
   isSaving.value = true
   saveError.value = ''
   try {
-    await $fetch('/api/providers/me', {
+    await apiFetch('/api/providers/me', {
       method: 'PATCH',
       body: {
         sector: props.sectorSlug,

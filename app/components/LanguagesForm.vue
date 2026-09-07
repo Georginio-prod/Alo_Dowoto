@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ProviderProfile } from '~/types/api'
 
+const { apiFetch } = useApi()
 /**
  * Langues maîtrisées par le prestataire — extrait de
  * app/pages/prestataire/langues.vue (#hub-profil-modales) pour être
@@ -46,7 +47,7 @@ async function submit() {
 
   isSubmitting.value = true
   try {
-    await $fetch('/api/providers/me', { method: 'PATCH', body: { languages: languages.value } })
+    await apiFetch('/api/providers/me', { method: 'PATCH', body: { languages: languages.value } })
     success.value = true
     emit('saved')
   } catch (fetchError) {

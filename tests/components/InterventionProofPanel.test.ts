@@ -66,7 +66,11 @@ describe('InterventionProofPanel (#268 preuve d’intervention in-app)', () => {
     await wrapper.find('button').trigger('click')
     await flushPromises()
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/conversations/conv-1/check-in', { method: 'POST', body: {} })
+    expect(fetchMock).toHaveBeenCalledWith('/api/conversations/conv-1/check-in', {
+      method: 'POST',
+      body: {},
+      credentials: 'include',
+    })
   })
 })
 

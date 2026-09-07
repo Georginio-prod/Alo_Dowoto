@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /**
  * Composeur de message (extrait de app/pages/messages/[id].vue pour rester
  * sous la limite de lignes par fichier, sur le même principe que
@@ -30,7 +31,7 @@ async function sendMessage() {
   isSending.value = true
   sendError.value = ''
   try {
-    await $fetch(`/api/conversations/${props.conversationId}/messages`, {
+    await apiFetch(`/api/conversations/${props.conversationId}/messages`, {
       method: 'POST',
       body: { body: text },
     })

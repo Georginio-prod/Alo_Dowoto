@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /**
  * Changement de mot de passe — extrait de app/pages/mot-de-passe.vue
  * (#hub-profil-modales) pour être réutilisé à la fois par cette page dédiée
@@ -44,7 +45,7 @@ async function submit() {
 
   isSubmitting.value = true
   try {
-    await $fetch('/api/auth/password', {
+    await apiFetch('/api/auth/password', {
       method: 'POST',
       body: { currentPassword: currentPassword.value, password: newPassword.value, confirmPassword: confirmPassword.value },
     })

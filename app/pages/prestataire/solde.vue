@@ -3,6 +3,7 @@ import type { PayoutMethod, ProviderProfile, Payment  } from '~/types/api'
 
 import type { PlanSlug } from '~/data/plans'
 
+const { apiFetch } = useApi()
 /**
  * « Solde » prestataire (#hub-profil-prestataire) : solde disponible, moyen
  * de retrait (réutilise `payoutMethod` déjà collecté à l'inscription, voir
@@ -57,7 +58,7 @@ async function savePayoutMethod() {
   payoutSuccess.value = false
   isSavingPayout.value = true
   try {
-    await $fetch('/api/providers/me', { method: 'PATCH', body: { payoutMethod: payoutMethod.value } })
+    await apiFetch('/api/providers/me', { method: 'PATCH', body: { payoutMethod: payoutMethod.value } })
     await refreshProfile()
     payoutSuccess.value = true
   } catch (fetchError) {
@@ -84,7 +85,7 @@ async function submitWithdrawal() {
   withdrawSuccess.value = false
   isWithdrawing.value = true
   try {
-    await $fetch('/api/wallet/withdraw', { method: 'POST', body: { amount: withdrawAmount.value } })
+    await apiFetch('/api/wallet/withdraw', { method: 'POST', body: { amount: withdrawAmount.value } })
     withdrawAmount.value = null
     withdrawSuccess.value = true
     await refreshWallet()

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ProviderSearchResult } from '~/types/api'
 
+const { apiFetch } = useApi()
 const props = withDefaults(
   defineProps<{
     provider: ProviderSearchResult
@@ -46,10 +47,10 @@ async function toggleFavorite() {
   isTogglingFavorite.value = true
   try {
     if (favorite.value) {
-      await $fetch(`/api/favorites/${props.provider.id}`, { method: 'DELETE' })
+      await apiFetch(`/api/favorites/${props.provider.id}`, { method: 'DELETE' })
       favorite.value = false
     } else {
-      await $fetch('/api/favorites', { method: 'POST', body: { providerId: props.provider.id } })
+      await apiFetch('/api/favorites', { method: 'POST', body: { providerId: props.provider.id } })
       favorite.value = true
     }
     emit('favorite-changed')

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Mobility, ProviderProfile } from '~/types/api'
 
+const { apiFetch } = useApi()
 /**
  * Préférences prestataire (tarifs, mobilité, disponibilité) — extrait de
  * app/pages/prestataire/preferences.vue (#hub-profil-modales) pour être
@@ -40,7 +41,7 @@ async function submit() {
 
   isSubmitting.value = true
   try {
-    await $fetch('/api/providers/me', {
+    await apiFetch('/api/providers/me', {
       method: 'PATCH',
       body: {
         rateFrom: rateFrom.value ?? undefined,

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /**
  * "Proposer un nouveau créneau" (#270, reprogrammation d'intervention) —
  * extrait de EscrowStatusPanel.vue pour rester sous la limite de lignes par
@@ -28,7 +29,7 @@ async function handleSubmit() {
   isProposing.value = true
   error.value = ''
   try {
-    await $fetch(`/api/conversations/${props.conversationId}/propose-reschedule`, {
+    await apiFetch(`/api/conversations/${props.conversationId}/propose-reschedule`, {
       method: 'POST',
       body: { proposedAt, note: note.value.trim() || undefined },
     })

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EscrowOrder } from '~/types/api'
 
+const { apiFetch } = useApi()
 // Valeur d'affichage seulement, dupliquée depuis CLIENT_LATE_CANCELLATION_PENALTY_RATE
 // (le service de séquestre de l'API, #275) : les imports frontend → backend
 // se limitent aux types, pas
@@ -36,7 +37,7 @@ async function handleMarkDelivered() {
   isDelivering.value = true
   deliverError.value = ''
   try {
-    await $fetch(`/api/conversations/${props.conversationId}/deliver`, { method: 'POST' })
+    await apiFetch(`/api/conversations/${props.conversationId}/deliver`, { method: 'POST' })
     emit('changed')
   } catch {
     deliverError.value = t('escrowStatusPanel.errorActionFailed')
@@ -53,7 +54,7 @@ async function handleConfirmReceipt() {
   isConfirmingReceipt.value = true
   receiptError.value = ''
   try {
-    await $fetch(`/api/conversations/${props.conversationId}/receive`, { method: 'POST' })
+    await apiFetch(`/api/conversations/${props.conversationId}/receive`, { method: 'POST' })
     emit('changed')
   } catch {
     receiptError.value = t('escrowStatusPanel.errorActionFailed')
@@ -78,7 +79,7 @@ async function handleCancelOrder() {
   isCancelling.value = true
   cancelError.value = ''
   try {
-    await $fetch(`/api/conversations/${props.conversationId}/cancel`, {
+    await apiFetch(`/api/conversations/${props.conversationId}/cancel`, {
       method: 'POST',
       body: { reason: cancelReason.value.trim() },
     })
@@ -106,7 +107,7 @@ async function handleClientCancelOrder() {
   isClientCancelling.value = true
   clientCancelError.value = ''
   try {
-    await $fetch(`/api/conversations/${props.conversationId}/client-cancel`, {
+    await apiFetch(`/api/conversations/${props.conversationId}/client-cancel`, {
       method: 'POST',
       body: { reason: clientCancelReason.value.trim() },
     })

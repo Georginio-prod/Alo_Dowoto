@@ -10,6 +10,7 @@
  */
 import { getSectorFields } from '~/data/firstContactSectorFields'
 
+const { apiFetch } = useApi()
 const props = defineProps<{ conversationId: string; prefillContact: string; providerName: string; sectorSlug: string | null }>()
 const emit = defineEmits<{ submitted: [] }>()
 
@@ -39,7 +40,7 @@ async function submit() {
         .map((field) => [field.key, (sectorAnswers.value[field.key] ?? '').trim()] as const)
         .filter(([, value]) => value.length > 0),
     )
-    await $fetch(`/api/conversations/${props.conversationId}/first-contact`, {
+    await apiFetch(`/api/conversations/${props.conversationId}/first-contact`, {
       method: 'POST',
       body: {
         description: description.value.trim(),
