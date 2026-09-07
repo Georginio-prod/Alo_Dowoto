@@ -1,125 +1,130 @@
 import { randomUUID } from 'node:crypto'
 import { addSystemMessage } from './conversationService'
 import { createEscrowOrder, getEscrowOrderByConversationId, payEscrowOrder } from './escrowOrderService'
-
-/**
- * Offres récurrentes natives (#271), portées iso depuis
- * `server/utils/recurringServiceStore.ts` (ADR-0016). **En mémoire** comme Nitro.
- * Chaque échéance réutilise le cycle escrow (`createEscrowOrder` + `payEscrowOrder`) ;
- * la suivante n'est déclenchée que si la précédente est terminale.
- */
+import {
+  recurringServiceRepository,
+  type RecurringServiceRepository,
+  type StoredRecurringService,
+} from '../repositories/recurringServiceRepository'
 
 export type RecurringFrequency = 'hebdomadaire' | 'mensuelle'
 export type RecurringServiceStatus = 'active' | 'payment_failed' | 'cancelled'
 
-export interface RecurringService {
-  id: string
-  conversationId: string
-  clientId: string
-  providerId: string
-  amount: number
+export interface RecurringService extends Omit<StoredRecurringService, 'frequency' | 'status'> {
   frequency: RecurringFrequency
   status: RecurringServiceStatus
-  createdAt: number
-  lastChargedAt: number | null
-  nextChargeAt: number
-  cancelledAt: number | null
 }
 
 const FREQUENCY_INTERVAL_MS: Record<RecurringFrequency, number> = {
   hebdomadaire: 7 * 24 * 60 * 60 * 1000,
   mensuelle: 30 * 24 * 60 * 60 * 1000,
 }
+const TERMINAL_ORDER_STATUSES = new Set(['released', 'refunded'])
 
-const servicesByConversationId = new Map<string, RecurringService>()
+function toService(service: StoredRecurringService): RecurringService {
+  return { ...service, frequency: service.frequency as RecurringFrequency, status: service.status as RecurringServiceStatus }
+}
 
 export type CreateRecurringServiceResult =
   | { ok: true; service: RecurringService }
   | { ok: false; error: 'already_active' }
+export type CancelRecurringServiceResult =
+  | { ok: true; service: RecurringService }
+  | { ok: false; error: 'not_found' | 'invalid_status' }
 
-/** Crée (ou relance) un service récurrent, première échéance immédiatement due. Iso Nitro. */
-export function createRecurringService(input: {
-  conversationId: string
-  clientId: string
-  providerId: string
-  amount: number
-  frequency: RecurringFrequency
-}): CreateRecurringServiceResult {
-  const existing = servicesByConversationId.get(input.conversationId)
-  if (existing && existing.status === 'active') return { ok: false, error: 'already_active' }
+export function createRecurringServiceService(repository: RecurringServiceRepository = recurringServiceRepository) {
+  async function applyDueChargeIfNeeded(service: RecurringService): Promise<RecurringService> {
+    if (service.status !== 'active' || Date.now() < service.nextChargeAt) return service
 
-  const service: RecurringService = {
-    id: randomUUID(),
-    conversationId: input.conversationId,
-    clientId: input.clientId,
-    providerId: input.providerId,
-    amount: input.amount,
-    frequency: input.frequency,
-    status: 'active',
-    createdAt: Date.now(),
-    lastChargedAt: null,
-    nextChargeAt: Date.now(),
-    cancelledAt: null,
-  }
-  servicesByConversationId.set(input.conversationId, service)
-  return { ok: true, service }
-}
+    const existingOrder = await getEscrowOrderByConversationId(service.conversationId)
+    if (existingOrder && !TERMINAL_ORDER_STATUSES.has(existingOrder.status)) return service
 
-export type CancelRecurringServiceResult = { ok: true; service: RecurringService } | { ok: false; error: 'not_found' | 'invalid_status' }
+    await createEscrowOrder({
+      conversationId: service.conversationId,
+      clientId: service.clientId,
+      providerId: service.providerId,
+      amount: service.amount,
+    })
+    const result = await payEscrowOrder(service.conversationId)
+    const now = Date.now()
 
-export function cancelRecurringService(conversationId: string): CancelRecurringServiceResult {
-  const service = servicesByConversationId.get(conversationId)
-  if (!service) return { ok: false, error: 'not_found' }
-  if (service.status !== 'active' && service.status !== 'payment_failed') return { ok: false, error: 'invalid_status' }
+    if (result.ok) {
+      const updated = toService(await repository.update(service.id, {
+        status: 'active',
+        lastChargedAt: now,
+        nextChargeAt: now + FREQUENCY_INTERVAL_MS[service.frequency],
+        cancelledAt: null,
+      }))
+      await addSystemMessage(
+        service.conversationId,
+        `Prélèvement automatique de ${service.amount.toLocaleString('fr-FR')} F CFA effectué pour votre service récurrent (${service.frequency}).`,
+        'text',
+        { key: 'systemMessages.recurringDebited', params: { amount: service.amount, frequency: service.frequency } },
+      )
+      return updated
+    }
 
-  service.status = 'cancelled'
-  service.cancelledAt = Date.now()
-  return { ok: true, service }
-}
-
-const TERMINAL_ORDER_STATUSES = new Set(['released', 'refunded'])
-
-/**
- * Déclenche le prélèvement dû, le cas échéant. Ne fait rien tant que le cycle
- * précédent n'est pas terminal. Solde insuffisant → `payment_failed`. Iso Nitro.
- */
-async function applyDueChargeIfNeeded(service: RecurringService): Promise<void> {
-  if (service.status !== 'active') return
-  if (Date.now() < service.nextChargeAt) return
-
-  const existingOrder = await getEscrowOrderByConversationId(service.conversationId)
-  if (existingOrder && !TERMINAL_ORDER_STATUSES.has(existingOrder.status)) return
-
-  await createEscrowOrder({
-    conversationId: service.conversationId,
-    clientId: service.clientId,
-    providerId: service.providerId,
-    amount: service.amount,
-  })
-  const result = await payEscrowOrder(service.conversationId)
-
-  if (result.ok) {
-    service.lastChargedAt = Date.now()
-    service.nextChargeAt = Date.now() + FREQUENCY_INTERVAL_MS[service.frequency]
-    await addSystemMessage(
-      service.conversationId,
-      `Prélèvement automatique de ${service.amount.toLocaleString('fr-FR')} F CFA effectué pour votre service récurrent (${service.frequency}).`,
-      'text',
-      { key: 'systemMessages.recurringDebited', params: { amount: service.amount, frequency: service.frequency } },
-    )
-  } else {
-    service.status = 'payment_failed'
+    const updated = toService(await repository.update(service.id, {
+      status: 'payment_failed',
+      lastChargedAt: service.lastChargedAt,
+      nextChargeAt: service.nextChargeAt,
+      cancelledAt: null,
+    }))
     await addSystemMessage(
       service.conversationId,
       'Le prélèvement automatique de votre service récurrent a échoué (solde insuffisant). Rechargez votre portefeuille puis relancez le service récurrent.',
       'text',
       { key: 'systemMessages.recurringDebitFailed' },
     )
+    return updated
+  }
+
+  return {
+    async createRecurringService(input: {
+      conversationId: string
+      clientId: string
+      providerId: string
+      amount: number
+      frequency: RecurringFrequency
+    }): Promise<CreateRecurringServiceResult> {
+      const existing = await repository.findByConversationId(input.conversationId)
+      if (existing?.status === 'active') return { ok: false, error: 'already_active' }
+      const now = Date.now()
+      const service = toService(await repository.upsert({
+        id: existing?.id ?? randomUUID(),
+        ...input,
+        status: 'active',
+        createdAt: existing?.createdAt ?? now,
+        lastChargedAt: null,
+        nextChargeAt: now,
+        cancelledAt: null,
+      }))
+      return { ok: true, service }
+    },
+    async cancelRecurringService(conversationId: string): Promise<CancelRecurringServiceResult> {
+      const existing = await repository.findByConversationId(conversationId)
+      if (!existing) return { ok: false, error: 'not_found' }
+      const service = toService(existing)
+      if (service.status !== 'active' && service.status !== 'payment_failed') return { ok: false, error: 'invalid_status' }
+      const now = Date.now()
+      return {
+        ok: true,
+        service: toService(await repository.update(service.id, {
+          status: 'cancelled',
+          lastChargedAt: service.lastChargedAt,
+          nextChargeAt: service.nextChargeAt,
+          cancelledAt: now,
+        })),
+      }
+    },
+    async getRecurringServiceByConversationId(conversationId: string): Promise<RecurringService | null> {
+      const service = await repository.findByConversationId(conversationId)
+      return service ? applyDueChargeIfNeeded(toService(service)) : null
+    },
   }
 }
 
-export async function getRecurringServiceByConversationId(conversationId: string): Promise<RecurringService | null> {
-  const service = servicesByConversationId.get(conversationId) ?? null
-  if (service) await applyDueChargeIfNeeded(service)
-  return service
-}
+export const recurringServiceService = createRecurringServiceService()
+export const createRecurringService = recurringServiceService.createRecurringService
+export const cancelRecurringService = recurringServiceService.cancelRecurringService
+export const getRecurringServiceByConversationId = recurringServiceService.getRecurringServiceByConversationId

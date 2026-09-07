@@ -27,7 +27,7 @@ export async function adminListMissions(req: Request, res: Response): Promise<vo
   const filters: AdminMissionFilters = { status: status ? (status as EscrowOrderStatus) : undefined }
 
   const result = await listAdminMissions(filters, page, pageSize)
-  const drafts = listAllServiceRequests().slice(0, 20)
+  const drafts = await listAllServiceRequests(20)
   res.json({ ...result, page, pageSize, drafts: drafts.map((d) => ({ id: d.id, title: d.title, userId: d.userId, createdAt: d.createdAt })) })
 }
 

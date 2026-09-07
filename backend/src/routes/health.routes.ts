@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { prisma } from '../config/prisma'
+import { asyncHandler } from '../utils/asyncHandler'
 
 /**
  * Sondes de disponibilité. `/health` (liveness) ne dépend de rien ; `/health/db`
@@ -60,11 +61,7 @@ healthRoutes.get('/health', (_req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-healthRoutes.get('/health/db', async (_req, res, next) => {
-  try {
-    await prisma.$queryRaw`SELECT 1`
-    res.json({ status: 'ok', database: 'postgres' })
-  } catch (error) {
-    next(error)
-  }
-})
+healthRoutes.get('/health/db', asyncHandler(async (_req, res) => {
+  await prisma.$queryRaw`SELECT 1`
+  res.json({ status: 'ok', database: 'postgres' })
+}))

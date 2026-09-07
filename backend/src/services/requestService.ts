@@ -10,27 +10,16 @@ import {
 import { getEffectiveRating, searchProviders, type ProviderSearchResult } from './providerDirectoryService'
 import { getProviderRequestsUsage, incrementProviderRequestsReceived } from './quotaService'
 import { subscriptionService } from './subscriptionService'
+import {
+  serviceRequestRepository,
+  type ServiceRequestRepository,
+  type StoredMatch,
+  type StoredServiceRequest,
+} from '../repositories/serviceRequestRepository'
 
-/**
- * Demandes clients et leurs correspondances calculées (#56/#63), porté iso
- * depuis `server/utils/requestStore.ts` (ADR-0016). **Volontairement en mémoire**
- * comme Nitro — mêmes structures volatiles (demandes + top de matches figé à la
- * création), donc « zéro changement fonctionnel ». La persistance reste un
- * chantier distinct. Compose l'annuaire (`searchProviders`/`getEffectiveRating`),
- * le moteur de scoring, les quotas et l'abonnement.
- */
-
-export interface ServiceRequest {
-  id: string
-  userId: string
-  title: string
-  skills: string[]
-  description: string
-  budgetMax: number
+/** Demande de prestation, persistée avec ses correspondances dans PostgreSQL. */
+export interface ServiceRequest extends Omit<StoredServiceRequest, 'urgency'> {
   urgency: Urgency
-  location: string
-  sector?: string
-  createdAt: number
 }
 
 export interface CreateServiceRequestInput {
@@ -52,18 +41,28 @@ export interface MatchedProvider {
   rating: number
   reviewCount: number
   priceFrom: number
-  /** Approximation dérivée du nombre d'avis (pas de champ dédié pour l'instant). */
   experienceYears: number
   score: { total: number; breakdown: MatchBreakdown }
 }
 
-const requests = new Map<string, ServiceRequest>()
-const matchesByRequestId = new Map<string, MatchedProvider[]>()
+function toRequest(request: StoredServiceRequest): ServiceRequest {
+  return { ...request, urgency: request.urgency as Urgency }
+}
+
+function toStoredMatch(match: MatchedProvider): StoredMatch {
+  return { ...match, position: 0, score: JSON.stringify(match.score) }
+}
+
+function toMatch(match: StoredMatch): MatchedProvider {
+  const { position: _position, score: rawScore, ...provider } = match
+  try {
+    return { ...provider, score: JSON.parse(rawScore) as MatchedProvider['score'] }
+  } catch {
+    return { ...provider, score: { total: 0, breakdown: { skills: 0, location: 0, reviews: 0, availability: 0, budget: 0 } } }
+  }
+}
 
 async function toCandidate(provider: ProviderSearchResult): Promise<MatchCandidate> {
-  // Note effective (#61) SANS repli (iso Nitro `toCandidate`) : les fiches de
-  // démo sans avis réels scorent donc sur une note de 0 — comportement exact à
-  // préserver (l'affichage, lui, retombe sur la note figée plus bas).
   const { rating, reviewCount } = await getEffectiveRating(provider.id)
   return {
     providerId: provider.id,
@@ -71,34 +70,22 @@ async function toCandidate(provider: ProviderSearchResult): Promise<MatchCandida
     location: provider.city,
     rating,
     reviewCount,
-    // Pas de signal de disponibilité réel dans l'annuaire de démo : approximé
-    // depuis le badge vérifié (iso Nitro).
     availability: provider.verified ? 1 : 0.7,
     priceFrom: provider.priceFrom,
   }
 }
 
-/**
- * Un prestataire ayant atteint son quota mensuel de demandes reçues (#63) n'est
- * pas retiré du classement mais rétrogradé en fin de liste. Une fiche de démo
- * sans abonnement (`getSubscriptionByUserId` → null) n'est pas concernée ; un
- * abonnement non actif retombe sur un quota de 0. Iso Nitro.
- */
 async function isAtRequestsQuota(providerId: string): Promise<boolean> {
   const subscription = await subscriptionService.getSubscriptionByUserId(providerId)
   if (!subscription) return false
-
-  const plan = subscription.status === 'actif' ? subscription.plan : null
-  const usage = getProviderRequestsUsage(providerId, plan)
-  if (usage.limit === null) return false
-  return usage.count >= usage.limit
+  const usage = await getProviderRequestsUsage(providerId, subscription.status === 'actif' ? subscription.plan : null)
+  return usage.limit !== null && usage.count >= usage.limit
 }
 
-/** Calcule (ou recalcule) le classement des prestataires pour une demande. */
+/** Recalcule le classement sans modifier les compteurs de quota. */
 export async function computeMatches(request: ServiceRequest, limit = 5): Promise<MatchedProvider[]> {
   const candidates = await searchProviders(request.sector ? { sector: request.sector } : {})
   const candidatesById = new Map(candidates.map((provider) => [provider.id, provider]))
-
   const matchRequest: MatchRequest = {
     skills: request.skills,
     location: request.location,
@@ -106,27 +93,21 @@ export async function computeMatches(request: ServiceRequest, limit = 5): Promis
     urgency: request.urgency,
   }
 
-  // Statut de quota calculé une fois par candidat (lecture d'abonnement async)
-  // avant les filtres synchrones de partition.
   const atQuotaFlags = new Map<string, boolean>()
-  for (const provider of candidates) {
-    atQuotaFlags.set(provider.id, await isAtRequestsQuota(provider.id))
-  }
+  for (const provider of candidates) atQuotaFlags.set(provider.id, await isAtRequestsQuota(provider.id))
 
   const available = candidates.filter((provider) => !atQuotaFlags.get(provider.id))
   const atQuota = candidates.filter((provider) => atQuotaFlags.get(provider.id))
-
   const rankedAvailable = rankProviders(matchRequest, await Promise.all(available.map(toCandidate)), DEFAULT_MATCH_WEIGHTS, limit)
   const remainingSlots = limit - rankedAvailable.length
-  const rankedAtQuota =
-    remainingSlots > 0 ? rankProviders(matchRequest, await Promise.all(atQuota.map(toCandidate)), DEFAULT_MATCH_WEIGHTS, remainingSlots) : []
+  const rankedAtQuota = remainingSlots > 0
+    ? rankProviders(matchRequest, await Promise.all(atQuota.map(toCandidate)), DEFAULT_MATCH_WEIGHTS, remainingSlots)
+    : []
 
   const matches: MatchedProvider[] = []
   for (const result of [...rankedAvailable, ...rankedAtQuota]) {
     const provider = candidatesById.get(result.providerId)
     if (!provider) continue
-    // Même note effective que le scoring, MAIS avec repli sur la note figée (#61)
-    // → l'affichage montre la moyenne à jour, cohérente avec le classement.
     const { rating, reviewCount } = await getEffectiveRating(provider.id, { rating: provider.rating, reviewCount: provider.reviewCount })
     matches.push({
       providerId: provider.id,
@@ -144,45 +125,32 @@ export async function computeMatches(request: ServiceRequest, limit = 5): Promis
   return matches
 }
 
-/**
- * Crée une demande et calcule immédiatement son top de correspondances. Chaque
- * prestataire retenu voit son compteur de demandes reçues du mois incrémenté
- * (#63) — contrairement à `GET /requests/:id/matches` qui recalcule un
- * instantané sans incrémenter. Iso Nitro.
- */
-export async function createServiceRequest(userId: string, input: CreateServiceRequestInput): Promise<ServiceRequest> {
-  const request: ServiceRequest = { id: randomUUID(), userId, ...input, createdAt: Date.now() }
-  requests.set(request.id, request)
-  const matches = await computeMatches(request)
-  matchesByRequestId.set(request.id, matches)
-  for (const match of matches) {
-    incrementProviderRequestsReceived(match.providerId)
+export function createRequestService(repository: ServiceRequestRepository = serviceRequestRepository) {
+  return {
+    async createServiceRequest(userId: string, input: CreateServiceRequestInput): Promise<ServiceRequest> {
+      const request = toRequest(await repository.create({ id: randomUUID(), userId, ...input, createdAt: Date.now() }))
+      const matches = await computeMatches(request)
+      await repository.replaceMatches(request.id, matches.map((match, position) => ({ ...toStoredMatch(match), position })))
+      await Promise.all(matches.map((match) => incrementProviderRequestsReceived(match.providerId)))
+      return request
+    },
+    async getServiceRequest(id: string): Promise<ServiceRequest | null> {
+      const request = await repository.findById(id)
+      return request ? toRequest(request) : null
+    },
+    async listRequestsByUser(userId: string): Promise<ServiceRequest[]> {
+      return (await repository.listByUser(userId)).map(toRequest)
+    },
+    async listAllServiceRequests(limit = 20): Promise<ServiceRequest[]> {
+      return (await repository.listRecent(limit)).map(toRequest)
+    },
+    async getStoredMatches(requestId: string): Promise<MatchedProvider[]> {
+      return (await repository.listMatches(requestId)).map(toMatch)
+    },
+    async listRequestsForProvider(providerId: string): Promise<ProviderMatchedRequest[]> {
+      return (await repository.listMatchesForProvider(providerId)).map(({ request, match }) => ({ request: toRequest(request), score: toMatch(match).score }))
+    },
   }
-  return request
-}
-
-export function getServiceRequest(id: string): ServiceRequest | null {
-  return requests.get(id) ?? null
-}
-
-/** Demandes du client, de la plus récente à la plus ancienne (« Mon espace », #64). */
-export function listRequestsByUser(userId: string): ServiceRequest[] {
-  return [...requests.values()]
-    .filter((request) => request.userId === userId)
-    .sort((a, b) => b.createdAt - a.createdAt)
-}
-
-/**
- * Toutes les fiches préalables en mémoire, la plus récente d'abord — brouillons
- * de missions pour le dashboard admin (#dashboard-admin, module 4). Volatile
- * (store en mémoire), comme côté Nitro. Iso `requestStore.listAllServiceRequests`.
- */
-export function listAllServiceRequests(): ServiceRequest[] {
-  return [...requests.values()].sort((a, b) => b.createdAt - a.createdAt)
-}
-
-export function getStoredMatches(requestId: string): MatchedProvider[] | null {
-  return matchesByRequestId.get(requestId) ?? null
 }
 
 export interface ProviderMatchedRequest {
@@ -190,15 +158,10 @@ export interface ProviderMatchedRequest {
   score: MatchedProvider['score']
 }
 
-/**
- * Demandes où ce prestataire figure dans le top calculé à la création
- * (« Demandes reçues ») — pas de flux d'acceptation/refus dans ce lot. Iso Nitro.
- */
-export function listRequestsForProvider(providerId: string): ProviderMatchedRequest[] {
-  const matched: ProviderMatchedRequest[] = []
-  for (const request of requests.values()) {
-    const match = matchesByRequestId.get(request.id)?.find((candidate) => candidate.providerId === providerId)
-    if (match) matched.push({ request, score: match.score })
-  }
-  return matched.sort((a, b) => b.request.createdAt - a.request.createdAt)
-}
+export const requestService = createRequestService()
+export const createServiceRequest = requestService.createServiceRequest
+export const getServiceRequest = requestService.getServiceRequest
+export const listRequestsByUser = requestService.listRequestsByUser
+export const listAllServiceRequests = requestService.listAllServiceRequests
+export const getStoredMatches = requestService.getStoredMatches
+export const listRequestsForProvider = requestService.listRequestsForProvider

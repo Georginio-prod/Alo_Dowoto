@@ -318,7 +318,7 @@ export async function createRecurring(req: Request, res: Response): Promise<void
     conflict("Ce prestataire n'a pas encore configuré de tarif fixe : service récurrent impossible pour le moment.")
   }
 
-  const result = createRecurringService({ conversationId: conversation.id, clientId: user.id, providerId: conversation.providerId, amount, frequency })
+  const result = await createRecurringService({ conversationId: conversation.id, clientId: user.id, providerId: conversation.providerId, amount, frequency })
   if (!result.ok) conflict('Un service récurrent est déjà actif pour cette conversation.')
 
   res.status(201).json({ recurringService: result.service })
@@ -328,7 +328,7 @@ export async function createRecurring(req: Request, res: Response): Promise<void
 export async function cancelRecurring(req: Request, res: Response): Promise<void> {
   const { conversation } = await requireParticipantConversation(req, 'client')
 
-  const result = cancelRecurringService(conversation.id)
+  const result = await cancelRecurringService(conversation.id)
   if (!result.ok) {
     if (result.error === 'not_found') notFound('Aucun service récurrent pour cette conversation.')
     conflict('Ce service récurrent est déjà annulé.')

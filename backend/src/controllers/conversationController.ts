@@ -134,7 +134,7 @@ export async function firstContact(req: Request, res: Response): Promise<void> {
   }
 
   // Règles anti-fraude de base (#277).
-  const risk = evaluateOrderRisk({
+  const risk = await evaluateOrderRisk({
     clientId: user.id,
     providerId: conversation.providerId,
     amount,
@@ -170,8 +170,8 @@ export async function getConversationMessages(req: Request, res: Response): Prom
   const { user, conversation } = await requireParticipantConversation(req)
 
   const order = await getEscrowOrderByConversationId(conversation.id)
-  // Déclenche le prélèvement dû d'un service récurrent (#271) — lecture paresseuse, iso Nitro (sans await).
-  const recurringService = getRecurringServiceByConversationId(conversation.id)
+  // Déclenche le prélèvement dû d'un service récurrent lors de la lecture.
+  const recurringService = await getRecurringServiceByConversationId(conversation.id)
   const isViewerProvider = user.id === conversation.providerId
   if (isViewerProvider && order && order.status === 'awaiting_payment') {
     res.json({

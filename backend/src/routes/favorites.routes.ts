@@ -23,7 +23,7 @@ export const favoritesRoutes = Router()
  *     security: [{ cookieAuth: [] }, { bearerAuth: [] }]
  *     responses:
  *       200:
- *         description: Favoris, les plus récents d'abord (`provider: null` si hors annuaire).
+ *         description: "Favoris, les plus récents d'abord (`provider: null` si hors annuaire)."
  *       401: { description: Non connecté., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
  *       403: { description: Réservé aux comptes client., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
  */

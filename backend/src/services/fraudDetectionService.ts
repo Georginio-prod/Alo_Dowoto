@@ -1,10 +1,9 @@
-import { randomUUID } from 'node:crypto'
+import { fraudAlertRepository } from '../repositories/fraudAlertRepository'
 
 /**
  * Règles anti-fraude de base sur le circuit de paiement en séquestre (#277).
- * Porté iso depuis `server/utils/fraudDetection.ts` (ADR-0016). **En mémoire**
- * comme Nitro (journal d'alertes volatile) : plafond dur, seuil de revue
- * manuelle, détection d'un rythme de création de commandes anormal.
+ * Les alertes sont conservées dans PostgreSQL : plafond dur, seuil de revue
+ * manuelle et détection d'un rythme de création de commandes anormal.
  */
 
 /** Montant maximal absolu d'une commande escrow — au-delà, la demande est bloquée. */
@@ -30,17 +29,24 @@ export interface FraudAlert {
   createdAt: number
 }
 
-const alerts: FraudAlert[] = []
+function toFraudAlert(row: { id: string; clientId: string; providerId: string; reason: string; amount: number; createdAt: Date }): FraudAlert {
+  return {
+    id: row.id,
+    clientId: row.clientId,
+    providerId: row.providerId,
+    reason: row.reason as FraudAlertReason,
+    amount: row.amount,
+    createdAt: row.createdAt.getTime(),
+  }
+}
 
-export function logFraudAlert(input: { clientId: string; providerId: string; reason: FraudAlertReason; amount: number }): FraudAlert {
-  const alert: FraudAlert = { id: randomUUID(), createdAt: Date.now(), ...input }
-  alerts.push(alert)
-  return alert
+export async function logFraudAlert(input: { clientId: string; providerId: string; reason: FraudAlertReason; amount: number }): Promise<FraudAlert> {
+  return toFraudAlert(await fraudAlertRepository.create(input))
 }
 
 /** Alertes les plus récentes en premier, pour une future interface de revue support. */
-export function listFraudAlerts(): FraudAlert[] {
-  return [...alerts].sort((a, b) => b.createdAt - a.createdAt)
+export async function listFraudAlerts(): Promise<FraudAlert[]> {
+  return (await fraudAlertRepository.list()).map(toFraudAlert)
 }
 
 export type OrderRiskEvaluation = { blocked: true; reason: string } | { blocked: false }
@@ -50,14 +56,14 @@ export type OrderRiskEvaluation = { blocked: true; reason: string } | { blocked:
  * que le dépassement du plafond absolu ; le seuil de revue et le rythme anormal
  * sont journalisés sans empêcher la transaction. Iso Nitro.
  */
-export function evaluateOrderRisk(input: {
+export async function evaluateOrderRisk(input: {
   clientId: string
   providerId: string
   amount: number
   recentOrderTimestamps: number[]
-}): OrderRiskEvaluation {
+}): Promise<OrderRiskEvaluation> {
   if (input.amount > MAX_ESCROW_ORDER_AMOUNT) {
-    logFraudAlert({ clientId: input.clientId, providerId: input.providerId, reason: 'amount_ceiling', amount: input.amount })
+    await logFraudAlert({ clientId: input.clientId, providerId: input.providerId, reason: 'amount_ceiling', amount: input.amount })
     return {
       blocked: true,
       reason: `Ce montant dépasse le plafond autorisé (${MAX_ESCROW_ORDER_AMOUNT.toLocaleString('fr-FR')} F CFA). Contactez le support pour une prestation de cette valeur.`,
@@ -65,13 +71,13 @@ export function evaluateOrderRisk(input: {
   }
 
   if (input.amount >= ESCROW_REVIEW_THRESHOLD_AMOUNT) {
-    logFraudAlert({ clientId: input.clientId, providerId: input.providerId, reason: 'review_threshold', amount: input.amount })
+    await logFraudAlert({ clientId: input.clientId, providerId: input.providerId, reason: 'review_threshold', amount: input.amount })
   }
 
   const now = Date.now()
   const recentCount = input.recentOrderTimestamps.filter((timestamp) => now - timestamp < RAPID_ORDERS_WINDOW_MS).length
   if (recentCount >= RAPID_ORDERS_ALERT_THRESHOLD) {
-    logFraudAlert({ clientId: input.clientId, providerId: input.providerId, reason: 'rapid_orders', amount: input.amount })
+    await logFraudAlert({ clientId: input.clientId, providerId: input.providerId, reason: 'rapid_orders', amount: input.amount })
   }
 
   return { blocked: false }

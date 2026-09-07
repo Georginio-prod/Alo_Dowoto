@@ -258,6 +258,88 @@ model ProviderProfile {
   @@index([sectorId, city])
 }
 
+/// Demande de prestation publiée par un client.
+model ServiceRequest {
+  id          String   @id @default(uuid())
+  userId      String
+  title       String
+  skills      String
+  description String
+  budgetMax   Int
+  urgency     String
+  location    String
+  sector      String?
+  createdAt   DateTime @default(now())
+
+  matches ServiceRequestMatch[]
+
+  @@index([userId, createdAt])
+}
+
+/// Instantané de correspondance conservé à la publication d'une demande.
+model ServiceRequestMatch {
+  id                String         @id @default(uuid())
+  requestId         String
+  request           ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  providerId        String
+  displayName       String
+  subSector         String
+  city              String
+  verified          Boolean
+  rating            Float
+  reviewCount       Int
+  priceFrom         Int
+  experienceYears   Int
+  position          Int
+  score             String
+  createdAt         DateTime       @default(now())
+
+  @@unique([requestId, providerId])
+  @@index([providerId, createdAt])
+}
+
+/// Service récurrent rattaché à une conversation.
+model RecurringService {
+  id             String   @id @default(uuid())
+  conversationId String   @unique
+  clientId       String
+  providerId     String
+  amount         Int
+  frequency      String
+  status         String
+  createdAt      DateTime @default(now())
+  lastChargedAt  DateTime?
+  nextChargeAt   DateTime
+  cancelledAt    DateTime?
+
+  @@index([clientId])
+  @@index([providerId])
+}
+
+/// Compteur mensuel de quota par utilisateur et portée (`contacts` ou `requests`).
+model MonthlyUsageCounter {
+  userId String
+  scope  String
+  month  String
+  count  Int @default(0)
+
+  @@id([userId, scope, month])
+}
+
+/// Alerte de risque produite pendant la création d'une commande en séquestre.
+model FraudAlert {
+  id         String   @id @default(uuid())
+  clientId   String
+  providerId String
+  reason     String
+  amount     Int
+  createdAt  DateTime @default(now())
+
+  @@index([clientId, createdAt])
+  @@index([providerId, createdAt])
+  @@index([createdAt])
+}
+
 /// Avis laissé après une collaboration.
 /// Chaque auteur ne peut noter qu'une fois une conversation.
 model Review {
