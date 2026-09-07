@@ -211,4 +211,26 @@ describe('Contrat — authentification (/api/auth)', () => {
       expect(res.body).toEqual({ pending: null })
     })
   })
+
+  describe('Google OAuth (annulation)', () => {
+    const saved = { id: process.env.GOOGLE_CLIENT_ID, secret: process.env.GOOGLE_CLIENT_SECRET }
+
+    beforeAll(() => {
+      process.env.GOOGLE_CLIENT_ID = 'test-google-client-id'
+      process.env.GOOGLE_CLIENT_SECRET = 'test-google-client-secret'
+    })
+
+    afterAll(() => {
+      if (saved.id === undefined) delete process.env.GOOGLE_CLIENT_ID
+      else process.env.GOOGLE_CLIENT_ID = saved.id
+      if (saved.secret === undefined) delete process.env.GOOGLE_CLIENT_SECRET
+      else process.env.GOOGLE_CLIENT_SECRET = saved.secret
+    })
+
+    it('GET /auth/google/callback annulé → 302 vers l’accueil', async () => {
+      const res = await request(app).get('/api/auth/google/callback').query({ error: 'access_denied' })
+      expect(res.status).toBe(302)
+      expect(res.headers.location).toBe('/')
+    })
+  })
 })

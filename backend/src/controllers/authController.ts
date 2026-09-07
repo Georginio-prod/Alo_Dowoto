@@ -150,9 +150,11 @@ export async function googleCallback(req: Request, res: Response): Promise<void>
   res.clearCookie(GOOGLE_STATE_COOKIE, { path: '/' })
   res.clearCookie(GOOGLE_ROLE_COOKIE, { path: '/' })
 
-  // L'utilisateur a refusé le consentement (ou Google renvoie une erreur).
+  // Une annulation côté Google doit ramener au point d'entrée de l'application.
+  // Le callback reste nécessaire : il permet aussi de supprimer les cookies OAuth
+  // temporaires avant la redirection.
   if (typeof req.query.error === 'string' && req.query.error) {
-    res.redirect('/auth?error=google_denied')
+    res.redirect('/')
     return
   }
 
