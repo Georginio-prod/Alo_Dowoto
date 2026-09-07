@@ -1,4 +1,5 @@
 import { badRequest, conflict, notFound, unauthorized } from '../utils/apiError'
+import { env } from '../config/env'
 import { parseSchema } from '../validation/validate'
 import { paymentWebhookSchema } from '../validation/schemas/payments'
 import { getPlanConfig } from '../data/plans'
@@ -69,7 +70,7 @@ export function createPaymentService(
       // Hors prod : confirmation opérateur simulée (#33/#34) — active
       // l'abonnement, sans récompense de parrainage (iso handler Nitro).
       // `.unref()` : ne retient pas le process (tests courts).
-      if (process.env.NODE_ENV !== 'production') {
+      if (!env.isProd) {
         setTimeout(() => {
           void (async () => {
             const resolved = await resolvePayment(payment.id, 'confirmed', `SIMULATED-${payment.id.slice(0, 8)}`)

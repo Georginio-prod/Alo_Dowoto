@@ -2,6 +2,7 @@ import type { Request, Response } from 'express'
 import type { Prisma } from '@prisma/client'
 import { prisma } from '../config/prisma'
 import { paginated, readAdminListParams, readAdminQueryString } from '../utils/adminList'
+import { isEscrowOrderStatus } from '../repositories/escrowOrderRepository'
 
 /**
  * Dashboard admin desktop (#admin) — sous-lot 2 : listes financières paginées
@@ -66,22 +67,13 @@ export async function adminPayments(req: Request, res: Response): Promise<void> 
   res.json({ ...paginated(items, total, params), sumAmount: sumAgg._sum.amount ?? 0 })
 }
 
-const ESCROW_VALID_STATUS = new Set([
-  'awaiting_payment',
-  'in_escrow',
-  'delivered',
-  'released',
-  'refunded',
-  'disputed',
-])
-
 /** GET /api/admin/escrow — liste paginée des commandes en séquestre (escrow.view). */
 export async function adminEscrow(req: Request, res: Response): Promise<void> {
   const params = readAdminListParams(req)
   const status = readAdminQueryString(req, 'status')
 
   const where: Prisma.EscrowOrderWhereInput = {}
-  if (ESCROW_VALID_STATUS.has(status)) {
+  if (isEscrowOrderStatus(status)) {
     where.status = status as Prisma.EscrowOrderWhereInput['status']
   }
   if (params.search) {

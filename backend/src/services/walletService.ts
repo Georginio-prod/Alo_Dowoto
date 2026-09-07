@@ -1,4 +1,5 @@
 import { badRequest, notFound, unauthorized } from '../utils/apiError'
+import { env } from '../config/env'
 import { parseSchema } from '../validation/validate'
 import { walletWebhookSchema } from '../validation/schemas/wallet'
 import { isValidWebhookSignature, isWebhookTimestampFresh } from '../utils/webhookSignature'
@@ -77,7 +78,7 @@ export function createWalletService(
       // on simule la confirmation opérateur après un délai ; en prod, seul le
       // vrai webhook résout la recharge. `.unref()` : ne retient pas le process
       // (tests courts) — le comportement observable via l'API est inchangé.
-      if (process.env.NODE_ENV !== 'production') {
+      if (!env.isProd) {
         setTimeout(() => {
           void resolveRecharge(recharge.id, 'confirmed', `SIMULATED-${recharge.id.slice(0, 8)}`).catch(() => {})
         }, SIMULATED_CONFIRMATION_DELAY_MS).unref?.()

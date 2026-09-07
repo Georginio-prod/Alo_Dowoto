@@ -91,5 +91,6 @@ et ne pas publier le port PostgreSQL.
 - [Architecture API](docs/architecture-api.md)
 - [Schéma et migrations PostgreSQL](docs/database-schema.md)
 - [Déploiement Docker](docs/deployment.md)
+- [Audit de structure et clean code — 7 septembre 2026](docs/audit-2026-09-07-structure.md)
 - [Décisions d'architecture](docs/adr/README.md)
 - [Contribution](CONTRIBUTION.md)

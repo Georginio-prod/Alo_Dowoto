@@ -14,7 +14,20 @@ import { prisma } from '../config/prisma'
  * plus jamais de double-débit / double-paiement sur panne.
  */
 
-export type EscrowOrderStatus = 'awaiting_payment' | 'in_escrow' | 'delivered' | 'released' | 'refunded' | 'disputed'
+export const ESCROW_ORDER_STATUSES = [
+  'awaiting_payment',
+  'in_escrow',
+  'delivered',
+  'released',
+  'refunded',
+  'disputed',
+] as const
+
+export type EscrowOrderStatus = typeof ESCROW_ORDER_STATUSES[number]
+
+export function isEscrowOrderStatus(value: unknown): value is EscrowOrderStatus {
+  return typeof value === 'string' && (ESCROW_ORDER_STATUSES as readonly string[]).includes(value)
+}
 
 export interface EscrowOrder {
   id: string

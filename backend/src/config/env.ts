@@ -13,6 +13,8 @@ export interface AppEnv {
   isProd: boolean
   /** Expose la doc OpenAPI (`/api/docs`). Par défaut : activée hors production. */
   docsEnabled: boolean
+  /** Inclut les prestataires de démonstration dans l'annuaire public. */
+  providersDemoEnabled: boolean
   /**
    * Relais de mises à jour du dashboard desktop (#Electron auto-update) : jeton
    * GitHub lecture seule et dépôt privé des releases. Noms d'env conservés
@@ -37,14 +39,21 @@ function parseOrigins(raw: string | undefined): string[] {
 }
 
 const nodeEnv = process.env.NODE_ENV ?? 'development'
+const isProd = nodeEnv === 'production'
 
 export const env: AppEnv = {
   nodeEnv,
   port: Number(process.env.PORT ?? 3001),
   corsOrigins: parseOrigins(process.env.CORS_ORIGINS),
   sentryDsn: process.env.SENTRY_DSN || undefined,
-  isProd: nodeEnv === 'production',
-  docsEnabled: parseBool(process.env.API_DOCS_ENABLED, nodeEnv !== 'production'),
+  isProd,
+  docsEnabled: parseBool(process.env.API_DOCS_ENABLED, !isProd),
+  // `NUXT_PROVIDERS_DEMO` est accepté temporairement pour les anciens
+  // environnements, mais la variable backend n'utilise plus le préfixe Nuxt.
+  providersDemoEnabled: parseBool(
+    process.env.PROVIDERS_DEMO ?? process.env.NUXT_PROVIDERS_DEMO,
+    !isProd,
+  ),
   githubUpdateToken: process.env.NUXT_GITHUB_UPDATE_TOKEN ?? process.env.GITHUB_UPDATE_TOKEN ?? '',
   githubUpdateRepo:
     process.env.NUXT_GITHUB_UPDATE_REPO ?? process.env.GITHUB_UPDATE_REPO ?? 'Nova2026-graphik/worktogo-admin',

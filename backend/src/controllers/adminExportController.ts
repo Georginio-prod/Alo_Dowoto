@@ -7,6 +7,7 @@ import { forbidden } from '../utils/apiError'
 import { getAdminPermissions, hasPermission } from '../services/adminPermissionsService'
 import { auditLogService } from '../services/auditLogService'
 import { exportMovementsCsv, type AdminMovementFilters, type AdminMovementKind } from '../services/adminMovementService'
+import { isEscrowOrderStatus } from '../repositories/escrowOrderRepository'
 
 /**
  * Dashboard admin (#admin) — exports « toutes lignes filtrées » pour la
@@ -158,15 +159,13 @@ export async function adminPaymentsExport(req: Request, res: Response): Promise<
   res.json({ items, total: items.length })
 }
 
-const ESCROW_VALID_STATUS = new Set(['awaiting_payment', 'in_escrow', 'delivered', 'released', 'refunded', 'disputed'])
-
 /** GET /api/admin/escrow/export — commandes en séquestre filtrées (escrow.view). */
 export async function adminEscrowExport(req: Request, res: Response): Promise<void> {
   const search = readAdminQueryString(req, 'search')
   const status = readAdminQueryString(req, 'status')
 
   const where: Prisma.EscrowOrderWhereInput = {}
-  if (ESCROW_VALID_STATUS.has(status)) {
+  if (isEscrowOrderStatus(status)) {
     where.status = status as Prisma.EscrowOrderWhereInput['status']
   }
   if (search) {
