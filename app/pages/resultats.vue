@@ -180,12 +180,28 @@ const nearbyProviders = computed(() =>
 )
 
 // Favoris déjà enregistrés par le client (#64) : chargés une seule fois pour
-// tous les prestataires affichés plutôt qu'une requête par carte. Échoue
-// silencieusement (client non connecté ou compte prestataire) : les cartes
-// démarrent alors simplement non favorites.
-const { data: favoritesData, refresh: refreshFavorites } = await useFetch<{ favorites: { providerId: string }[] }>(
-  '/api/favorites',
-)
+// tous les prestataires affichés plutôt qu'une requête par carte. On ne lance
+// pas l'appel protégé pour un visiteur ni pour un prestataire : un 401 est
+// correct côté API, mais inutile dans le navigateur et bruyant dans la console.
+const { apiFetch } = useApi()
+const favoritesData = ref<{ favorites: { providerId: string }[] } | null>(null)
+
+async function refreshFavorites() {
+  if (user.value?.role !== 'client') {
+    favoritesData.value = null
+    return
+  }
+
+  try {
+    favoritesData.value = await apiFetch<{ favorites: { providerId: string }[] }>('/api/favorites')
+  } catch {
+    // Une session qui expire entre-temps remet simplement les cartes à l'état
+    // non favori ; l'action explicite de l'utilisateur affichera son erreur.
+    favoritesData.value = null
+  }
+}
+
+await refreshFavorites()
 const favoriteProviderIds = computed(() => new Set((favoritesData.value?.favorites ?? []).map((f) => f.providerId)))
 
 function resetFilters() {

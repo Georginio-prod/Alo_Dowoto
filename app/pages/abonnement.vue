@@ -7,7 +7,8 @@ const { t } = useI18n({ useScope: 'global' })
 
 const { trialDays = 14 } = defineProps<{ trialDays?: number }>()
 
-const { user } = useSession()
+const { user, ensure } = useSession()
+await ensure()
 
 const selectedSlug = ref((PLANS.find((plan) => plan.hasTag) ?? PLANS[0]).slug)
 const selectedPlan = computed(() => findPlan(selectedSlug.value) ?? PLANS[0])
@@ -21,9 +22,21 @@ function selectPlan(slug: PlanSlug) {
 // (voir le texte ci-dessous) — jusqu'ici sans contrepartie réelle, un
 // prestataire était renvoyé vers le paiement immédiat quoi qu'il arrive.
 // Éligible uniquement s'il n'a jamais eu le moindre abonnement (même
-// abandonné en attente), vérifié une seule fois au chargement de la page.
-const { data: existingSubscription } = await useFetch<{ subscription: Subscription | null }>('/api/subscriptions/me')
-const isTrialEligible = computed(() => existingSubscription.value?.subscription === null)
+// abandonné en attente), vérifié une seule fois au chargement de la page. La
+// consultation est réservée à un prestataire connecté ; la page reste publique
+// et ne doit donc pas générer de 401 pour un visiteur.
+const existingSubscription = ref<Subscription | null | undefined>(undefined)
+if (user.value?.role === 'prestataire') {
+  try {
+    const response = await apiFetch<{ subscription: Subscription | null }>('/api/subscriptions/me')
+    existingSubscription.value = response.subscription
+  } catch {
+    // Si la session vient d'expirer, les CTAs existants redirigeront vers la
+    // connexion au moment de l'action ; on ne prétend pas connaître l'éligibilité.
+    existingSubscription.value = undefined
+  }
+}
+const isTrialEligible = computed(() => existingSubscription.value === null)
 
 async function startFreeTrial() {
   if (isSubmitting.value) return
