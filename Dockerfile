@@ -18,7 +18,10 @@ RUN npx nuxt prepare && npm run build
 
 FROM nginx:1.27-alpine
 
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+# `nginx.conf` est rendu au démarrage par l'entrypoint officiel nginx :
+# API_HOST reste `api` sous Compose et prend le DNS privé Railway en production.
+ENV API_HOST=api
+COPY docker/nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /workspace/.output/public /usr/share/nginx/html
 
 EXPOSE 80
