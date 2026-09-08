@@ -24,6 +24,11 @@ ENV NODE_ENV=production
 
 COPY --from=build /workspace/node_modules ./node_modules
 COPY --from=build /workspace/backend/dist ./dist
+# Railway exécute `prisma migrate deploy` dans l'image runtime avant le
+# démarrage. Les migrations et leur configuration doivent donc être présentes
+# dans cette image, pas seulement dans le stage de build.
+COPY --from=build /workspace/backend/prisma ./prisma
+COPY --from=build /workspace/backend/prisma.config.ts ./prisma.config.ts
 
 EXPOSE 3001
 CMD ["node", "dist/index.js"]
