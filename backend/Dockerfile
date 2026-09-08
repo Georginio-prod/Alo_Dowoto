@@ -31,4 +31,6 @@ COPY --from=build /workspace/backend/prisma ./prisma
 COPY --from=build /workspace/backend/prisma.config.ts ./prisma.config.ts
 
 EXPOSE 3001
-CMD ["node", "dist/index.js"]
+# Railway héberge l'API dans un service unique. Appliquer les migrations avant
+# le démarrage garantit que l'API ne sert jamais un schéma obsolète.
+CMD ["sh", "-c", "npx prisma migrate deploy && exec node dist/index.js"]
