@@ -21,6 +21,9 @@ FROM nginx:1.27-alpine
 # `nginx.conf` est rendu au démarrage par l'entrypoint officiel nginx :
 # API_HOST reste `api` sous Compose et prend le DNS privé Railway en production.
 ENV API_HOST=api
+# Active la découverte DNS à l'exécution : l'adresse privée Railway de l'API
+# peut changer à chaque redéploiement sans que le front ait à être relancé.
+ENV NGINX_ENTRYPOINT_LOCAL_RESOLVERS=on
 COPY docker/nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /workspace/.output/public /usr/share/nginx/html
 
