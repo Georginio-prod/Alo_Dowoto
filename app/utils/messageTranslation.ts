@@ -1,5 +1,5 @@
 import { getSectorFields } from '~/data/firstContactSectorFields'
-import type { Message } from '~~/server/utils/conversationStore'
+import type { Message } from '~/types/api'
 
 /**
  * Résout les lignes affichables d'un message de fil de discussion (#i18n) :

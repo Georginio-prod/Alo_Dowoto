@@ -61,7 +61,7 @@ requestsRoutes.post('/requests', requireSessionUser, validateBody(createServiceR
  *       401: { description: Non connecté., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
  *       403: { description: Réservé aux clients., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
  */
-requestsRoutes.get('/requests', requireClientRole, getMyRequests)
+requestsRoutes.get('/requests', requireClientRole, asyncHandler(getMyRequests))
 
 /**
  * @openapi
@@ -75,7 +75,7 @@ requestsRoutes.get('/requests', requireClientRole, getMyRequests)
  *       401: { description: Non connecté., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
  *       403: { description: Réservé aux prestataires., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
  */
-requestsRoutes.get('/requests/received', requireProviderRole, getReceivedRequests)
+requestsRoutes.get('/requests/received', requireProviderRole, asyncHandler(getReceivedRequests))
 
 /**
  * @openapi
@@ -117,4 +117,4 @@ requestsRoutes.get('/requests/:id/matches', requireSessionUser, asyncHandler(get
  *       401: { description: Non connecté., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
  *       404: { description: Demande introuvable., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
  */
-requestsRoutes.get('/requests/:id', requireSessionUser, getRequest)
+requestsRoutes.get('/requests/:id', requireSessionUser, asyncHandler(getRequest))

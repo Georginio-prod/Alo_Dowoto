@@ -11,7 +11,7 @@ import {
   Truck,
   type LucideIcon,
 } from '@lucide/vue'
-import type { Sector } from '~/data/sectors'
+import type { Sector } from '#domain-data/sectors'
 
 /**
  * Icône Lucide par secteur (`Sector.icon`) — remplace l'emoji comme rendu

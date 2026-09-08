@@ -18,7 +18,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U worktogo" --health-interval 5s
+          --health-cmd "pg_isready -U worktogo -d worktogo_e2e" --health-interval 5s
           --health-timeout 5s --health-retries 15
     env:
       # Base PostgreSQL fournie par le service ci-dessus. `prisma generate` ne
@@ -43,7 +43,7 @@ jobs:
         run: npm run db:generate
       - name: Installer les navigateurs Playwright
         run: npx playwright install --with-deps chromium
-      # La base SQLite jetable et le serveur Nuxt sont pris en charge par
+      # La base PostgreSQL jetable, Express et Nuxt sont pris en charge par
       # playwright.config.ts (globalSetup + webServer).
       - name: Lancer les tests de parcours
         run: npx playwright test --project=chromium

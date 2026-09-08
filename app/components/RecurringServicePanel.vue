@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import type { RecurringFrequency, RecurringService } from '~~/server/utils/recurringServiceStore'
+import type { RecurringFrequency, RecurringService } from '~/types/api'
 
+const { apiFetch } = useApi()
 /**
  * Offres récurrentes natives (#271) : le chercheur met en place un
  * prélèvement automatique périodique auprès du prestataire de cette
  * conversation, pour un service régulier (ménage hebdomadaire, jardinage
  * mensuel…) sans avoir à reprendre contact à chaque occurrence. Le
  * déclenchement effectif de chaque échéance est géré côté serveur
- * (server/utils/recurringServiceStore.ts) — ce composant ne fait
+ * (le service récurrent de l'API) — ce composant ne fait
  * qu'afficher l'état courant et proposer de démarrer/annuler.
  */
 const props = defineProps<{ recurringService: RecurringService | null; conversationId: string }>()
@@ -32,7 +33,7 @@ async function startRecurring() {
   isSubmitting.value = true
   error.value = ''
   try {
-    await $fetch(`/api/conversations/${props.conversationId}/recurring`, {
+    await apiFetch(`/api/conversations/${props.conversationId}/recurring`, {
       method: 'POST',
       body: { frequency: frequency.value },
     })
@@ -52,7 +53,7 @@ async function cancelRecurring() {
   isCancelling.value = true
   error.value = ''
   try {
-    await $fetch(`/api/conversations/${props.conversationId}/recurring`, { method: 'DELETE' })
+    await apiFetch(`/api/conversations/${props.conversationId}/recurring`, { method: 'DELETE' })
     emit('changed')
   } catch (fetchError) {
     error.value = apiErrorMessage(fetchError, t('recurringServicePanel.errorCancelFailed'))

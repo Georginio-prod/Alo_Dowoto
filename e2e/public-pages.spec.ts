@@ -52,8 +52,11 @@ test('/paiement renvoie un visiteur non connecté vers l’inscription prestatai
   await expect(page).toHaveURL(/\/auth\?.*role=prestataire/)
 })
 
-test('une URL inconnue rend la page 404 et non une erreur serveur', async ({ page }) => {
+test('une URL inconnue rend la page 404 sans erreur serveur', async ({ page }) => {
   const response = await page.goto('/cette-page-nexiste-pas')
-  expect(response?.status()).toBe(404)
+  // En SPA, Nuxt sert le document racine en 200 puis le routeur affiche la
+  // page 404 côté client. L'important est donc l'écran 404, pas le statut du
+  // document HTML de démarrage.
+  expect(response?.status()).toBe(200)
   await expect(page.locator('body')).toContainText(/404|introuvable|not found/i)
 })

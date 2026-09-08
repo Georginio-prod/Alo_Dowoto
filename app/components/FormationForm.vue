@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { FormationEntry, ProviderProfile } from '~~/server/utils/providerStore'
+import type { FormationEntry, ProviderProfile } from '~/types/api'
 
+const { apiFetch } = useApi()
 /**
  * Parcours de formation du prestataire — extrait de
  * app/pages/prestataire/formation.vue (#hub-profil-modales) pour être
@@ -41,7 +42,7 @@ async function submit() {
 
   isSubmitting.value = true
   try {
-    await $fetch('/api/providers/me', { method: 'PATCH', body: { formations: cleaned } })
+    await apiFetch('/api/providers/me', { method: 'PATCH', body: { formations: cleaned } })
     formations.value = cleaned.length ? cleaned : [emptyFormation()]
     success.value = true
     emit('saved')

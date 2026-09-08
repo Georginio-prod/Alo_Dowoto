@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { SignupProfile } from '~/components/AuthContactStep.vue'
-import type { PublicUser } from '~~/server/utils/userStore'
+import type { PublicUser } from '~/types/api'
 
+const { apiFetch } = useApi()
 /**
  * Étape « mot de passe » du parcours d'authentification (#125 création à
  * l'inscription, #126 saisie obligatoire à la connexion). Extrait de
@@ -89,7 +90,7 @@ async function submitSignupPassword() {
         referralCode: props.referralCode,
       },
     })
-    await $fetch('/api/auth/password', {
+    await apiFetch('/api/auth/password', {
       method: 'POST',
       body: { password: signupPassword.value, confirmPassword: signupConfirmPassword.value },
     })
@@ -97,7 +98,7 @@ async function submitSignupPassword() {
     emit('signup-success')
   } catch (error) {
     const message = apiErrorMessage(error, '')
-    // Contact déjà associé à un compte finalisé (voir server/api/auth/session.post.ts) :
+    // Contact déjà associé à un compte finalisé (voir l'API de session) :
     // le formulaire ci-dessus ne propose que des champs de *nouveau* mot de
     // passe, donc renvoyer tel quel « Mot de passe requis. » serait
     // incompréhensible ici — on oriente explicitement vers la connexion.

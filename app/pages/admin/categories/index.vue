@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /** Catégories de services & contenu (#dashboard-admin, module 10). */
 definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
@@ -21,28 +22,28 @@ async function withBusy(action: () => Promise<void>) {
 const newSector = ref({ slug: '', name: '', emoji: '🛠️' })
 async function createSector() {
   await withBusy(async () => {
-    await $fetch('/api/admin/categories', { method: 'POST', body: newSector.value })
+    await apiFetch('/api/admin/categories', { method: 'POST', body: newSector.value })
     newSector.value = { slug: '', name: '', emoji: '🛠️' }
     await refreshSectors()
   })
 }
 
 async function toggleSector(sector: Sector) {
-  await withBusy(async () => { await $fetch(`/api/admin/categories/${sector.id}`, { method: 'PATCH', body: { active: !sector.active } }); await refreshSectors() })
+  await withBusy(async () => { await apiFetch(`/api/admin/categories/${sector.id}`, { method: 'PATCH', body: { active: !sector.active } }); await refreshSectors() })
 }
 
 async function renameSector(sector: Sector, name: string) {
-  await withBusy(async () => { await $fetch(`/api/admin/categories/${sector.id}`, { method: 'PATCH', body: { name } }); await refreshSectors() })
+  await withBusy(async () => { await apiFetch(`/api/admin/categories/${sector.id}`, { method: 'PATCH', body: { name } }); await refreshSectors() })
 }
 
 async function move(sector: Sector, direction: -1 | 1) {
-  await withBusy(async () => { await $fetch(`/api/admin/categories/${sector.id}`, { method: 'PATCH', body: { order: sector.order + direction } }); await refreshSectors() })
+  await withBusy(async () => { await apiFetch(`/api/admin/categories/${sector.id}`, { method: 'PATCH', body: { order: sector.order + direction } }); await refreshSectors() })
 }
 
 const newContent = ref({ key: '', label: '', value: '' })
 async function saveContent() {
   await withBusy(async () => {
-    await $fetch('/api/admin/content', { method: 'POST', body: newContent.value })
+    await apiFetch('/api/admin/content', { method: 'POST', body: newContent.value })
     newContent.value = { key: '', label: '', value: '' }
     await refreshContent()
   })

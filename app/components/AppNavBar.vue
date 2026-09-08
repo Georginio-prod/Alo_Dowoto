@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { SECTORS } from '~/data/sectors'
+import { SECTORS } from '#domain-data/sectors'
 import { SECTOR_ICONS } from '~/utils/sectorIcons'
 
 /**

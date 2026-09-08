@@ -25,9 +25,10 @@ export interface AdminClientSummary {
 }
 
 async function toSummary(user: AdminUserView): Promise<AdminClientSummary> {
-  const [paidMissionsCount, openDisputesCount] = await Promise.all([
+  const [paidMissionsCount, openDisputesCount, requests] = await Promise.all([
     prisma.escrowOrder.count({ where: { clientId: user.id, status: { not: 'awaiting_payment' } } }),
     prisma.escrowOrder.count({ where: { clientId: user.id, status: 'disputed' } }),
+    listRequestsByUser(user.id),
   ])
   return {
     id: user.id,
@@ -37,7 +38,7 @@ async function toSummary(user: AdminUserView): Promise<AdminClientSummary> {
     status: user.status,
     riskFlag: user.riskFlag,
     location: user.location,
-    requestsCount: listRequestsByUser(user.id).length,
+    requestsCount: requests.length,
     paidMissionsCount,
     openDisputesCount,
   }
@@ -94,15 +95,16 @@ export async function getAdminClientDetail(userId: string): Promise<AdminClientD
   if (!row || row.role !== 'client') return null
   const user = toUser(row)
 
-  const [missions, refunds, reviewsLeft] = await Promise.all([
+  const [missions, refunds, reviewsLeft, requests] = await Promise.all([
     prisma.escrowOrder.findMany({ where: { clientId: userId }, orderBy: { createdAt: 'desc' } }),
     prisma.walletMovement.findMany({ where: { walletUserId: userId, type: 'escrow_refund' }, orderBy: { createdAt: 'desc' } }),
     reviewService.listReviewsByAuthor(userId),
+    listRequestsByUser(userId),
   ])
 
   return {
     user,
-    requests: listRequestsByUser(userId).map((r) => ({ id: r.id, title: r.title, createdAt: r.createdAt })),
+    requests: requests.map((r) => ({ id: r.id, title: r.title, createdAt: r.createdAt })),
     missions: missions.map((m) => ({ id: m.id, status: m.status, amount: m.amount, createdAt: m.createdAt.getTime(), providerId: m.providerId })),
     disputes: missions.filter((m) => m.disputedAt !== null).map((m) => ({ id: m.id, disputeReason: m.disputeReason, disputedAt: m.disputedAt?.getTime() ?? null })),
     refunds: refunds.map((r) => ({ id: r.id, amount: r.amount, createdAt: r.createdAt.getTime() })),

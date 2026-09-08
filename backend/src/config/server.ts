@@ -45,6 +45,11 @@ export function createServer(): Express {
 
   app.disable('x-powered-by')
 
+  // En production, Express est toujours placé derrière le proxy nginx. Cette
+  // configuration rend `req.protocol` fiable pour les callbacks OAuth et
+  // permet au rate limiter d'identifier l'adresse cliente transmise par nginx.
+  if (env.isProd) app.set('trust proxy', 1)
+
   app.use(
     cors({
       // Vide en dev = toutes origines ; en prod, liste blanche via CORS_ORIGINS.

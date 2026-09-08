@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /** Fiche détaillée d'un chercheur (#dashboard-admin, module 3). */
 definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
@@ -43,17 +44,17 @@ const suspendOpen = ref(false)
 async function suspend(reason?: string) {
   suspendOpen.value = false
   if (!reason) return
-  await withBusy(async () => { await $fetch(`/api/admin/users/${id}/suspend`, { method: 'POST', body: { reason } }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/users/${id}/suspend`, { method: 'POST', body: { reason } }) })
 }
 async function reactivate() {
-  await withBusy(async () => { await $fetch(`/api/admin/users/${id}/reactivate`, { method: 'POST' }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/users/${id}/reactivate`, { method: 'POST' }) })
 }
 
 const riskBusy = ref(false)
 async function toggleRisk() {
   riskBusy.value = true
   try {
-    await $fetch(`/api/admin/users/${id}/risk-flag`, { method: 'POST', body: { riskFlag: !client.value?.user.riskFlag } })
+    await apiFetch(`/api/admin/users/${id}/risk-flag`, { method: 'POST', body: { riskFlag: !client.value?.user.riskFlag } })
     await refresh()
   } finally {
     riskBusy.value = false
@@ -65,7 +66,7 @@ const messageSubject = ref('')
 const messageBody = ref('')
 async function sendMessage() {
   await withBusy(async () => {
-    await $fetch(`/api/admin/users/${id}/message`, { method: 'POST', body: { subject: messageSubject.value, body: messageBody.value } })
+    await apiFetch(`/api/admin/users/${id}/message`, { method: 'POST', body: { subject: messageSubject.value, body: messageBody.value } })
     messageOpen.value = false
     messageSubject.value = ''
     messageBody.value = ''
@@ -77,7 +78,7 @@ const refundAmount = ref(1000)
 const refundReason = ref('')
 async function submitRefund() {
   await withBusy(async () => {
-    await $fetch(`/api/admin/clients/${id}/refund`, { method: 'POST', body: { amount: refundAmount.value, reason: refundReason.value } })
+    await apiFetch(`/api/admin/clients/${id}/refund`, { method: 'POST', body: { amount: refundAmount.value, reason: refundReason.value } })
     refundOpen.value = false
     refundReason.value = ''
   })
@@ -86,7 +87,7 @@ async function submitRefund() {
 const deleteOpen = ref(false)
 async function deleteAccount() {
   deleteOpen.value = false
-  await withBusy(async () => { await $fetch(`/api/admin/users/${id}/delete`, { method: 'POST', body: {} }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/users/${id}/delete`, { method: 'POST', body: {} }) })
   navigateTo('/admin/chercheurs')
 }
 </script>

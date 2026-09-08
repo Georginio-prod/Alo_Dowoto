@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Urgency } from '~~/server/utils/matchingEngine'
-import type { ServiceRequest } from '~~/server/utils/requestStore'
+import type { Urgency, ServiceRequest  } from '~/types/api'
+
 
 definePageMeta({ layout: 'blank' })
 

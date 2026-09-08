@@ -1,5 +1,6 @@
 import { SECTORS } from '../data/sectors'
 import { DEFAULT_RADIUS_KM, RADIUS_SLIDER_OPTIONS_KM } from '../data/searchRadius'
+import { env } from '../config/env'
 import { isValidCoordinatePair } from '../validation/primitives'
 import { boundingBoxAround, fuzzCoordinate, haversineDistanceKm, isWithinBoundingBox } from '../utils/geo'
 import { scoreFeaturedProvider, type FeaturedCandidate } from './matchingEngine'
@@ -87,11 +88,9 @@ export function estimateExperienceYears(reviewCount: number): number {
  * Inclure l'annuaire de DÉMONSTRATION (faux prestataires `p01…`) dans les
  * résultats publics ? Utile pour peupler le catalogue en dev/démo, mais JAMAIS
  * en production (faux profils contactables/payables). Défaut : activé hors prod,
- * surchargeable via NUXT_PROVIDERS_DEMO=on|off. Iso Nitro.
+ * surchargeable via PROVIDERS_DEMO=on|off.
  */
-const INCLUDE_DEMO_PROVIDERS = process.env.NUXT_PROVIDERS_DEMO
-  ? process.env.NUXT_PROVIDERS_DEMO === 'on'
-  : process.env.NODE_ENV !== 'production'
+const INCLUDE_DEMO_PROVIDERS = env.providersDemoEnabled
 
 /** Convertit un vrai profil prestataire au format annuaire (position floutée par défaut, #geoloc). */
 async function toSearchResult(profile: ProviderProfile): Promise<ProviderSearchResult> {

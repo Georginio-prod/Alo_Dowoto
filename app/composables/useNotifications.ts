@@ -1,4 +1,4 @@
-import type { Notification } from '~~/server/utils/notificationStore'
+import type { Notification } from '~/types/api'
 
 /**
  * Centre de notifications partagé (#360, premier incrément) — même patron
@@ -12,11 +12,11 @@ export function useNotifications() {
   const notifications = useState<Notification[]>('notifications-list', () => [])
   const unreadCount = useState('notifications-unread-count', () => 0)
   const loaded = useState('notifications-loaded', () => false)
-  const requestFetch = useRequestFetch()
+  const { apiFetch } = useApi()
 
   async function refresh() {
     try {
-      const fetched = await requestFetch<{ notifications: Notification[]; unreadCount: number }>('/api/notifications')
+      const fetched = await apiFetch<{ notifications: Notification[]; unreadCount: number }>('/api/notifications')
       notifications.value = fetched.notifications
       unreadCount.value = fetched.unreadCount
     } finally {
@@ -32,7 +32,7 @@ export function useNotifications() {
   async function markAllRead() {
     if (unreadCount.value === 0) return
     unreadCount.value = 0
-    await requestFetch('/api/notifications/read', { method: 'POST' })
+    await apiFetch('/api/notifications/read', { method: 'POST' })
   }
 
   return { notifications, unreadCount, loaded, refresh, ensure, markAllRead }

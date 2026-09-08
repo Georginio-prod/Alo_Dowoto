@@ -1,45 +1,73 @@
-# Infrastructure de développement d'Alo_Dowoto.
-#
-# Base PostgreSQL du backend Express (chantier d'extraction, ADR-0015). Postgres
-# gère les écritures concurrentes des trois clients (web, dashboard, mobile), ce
-# que le SQLite fichier actuel ne fait pas. L'app Nuxt reste sur SQLite tant que
-# sa migration vers Postgres n'est pas faite (étape séparée) ; à terme, l'app et
-# le backend partagent cette même base.
-#
-#   docker compose up -d postgres     # démarrer la base
-#   docker compose down               # arrêter (les données persistent dans le volume)
-#   Adminer (UI web) : http://localhost:8080  (Système: PostgreSQL, Serveur: postgres)
+name: worktogo
 
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: worktogo-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: worktogo
-      POSTGRES_PASSWORD: worktogo
-      POSTGRES_DB: worktogo
+      POSTGRES_USER: ${POSTGRES_USER:-worktogo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-worktogo}
+      POSTGRES_DB: ${POSTGRES_DB:-worktogo}
     ports:
-      # Hôte 5433 (5432 souvent déjà pris par un Postgres local) → conteneur 5432.
-      # DATABASE_URL utilise donc le port 5433.
-      - '5433:5432'
+      - '${POSTGRES_PORT:-5433}:5432'
     volumes:
       - worktogo-pg-data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U worktogo -d worktogo']
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 12
 
-  adminer:
-    image: adminer:4
-    container_name: worktogo-adminer
-    restart: unless-stopped
-    ports:
-      - '8080:8080'
+  migrate:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: migration
+    environment:
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql://worktogo:worktogo@postgres:5432/worktogo?schema=public}
     depends_on:
       postgres:
         condition: service_healthy
+    restart: 'no'
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: runtime
+    env_file:
+      - ./backend/.env
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql://worktogo:worktogo@postgres:5432/worktogo?schema=public}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    expose:
+      - '3001'
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - '${WEB_PORT:-3000}:80'
+    restart: unless-stopped
+
+  adminer:
+    image: adminer:4
+    profiles: ['tools']
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '${ADMINER_PORT:-8080}:8080'
 
 volumes:
   worktogo-pg-data:

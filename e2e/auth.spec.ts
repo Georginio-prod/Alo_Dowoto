@@ -16,6 +16,27 @@ async function openAuthPage(page: Page, path = '/auth'): Promise<void> {
   await clickWhenReady(page.getByRole('button', { name: 'Téléphone', exact: true }), page.getByLabel('Numéro de téléphone'))
 }
 
+test('un retour navigateur depuis Google ramène à l’accueil', async ({ page }) => {
+  // Google est simulé : le test vérifie uniquement l'historique de navigation,
+  // sans ouvrir le sélecteur de comptes ni manipuler une session réelle.
+  await page.route('**/api/auth/google**', async route => {
+    await route.fulfill({
+      contentType: 'text/html',
+      body: '<title>Google test</title>',
+    })
+  })
+
+  await gotoHydrated(page, '/')
+  await page.getByRole('link', { name: 'Se connecter' }).click()
+  await expect(page).toHaveURL(/\/auth$/)
+
+  await page.getByRole('button', { name: 'Se connecter avec Google' }).click()
+  await expect(page).toHaveTitle('Google test')
+
+  await page.goBack()
+  await expect(page).toHaveURL(/\/$/)
+})
+
 /** Pages « Mon espace » : un visiteur non connecté doit être renvoyé vers /auth. */
 const PROTECTED_PAGES = [
   '/dashboard/client',

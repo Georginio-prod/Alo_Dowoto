@@ -30,7 +30,7 @@ export const quotasRoutes = Router()
  *       401: { description: Non connecté., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
  *       403: { description: Réservé aux clients., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
  */
-quotasRoutes.get('/quotas/contacts', requireClientRole, getContacts)
+quotasRoutes.get('/quotas/contacts', requireClientRole, asyncHandler(getContacts))
 
 /**
  * @openapi
@@ -49,7 +49,7 @@ quotasRoutes.get('/quotas/contacts', requireClientRole, getContacts)
  *       403: { description: Réservé aux clients., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
  *       429: { description: Quota mensuel atteint., content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
  */
-quotasRoutes.post('/quotas/contacts', requireClientRole, postContacts)
+quotasRoutes.post('/quotas/contacts', requireClientRole, asyncHandler(postContacts))
 
 /**
  * @openapi

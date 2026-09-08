@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Pagination côté serveur des tableaux admin (#dashboard-admin) — voir server/utils/adminPagination.ts. */
+/** Pagination côté serveur des tableaux admin (#dashboard-admin) — voir la pagination de l'API. */
 const props = defineProps<{ page: number, pageSize: number, total: number }>()
 const emit = defineEmits<{ 'update:page': [page: number] }>()
 

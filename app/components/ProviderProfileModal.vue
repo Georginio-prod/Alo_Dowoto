@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { ConversationSummary } from '~~/server/utils/conversationStore'
-import type { ProviderDetail } from '~~/server/utils/providerDirectory'
+import type { ConversationSummary, ProviderDetail  } from '~/types/api'
+
+const { apiFetch } = useApi()
 
 /**
  * Fenêtre « Voir le profil » d'un prestataire (#127), ouverte depuis
@@ -45,7 +46,7 @@ async function contactProvider() {
   isContacting.value = true
   contactError.value = ''
   try {
-    await $fetch('/api/quotas/contacts', { method: 'POST' })
+    await apiFetch('/api/quotas/contacts', { method: 'POST' })
     const { conversation } = await $fetch<{ conversation: ConversationSummary }>('/api/conversations', {
       method: 'POST',
       body: { providerId: props.providerId },

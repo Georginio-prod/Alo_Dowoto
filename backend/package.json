@@ -21,7 +21,9 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "prisma:push": "prisma db push"
+    "prisma:push": "prisma db push",
+    "prisma:seed": "tsx scripts/seed.ts",
+    "admin:create": "node scripts/create-admin.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

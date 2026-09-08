@@ -16,8 +16,8 @@ import {
  */
 
 /** GET /api/quotas/contacts → { usage } (contacts du mois, sans incrément). */
-export function getContacts(req: Request, res: Response): void {
-  res.json({ usage: getClientContactsUsage(authUser(req).id) })
+export async function getContacts(req: Request, res: Response): Promise<void> {
+  res.json({ usage: await getClientContactsUsage(authUser(req).id) })
 }
 
 /**
@@ -25,13 +25,13 @@ export function getContacts(req: Request, res: Response): void {
  * Quota gratuit atteint (3/mois) → 429 explicite avec l'usage, jamais une 500
  * brute : le bouton « Contacter » s'en sert pour se désactiver (iso Nitro).
  */
-export function postContacts(req: Request, res: Response): void {
+export async function postContacts(req: Request, res: Response): Promise<void> {
   const userId = authUser(req).id
-  const usage = getClientContactsUsage(userId)
+  const usage = await getClientContactsUsage(userId)
   if (usage.count >= CLIENT_CONTACTS_MONTHLY_LIMIT) {
     tooManyRequests('Quota de contacts atteint ce mois-ci (3 / mois). Réessayez le mois prochain.', { usage })
   }
-  const result = incrementClientContacts(userId)
+  const result = await incrementClientContacts(userId)
   res.json({ usage: { ...result, limit: CLIENT_CONTACTS_MONTHLY_LIMIT } })
 }
 
@@ -42,5 +42,5 @@ export async function getRequestsReceived(req: Request, res: Response): Promise<
   // Un abonnement en attente ou expiré n'ouvre pas droit à un quota, au même
   // titre qu'une absence totale d'abonnement (iso Nitro).
   const plan = subscription?.status === 'actif' ? subscription.plan : null
-  res.json({ usage: getProviderRequestsUsage(userId, plan) })
+  res.json({ usage: await getProviderRequestsUsage(userId, plan) })
 }

@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import type { PayoutMethod } from '~~/server/utils/providerStore'
+import type { PayoutMethod } from '~/types/api'
 
+const { apiFetch } = useApi()
 /**
  * Étape « Localisation & mode de rémunération » de l'inscription
  * prestataire (#123 : composant fonctionnel et persisté ; #124 : les deux
  * champs sont obligatoires, contrôlés côté client ET côté serveur — voir
- * la validation dupliquée dans server/api/providers/me.patch.ts).
+ * la validation dupliquée dans l'API de profil).
  */
 
 const props = defineProps<{ sectorSlug: string }>()
@@ -46,7 +47,7 @@ async function submit() {
   isSaving.value = true
   saveError.value = ''
   try {
-    await $fetch('/api/providers/me', {
+    await apiFetch('/api/providers/me', {
       method: 'PATCH',
       body: {
         sector: props.sectorSlug,

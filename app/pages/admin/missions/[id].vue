@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /** Fiche détaillée d'une mission (#dashboard-admin, module 4). */
 definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
@@ -57,34 +58,34 @@ async function withBusy(action: () => Promise<void>) {
 const forceValidateOpen = ref(false)
 async function forceValidate() {
   forceValidateOpen.value = false
-  await withBusy(async () => { await $fetch(`/api/admin/missions/${id}/force-validate`, { method: 'POST' }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/missions/${id}/force-validate`, { method: 'POST' }) })
 }
 
 const cancelOpen = ref(false)
 async function cancelMission(reason?: string) {
   cancelOpen.value = false
   if (!reason) return
-  await withBusy(async () => { await $fetch(`/api/admin/missions/${id}/cancel`, { method: 'POST', body: { reason } }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/missions/${id}/cancel`, { method: 'POST', body: { reason } }) })
 }
 
 const reassignOpen = ref(false)
 const reassignProviderId = ref('')
 async function reassign() {
   await withBusy(async () => {
-    await $fetch(`/api/admin/missions/${id}/reassign`, { method: 'POST', body: { providerId: reassignProviderId.value } })
+    await apiFetch(`/api/admin/missions/${id}/reassign`, { method: 'POST', body: { providerId: reassignProviderId.value } })
     reassignOpen.value = false
     reassignProviderId.value = ''
   })
 }
 
 async function nudge() {
-  await withBusy(async () => { await $fetch(`/api/admin/missions/${id}/nudge`, { method: 'POST' }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/missions/${id}/nudge`, { method: 'POST' }) })
 }
 
 const noteBody = ref('')
 async function addNote() {
   await withBusy(async () => {
-    await $fetch(`/api/admin/missions/${id}/note`, { method: 'POST', body: { body: noteBody.value } })
+    await apiFetch(`/api/admin/missions/${id}/note`, { method: 'POST', body: { body: noteBody.value } })
     noteBody.value = ''
   })
 }

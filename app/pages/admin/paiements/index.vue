@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /** Paiements & séquestre (#dashboard-admin, module 5). */
 definePageMeta({ layout: 'admin', middleware: 'auth', authRole: 'admin' })
 
@@ -59,7 +60,7 @@ async function withBusy(action: () => Promise<void>) {
 }
 
 async function releaseOrder(orderId: string) {
-  await withBusy(async () => { await $fetch(`/api/admin/payments/${orderId}/release`, { method: 'POST' }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/payments/${orderId}/release`, { method: 'POST' }) })
 }
 
 const refundTarget = ref<string | null>(null)
@@ -67,12 +68,12 @@ async function refundOrder(reason?: string) {
   const orderId = refundTarget.value
   refundTarget.value = null
   if (!orderId || !reason) return
-  await withBusy(async () => { await $fetch(`/api/admin/payments/${orderId}/refund`, { method: 'POST', body: { reason } }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/payments/${orderId}/refund`, { method: 'POST', body: { reason } }) })
 }
 
 async function retryTransaction(row: MovementRow) {
   if (row.kind !== 'subscription_payment' && row.kind !== 'wallet_recharge') return
-  await withBusy(async () => { await $fetch(`/api/admin/payments/${row.id}/retry`, { method: 'POST', body: { kind: row.kind } }) })
+  await withBusy(async () => { await apiFetch(`/api/admin/payments/${row.id}/retry`, { method: 'POST', body: { kind: row.kind } }) })
 }
 
 function exportCsv() {

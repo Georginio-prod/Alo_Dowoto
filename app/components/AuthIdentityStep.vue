@@ -3,7 +3,7 @@
  * Étape « Identité » du parcours d'inscription (#180+1) : facultative à ce
  * stade (voir bouton « Passer pour l'instant »), mais requise ensuite pour
  * qu'un chercheur publie sa première demande ou qu'un prestataire puisse
- * être contacté (server/api/requests, server/api/conversations). Extrait de
+ * être contacté (l'API des demandes, l'API des conversations). Extrait de
  * app/pages/auth.vue pour respecter la limite de lignes par fichier.
  */
 

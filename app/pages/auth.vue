@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PendingGoogleSignup, SignupProfile } from '~/components/AuthContactStep.vue'
-import { SECTORS } from '~/data/sectors'
-import type { PublicUser } from '~~/server/utils/userStore'
+import { SECTORS } from '#domain-data/sectors'
+import type { PublicUser } from '~/types/api'
 
 type Tab = 'login' | 'signup'
 type Role = 'client' | 'prestataire'
@@ -47,12 +47,11 @@ const googleError = computed(() => {
 
 // Retour d'inscription Google (`?google=1`) : le callback a déposé le profil
 // (email vérifié, prénom, nom) dans un cookie httpOnly — jamais dans l'URL.
-// `useRequestFetch` transmet ce cookie pendant le SSR (même raison que dans
-// useSession.ts).
 const googlePending = ref<PendingGoogleSignup | null>(null)
 if (route.query.google === '1') {
   try {
-    const { pending } = await useRequestFetch()<{ pending: PendingGoogleSignup | null }>('/api/auth/google/pending')
+    const { apiFetch } = useApi()
+    const { pending } = await apiFetch<{ pending: PendingGoogleSignup | null }>('/api/auth/google/pending')
     googlePending.value = pending
   } catch {
     googlePending.value = null
@@ -64,7 +63,10 @@ function startGoogle() {
   // Redirection plein écran (pas un appel API) : le serveur pose le cookie
   // `state` puis renvoie vers l'écran de consentement Google.
   const target = activeTab.value === 'signup' ? `/api/auth/google?role=${role.value}` : '/api/auth/google'
-  navigateTo(target, { external: true })
+  // La page d'authentification ne doit pas rester dans l'historique entre
+  // l'accueil et Google. Ainsi, un Retour avant la sélection d'un compte
+  // revient à l'accueil au lieu de revisiter une URL de callback obsolète.
+  navigateTo(target, { external: true, replace: true })
 }
 
 const contactMethod = ref<Method>('phone')

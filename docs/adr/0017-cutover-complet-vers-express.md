@@ -1,6 +1,6 @@
 # ADR 0017 — Cutover complet vers Express (abandon de l'API Nitro)
 
-**Statut :** Accepté (2026-08-27) — **remplace la stratégie de migration progressive**
+**Statut :** Implémenté (2026-09-07) — **remplace la stratégie de migration progressive**
 de [ADR-0016](0016-iso-fonctionnement-par-tests-de-contrat.md) (« zéro changement,
 bascule domaine par domaine sans interruption »).
 
@@ -10,8 +10,8 @@ le site un moment** au cutover.
 
 ## Décision
 
-1. **Fin de l'API Nitro.** Les 183 routes `server/api/**` sont portées vers le
-   backend Express, puis `server/api/**` et `server/utils/**` sont **supprimés**.
+1. **Fin de l'API Nitro.** Les 183 routes `server/api/**` ont été portées vers
+   le backend Express; `server/api/**` et `server/utils/**` sont **supprimés**.
 2. **Front en SPA.** L'app Nuxt passe en **mode SPA** (`ssr: false`, build
    statique) — plus de serveur Nitro au runtime. On **garde Nuxt** (pas de
    réécriture Vite) : mêmes bénéfices qu'une SPA Vite (comme cnc-portal), sans
@@ -23,8 +23,8 @@ le site un moment** au cutover.
 4. **Le backend possède la couche données.** Prisma (schéma + migrations + config
    + client) vit dans `backend/prisma/` ; le client est mutualisé via les
    workspaces npm (l'app l'importe tant que Nitro n'est pas retiré).
-5. **Downtime accepté** au cutover prod uniquement — le développement se fait sur
-   branches sans couper le site.
+5. **Conteneurs livrables.** nginx sert la SPA et relaie `/api/**` vers Express;
+   un service Compose applique les migrations avant le démarrage de l'API.
 
 ## Ce qui est conservé de l'ADR-0016
 
@@ -35,11 +35,8 @@ mais reste un **objectif de correction** vérifié par les tests.
 
 ## Conséquences
 
-- Le point de bascule `useApi` / `NUXT_PUBLIC_MIGRATED_API_PREFIXES` devient
-  **inutile** (le proxy suffit) → retiré en Phase 3.
-- Déploiement : deux artefacts (front statique + backend Express) derrière un
-  proxy.
-- Effort important (portage massif) mais **plus rapide** sans bascule graduelle.
-- Le plan d'exécution : Phase 0 (Prisma → backend, **faite**) → 1 (couche
-  transverse) → 2 (portage par domaine + rejeu de contrat) → 3 (SPA + proxy +
-  suppression Nitro) → 4 (déploiement + cutover prod).
+- Le point de bascule `useApi` / `NUXT_PUBLIC_MIGRATED_API_PREFIXES` est retiré.
+- Le déploiement produit deux artefacts (front statique + backend Express)
+  derrière nginx, avec PostgreSQL comme seule base applicative.
+- Les demandes, correspondances, services récurrents et compteurs mensuels sont
+  désormais persistés avec les données transactionnelles existantes.

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import type { Message } from '~~/server/utils/conversationStore'
+import type { Message } from '~/types/api'
 import { resolveMessageLines } from '~/utils/messageTranslation'
 
+const { apiFetch } = useApi()
 /**
  * Une bulle du fil de discussion (#hub-messages-automatiques) : message
  * classique aligné selon l'émetteur, ou message automatique WorkTogo centré
@@ -43,7 +44,7 @@ async function confirmOrder() {
   isConfirmingOrder.value = true
   confirmOrderError.value = ''
   try {
-    await $fetch(`/api/conversations/${props.conversationId}/confirm-order`, { method: 'POST' })
+    await apiFetch(`/api/conversations/${props.conversationId}/confirm-order`, { method: 'POST' })
     emit('changed')
   } catch {
     confirmOrderError.value = t('messageBubble.errorConfirmFailed')
@@ -68,7 +69,7 @@ async function shareLocation() {
   navigator.geolocation.getCurrentPosition(
     async (position) => {
       try {
-        await $fetch(`/api/conversations/${props.conversationId}/share-location`, {
+        await apiFetch(`/api/conversations/${props.conversationId}/share-location`, {
           method: 'POST',
           body: { lat: position.coords.latitude, lng: position.coords.longitude },
         })
@@ -101,7 +102,7 @@ async function confirmReschedule() {
   isConfirmingReschedule.value = true
   confirmRescheduleError.value = ''
   try {
-    await $fetch(`/api/conversations/${props.conversationId}/confirm-reschedule`, { method: 'POST' })
+    await apiFetch(`/api/conversations/${props.conversationId}/confirm-reschedule`, { method: 'POST' })
     emit('changed')
   } catch {
     confirmRescheduleError.value = t('messageBubble.errorConfirmFailed')

@@ -18,7 +18,7 @@ export const assistantRoutes = Router()
  *   post:
  *     tags: [Assistant]
  *     summary: Message à l'assistant IA (recommandations, FAQ)
- *     description: Appel serveur uniquement (clé API jamais exposée). Sans fournisseur configuré ou en cas de panne, bascule en mode dégradé (recherche FAQ) avec `degraded: true`.
+ *     description: "Appel serveur uniquement (clé API jamais exposée). Sans fournisseur configuré ou en cas de panne, bascule en mode dégradé (recherche FAQ) avec `degraded: true`."
  *     requestBody:
  *       required: true
  *       content:

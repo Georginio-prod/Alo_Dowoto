@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_REGION_SLUG, findQuartierBySlug, getRegionBySlug, listAllQuartiers, listQuartiers, REGIONS } from '~~/app/data/regions'
+import { DEFAULT_REGION_SLUG, findQuartierBySlug, getRegionBySlug, listAllQuartiers, listQuartiers, REGIONS } from '#domain-data/regions'
 
 describe('regions (#geoloc, découpage géographique en donnée de configuration)', () => {
   it('expose la Région Maritime avec des bornes cohérentes (sud < nord, ouest < est)', () => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Sector } from '~/data/sectors'
+import type { Sector } from '#domain-data/sectors'
 import { SECTOR_ICONS } from '~/utils/sectorIcons'
 
 const { t } = useI18n({ useScope: 'global' })

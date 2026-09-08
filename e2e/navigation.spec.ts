@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { gotoHydrated } from './helpers/hydration'
+import { gotoHydrated, waitForHydration } from './helpers/hydration'
 
 test('le pied de page mène aux pages légales', async ({ page }) => {
   await gotoHydrated(page, '/')
@@ -43,6 +43,7 @@ test('bascule de thème', async ({ page }) => {
   // Le thème doit survivre à un rechargement (stocké dans localStorage).
   const chosen = await page.locator('html').getAttribute('data-theme')
   await page.reload()
+  await waitForHydration(page)
   expect(await page.locator('html').getAttribute('data-theme')).toBe(chosen)
 })
 

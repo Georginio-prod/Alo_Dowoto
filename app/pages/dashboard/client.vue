@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ServiceRequest } from '~~/server/utils/requestStore'
+import type { ServiceRequest } from '~/types/api'
 
 /**
  * « Mon espace » chercheur : vue d'ensemble de l'activité (demandes,

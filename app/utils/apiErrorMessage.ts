@@ -1,6 +1,6 @@
 /**
  * Extrait le message d'erreur renvoyé par l'API (champ `message` du corps
- * JSON des erreurs Nitro, posé par server/utils/apiError.ts). `$fetch`
+ * JSON des erreurs de l'API, posé par backend/src/middleware/errorHandler.ts). `$fetch`
  * expose le corps parsé sous `error.data`.
  *
  * Remplace l'ancienne lecture de `error.statusMessage` : h3 assainit la

@@ -1,34 +1,18 @@
-import frMessages from '~~/i18n/locales/fr.json'
-
 /**
  * Contenu FAQ (#i18n) — entièrement piloté par les clés `faq.*` de
  * i18n/locales/{fr,en}.json plutôt que du texte français en dur, pour rester
  * cohérent avec le reste de l'internationalisation (voir LanguageSwitcher.vue).
- *
- * Utilisé par la page FAQ (locale active, via `getFaqCategories(t)` avec le
- * `t` réactif de useI18n) et par l'outil `consulterFAQ` de l'assistant IA
- * (server/utils/ai/tools.ts, via `getFaqCategoriesFr()`) : le second n'a pas
- * de contexte vue-i18n (util serveur Nitro pur) et l'assistant répond
- * toujours en français par conception (#geoloc/2.4) — `frLookup` retrouve
- * directement les mêmes clés dans i18n/locales/fr.json plutôt que de dupliquer
- * ce contenu.
+ * Utilisé uniquement par la page FAQ avec le `t` réactif de useI18n. La FAQ
+ * française de l'assistant relève du backend, qui reste déployable séparément.
  */
 export interface FaqItem {
   question: string
   answer: string
 }
-
 export interface FaqCategory {
   id: string
   title: string
   items: FaqItem[]
-}
-
-function frLookup(key: string): string {
-  const value = key.split('.').reduce<unknown>((node, segment) => {
-    return typeof node === 'object' && node !== null ? (node as Record<string, unknown>)[segment] : undefined
-  }, frMessages)
-  return typeof value === 'string' ? value : key
 }
 
 export function getFaqCategories(t: (key: string) => string): FaqCategory[] {
@@ -78,9 +62,4 @@ export function getFaqCategories(t: (key: string) => string): FaqCategory[] {
       ],
     },
   ]
-}
-
-/** FAQ toujours en français, pour l'assistant IA (voir server/utils/ai/tools.ts). */
-export function getFaqCategoriesFr(): FaqCategory[] {
-  return getFaqCategories(frLookup)
 }

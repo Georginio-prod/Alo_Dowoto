@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
-import type { ProviderProfile } from '~~/server/utils/providerStore'
-import type { Subscription } from '~~/server/utils/subscriptionStore'
+import type { ProviderProfile, Subscription  } from '~/types/api'
+
 import AvailabilityCalendar from '~/components/AvailabilityCalendar.vue'
 import CertificationsForm from '~/components/CertificationsForm.vue'
 import ContactForm from '~/components/ContactForm.vue'

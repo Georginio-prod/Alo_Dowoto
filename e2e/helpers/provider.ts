@@ -13,7 +13,7 @@ export async function createVisibleProvider(
   const user = await signupViaApi(page, 'prestataire')
 
   // Un prestataire non vérifié ne peut pas être contacté (voir
-  // server/api/conversations/index.post.ts) : les tests de messagerie ont donc
+  // l'API de conversations) : les tests de messagerie ont donc
   // besoin d'un compte vérifié, comme un vrai prestataire actif.
   if (overrides.verified !== false) await verifyIdentityViaApi(page)
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { ProviderProfile } from '~~/server/utils/providerStore'
+import type { ProviderProfile } from '~/types/api'
 
+const { apiFetch } = useApi()
 /**
  * Coordonnées complémentaires du prestataire (WhatsApp, site web) — extrait
  * de app/pages/prestataire/coordonnees.vue (#hub-profil-modales) pour être
@@ -30,7 +31,7 @@ async function submit() {
 
   isSubmitting.value = true
   try {
-    await $fetch('/api/providers/me', {
+    await apiFetch('/api/providers/me', {
       method: 'PATCH',
       body: {
         whatsapp: whatsapp.value.trim() || undefined,

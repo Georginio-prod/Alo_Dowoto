@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /**
  * Droits RGPD en libre-service (#286, audit sécurité — droit d'accès à la
  * portabilité et droit à l'effacement) : jusqu'ici, la politique de
@@ -17,7 +18,7 @@ async function exportData() {
   isExporting.value = true
   exportError.value = ''
   try {
-    const data = await $fetch('/api/account/export')
+    const data = await apiFetch('/api/account/export')
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -43,7 +44,7 @@ async function deleteAccount() {
   isDeleting.value = true
   deleteError.value = ''
   try {
-    await $fetch('/api/account/delete', { method: 'POST' })
+    await apiFetch('/api/account/delete', { method: 'POST' })
     clearSession()
     await navigateTo('/')
   } catch (fetchError) {

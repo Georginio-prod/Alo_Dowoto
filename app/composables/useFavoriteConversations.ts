@@ -12,14 +12,14 @@ export function useFavoriteConversations() {
   const entries = useState<FavoriteConversationEntry[]>('favorite-conversations', () => [])
   const loaded = useState('favorite-conversations-loaded', () => false)
   const pending = useState('favorite-conversations-pending', () => false)
-  const requestFetch = useRequestFetch()
+  const { apiFetch } = useApi()
   const { conversations, refresh: refreshConversations } = useConversations()
 
   async function refresh() {
     pending.value = true
     try {
       const [{ favorites }] = await Promise.all([
-        requestFetch<{ favorites: FavoriteSource[] }>('/api/favorites'),
+        apiFetch<{ favorites: FavoriteSource[] }>('/api/favorites'),
         refreshConversations(),
       ])
       entries.value = buildFavoriteEntries(favorites, conversations.value)

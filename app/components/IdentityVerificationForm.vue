@@ -1,10 +1,11 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /**
  * Formulaire de vérification d'identité (#180+1) : télé-versement de la
  * carte d'identité puis d'une photo passeport (fond blanc, format
  * international). Réutilisé par AuthIdentityStep.vue (étape facultative de
  * l'inscription) et par profil.vue (complétion après coup) — voir
- * server/utils/verificationStore.ts pour la certification côté serveur.
+ * le service de vérification de l'API pour la certification côté serveur.
  */
 
 const emit = defineEmits<{ submitted: [] }>()
@@ -69,7 +70,7 @@ async function submit() {
   isSubmitting.value = true
   error.value = ''
   try {
-    await $fetch('/api/verification', {
+    await apiFetch('/api/verification', {
       method: 'POST',
       body: { idCardImage: idCardImage.value, passportPhotoImage: passportPhotoImage.value },
     })

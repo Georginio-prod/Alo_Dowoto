@@ -1,4 +1,4 @@
-import type { ConversationSummary } from '~~/server/utils/conversationStore'
+import type { ConversationSummary } from '~/types/api'
 
 export interface FavoriteProviderSummary {
   displayName: string
@@ -27,7 +27,7 @@ export interface FavoriteConversationEntry {
  * conversation (`conversationId: null`), un favori dont la fiche annuaire a
  * disparu est ignoré (rien d'affichable — pas de nom, pas d'avatar).
  * Isolée du composable pour rester testable sans dépendre des auto-imports
- * Nuxt (`useState`, `useRequestFetch`).
+ * Nuxt (`useState`, `useApi`).
  */
 export function buildFavoriteEntries(
   favorites: FavoriteSource[],

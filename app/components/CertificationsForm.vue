@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { CertificationEntry, ProviderProfile } from '~~/server/utils/providerStore'
+import type { CertificationEntry, ProviderProfile } from '~/types/api'
 
+const { apiFetch } = useApi()
 /**
  * Certification des aptitudes du prestataire — extrait de
  * app/pages/prestataire/certifications.vue (#hub-profil-modales) pour être
@@ -86,7 +87,7 @@ async function submit() {
 
   isSubmitting.value = true
   try {
-    await $fetch('/api/providers/me', { method: 'PATCH', body: { certifications: certifications.value } })
+    await apiFetch('/api/providers/me', { method: 'PATCH', body: { certifications: certifications.value } })
     success.value = true
     emit('saved')
   } catch (fetchError) {

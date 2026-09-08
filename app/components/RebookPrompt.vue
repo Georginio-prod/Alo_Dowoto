@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { apiFetch } = useApi()
 /**
  * "Reprendre ce prestataire" (#266, rebooking rapide) : affiché à la place
  * de l'ancien EscrowStatusPanel une fois la précédente commande terminale
@@ -27,7 +28,7 @@ async function handleSubmit() {
   isSubmitting.value = true
   error.value = ''
   try {
-    await $fetch(`/api/conversations/${props.conversationId}/rebook`, { method: 'POST', body: { description: text } })
+    await apiFetch(`/api/conversations/${props.conversationId}/rebook`, { method: 'POST', body: { description: text } })
     description.value = ''
     showForm.value = false
     emit('changed')

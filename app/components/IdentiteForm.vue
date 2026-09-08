@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PublicUser } from '~~/server/utils/userStore'
+import type { PublicUser } from '~/types/api'
 
 /**
  * Édition de l'identité (nom d'utilisateur, prénom, nom, localisation) —
@@ -22,7 +22,7 @@ const isSubmitting = ref(false)
 
 // Suppression de la position GPS enregistrée (#geoloc, partie 3 — vie
 // privée) : action distincte de l'enregistrement du profil ci-dessus, voir
-// server/utils/userStore.ts#clearUserPosition.
+// l'API de profil.
 const hasStoredPosition = computed(() => user.value?.latitude !== undefined)
 const isClearingPosition = ref(false)
 const clearPositionError = ref('')

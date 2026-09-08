@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { SECTORS } from '~/data/sectors'
-import { DEFAULT_RADIUS_KM } from '~/data/searchRadius'
-import type { FeaturedProviderResult, ProviderSearchResult } from '~~/server/utils/providerDirectory'
+import { SECTORS } from '#domain-data/sectors'
+import { DEFAULT_RADIUS_KM } from '#domain-data/searchRadius'
+import type { FeaturedProviderResult, ProviderSearchResult } from '~/types/api'
 
 interface SearchResponse {
   results: ProviderSearchResult[]
@@ -154,14 +154,14 @@ const showHomeSections = computed(() => !searchTerm.value)
 
 // « Meilleurs prestataires » (#187) : classement calculé dynamiquement côté
 // serveur (score de mise en avant, moyenne bayésienne des avis) plutôt que
-// figé en dur — voir server/api/providers/featured.get.ts.
+// figé en dur — voir l'API d'annuaire.
 const { data: featuredData } = await useFetch<FeaturedResponse>('/api/providers/featured', {
   query: { limit: 6 },
 })
 const featuredProviders = computed(() => featuredData.value?.results ?? [])
 
 // « Prestataires près de vous » (#187/#263) : distance réelle (Haversine,
-// server/utils/geo.ts) quand le chercheur connecté a des coordonnées GPS
+// le service de géolocalisation de l'API) quand le chercheur connecté a des coordonnées GPS
 // (bouton « Ma position » à l'inscription, userStore.latitude/longitude) —
 // repli sur le filtrage par ville (comportement d'origine) sinon, sans
 // régression pour les comptes n'ayant jamais activé la géolocalisation.
@@ -180,12 +180,28 @@ const nearbyProviders = computed(() =>
 )
 
 // Favoris déjà enregistrés par le client (#64) : chargés une seule fois pour
-// tous les prestataires affichés plutôt qu'une requête par carte. Échoue
-// silencieusement (client non connecté ou compte prestataire) : les cartes
-// démarrent alors simplement non favorites.
-const { data: favoritesData, refresh: refreshFavorites } = await useFetch<{ favorites: { providerId: string }[] }>(
-  '/api/favorites',
-)
+// tous les prestataires affichés plutôt qu'une requête par carte. On ne lance
+// pas l'appel protégé pour un visiteur ni pour un prestataire : un 401 est
+// correct côté API, mais inutile dans le navigateur et bruyant dans la console.
+const { apiFetch } = useApi()
+const favoritesData = ref<{ favorites: { providerId: string }[] } | null>(null)
+
+async function refreshFavorites() {
+  if (user.value?.role !== 'client') {
+    favoritesData.value = null
+    return
+  }
+
+  try {
+    favoritesData.value = await apiFetch<{ favorites: { providerId: string }[] }>('/api/favorites')
+  } catch {
+    // Une session qui expire entre-temps remet simplement les cartes à l'état
+    // non favori ; l'action explicite de l'utilisateur affichera son erreur.
+    favoritesData.value = null
+  }
+}
+
+await refreshFavorites()
 const favoriteProviderIds = computed(() => new Set((favoritesData.value?.favorites ?? []).map((f) => f.providerId)))
 
 function resetFilters() {

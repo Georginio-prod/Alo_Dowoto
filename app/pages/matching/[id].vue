@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MatchedProvider, ServiceRequest } from '~~/server/utils/requestStore'
+import type { MatchedProvider, ServiceRequest } from '~/types/api'
 
 interface RequestResponse {
   request: ServiceRequest

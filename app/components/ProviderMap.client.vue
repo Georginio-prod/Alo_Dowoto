@@ -7,8 +7,8 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
 import iconUrl from 'leaflet/dist/images/marker-icon.png'
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
-import { getRegionBySlug } from '~~/app/data/regions'
-import type { ProviderSearchResult } from '~~/server/utils/providerDirectory'
+import { getRegionBySlug } from '#domain-data/regions'
+import type { ProviderSearchResult } from '~/types/api'
 
 /**
  * Carte interactive des prestataires (#geoloc, 1.4/1.5). Suffixe `.client`

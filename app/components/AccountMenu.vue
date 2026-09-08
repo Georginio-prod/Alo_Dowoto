@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { PublicUser } from '~~/server/utils/userStore'
+import type { PublicUser } from '~/types/api'
 
+const { apiFetch } = useApi()
 /**
  * Icône de statut de compte + menu déroulant d'actions rapides (#130),
  * affiché dans AppHeader à la place des liens Connexion/Devenir prestataire
@@ -62,7 +63,7 @@ async function confirmLogout() {
   if (isLoggingOut.value) return
   isLoggingOut.value = true
   try {
-    await $fetch('/api/auth/session', { method: 'DELETE' })
+    await apiFetch('/api/auth/session', { method: 'DELETE' })
     // État partagé (useSession.ts) : sans ce `clear()`, l'en-tête restait
     // affiché comme connecté après une déconnexion tant qu'aucune
     // navigation ne remontait AppHeader (ex. déconnexion depuis "/").

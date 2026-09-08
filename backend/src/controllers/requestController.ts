@@ -45,26 +45,26 @@ export async function postRequest(req: Request, res: Response): Promise<void> {
     sector: body.sector,
   })
 
-  res.status(201).json({ request, matches: getStoredMatches(request.id) ?? [] })
+  res.status(201).json({ request, matches: await getStoredMatches(request.id) })
 }
 
 /** GET /api/requests → demandes du client connecté (« Mon espace », #64). */
-export function getMyRequests(req: Request, res: Response): void {
-  res.json({ requests: listRequestsByUser(authUser(req).id) })
+export async function getMyRequests(req: Request, res: Response): Promise<void> {
+  res.json({ requests: await listRequestsByUser(authUser(req).id) })
 }
 
 /** GET /api/requests/:id → demande + top figé (titulaire uniquement). */
-export function getRequest(req: Request, res: Response): void {
+export async function getRequest(req: Request, res: Response): Promise<void> {
   const user = authUser(req)
-  const request = req.params.id ? getServiceRequest(req.params.id) : null
+  const request = req.params.id ? await getServiceRequest(req.params.id) : null
   if (!request || request.userId !== user.id) notFound('Demande introuvable.')
-  res.json({ request, matches: getStoredMatches(request.id) ?? [] })
+  res.json({ request, matches: await getStoredMatches(request.id) })
 }
 
 /** GET /api/requests/:id/matches → recalcule le top à la demande (sans incrément quota). */
 export async function getRequestMatches(req: Request, res: Response): Promise<void> {
   const user = authUser(req)
-  const request = req.params.id ? getServiceRequest(req.params.id) : null
+  const request = req.params.id ? await getServiceRequest(req.params.id) : null
   if (!request || request.userId !== user.id) notFound('Demande introuvable.')
 
   const rawLimit = req.query.limit
@@ -75,6 +75,6 @@ export async function getRequestMatches(req: Request, res: Response): Promise<vo
 }
 
 /** GET /api/requests/received → demandes matchées reçues par le prestataire connecté. */
-export function getReceivedRequests(req: Request, res: Response): void {
-  res.json({ matches: listRequestsForProvider(authUser(req).id) })
+export async function getReceivedRequests(req: Request, res: Response): Promise<void> {
+  res.json({ matches: await listRequestsForProvider(authUser(req).id) })
 }

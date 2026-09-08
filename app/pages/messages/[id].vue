@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import type { ConversationSummary, Message } from '~~/server/utils/conversationStore'
-import type { EscrowOrder } from '~~/server/utils/escrowOrderStore'
-import type { RecurringService } from '~~/server/utils/recurringServiceStore'
+import type { ConversationSummary, Message, EscrowOrder , RecurringService  } from '~/types/api'
+
+const { apiFetch } = useApi()
+
 
 interface MessagesResponse {
   conversation: ConversationSummary
@@ -68,7 +69,7 @@ async function handlePayEscrowOrder() {
   isPaying.value = true
   payError.value = ''
   try {
-    await $fetch(`/api/conversations/${conversationId.value}/pay`, { method: 'POST' })
+    await apiFetch(`/api/conversations/${conversationId.value}/pay`, { method: 'POST' })
     await refresh()
     refreshConversationList()
   } catch (fetchError) {
@@ -132,7 +133,7 @@ const alreadyReviewed = computed(() => conversation.value?.alreadyReviewed === t
 // Reprendre ce prestataire (#266, rebooking rapide) : disponible côté
 // chercheur une fois la précédente commande terminée (released) ou annulée
 // (refunded) — voir la logique correspondante dans createEscrowOrder,
-// server/utils/escrowOrderStore.ts. Formulaire possédé par RebookPrompt.vue
+// le service de séquestre de l'API. Formulaire possédé par RebookPrompt.vue
 // (comme EscrowStatusPanel.vue pour le séquestre), cette page ne fait que
 // rafraîchir ses données quand le composant émet `changed`.
 const canRebook = computed(
@@ -154,7 +155,7 @@ async function submitReview() {
   isSubmittingReview.value = true
   reviewError.value = ''
   try {
-    await $fetch(`/api/conversations/${conversationId.value}/review`, {
+    await apiFetch(`/api/conversations/${conversationId.value}/review`, {
       method: 'POST',
       body: { rating: reviewRating.value, comment: reviewComment.value.trim() || undefined },
     })

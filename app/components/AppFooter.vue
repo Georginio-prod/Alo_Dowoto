@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { COMPANY_NAME, SUPPORT_EMAIL, SUPPORT_PHONE } from '~/data/companyInfo'
-import { SECTORS } from '~/data/sectors'
+import { SECTORS } from '#domain-data/sectors'
 
 /** Footer complet (#132) : à propos, secteurs, assistance, légal, réseaux sociaux, contact, copyright. */
 

@@ -1058,7 +1058,13 @@ adminRoutes.post('/admin/templates', requireAdminRole, validateBody(messageTempl
  *
  * @openapi
  * /admin/users/{id}/delete:
- *   post: { tags: [Admin], summary: Supprime un compte par anonymisation (rôle admin, tracé, #286), security: [{ bearerAuth: [] }, { cookieAuth: [] }], parameters: [{ in: path, name: id, required: true, schema: { type: string } }], responses: { 200: { description: Compte anonymisé. } } }
+ *   post:
+ *     tags: [Admin]
+ *     summary: Supprime un compte par anonymisation
+ *     security: [{ bearerAuth: [] }, { cookieAuth: [] }]
+ *     parameters: [{ in: path, name: id, required: true, schema: { type: string } }]
+ *     responses:
+ *       200: { description: Compte anonymisé. }
  */
 adminRoutes.post('/admin/users/:id/delete', requireAdminRole, validateBody(optionalReasonBodySchema), asyncHandler(adminAnonymizeUser))
 
@@ -1123,20 +1129,35 @@ adminRoutes.get('/admin/conversations', requireAdminPermission('conversations.vi
  *
  * @openapi
  * /admin/payments/export:
- *   get: { tags: [Admin], summary: Export des mouvements/paiements — CSV (?format=csv, rôle admin, tracé) ou JSON (payments.view), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: CSV en pièce jointe, ou JSON { items, total }. } } }
+ *   get:
+ *     tags: [Admin]
+ *     summary: Export des mouvements et paiements
+ *     security: [{ bearerAuth: [] }, { cookieAuth: [] }]
+ *     responses:
+ *       200: { description: "CSV en pièce jointe, ou JSON avec items et total." }
  */
 adminRoutes.get('/admin/payments/export', requireAdminRole, asyncHandler(adminPaymentsExport))
 
 /**
  * @openapi
  * /admin/escrow/export:
- *   get: { tags: [Admin], summary: Export des commandes en séquestre filtrées, pour CSV côté client (escrow.view), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: JSON { items, total }. } } }
+ *   get:
+ *     tags: [Admin]
+ *     summary: Export des commandes en séquestre filtrées
+ *     security: [{ bearerAuth: [] }, { cookieAuth: [] }]
+ *     responses:
+ *       200: { description: "JSON avec items et total." }
  */
 adminRoutes.get('/admin/escrow/export', requireAdminPermission('escrow.view'), asyncHandler(adminEscrowExport))
 
 /**
  * @openapi
  * /admin/subscriptions/export:
- *   get: { tags: [Admin], summary: Export des abonnements filtrés, pour CSV côté client (subscriptions.view), security: [{ bearerAuth: [] }, { cookieAuth: [] }], responses: { 200: { description: JSON { items, total }. } } }
+ *   get:
+ *     tags: [Admin]
+ *     summary: Export des abonnements filtrés
+ *     security: [{ bearerAuth: [] }, { cookieAuth: [] }]
+ *     responses:
+ *       200: { description: "JSON avec items et total." }
  */
 adminRoutes.get('/admin/subscriptions/export', requireAdminPermission('subscriptions.view'), asyncHandler(adminSubscriptionsExport))

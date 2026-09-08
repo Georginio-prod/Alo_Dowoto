@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildFavoriteEntries, type FavoriteSource } from '~/utils/favoriteConversations'
-import type { ConversationSummary } from '~~/server/utils/conversationStore'
+import type { ConversationSummary } from '~/types/api'
 
 function favorite(overrides: Partial<FavoriteSource> = {}): FavoriteSource {
   return {

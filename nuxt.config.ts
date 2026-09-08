@@ -1,9 +1,18 @@
 import tailwindcss from '@tailwindcss/vite'
+import { fileURLToPath } from 'node:url'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
+  // Le runtime web ne sert plus d'API : Nuxt produit une SPA statique, servie
+  // par nginx. Toutes les requêtes `/api/**` sont relayées à Express.
+  ssr: false,
   modules: ['@nuxt/eslint', '@nuxtjs/i18n'],
+  // Référentiel unique partagé avec Express (secteurs, régions et rayons de
+  // recherche) : le front ne maintient plus de copie concurrente de ces données.
+  alias: {
+    '#domain-data': fileURLToPath(new URL('./backend/src/data', import.meta.url)),
+  },
   // Désactivé pour l'instance lancée par les tests de parcours (E2E=true, voir
   // playwright.config.ts) : l'overlay des DevTools se superpose à la page et
   // intercepte les clics, ce qui fait échouer des tests sans rapport.
@@ -62,72 +71,30 @@ export default defineNuxtConfig({
   // NUXT_PUBLIC_SENTRY_DSN. Vide par défaut (voir app/plugins/errorReporting.client.ts,
   // qui reste inerte tant qu'aucune valeur n'est fournie).
   runtimeConfig: {
-    // Relais de mises à jour du dashboard admin desktop (voir
-    // server/api/updates/[...file].get.ts). Le jeton GitHub (lecture seule sur
-    // le dépôt PRIVÉ des releases) vit UNIQUEMENT ici, côté serveur : il n'est
-    // jamais embarqué sur les postes clients. À définir via l'environnement :
-    //   NUXT_GITHUB_UPDATE_TOKEN=github_pat_… (Contents: Read-only)
-    //   NUXT_GITHUB_UPDATE_REPO=Nova2026-graphik/worktogo-admin (facultatif)
-    githubUpdateToken: '',
-    githubUpdateRepo: 'Nova2026-graphik/worktogo-admin',
     public: {
       sentryDsn: '',
-      // Point de bascule vers le backend Express (chantier d'extraction, ADR-0014).
-      // Les deux sont VIDES par défaut → l'API interne Nitro est utilisée, aucun
-      // changement de comportement. La bascule d'un domaine se fait sans redéploiement
-      // de code, par simple configuration (réversible instantanément) :
-      //   NUXT_PUBLIC_BACKEND_BASE_URL=https://api.worktogo.example   (URL du backend)
-      //   NUXT_PUBLIC_MIGRATED_API_PREFIXES=/api/auth,/api/wallet     (domaines déjà portés, CSV)
-      backendBaseUrl: '',
-      migratedApiPrefixes: ''
     }
   },
   app: {
     // Transition globale entre les pages (voir .page-* dans main.css).
     pageTransition: { name: 'page', mode: 'out-in' },
     head: {
-      // `htmlAttrs.lang` n'est plus figé ici (#343) : géré dynamiquement par
-      // useLocaleHead() dans app.vue selon la langue active (#364).
-      // La police Poppins est désormais auto-hébergée (voir la liste `css`
-      // ci-dessus, #341) : plus aucun `link` vers fonts.googleapis.com /
-      // fonts.gstatic.com ni `preconnect` associé.
-      script: [
-        {
-          // Applique le thème enregistré avant le premier rendu (évite le flash).
-          // Autorisé par la CSP (#354) via un nonce par requête, injecté par
-          // server/plugins/cspNonce.ts (ce script n'a aucun moyen de le
-          // connaître au moment où Nuxt construit cette configuration statique).
-          innerHTML: ";(function(){try{var t=localStorage.getItem('wt-theme');if(t&&t!=='clair'){document.documentElement.setAttribute('data-theme',t)}}catch(e){}})();",
-          tagPosition: 'head'
-        }
-      ]
+      // `htmlAttrs.lang` n'est plus figé ici : géré dynamiquement par
+      // useLocaleHead() dans app.vue selon la langue active. Le thème est
+      // appliqué par le plugin client, ce qui permet une CSP sans script inline.
     }
   },
-  // Reverse proxy de développement `/api/* → backend Express` (Phase 3, ADR-0017).
-  // En dev, le serveur Nitro relaie toutes les requêtes `/api` vers le backend
-  // (par défaut http://localhost:3001) : le web reste **same-origin** (cookies
-  // `wt_session` OK, aucun souci CORS) et consomme la vraie API Express. Les
-  // handlers `server/api/**` restants ne sont donc plus sollicités en dev — ils
-  // seront supprimés en fin de Phase 3. En PROD, ce relais est assuré par le
-  // reverse proxy d'infrastructure (nginx/Caddy), pas par Nitro.
-  // Cible surchargeable via NUXT_DEV_API_PROXY_TARGET (ex. tunnel ngrok).
-  //
-  // ⚠️ Désactivé pendant les tests de parcours (E2E=true) : Playwright lance
-  // `nuxt dev` et exerce les vrais `/api` — tant que Nitro existe, l'E2E doit
-  // continuer à taper les handlers `server/api/**` (pas un backend Express qui
-  // n'est pas démarré par le harnais E2E). Le proxy sera rendu inconditionnel
-  // quand Nitro sera retiré (et l'E2E adapté pour démarrer le backend).
+  // Reverse proxy de développement `/api/* → backend Express`. En production,
+  // nginx fournit le même relais ; le navigateur reste donc same-origin.
+  // Cible surchargeable via NUXT_DEV_API_PROXY_TARGET (tunnel ou conteneur).
   $development: {
     nitro: {
-      devProxy:
-        process.env.E2E === 'true'
-          ? {}
-          : {
-              '/api': {
-                target: `${process.env.NUXT_DEV_API_PROXY_TARGET ?? 'http://localhost:3001'}/api`,
-                changeOrigin: true,
-              },
-            },
+      devProxy: {
+        '/api': {
+          target: `${process.env.NUXT_DEV_API_PROXY_TARGET ?? 'http://localhost:3001'}/api`,
+          changeOrigin: true,
+        },
+      },
     },
   },
   vite: {

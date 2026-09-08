@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import InterventionProofPanel from '~/components/InterventionProofPanel.vue'
-import type { EscrowOrder } from '~~/server/utils/escrowOrderStore'
+import type { EscrowOrder } from '~/types/api'
 
 const fetchMock = vi.fn().mockResolvedValue({})
 vi.stubGlobal('$fetch', fetchMock)
@@ -66,7 +66,11 @@ describe('InterventionProofPanel (#268 preuve d’intervention in-app)', () => {
     await wrapper.find('button').trigger('click')
     await flushPromises()
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/conversations/conv-1/check-in', { method: 'POST', body: {} })
+    expect(fetchMock).toHaveBeenCalledWith('/api/conversations/conv-1/check-in', {
+      method: 'POST',
+      body: {},
+      credentials: 'include',
+    })
   })
 })
 

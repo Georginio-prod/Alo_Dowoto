@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { EscrowOrder } from '~~/server/utils/escrowOrderStore'
+import type { EscrowOrder } from '~/types/api'
 
+const { apiFetch } = useApi()
 /**
  * Preuve d'intervention in-app (#268, anti-fuite) : le prestataire enregistre
  * son arrivée (check-in) puis son départ (check-out) du lieu d'intervention.
@@ -37,7 +38,7 @@ async function handleCheckIn() {
   proofError.value = ''
   try {
     const location = await currentLocation()
-    await $fetch(`/api/conversations/${props.conversationId}/check-in`, { method: 'POST', body: location ?? {} })
+    await apiFetch(`/api/conversations/${props.conversationId}/check-in`, { method: 'POST', body: location ?? {} })
     emit('changed')
   } catch {
     proofError.value = t('interventionProofPanel.errorCheckInFailed')
@@ -52,7 +53,7 @@ async function handleCheckOut() {
   proofError.value = ''
   try {
     const location = await currentLocation()
-    await $fetch(`/api/conversations/${props.conversationId}/check-out`, { method: 'POST', body: location ?? {} })
+    await apiFetch(`/api/conversations/${props.conversationId}/check-out`, { method: 'POST', body: location ?? {} })
     emit('changed')
   } catch {
     proofError.value = t('interventionProofPanel.errorCheckOutFailed')

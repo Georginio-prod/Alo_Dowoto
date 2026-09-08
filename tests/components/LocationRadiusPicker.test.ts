@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import LocationRadiusPicker from '~/components/LocationRadiusPicker.vue'
-import { RADIUS_SLIDER_OPTIONS_KM } from '~/data/searchRadius'
+import { RADIUS_SLIDER_OPTIONS_KM } from '#domain-data/searchRadius'
 
 /**
  * LocationRadiusPicker.vue (#geoloc, 1.1/1.3) : géolocalisation avec repli

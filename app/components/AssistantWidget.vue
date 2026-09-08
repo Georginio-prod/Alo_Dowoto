@@ -4,7 +4,7 @@
  * au niveau racine (app.vue, même principe que FavoritesMessagingBar.vue)
  * pour apparaître sur toutes les pages. Ne connaît rien du fournisseur IA —
  * appelle uniquement POST /api/assistant/chat, qui gère lui-même le mode
- * dégradé (voir server/api/assistant/chat.post.ts) : ce composant affiche
+ * dégradé (voir l'API assistant) : ce composant affiche
  * simplement `degraded` tel quel, sans jamais savoir pourquoi.
  */
 interface AssistantProvider {

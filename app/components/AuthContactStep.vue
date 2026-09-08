@@ -159,7 +159,7 @@ async function submit() {
   isSubmitting.value = true
   contactError.value = ''
   try {
-    // `devCode` n'est renvoyé que hors production (voir server/api/auth/otp/send.post.ts)
+    // `devCode` n'est renvoyé que hors production (voir l'API OTP)
     // — en l'absence de provider SMS/email réel (#23), c'est le seul moyen de
     // tester le parcours sans lire les logs serveur.
     const { devCode } = await $fetch<{ devCode?: string }>('/api/auth/otp/send', {
