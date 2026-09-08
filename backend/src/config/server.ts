@@ -78,10 +78,13 @@ export function createServer(): Express {
       limit: 300,
       standardHeaders: true,
       legacyHeaders: false,
+      // La suite E2E concentre des centaines de requêtes locales dans une
+      // minute ; le limiteur anti-abus ne doit pas rendre les tests aléatoires.
+      // Cette exception est strictement limitée à NODE_ENV=test.
       // Le relais de mises à jour Electron (#auto-update) est exempté : un
       // téléchargement différentiel émet de nombreuses requêtes `Range`
       // rapprochées qui dépasseraient la fenêtre. Iso Nitro (aucune limite là-bas).
-      skip: (req) => req.path.startsWith('/api/updates/'),
+      skip: (req) => env.nodeEnv === 'test' || req.path.startsWith('/api/updates/'),
     }),
   )
 
