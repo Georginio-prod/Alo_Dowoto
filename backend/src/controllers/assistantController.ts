@@ -79,13 +79,17 @@ export async function assistantChat(req: Request, res: Response): Promise<void> 
   try {
     result = await client.complete({
       systemPrompt: buildAssistantSystemPrompt(),
+      userMessage: body.message,
       history,
       tools: ASSISTANT_TOOLS,
       executeTool,
       modelTier,
     })
-  } catch {
+  } catch (error) {
     // Panne du fournisseur (quota, réseau, clé invalide) : mode dégradé.
+    // L'erreur reste côté serveur pour diagnostiquer la configuration Railway ;
+    // le client reçoit toujours le repli sûr ci-dessous.
+    console.warn(`[assistant] fournisseur ${client.providerId} indisponible`, error)
     const text = await faqFallback(
       body.message,
       "L'assistant IA est momentanément indisponible. Utilisez la recherche classique ou consultez la FAQ.",
