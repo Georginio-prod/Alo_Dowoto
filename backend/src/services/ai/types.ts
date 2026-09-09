@@ -31,6 +31,9 @@ export type ModelTier = 'light' | 'heavy'
 
 export interface AiCompletionParams {
   systemPrompt: string
+  /** Message actuellement soumis par l'utilisateur. */
+  userMessage: string
+  /** Tours précédents uniquement ; le message courant est ajouté par le client. */
   history: AiMessage[]
   tools: AiToolDefinition[]
   /** Exécute un outil par son nom et renvoie un résultat sérialisable — jamais d'invention côté modèle. */

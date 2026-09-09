@@ -40,7 +40,7 @@ export function createClaudeClient(apiKey: string, models: { light: string; heav
     providerId: 'anthropic',
 
     async complete(params: AiCompletionParams): Promise<AiCompletionResult> {
-      const { systemPrompt, history, tools, executeTool, modelTier } = params
+      const { systemPrompt, userMessage, history, tools, executeTool, modelTier } = params
       const model = modelTier === 'heavy' ? models.heavy : models.light
 
       const anthropicTools = tools.map((tool) => ({
@@ -49,10 +49,10 @@ export function createClaudeClient(apiKey: string, models: { light: string; heav
         input_schema: tool.inputSchema,
       }))
 
-      const messages: { role: 'user' | 'assistant'; content: MessageContent }[] = history.map((message) => ({
-        role: message.role,
-        content: message.content,
-      }))
+      const messages: { role: 'user' | 'assistant'; content: MessageContent }[] = [
+        ...history.map((message) => ({ role: message.role, content: message.content })),
+        { role: 'user', content: userMessage },
+      ]
 
       const toolCalls: AiToolCallLog[] = []
 
