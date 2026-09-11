@@ -18,6 +18,7 @@ const props = withDefaults(
 const emit = defineEmits<{ 'favorite-changed': [] }>()
 
 const { t } = useI18n({ useScope: 'global' })
+const { subSectorLabelByName } = useSectorI18n()
 
 const filledStars = computed(() => Math.round(props.provider.rating))
 
@@ -104,7 +105,7 @@ async function toggleFavorite() {
       </div>
 
       <p class="text-[13px] text-muted">
-        {{ provider.subSector }} · {{ provider.city }}
+        {{ subSectorLabelByName(provider.sector, provider.subSector) }} · {{ provider.city }}
         <span v-if="provider.distanceKm !== null"> · {{ t('providerCard.distanceSuffix', { km: provider.distanceKm }) }}</span>
       </p>
 

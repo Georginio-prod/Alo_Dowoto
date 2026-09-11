@@ -5,6 +5,7 @@ import { SECTORS } from '#domain-data/sectors'
 /** Footer complet (#132) : à propos, secteurs, assistance, légal, réseaux sociaux, contact, copyright. */
 
 const { t } = useI18n({ useScope: 'global' })
+const { sectorLabel } = useSectorI18n()
 
 const year = new Date().getFullYear()
 const featuredSectors = SECTORS.slice(0, 6)
@@ -46,7 +47,7 @@ const SOCIAL_LINKS = [
           <ul class="flex flex-col gap-2">
             <li v-for="sector in featuredSectors" :key="sector.slug">
               <NuxtLink :to="`/categories/${sector.slug}`" class="press text-[12.5px] text-muted hover:text-primary">
-                {{ sector.name }}
+                {{ sectorLabel(sector) }}
               </NuxtLink>
             </li>
             <li>

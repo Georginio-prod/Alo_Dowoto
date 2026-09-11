@@ -15,6 +15,7 @@ const props = defineProps<{ providerId: string }>()
 const emit = defineEmits<{ close: [] }>()
 
 const { t, locale, locales } = useI18n({ useScope: 'global' })
+const { subSectorLabelByName } = useSectorI18n()
 const languageTag = computed(() =>
   (locales.value as Array<{ code: string, language?: string }>).find((l) => l.code === locale.value)?.language ?? 'fr-FR',
 )
@@ -135,7 +136,7 @@ onUnmounted(() => {
                   {{ t('providerProfileModal.skillsVerifiedBadge') }}
                 </span>
               </div>
-              <p class="text-[13px] text-muted">{{ provider.subSector }} · {{ provider.city }}</p>
+              <p class="text-[13px] text-muted">{{ subSectorLabelByName(provider.sector, provider.subSector) }} · {{ provider.city }}</p>
             </div>
           </div>
 

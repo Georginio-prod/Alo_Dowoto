@@ -9,6 +9,7 @@ type Method = 'phone' | 'email'
 type Step = 'contact' | 'otp' | 'password' | 'identity' | 'sector' | 'payout'
 
 const { t } = useI18n({ useScope: 'global' })
+const { sectorLabel } = useSectorI18n()
 const route = useRoute()
 
 // `mode=login` force l'onglet Connexion même quand `role` est fourni dans
@@ -286,7 +287,7 @@ function onPayoutSaved() {
           >
             <option value="" disabled>{{ t('auth.sectorPlaceholder') }}</option>
             <option v-for="sector in SECTORS" :key="sector.slug" :value="sector.slug">
-              {{ sector.name }}
+              {{ sectorLabel(sector) }}
             </option>
           </select>
 

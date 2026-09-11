@@ -122,6 +122,18 @@
     "subSectorCount": "{count} sous-secteurs",
     "subSectorsOf": "Sous-secteurs de {name}"
   },
+  "sectorTaxonomy": {
+    "btp": { "name": "Artisanat & BTP", "sub0": "Menuiserie", "sub1": "Maçonnerie", "sub2": "Plomberie", "sub3": "Électricité", "sub4": "Peinture & décoration", "sub5": "Soudure & métallerie" },
+    "digital": { "name": "Informatique & Digital", "sub0": "Développement web & mobile", "sub1": "Réparation ordinateurs/téléphones", "sub2": "Marketing digital", "sub3": "Graphisme & design", "sub4": "Formation informatique" },
+    "menage": { "name": "Ménage & Maison", "sub0": "Ménage à domicile", "sub1": "Repassage", "sub2": "Jardinage", "sub3": "Garde d'enfants", "sub4": "Cuisine à domicile" },
+    "beaute": { "name": "Beauté & Bien-être", "sub0": "Coiffure", "sub1": "Esthétique & soins", "sub2": "Manucure & pédicure", "sub3": "Massage", "sub4": "Maquillage événementiel" },
+    "evenement": { "name": "Événementiel", "sub0": "Traiteur", "sub1": "Décoration de salle", "sub2": "DJ & sonorisation", "sub3": "Photographie & vidéo", "sub4": "Location de matériel" },
+    "education": { "name": "Éducation & Cours", "sub0": "Soutien scolaire", "sub1": "Cours de langues", "sub2": "Cours de musique", "sub3": "Formation professionnelle", "sub4": "Coaching" },
+    "transport": { "name": "Transport & Livraison", "sub0": "Livraison de colis", "sub1": "Déménagement", "sub2": "Location véhicule avec chauffeur", "sub3": "Course moto" },
+    "commerce": { "name": "Commerce", "sub0": "Vente en gros", "sub1": "Import-export", "sub2": "Boutique en ligne", "sub3": "Distribution & revente" },
+    "industrie": { "name": "Industrie", "sub0": "Fabrication métallique", "sub1": "Agroalimentaire", "sub2": "Textile & couture", "sub3": "Maintenance industrielle" },
+    "sante": { "name": "Santé & Bien-être", "sub0": "Aide-soignant à domicile", "sub1": "Kinésithérapie", "sub2": "Nutrition & diététique", "sub3": "Sage-femme à domicile" }
+  },
   "sectorDrawer": {
     "close": "Fermer"
   },
@@ -906,6 +918,7 @@
   "accountMenu": {
     "roleProvider": "Prestataire",
     "roleClient": "Chercheur",
+    "verifiedIdentity": "Identité vérifiée",
     "otherRoleProvider": "prestataire",
     "otherRoleClient": "chercheur",
     "mySpace": "Mon espace",
