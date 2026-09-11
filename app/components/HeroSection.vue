@@ -19,10 +19,9 @@ const partners = [
   <section class="relative mx-auto max-w-6xl overflow-hidden px-6 pb-4 pt-16 text-center">
     <div class="hero-glow" />
     <!--
-      WebP servi en priorité (≈27 Ko contre ≈1,3 Mo pour le PNG source),
-      PNG conservé en repli pour les rares navigateurs sans WebP. Le
-      <picture> est en `display:contents` : il ne crée aucune boîte, donc la
-      mise en page de l'<img> (centrage, largeur) reste strictement identique.
+      L'illustration originale reste le visuel principal du hero. Son léger
+      mouvement et le parallaxe conservent une sensation de vie, sans masquer
+      le message de mise en relation qu'elle représente.
     -->
     <picture class="contents">
       <source srcset="/images/hero-illustration.webp" type="image/webp">

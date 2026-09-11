@@ -9,6 +9,7 @@ import { SECTOR_ICONS } from '~/utils/sectorIcons'
  */
 
 const { t } = useI18n({ useScope: 'global' })
+const { sectorLabel, subSectorLabel } = useSectorI18n()
 
 const emit = defineEmits<{
   select: [sector: Sector]
@@ -119,7 +120,7 @@ onUnmounted(clearCloseTimer)
           </div>
           <div class="flex w-full items-start justify-between gap-2">
             <div>
-              <div class="flex min-h-[2.4em] items-start text-[14.5px] font-semibold leading-tight text-dark">{{ sector.name }}</div>
+              <div class="flex min-h-[2.4em] items-start text-[14.5px] font-semibold leading-tight text-dark">{{ sectorLabel(sector) }}</div>
               <span class="mt-1 inline-block rounded-pill bg-bg px-2 py-0.5 text-[11px] font-medium text-muted">
                 {{ t('sectorGrid.subSectorCount', { count: sector.subSectors.length }) }}
               </span>
@@ -154,7 +155,7 @@ onUnmounted(clearCloseTimer)
           ]"
           role="menu"
           :aria-hidden="hoveredSlug !== sector.slug"
-          :aria-label="t('sectorGrid.subSectorsOf', { name: sector.name })"
+          :aria-label="t('sectorGrid.subSectorsOf', { name: sectorLabel(sector) })"
           @mouseenter="onDropdownEnter"
           @mouseleave="scheduleClose"
         >
@@ -167,7 +168,7 @@ onUnmounted(clearCloseTimer)
               class="press block w-full rounded-field px-3 py-2 text-left text-[13px] text-dark hover:bg-bg"
               @click="onSelectSub(sector, sub.name)"
             >
-              {{ sub.name }}
+              {{ subSectorLabel(sector, sub) }}
             </button>
           </div>
         </div>
