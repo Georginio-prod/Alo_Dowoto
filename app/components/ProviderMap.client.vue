@@ -34,6 +34,7 @@ const props = withDefaults(
 const emit = defineEmits<{ 'select-provider': [id: string] }>()
 
 const { t } = useI18n({ useScope: 'global' })
+const { subSectorLabelByName } = useSectorI18n()
 
 // Correctif classique Leaflet + bundler (Vite) : les icônes par défaut sont
 // référencées par un chemin relatif qui ne survit pas au bundling — sans ce
@@ -65,7 +66,7 @@ function renderMarkers() {
     if (provider.latitude === null || provider.longitude === null) continue
     const marker = L.marker([provider.latitude, provider.longitude])
     const distance = provider.distanceKm !== null ? ` · ${t('providerMap.distanceSuffix', { km: provider.distanceKm })}` : ''
-    marker.bindPopup(`<strong>${provider.displayName}</strong><br>${provider.subSector}${distance}`)
+    marker.bindPopup(`<strong>${provider.displayName}</strong><br>${subSectorLabelByName(provider.sector, provider.subSector)}${distance}`)
     marker.on('click', () => emit('select-provider', provider.id))
     clusterGroup.addLayer(marker)
   }

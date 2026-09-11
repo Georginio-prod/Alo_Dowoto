@@ -4,6 +4,7 @@ import { SECTOR_ICONS } from '~/utils/sectorIcons'
 import type { SectorCount } from '~/types/api'
 
 const { t } = useI18n({ useScope: 'global' })
+const { sectorLabel } = useSectorI18n()
 
 useHead(() => ({ title: t('categories.pageTitle') }))
 
@@ -42,7 +43,7 @@ function providerCountLabel(slug: string) {
           >
             <component :is="SECTOR_ICONS[sector.icon]" :size="22" :stroke-width="2" aria-hidden="true" />
           </div>
-          <div class="text-[15px] font-bold leading-tight text-dark">{{ sector.name }}</div>
+          <div class="text-[15px] font-bold leading-tight text-dark">{{ sectorLabel(sector) }}</div>
           <div class="text-[13px] text-muted">
             <span v-if="pending">…</span>
             <span v-else>{{ providerCountLabel(sector.slug) }}</span>
