@@ -25,6 +25,7 @@
     "db:generate": "npm --prefix backend run prisma:generate",
     "db:studio": "npm --prefix backend run prisma:studio",
     "db:seed": "npm --prefix backend run prisma:seed",
+    "db:reset": "npm --prefix backend run prisma:reset --",
     "admin:create": "npm --prefix backend run admin:create",
     "test:all": "npm test && npm --prefix backend test",
     "docker:up": "docker compose up --build"
