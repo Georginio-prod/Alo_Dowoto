@@ -18,6 +18,13 @@ export interface AppEnv {
   /** Inclut les prestataires de démonstration dans l'annuaire public. */
   providersDemoEnabled: boolean
   /**
+   * Parcours d'abonnement prestataire actif ? Masqué pour le moment (le code
+   * est conservé) : à `false`, un abonnement absent, en attente ou expiré ne
+   * limite plus les demandes reçues — pendant du flag front
+   * `NUXT_PUBLIC_SUBSCRIPTION_ENABLED` (voir app/composables/useSubscriptionFeature.ts).
+   */
+  subscriptionEnabled: boolean
+  /**
    * Relais de mises à jour du dashboard desktop (#Electron auto-update) : jeton
    * GitHub lecture seule et dépôt privé des releases. Noms d'env conservés
    * depuis Nitro (`NUXT_GITHUB_UPDATE_*`) pour une migration sans reconfiguration,
@@ -57,6 +64,7 @@ export const env: AppEnv = {
     process.env.PROVIDERS_DEMO ?? process.env.NUXT_PROVIDERS_DEMO,
     !isProd,
   ),
+  subscriptionEnabled: parseBool(process.env.SUBSCRIPTION_ENABLED, false),
   githubUpdateToken: process.env.NUXT_GITHUB_UPDATE_TOKEN ?? process.env.GITHUB_UPDATE_TOKEN ?? '',
   githubUpdateRepo:
     process.env.NUXT_GITHUB_UPDATE_REPO ?? process.env.GITHUB_UPDATE_REPO ?? 'Nova2026-graphik/worktogo-admin',

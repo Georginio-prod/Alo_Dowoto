@@ -30,8 +30,15 @@ const BADGE_STYLES: Record<string, string> = {
 }
 
 const { user } = useSession()
+// Parcours d'abonnement masqué pour le moment (voir
+// app/composables/useSubscriptionFeature.ts) : badge de statut, bandeau de
+// rappel et plafond de demandes ne sont plus affichés tant que le flag est
+// désactivé — et l'appel /api/subscriptions/me n'est plus émis.
+const { enabled: subscriptionEnabled } = useSubscriptionFeature()
 const { data: profileData } = await useFetch<{ profile: ProviderProfile | null }>('/api/providers/me')
-const { data: subscriptionData } = await useFetch<{ subscription: Subscription | null }>('/api/subscriptions/me')
+const { data: subscriptionData } = await useFetch<{ subscription: Subscription | null }>('/api/subscriptions/me', {
+  immediate: subscriptionEnabled.value,
+})
 const { data: requestsQuotaData } = await useFetch<{ usage: { count: number; limit: number | null; month: string } }>(
   '/api/quotas/requests-received',
 )
@@ -57,6 +64,9 @@ function sectorLabel(slug?: string) {
 // explicitement plutôt que de laisser deviner une limite numérique.
 const requestsUsageLabel = computed(() => {
   const usage = requestsQuotaData.value?.usage
+  // Sans parcours d'abonnement, le plafond n'a pas de sens (l'API renvoie
+  // `limit: 0` faute de formule) : on n'affiche que le nombre de demandes.
+  if (!subscriptionEnabled.value) return String(usage?.count ?? 0)
   if (!usage) return '0 / 0'
   return usage.limit === null ? `${usage.count} / ${t('prestataireIndex.unlimited')}` : `${usage.count} / ${usage.limit}`
 })
@@ -146,7 +156,7 @@ function restartDemo() {
             <span v-if="user?.location">📍 {{ user.location }} · </span>{{ sectorName }}
           </p>
         </div>
-        <span class="shrink-0 rounded-pill px-3 py-1.5 text-[12.5px] font-bold" :class="BADGE_STYLES[subscriptionBadge.tone]">
+        <span v-if="subscriptionEnabled" class="shrink-0 rounded-pill px-3 py-1.5 text-[12.5px] font-bold" :class="BADGE_STYLES[subscriptionBadge.tone]">
           {{ subscriptionBadge.label }}
         </span>
       </div>
@@ -192,7 +202,7 @@ function restartDemo() {
     </NuxtLink>
 
     <NuxtLink
-      v-if="profileIncomplete"
+      v-if="subscriptionEnabled && profileIncomplete"
       to="/abonnement"
       class="press mb-6 flex items-center justify-between gap-3 rounded-card border border-primary/30 bg-primary/8 p-4 hover:border-primary/50"
     >

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 const { apiFetch } = useApi()
+// Parcours d'abonnement masqué (voir useSubscriptionFeature) : la description
+// de l'export ne cite plus l'abonnement parmi les données.
+const { enabled: subscriptionEnabled } = useSubscriptionFeature()
 /**
  * Droits RGPD en libre-service (#286, audit sécurité — droit d'accès à la
  * portabilité et droit à l'effacement) : jusqu'ici, la politique de
@@ -60,7 +63,7 @@ async function deleteAccount() {
     <div class="mb-5">
       <h3 class="mb-1.5 text-[13.5px] font-bold text-dark">{{ t('dataPrivacyPanel.exportHeading') }}</h3>
       <p class="mb-2.5 text-[12.5px] leading-relaxed text-muted">
-        {{ t('dataPrivacyPanel.exportDescription') }}
+        {{ t(subscriptionEnabled ? 'dataPrivacyPanel.exportDescription' : 'dataPrivacyPanel.exportDescriptionNoSubscription') }}
       </p>
       <button
         type="button"

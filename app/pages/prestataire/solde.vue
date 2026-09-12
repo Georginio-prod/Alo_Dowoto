@@ -35,8 +35,13 @@ const formattedBalance = computed(() => (balance.value === null ? '…' : `${bal
 const formattedMinWithdrawal = computed(() => (minWithdrawal.value === null ? '…' : `${minWithdrawal.value.toLocaleString(languageTag.value)} F CFA`))
 
 // Historique des paiements d'abonnement (#363) : reçus PDF téléchargeables,
-// même principe que les mouvements de portefeuille ci-dessous.
-const { data: paymentsData } = await useFetch<{ payments: Payment[]; plan: PlanSlug | null }>('/api/payments/me')
+// même principe que les mouvements de portefeuille ci-dessous. Section
+// masquée (et appel non émis) tant que le parcours d'abonnement l'est aussi
+// (voir app/composables/useSubscriptionFeature.ts).
+const { enabled: subscriptionEnabled } = useSubscriptionFeature()
+const { data: paymentsData } = await useFetch<{ payments: Payment[]; plan: PlanSlug | null }>('/api/payments/me', {
+  immediate: subscriptionEnabled.value,
+})
 const payments = computed(() => paymentsData.value?.payments ?? [])
 const plan = computed(() => paymentsData.value?.plan ?? null)
 
@@ -172,7 +177,7 @@ async function submitWithdrawal() {
 
     <WalletMovementList :movements="movements" />
 
-    <div class="mt-5 rounded-card border border-hairline bg-surface p-5">
+    <div v-if="subscriptionEnabled" class="mt-5 rounded-card border border-hairline bg-surface p-5">
       <p class="mb-4 text-[14.5px] font-bold text-dark">{{ t('prestataireSolde.paymentsHeading') }}</p>
 
       <p v-if="payments.length === 0" class="text-center text-[13px] text-muted">{{ t('prestataireSolde.noPayments') }}</p>

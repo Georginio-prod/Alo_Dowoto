@@ -46,12 +46,17 @@ const { t } = useI18n({ useScope: 'global' })
 const { user, ensure } = useSession()
 await ensure()
 const isProvider = computed(() => user.value?.role === 'prestataire')
+// Parcours d'abonnement masqué pour le moment (voir
+// app/composables/useSubscriptionFeature.ts) : badge Premium, section
+// « Abonnement » et son poids dans la complétion sont retirés tant que le
+// flag est désactivé — et l'appel /api/subscriptions/me n'est plus émis.
+const { enabled: subscriptionEnabled } = useSubscriptionFeature()
 
 const { data: providerData, refresh: refreshProvider } = await useFetch<{ profile: ProviderProfile | null }>('/api/providers/me', {
   immediate: user.value?.role === 'prestataire',
 })
 const { data: subscriptionData } = await useFetch<{ subscription: Subscription | null }>('/api/subscriptions/me', {
-  immediate: user.value?.role === 'prestataire',
+  immediate: subscriptionEnabled.value && user.value?.role === 'prestataire',
 })
 
 const providerProfile = computed(() => providerData.value?.profile ?? null)
@@ -154,7 +159,7 @@ const { completionPercent, remainingCount, RING_CIRCUMFERENCE, ringOffset, first
     { key: 'certifications', complete: certificationsComplete },
     { key: 'preferences', complete: preferencesComplete },
     { key: 'coordonnees', complete: coordonneesComplete },
-    { key: 'abonnement', complete: subscriptionActive },
+    ...(subscriptionEnabled.value ? [{ key: 'abonnement', complete: subscriptionActive }] : []),
   ],
 })
 
@@ -184,7 +189,7 @@ function completeProfile() {
           <div>
             <p class="text-[16.5px] font-bold text-dark">{{ fullName }}</p>
             <div class="mt-1.5 flex flex-wrap gap-1.5">
-              <span v-if="isProvider" class="rounded-pill px-2.5 py-1 text-[11px] font-bold" :class="subscriptionActive ? 'bg-primary/12 text-primary' : 'bg-bg text-muted'">
+              <span v-if="isProvider && subscriptionEnabled" class="rounded-pill px-2.5 py-1 text-[11px] font-bold" :class="subscriptionActive ? 'bg-primary/12 text-primary' : 'bg-bg text-muted'">
                 {{ subscriptionActive ? t('profilPage.premium') : t('profilPage.notPremium') }}
               </span>
               <span class="rounded-pill px-2.5 py-1 text-[11px] font-bold" :class="user?.verified ? 'bg-primary/12 text-primary' : 'bg-bg text-muted'">
@@ -332,7 +337,7 @@ function completeProfile() {
             @click="openModal('disponibilite')"
           />
           <ProfileSectionCard
-            icon="💳"
+            v-if="subscriptionEnabled" icon="💳"
             :title="t('profilPage.sectionAbonnementTitle')"
             :subtitle="t('profilPage.sectionAbonnementSubtitle')"
             to="/abonnement"

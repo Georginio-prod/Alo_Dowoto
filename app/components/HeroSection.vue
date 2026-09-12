@@ -1,5 +1,8 @@
 <script setup lang="ts">
 const { t } = useI18n({ useScope: 'global' })
+// Lien « Voir les formules » retiré tant que le parcours d'abonnement est
+// masqué (voir app/composables/useSubscriptionFeature.ts).
+const { enabled: subscriptionEnabled } = useSubscriptionFeature()
 
 // Noms de partenaires — PLACEHOLDER inventés, À REMPLACER par les vrais
 // partenaires. Défilent en continu sous l'accroche (bandeau de confiance).
@@ -59,7 +62,7 @@ const partners = [
         {{ t('home.hero.ctaFind') }}
         <span aria-hidden="true">→</span>
       </a>
-      <NuxtLink to="/formules" class="press link-underline text-sm font-medium text-muted">
+      <NuxtLink v-if="subscriptionEnabled" to="/formules" class="press link-underline text-sm font-medium text-muted">
         {{ t('home.hero.ctaProvider') }}
       </NuxtLink>
     </div>
