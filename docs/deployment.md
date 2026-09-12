@@ -36,6 +36,12 @@ d'images.
 Les variables optionnelles sont documentées dans `backend/.env.example` :
 Google OAuth, Twilio/Brevo, Sentry, assistant IA et mises à jour desktop.
 
+Pour l'authentification, les **deux** canaux OTP doivent être configurés en
+production (email via Brevo, SMS via Brevo ou Twilio) : un canal sans provider
+répond 503 au lieu de prétendre un envoi. Vérifier après déploiement avec
+`GET /api/health/delivery` (attendu : `email` et `sms` non nuls) — détails dans
+[Envoi des codes OTP](otp-delivery.md).
+
 Pour Google OAuth, `APP_ORIGIN` doit être l'URL publique exacte du front et
 l'URI enregistrée dans Google Cloud doit être
 `<APP_ORIGIN>/api/auth/google/callback`. En local avec le port 3100 :

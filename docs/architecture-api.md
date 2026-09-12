@@ -52,6 +52,8 @@ et rayons) vivent dans `backend/src/data/`; Nuxt les lit via l'alias
 
 - `GET /health` : disponibilité du processus.
 - `GET /health/db` : vérification PostgreSQL.
+- `GET /health/delivery` : driver actif par canal d'envoi OTP (`email`, `sms`),
+  sans secret — voir [Envoi des codes OTP](otp-delivery.md).
 - `GET /api/docs` et `GET /api/docs.json` : OpenAPI, activés hors production
   par défaut (configurable avec `API_DOCS_ENABLED`).
 
