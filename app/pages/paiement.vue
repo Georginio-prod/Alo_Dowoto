@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { findPlan, type PlanSlug } from '~/data/plans'
 
+// Parcours d'abonnement masqué pour le moment (voir useSubscriptionFeature) :
+// la page redirige vers l'accueil tant que le flag n'est pas activé.
+definePageMeta({ middleware: 'subscription-feature' })
+
 type Provider = 'flooz' | 'tmoney'
 type Step = 'idle' | 'processing' | 'success'
 

@@ -65,6 +65,8 @@ export default defineConfig({
         TWILIO_ACCOUNT_SID: '',
         TWILIO_AUTH_TOKEN: '',
         EMAIL_FROM: '',
+        // Pendant backend du flag NUXT_PUBLIC_SUBSCRIPTION_ENABLED ci-dessous.
+        SUBSCRIPTION_ENABLED: 'true',
       },
     },
     {
@@ -79,6 +81,10 @@ export default defineConfig({
         HOST: '127.0.0.1',
         E2E: 'true',
         NUXT_DEV_API_PROXY_TARGET: `http://127.0.0.1:${BACKEND_PORT}`,
+        // Le parcours d'abonnement est masqué en production pour le moment ;
+        // on le réactive ici pour que les scénarios existants continuent de
+        // le couvrir (pages /formules, /abonnement, /paiement).
+        NUXT_PUBLIC_SUBSCRIPTION_ENABLED: 'true',
       },
     },
   ],

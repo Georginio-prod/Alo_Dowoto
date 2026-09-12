@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const { isOpen, searchTerm, close } = useChoiceModal()
+const { enabled: subscriptionEnabled } = useSubscriptionFeature()
 </script>
 
 <template>
@@ -12,6 +13,6 @@ const { isOpen, searchTerm, close } = useChoiceModal()
 
     <AppFooter />
 
-    <ChoiceModal v-if="isOpen" :search-term="searchTerm" @cancel="close" />
+    <ChoiceModal v-if="isOpen" :search-term="searchTerm" :subscription-enabled="subscriptionEnabled" @cancel="close" />
   </div>
 </template>

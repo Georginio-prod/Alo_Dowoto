@@ -2,6 +2,10 @@
 import { PLANS, findPlan, type PlanSlug } from '~/data/plans'
 import type { Subscription } from '~/types/api'
 
+// Parcours d'abonnement masqué pour le moment (voir useSubscriptionFeature) :
+// la page redirige vers l'accueil tant que le flag n'est pas activé.
+definePageMeta({ middleware: 'subscription-feature' })
+
 const { apiFetch } = useApi()
 const { t } = useI18n({ useScope: 'global' })
 

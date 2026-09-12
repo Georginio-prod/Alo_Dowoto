@@ -15,6 +15,9 @@ type MenuKey = 'trouver' | 'devenir' | 'aide'
 
 const { t } = useI18n({ useScope: 'global' })
 const { sectorLabel, subSectorLabel } = useSectorI18n()
+// Liens « Tarification » / « Voir les formules » retirés tant que le parcours
+// d'abonnement est masqué (voir app/composables/useSubscriptionFeature.ts).
+const { enabled: subscriptionEnabled } = useSubscriptionFeature()
 
 const CLOSE_DELAY_MS = 150
 
@@ -117,7 +120,7 @@ onUnmounted(() => {
         </svg>
       </button>
 
-      <NuxtLink to="/formules" class="press rounded-field px-3 py-2.5 text-[13.5px] font-semibold text-dark hover:bg-bg">
+      <NuxtLink v-if="subscriptionEnabled" to="/formules" class="press rounded-field px-3 py-2.5 text-[13.5px] font-semibold text-dark hover:bg-bg">
         {{ t('nav.pricing') }}
       </NuxtLink>
     </nav>
@@ -218,7 +221,7 @@ onUnmounted(() => {
               <NuxtLink to="/auth?role=prestataire" class="press text-primary hover:underline" @click="closeMenu">
                 {{ t('nav.become.cta') }}
               </NuxtLink>
-              <NuxtLink to="/formules" class="press text-primary hover:underline" @click="closeMenu">
+              <NuxtLink v-if="subscriptionEnabled" to="/formules" class="press text-primary hover:underline" @click="closeMenu">
                 {{ t('nav.become.seePlans') }}
               </NuxtLink>
             </div>

@@ -24,6 +24,7 @@ const URGENCY_LABELS = computed<Record<string, string>>(() => ({
   flexible: t('prestataireDemandes.urgencyFlexible'),
 }))
 
+const { enabled: subscriptionEnabled } = useSubscriptionFeature()
 const { data: matchesData } = await useFetch<{ matches: ProviderMatchedRequest[] }>('/api/requests/received')
 const { data: quotaData } = await useFetch<{ usage: { count: number; limit: number | null; month: string } }>(
   '/api/quotas/requests-received',
@@ -63,6 +64,9 @@ function matchQuality(score: number): { label: string; cls: string } {
 const profileComplete = computed(() => !!(profileData.value?.profile?.photoUrl && profileData.value?.profile?.description))
 const quotaLabel = computed(() => {
   const usage = quotaData.value?.usage
+  // Sans parcours d'abonnement (voir useSubscriptionFeature), le plafond n'a
+  // pas de sens (`limit: 0` faute de formule) : seul le compteur est affiché.
+  if (!subscriptionEnabled.value) return String(usage?.count ?? 0)
   if (!usage) return '0 / 0'
   return usage.limit === null ? `${usage.count} / ${t('prestataireDemandes.unlimited')}` : `${usage.count} / ${usage.limit}`
 })

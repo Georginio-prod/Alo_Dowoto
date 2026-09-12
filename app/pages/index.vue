@@ -3,6 +3,9 @@ import type { Sector } from '#domain-data/sectors'
 
 const { open: openChoiceModal } = useChoiceModal()
 const { user: sessionUser, ensure } = useSession()
+// Bloc « formules » de l'accueil retiré tant que le parcours d'abonnement
+// est masqué (voir app/composables/useSubscriptionFeature.ts).
+const { enabled: subscriptionEnabled } = useSubscriptionFeature()
 await ensure()
 
 // Un prestataire connecté n'a pas d'usage pour la vitrine publique (recherche
@@ -42,7 +45,7 @@ function onSelectSubSector(name: string) {
     <SectorGrid @select="openSectorDrawer" @select-sub="(_sector, name) => onSelectSubSector(name)" />
     <HowItWorks />
     <ReassuranceBar />
-    <PricingTeaser />
+    <PricingTeaser v-if="subscriptionEnabled" />
     <TestimonialsSection />
     <SectorDrawer :sector="activeSector" @close="closeSectorDrawer" @select="onSelectSubSector" />
   </div>

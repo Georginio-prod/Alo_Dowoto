@@ -5,7 +5,8 @@ const { t } = useI18n({ useScope: 'global' })
 
 useHead(() => ({ title: t('reclamationPage.pageTitle') }))
 
-const COMPLAINT_CATEGORIES = computed(() => getComplaintCategories(t))
+const { enabled: subscriptionEnabled } = useSubscriptionFeature()
+const COMPLAINT_CATEGORIES = computed(() => getComplaintCategories(t, { subscriptionEnabled: subscriptionEnabled.value }))
 
 const { user } = useSession()
 
