@@ -5,10 +5,18 @@ const props = withDefaults(
   defineProps<{
     searchTerm?: string | null
     trialDays?: number
+    /**
+     * Parcours d'abonnement visible ? Passé par le layout (voir
+     * useSubscriptionFeature) plutôt que lu ici, pour que le composant reste
+     * montable sous Vitest sans runtime Nuxt. À `false`, les badges « Essai
+     * gratuit » / « Abonnement requis » laissent place à « Inscription gratuite ».
+     */
+    subscriptionEnabled?: boolean
   }>(),
   {
     searchTerm: null,
     trialDays: 14,
+    subscriptionEnabled: true,
   },
 )
 
@@ -92,12 +100,17 @@ onUnmounted(() => {
             class="lift flex-1 basis-[260px] rounded-[14px] border-2 border-transparent bg-dark p-[22px] text-left hover:border-primary"
             @click="chooseProvider"
           >
-            <div class="mb-3.5 flex flex-wrap items-center justify-between gap-2">
+            <div v-if="subscriptionEnabled" class="mb-3.5 flex flex-wrap items-center justify-between gap-2">
               <span class="rounded-pill bg-white/15 px-2.5 py-1 text-[13px] font-bold text-white">
                 {{ t('choiceModal.providerTrialBadge', { days: trialDays }) }}
               </span>
               <span class="whitespace-nowrap rounded-pill bg-white px-2.5 py-1 text-[11px] font-bold text-dark">
                 {{ t('choiceModal.providerRequiredBadge') }}
+              </span>
+            </div>
+            <div v-else class="mb-3.5">
+              <span class="rounded-pill bg-white/15 px-2.5 py-1 text-[13px] font-bold text-white">
+                {{ t('choiceModal.clientBadge') }}
               </span>
             </div>
             <div class="mb-2 text-[17px] font-bold text-white">{{ t('choiceModal.providerTitle') }}</div>

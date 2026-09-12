@@ -122,6 +122,18 @@
     "subSectorCount": "{count} sub-sectors",
     "subSectorsOf": "Sub-sectors of {name}"
   },
+  "sectorTaxonomy": {
+    "btp": { "name": "Crafts & Construction", "sub0": "Carpentry", "sub1": "Masonry", "sub2": "Plumbing", "sub3": "Electrical", "sub4": "Painting & decorating", "sub5": "Welding & metalwork" },
+    "digital": { "name": "IT & Digital", "sub0": "Web & mobile development", "sub1": "Computer/phone repair", "sub2": "Digital marketing", "sub3": "Graphic design", "sub4": "IT training" },
+    "menage": { "name": "Cleaning & Home", "sub0": "Home cleaning", "sub1": "Ironing", "sub2": "Gardening", "sub3": "Childcare", "sub4": "Home cooking" },
+    "beaute": { "name": "Beauty & Wellness", "sub0": "Hairdressing", "sub1": "Esthetics & skincare", "sub2": "Manicure & pedicure", "sub3": "Massage", "sub4": "Event makeup" },
+    "evenement": { "name": "Events", "sub0": "Catering", "sub1": "Venue decoration", "sub2": "DJ & sound", "sub3": "Photography & video", "sub4": "Equipment rental" },
+    "education": { "name": "Education & Tutoring", "sub0": "Academic tutoring", "sub1": "Language lessons", "sub2": "Music lessons", "sub3": "Vocational training", "sub4": "Coaching" },
+    "transport": { "name": "Transport & Delivery", "sub0": "Parcel delivery", "sub1": "Moving", "sub2": "Chauffeured vehicle rental", "sub3": "Motorbike courier" },
+    "commerce": { "name": "Retail & Trade", "sub0": "Wholesale", "sub1": "Import-export", "sub2": "Online store", "sub3": "Distribution & resale" },
+    "industrie": { "name": "Industry", "sub0": "Metal fabrication", "sub1": "Food processing", "sub2": "Textile & sewing", "sub3": "Industrial maintenance" },
+    "sante": { "name": "Health & Care", "sub0": "Home care assistant", "sub1": "Physiotherapy", "sub2": "Nutrition & dietetics", "sub3": "Home midwife" }
+  },
   "sectorDrawer": {
     "close": "Close"
   },
@@ -214,6 +226,9 @@
     "catProvidersA4": "Payment is made via Mobile Money (Flooz or T-Money). A free 14-day trial is offered on first subscription, with no commitment beyond the first period.",
     "catProvidersQ5": "Can I change plans along the way?",
     "catProvidersA5": "Yes, you can upgrade to a higher plan from the Pricing page at any time.",
+    "catProvidersA1NoSubscription": "Click \"Become a provider\", create your account (number verified by code), choose your sector of activity and fill in your details. Your provider space is available right away, with no subscription.",
+    "catProvidersA2NoSubscription": "There is no cap: you receive every request matching your sector and area. Complete your profile (photo, description, rate) to rank higher.",
+    "catProvidersA3NoSubscription": "By verifying your identity (ID card + passport photo) from \"Edit my profile\". It's required to be contacted by a client.",
     "catAccount": "Account and security",
     "catAccountQ1": "How do I edit my profile (name, location…)?",
     "catAccountA1": "From the account menu (top right), click \"Edit my profile\".",
@@ -275,6 +290,7 @@
     "catProvidersLink2Desc": "Compare Monthly, Quarterly and Annual plans.",
     "catProvidersLink3Title": "My provider space",
     "catProvidersLink3Desc": "Requests received, reviews, subscription status.",
+    "catProvidersLink3DescNoSubscription": "Requests received, reviews, balance.",
     "catProvidersLink4Title": "All provider questions",
     "catProvidersLink4Desc": "\"Verified\" badge, request quotas, payment…",
     "catAccount": "Account and settings",
@@ -298,6 +314,7 @@
     "pageTitle": "Contact — WorkTogo",
     "heading": "Contact support",
     "intro": "For a technical issue, or a question about your account or subscription, our team replies by email or phone below.",
+    "introNoSubscription": "For a technical issue or a question about your account, our team replies by email or phone below.",
     "email": "Email",
     "phone": "Phone",
     "hours": "Support available Monday to Friday, 8am – 6pm, and Saturday, 9am – 1pm (Lomé time). Email replies within 48 business hours on average.",
@@ -906,6 +923,7 @@
   "accountMenu": {
     "roleProvider": "Provider",
     "roleClient": "Client",
+    "verifiedIdentity": "Verified identity",
     "otherRoleProvider": "provider",
     "otherRoleClient": "client",
     "mySpace": "My space",
@@ -1055,6 +1073,7 @@
   "dataPrivacyPanel": {
     "exportHeading": "Download my data",
     "exportDescription": "Receive a copy of your WorkTogo data (profile, subscription, balance) in JSON format.",
+    "exportDescriptionNoSubscription": "Receive a copy of your WorkTogo data (profile, balance) in JSON format.",
     "exportCta": "Download my data",
     "exporting": "Preparing…",
     "errorExportFailed": "The export failed. Please try again.",
@@ -1534,6 +1553,7 @@
     "prestataire": "Problem with a provider",
     "chercheur": "Problem with a client",
     "paiement": "Payment or subscription",
+    "paiementNoSubscription": "Payment",
     "compte": "My account",
     "technique": "Technical issue",
     "autre": "Other"

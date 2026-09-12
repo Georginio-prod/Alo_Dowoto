@@ -15,12 +15,13 @@ definePageMeta({ layout: 'blank' })
 const route = useRoute()
 
 const { t } = useI18n({ useScope: 'global' })
+const { sectorLabel, subSectorLabel } = useSectorI18n()
 
 const slug = computed(() => String(route.params.slug ?? ''))
 const sector = computed(() => SECTORS.find((s) => s.slug === slug.value) ?? null)
 
 useHead({
-  title: computed(() => `${sector.value ? sector.value.name : t('categories.notFoundPageTitle')} — WorkTogo`),
+  title: computed(() => `${sector.value ? sectorLabel(sector.value) : t('categories.notFoundPageTitle')} — WorkTogo`),
 })
 
 // Slug inconnu : on ne sollicite pas l'API de recherche (elle rejetterait de
@@ -87,9 +88,9 @@ const results = computed(() => data.value?.results ?? [])
             <component :is="SECTOR_ICONS[sector.icon]" :size="24" :stroke-width="2" aria-hidden="true" />
           </div>
           <div>
-            <h1 class="text-xl font-extrabold text-dark">{{ sector.name }}</h1>
+            <h1 class="text-xl font-extrabold text-dark">{{ sectorLabel(sector) }}</h1>
             <p class="text-[13.5px] text-muted">
-              {{ sector.subSectors.map((s) => s.name).join(' · ') }}
+              {{ sector.subSectors.map((s) => subSectorLabel(sector!, s)).join(' · ') }}
             </p>
           </div>
         </div>

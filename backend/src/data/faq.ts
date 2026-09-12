@@ -6,6 +6,8 @@
  * `i18n/locales/fr.json` (clés `faq.*`). L'assistant répond toujours en
  * français par conception, d'où une seule locale.
  */
+import { env } from '../config/env'
+
 export interface FaqItem {
   question: string
   answer: string
@@ -124,8 +126,46 @@ const FAQ_CATEGORIES_FR: FaqCategory[] = [
   }
 ]
 
-/** FAQ officielle en français, pour l'assistant IA (iso `app/data/faq.getFaqCategoriesFr`). */
-export function getFaqCategoriesFr(): FaqCategory[] {
-  return FAQ_CATEGORIES_FR
+/**
+ * Variante « Prestataires » sans abonnement (pendant des clés
+ * `faq.catProvidersA*NoSubscription` de i18n/locales/fr.json) : servie tant
+ * que SUBSCRIPTION_ENABLED est à `false` (voir config/env.ts), pour que
+ * l'assistant ne renvoie pas vers des formules, une page Tarification ou un
+ * paiement d'abonnement qui sont masqués. À garder synchronisé avec fr.json.
+ */
+const PROVIDER_ANSWERS_NO_SUBSCRIPTION_FR: Record<string, string> = {
+  'Comment devenir prestataire sur WorkTogo ?':
+    "Cliquez sur « Devenir prestataire », créez votre compte (numéro vérifié par code), choisissez votre secteur d'activité et renseignez vos informations. Votre espace prestataire est disponible immédiatement, sans abonnement.",
+  'Combien de demandes puis-je recevoir par mois ?':
+    "Il n'y a pas de plafond : vous recevez toutes les demandes correspondant à votre secteur et à votre zone. Complétez votre profil (photo, description, tarif) pour apparaître en meilleure position.",
+  'Comment obtenir le badge « Vérifié » ?':
+    "En vérifiant votre identité (carte d'identité + photo passeport) depuis « Modifier mon profil ». C'est obligatoire pour pouvoir être contacté par un client.",
 }
 
+function withoutSubscription(categories: FaqCategory[]): FaqCategory[] {
+  return categories.map((category) => {
+    if (category.id !== 'prestataires') return category
+    return {
+      ...category,
+      items: category.items
+        // Les questions consacrées à l'abonnement (paiement, changement de
+        // formule) n'ont pas de variante : elles sont retirées.
+        .filter((item) => !/abonnement|formule/i.test(item.question))
+        .map((item) => {
+          const answer = PROVIDER_ANSWERS_NO_SUBSCRIPTION_FR[item.question]
+          return answer ? { ...item, answer } : item
+        }),
+    }
+  })
+}
+
+const FAQ_CATEGORIES_NO_SUBSCRIPTION_FR = withoutSubscription(FAQ_CATEGORIES_FR)
+
+/**
+ * FAQ officielle en français, pour l'assistant IA (iso `app/data/faq.getFaqCategories`).
+ * Le parcours d'abonnement étant masqué par défaut, la variante sans
+ * abonnement est servie tant que `env.subscriptionEnabled` est faux.
+ */
+export function getFaqCategoriesFr(): FaqCategory[] {
+  return env.subscriptionEnabled ? FAQ_CATEGORIES_FR : FAQ_CATEGORIES_NO_SUBSCRIPTION_FR
+}

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import request from 'supertest'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { env } from '../../config/env'
 import { prisma } from '../../config/prisma'
 import { createServer } from '../../config/server'
 
@@ -84,6 +85,17 @@ describe('Contrat — quotas (/api/quotas)', () => {
       const res = await request(app).get('/api/quotas/requests-received').set('Cookie', trialProvider.cookie)
       expect(res.status).toBe(200)
       expect(res.body.usage).toEqual({ count: 0, limit: 0, month: expect.any(String) })
+    })
+
+    it('parcours d’abonnement masqué (SUBSCRIPTION_ENABLED=false) → aucun plafond, même en attente', async () => {
+      env.subscriptionEnabled = false
+      try {
+        const res = await request(app).get('/api/quotas/requests-received').set('Cookie', trialProvider.cookie)
+        expect(res.status).toBe(200)
+        expect(res.body.usage).toEqual({ count: 0, limit: null, month: expect.any(String) })
+      } finally {
+        env.subscriptionEnabled = true
+      }
     })
   })
 })

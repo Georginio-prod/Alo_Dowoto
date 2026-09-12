@@ -2,6 +2,9 @@
 import { SUPPORT_EMAIL, SUPPORT_PHONE } from '~/data/companyInfo'
 
 const { t } = useI18n({ useScope: 'global' })
+// Parcours d'abonnement masqué (voir useSubscriptionFeature) : l'intro ne
+// mentionne plus l'abonnement.
+const { enabled: subscriptionEnabled } = useSubscriptionFeature()
 
 useHead(() => ({ title: t('contact.pageTitle') }))
 
@@ -21,7 +24,7 @@ const OTHER_REASONS: ContactReason[] = [
   <div class="mx-auto max-w-2xl px-6 py-12">
     <h1 class="mb-2 text-2xl font-extrabold text-dark">{{ t('contact.heading') }}</h1>
     <p class="mb-6 text-[14.5px] leading-relaxed text-muted">
-      {{ t('contact.intro') }}
+      {{ t(subscriptionEnabled ? 'contact.intro' : 'contact.introNoSubscription') }}
     </p>
 
     <div class="mb-6 flex flex-col gap-3">

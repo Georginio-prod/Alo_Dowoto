@@ -15,7 +15,18 @@ export interface FaqCategory {
   items: FaqItem[]
 }
 
-export function getFaqCategories(t: (key: string) => string): FaqCategory[] {
+export interface FaqOptions {
+  /**
+   * Parcours d'abonnement visible ? (voir app/composables/useSubscriptionFeature.ts).
+   * À `false`, les réponses « Prestataires » qui mentionnent formules,
+   * tarification ou paiement d'abonnement sont remplacées par leur variante
+   * `*NoSubscription`, et les questions dédiées à l'abonnement sont retirées.
+   */
+  subscriptionEnabled?: boolean
+}
+
+export function getFaqCategories(t: (key: string) => string, { subscriptionEnabled = true }: FaqOptions = {}): FaqCategory[] {
+  const providerAnswer = (n: 1 | 2 | 3) => t(subscriptionEnabled ? `faq.catProvidersA${n}` : `faq.catProvidersA${n}NoSubscription`)
   return [
     {
       id: 'chercheurs',
@@ -33,11 +44,15 @@ export function getFaqCategories(t: (key: string) => string): FaqCategory[] {
       id: 'prestataires',
       title: t('faq.catProviders'),
       items: [
-        { question: t('faq.catProvidersQ1'), answer: t('faq.catProvidersA1') },
-        { question: t('faq.catProvidersQ2'), answer: t('faq.catProvidersA2') },
-        { question: t('faq.catProvidersQ3'), answer: t('faq.catProvidersA3') },
-        { question: t('faq.catProvidersQ4'), answer: t('faq.catProvidersA4') },
-        { question: t('faq.catProvidersQ5'), answer: t('faq.catProvidersA5') },
+        { question: t('faq.catProvidersQ1'), answer: providerAnswer(1) },
+        { question: t('faq.catProvidersQ2'), answer: providerAnswer(2) },
+        { question: t('faq.catProvidersQ3'), answer: providerAnswer(3) },
+        ...(subscriptionEnabled
+          ? [
+              { question: t('faq.catProvidersQ4'), answer: t('faq.catProvidersA4') },
+              { question: t('faq.catProvidersQ5'), answer: t('faq.catProvidersA5') },
+            ]
+          : []),
       ],
     },
     {

@@ -7,6 +7,7 @@ import {
   type MatchRequest,
   type Urgency,
 } from './matchingEngine'
+import { env } from '../config/env'
 import { getEffectiveRating, searchProviders, type ProviderSearchResult } from './providerDirectoryService'
 import { getProviderRequestsUsage, incrementProviderRequestsReceived } from './quotaService'
 import { subscriptionService } from './subscriptionService'
@@ -76,6 +77,10 @@ async function toCandidate(provider: ProviderSearchResult): Promise<MatchCandida
 }
 
 async function isAtRequestsQuota(providerId: string): Promise<boolean> {
+  // Parcours d'abonnement masqué (SUBSCRIPTION_ENABLED=false) : aucun plafond,
+  // y compris pour un abonnement resté « en attente » ou expiré, qui aurait
+  // sinon une limite de 0 et serait relégué en fin de classement.
+  if (!env.subscriptionEnabled) return false
   const subscription = await subscriptionService.getSubscriptionByUserId(providerId)
   if (!subscription) return false
   const usage = await getProviderRequestsUsage(providerId, subscription.status === 'actif' ? subscription.plan : null)

@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { PLANS, findPlan, type PlanSlug } from '~/data/plans'
 
+// Parcours d'abonnement masqué pour le moment (voir useSubscriptionFeature) :
+// la page redirige vers l'accueil tant que le flag n'est pas activé.
+definePageMeta({ middleware: 'subscription-feature' })
+
 const { t } = useI18n({ useScope: 'global' })
 
 useHead(() => ({ title: t('formules.pageTitle') }))

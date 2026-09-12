@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const { t } = useI18n({ useScope: 'global' })
+const { enabled: subscriptionEnabled } = useSubscriptionFeature()
 
 useHead(() => ({ title: t('aide.pageTitle') }))
 
@@ -36,8 +37,16 @@ const CATEGORIES: HelpCategory[] = [
     titleKey: 'aide.catProviders',
     links: [
       { to: '/auth?role=prestataire', titleKey: 'aide.catProvidersLink1Title', descriptionKey: 'aide.catProvidersLink1Desc' },
-      { to: '/formules', titleKey: 'aide.catProvidersLink2Title', descriptionKey: 'aide.catProvidersLink2Desc' },
-      { to: '/prestataire', titleKey: 'aide.catProvidersLink3Title', descriptionKey: 'aide.catProvidersLink3Desc' },
+      // « Formules et tarifs » : lien retiré tant que le parcours d'abonnement
+      // est masqué (voir app/composables/useSubscriptionFeature.ts).
+      ...(subscriptionEnabled.value
+        ? [{ to: '/formules', titleKey: 'aide.catProvidersLink2Title', descriptionKey: 'aide.catProvidersLink2Desc' }]
+        : []),
+      {
+        to: '/prestataire',
+        titleKey: 'aide.catProvidersLink3Title',
+        descriptionKey: subscriptionEnabled.value ? 'aide.catProvidersLink3Desc' : 'aide.catProvidersLink3DescNoSubscription',
+      },
       { to: '/faq#prestataires', titleKey: 'aide.catProvidersLink4Title', descriptionKey: 'aide.catProvidersLink4Desc' },
     ],
   },

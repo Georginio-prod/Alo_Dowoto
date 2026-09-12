@@ -23,6 +23,7 @@
     "prisma:studio": "prisma studio",
     "prisma:push": "prisma db push",
     "prisma:seed": "tsx scripts/seed.ts",
+    "prisma:reset": "tsx scripts/reset.ts",
     "admin:create": "node scripts/create-admin.mjs"
   },
   "dependencies": {

@@ -9,7 +9,12 @@ type Method = 'phone' | 'email'
 type Step = 'contact' | 'otp' | 'password' | 'identity' | 'sector' | 'payout'
 
 const { t } = useI18n({ useScope: 'global' })
+const { sectorLabel } = useSectorI18n()
 const route = useRoute()
+// Parcours d'abonnement masqué pour le moment : sans lui, l'inscription
+// prestataire s'arrête à l'étape « Infos » et mène directement à l'espace
+// prestataire (voir app/composables/useSubscriptionFeature.ts).
+const { enabled: subscriptionEnabled } = useSubscriptionFeature()
 
 // `mode=login` force l'onglet Connexion même quand `role` est fourni dans
 // l'URL (ex. « Changer de compte » → « J'ai déjà un compte prestataire »,
@@ -81,7 +86,8 @@ const flowSteps = computed(() =>
   role.value === 'prestataire'
     ? [
         t('flowSteps.contact'), t('flowSteps.verification'), t('flowSteps.password'), t('flowSteps.identity'),
-        t('flowSteps.sector'), t('flowSteps.info'), t('flowSteps.subscription'), t('flowSteps.payment'),
+        t('flowSteps.sector'), t('flowSteps.info'),
+        ...(subscriptionEnabled.value ? [t('flowSteps.subscription'), t('flowSteps.payment')] : []),
       ]
     : [t('flowSteps.contact'), t('flowSteps.verification'), t('flowSteps.password'), t('flowSteps.identity')],
 )
@@ -150,8 +156,8 @@ function submitSector() {
 }
 
 function onPayoutSaved() {
-  // Étape Abonnement, voir #29.
-  navigateTo('/abonnement')
+  // Étape Abonnement, voir #29 — sautée tant que le parcours est masqué.
+  navigateTo(subscriptionEnabled.value ? '/abonnement' : landingPathFor('prestataire'))
 }
 </script>
 
@@ -286,7 +292,7 @@ function onPayoutSaved() {
           >
             <option value="" disabled>{{ t('auth.sectorPlaceholder') }}</option>
             <option v-for="sector in SECTORS" :key="sector.slug" :value="sector.slug">
-              {{ sector.name }}
+              {{ sectorLabel(sector) }}
             </option>
           </select>
 

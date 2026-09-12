@@ -2,8 +2,9 @@
 import { getFaqCategories } from '~/data/faq'
 
 const { t } = useI18n({ useScope: 'global' })
+const { enabled: subscriptionEnabled } = useSubscriptionFeature()
 
-const categories = computed(() => getFaqCategories(t))
+const categories = computed(() => getFaqCategories(t, { subscriptionEnabled: subscriptionEnabled.value }))
 
 useHead(() => ({ title: t('faq.pageTitle') }))
 </script>

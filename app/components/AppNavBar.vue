@@ -14,6 +14,10 @@ import { SECTOR_ICONS } from '~/utils/sectorIcons'
 type MenuKey = 'trouver' | 'devenir' | 'aide'
 
 const { t } = useI18n({ useScope: 'global' })
+const { sectorLabel, subSectorLabel } = useSectorI18n()
+// Liens « Tarification » / « Voir les formules » retirés tant que le parcours
+// d'abonnement est masqué (voir app/composables/useSubscriptionFeature.ts).
+const { enabled: subscriptionEnabled } = useSubscriptionFeature()
 
 const CLOSE_DELAY_MS = 150
 
@@ -116,7 +120,7 @@ onUnmounted(() => {
         </svg>
       </button>
 
-      <NuxtLink to="/formules" class="press rounded-field px-3 py-2.5 text-[13.5px] font-semibold text-dark hover:bg-bg">
+      <NuxtLink v-if="subscriptionEnabled" to="/formules" class="press rounded-field px-3 py-2.5 text-[13.5px] font-semibold text-dark hover:bg-bg">
         {{ t('nav.pricing') }}
       </NuxtLink>
     </nav>
@@ -151,9 +155,9 @@ onUnmounted(() => {
                     <component :is="SECTOR_ICONS[sector.icon]" :size="16" :stroke-width="2.25" aria-hidden="true" />
                   </span>
                   <span class="min-w-0">
-                    <span class="block text-[13.5px] font-semibold text-dark">{{ sector.name }}</span>
+                    <span class="block text-[13.5px] font-semibold text-dark">{{ sectorLabel(sector) }}</span>
                     <span class="block truncate text-[12px] text-muted">
-                      {{ sector.subSectors.slice(0, 2).map((s) => s.name).join(', ') }}
+                      {{ sector.subSectors.slice(0, 2).map((s) => subSectorLabel(sector, s)).join(', ') }}
                     </span>
                   </span>
                 </NuxtLink>
@@ -217,7 +221,7 @@ onUnmounted(() => {
               <NuxtLink to="/auth?role=prestataire" class="press text-primary hover:underline" @click="closeMenu">
                 {{ t('nav.become.cta') }}
               </NuxtLink>
-              <NuxtLink to="/formules" class="press text-primary hover:underline" @click="closeMenu">
+              <NuxtLink v-if="subscriptionEnabled" to="/formules" class="press text-primary hover:underline" @click="closeMenu">
                 {{ t('nav.become.seePlans') }}
               </NuxtLink>
             </div>

@@ -73,6 +73,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       sentryDsn: '',
+      // Parcours d'abonnement prestataire masqué pour le moment (le code est
+      // conservé) : passer NUXT_PUBLIC_SUBSCRIPTION_ENABLED=true pour le
+      // réactiver. Voir app/composables/useSubscriptionFeature.ts.
+      subscriptionEnabled: false,
     }
   },
   app: {

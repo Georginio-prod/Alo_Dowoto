@@ -3,6 +3,7 @@ import type { Sector } from '#domain-data/sectors'
 import { SECTOR_ICONS } from '~/utils/sectorIcons'
 
 const { t } = useI18n({ useScope: 'global' })
+const { sectorLabel, subSectorLabel } = useSectorI18n()
 
 const props = defineProps<{
   sector: Sector | null
@@ -55,7 +56,7 @@ onUnmounted(() => {
             >
               <component :is="SECTOR_ICONS[sector.icon]" :size="18" :stroke-width="2.25" aria-hidden="true" />
             </div>
-            <div class="text-[17px] font-bold text-dark">{{ sector.name }}</div>
+            <div class="text-[17px] font-bold text-dark">{{ sectorLabel(sector) }}</div>
           </div>
           <button
             type="button"
@@ -75,7 +76,7 @@ onUnmounted(() => {
             class="press flex items-center justify-between rounded-[10px] border-[1.5px] border-transparent bg-bg px-4 py-3.5 text-left text-[14.5px] font-medium text-ink transition-colors hover:border-primary hover:bg-white"
             @click="emit('select', sub.name)"
           >
-            <span>{{ sub.name }}</span>
+            <span>{{ subSectorLabel(sector, sub) }}</span>
             <span class="font-bold text-primary">→</span>
           </button>
         </div>

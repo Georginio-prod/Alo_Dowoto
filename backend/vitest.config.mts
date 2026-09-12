@@ -16,6 +16,10 @@ export default defineConfig({
       DATABASE_URL:
         process.env.TEST_DATABASE_URL ??
         'postgresql://worktogo:worktogo@localhost:5433/worktogo_backend_test',
+      // Le parcours d'abonnement est masqué en production pour le moment ; on
+      // le réactive ici pour que les tests de quotas/abonnements continuent de
+      // le couvrir (le cas « flag désactivé » est testé via vi.resetModules).
+      SUBSCRIPTION_ENABLED: 'true',
     },
   },
 })

@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express'
+import { env } from '../config/env'
 import { tooManyRequests } from '../utils/apiError'
 import { authUser } from '../utils/authUser'
 import { subscriptionService } from '../services/subscriptionService'
@@ -38,6 +39,13 @@ export async function postContacts(req: Request, res: Response): Promise<void> {
 /** GET /api/quotas/requests-received → { usage } (demandes reçues du mois, selon la formule). */
 export async function getRequestsReceived(req: Request, res: Response): Promise<void> {
   const userId = authUser(req).id
+  // Parcours d'abonnement masqué (SUBSCRIPTION_ENABLED=false) : pas de
+  // plafond (`limit: null`, comme une formule illimitée), quel que soit l'état
+  // de l'abonnement.
+  if (!env.subscriptionEnabled) {
+    res.json({ usage: { ...(await getProviderRequestsUsage(userId, null)), limit: null } })
+    return
+  }
   const subscription = await subscriptionService.getSubscriptionByUserId(userId)
   // Un abonnement en attente ou expiré n'ouvre pas droit à un quota, au même
   // titre qu'une absence totale d'abonnement (iso Nitro).
