@@ -59,6 +59,25 @@ describe('Contrat — authentification (/api/auth)', () => {
       const res = await request(app).post('/api/auth/otp/verify').send({ method: 'email', value: email, code: '000000' })
       expect(res.status).toBe(400)
     })
+
+    it('numéro invalide → 400', async () => {
+      const res = await request(app).post('/api/auth/otp/send').send({ method: 'phone', value: '123' })
+      expect(res.status).toBe(400)
+    })
+
+    it('téléphone : même contrat que l’email (devCode, vérification, normalisation +228)', async () => {
+      // 8 chiffres aléatoires → contact normalisé "+228XXXXXXXX", suivi pour le nettoyage.
+      const local = String(Math.floor(10000000 + Math.random() * 89999999))
+      track(`+228${local}`)
+      const send = await request(app).post('/api/auth/otp/send').send({ method: 'phone', value: `${local.slice(0, 2)} ${local.slice(2, 4)} ${local.slice(4, 6)} ${local.slice(6)}` })
+      expect(send.status).toBe(200)
+      expect(send.body.expiresInSeconds).toBe(600)
+      expect(send.body.devCode).toMatch(/^\d{6}$/)
+
+      const verify = await request(app).post('/api/auth/otp/verify').send({ method: 'phone', value: local, code: send.body.devCode })
+      expect(verify.status).toBe(200)
+      expect(verify.body).toEqual({ verified: true })
+    })
   })
 
   describe('POST /auth/session (inscription/connexion)', () => {

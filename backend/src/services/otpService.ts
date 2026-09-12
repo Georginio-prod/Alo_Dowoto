@@ -1,6 +1,6 @@
 import { otpRepository, type OtpRepository } from '../repositories/otpRepository'
 import { normalizeContact, type ContactMethod } from '../utils/contact'
-import { badGateway, badRequest, tooManyRequests } from '../utils/apiError'
+import { badGateway, badRequest, serviceUnavailable, tooManyRequests } from '../utils/apiError'
 import { isEmailConfigured, sendEmail } from '../utils/email'
 import { isSmsConfigured, sendSms } from '../utils/sms'
 import { env } from '../config/env'
@@ -11,6 +11,15 @@ import { env } from '../config/env'
  * depuis `server/utils/otpStore.ts` et les handlers `server/api/auth/otp/*`
  * (ADR-0016) : mêmes TTL, même cooldown, même plafond de tentatives, mêmes
  * messages, même repli développement (code journalisé + `devCode`).
+ *
+ * Les deux canaux (SMS, email) suivent exactement le même contrat : même code,
+ * même message, même TTL, même repli dev, mêmes erreurs — seul le driver
+ * d'envoi change (`utils/sms`, `utils/email`). Deux garde-fous s'ajoutent à
+ * la logique Nitro d'origine :
+ * - en production, un canal sans provider est **refusé** (503) plutôt que de
+ *   prétendre un envoi qui n'arrivera jamais ;
+ * - un échec d'envoi (502) **libère le cooldown** pour que l'utilisateur puisse
+ *   redemander un code immédiatement.
  */
 
 const OTP_TTL_MS = 10 * 60 * 1000
@@ -44,7 +53,16 @@ export interface OtpDelivery {
 
 const defaultDelivery: OtpDelivery = { isEmailConfigured, isSmsConfigured, sendEmail, sendSms }
 
-export function createOtpService(repo: OtpRepository = otpRepository, delivery: OtpDelivery = defaultDelivery) {
+/** Options d'environnement, injectables pour tester les deux comportements prod/dev. */
+export interface OtpServiceOptions {
+  isProd: boolean
+}
+
+export function createOtpService(
+  repo: OtpRepository = otpRepository,
+  delivery: OtpDelivery = defaultDelivery,
+  options: OtpServiceOptions = { isProd: env.isProd },
+) {
   /** Génère (ou refuse pendant le cooldown) un code pour un contact. Iso `generateOtp`. */
   async function generateOtp(contact: string): Promise<GenerateOtpResult> {
     const now = Date.now()
@@ -99,14 +117,29 @@ export function createOtpService(repo: OtpRepository = otpRepository, delivery: 
 
     /**
      * `POST /api/auth/otp/send` : normalise, génère et envoie le code. Lève un
-     * 400 (contact invalide), 429 (cooldown) ou 502 (échec provider), iso Nitro.
-     * `devCode` renvoyé uniquement hors production quand aucun envoi réel n'a eu
-     * lieu, pour tester le parcours sans provider SMS/email.
+     * 400 (contact invalide), 429 (cooldown), 502 (échec provider) ou 503 (canal
+     * sans provider en production). `devCode` renvoyé uniquement hors production
+     * quand aucun envoi réel n'a eu lieu, pour tester le parcours sans provider.
      */
     async requestOtp(method: ContactMethod, value: string) {
       const contact = normalizeContact(method, value)
       if (!contact) {
         badRequest(method === 'phone' ? 'Entrez un numéro valide (8 chiffres).' : 'Entrez une adresse email valide.')
+      }
+
+      const isSms = method === 'phone'
+      const configured = isSms ? delivery.isSmsConfigured() : delivery.isEmailConfigured()
+
+      // En production, aucun code ne doit partir « dans le vide » : sans provider
+      // pour ce canal, on le dit clairement plutôt que de laisser l'utilisateur
+      // attendre un SMS/email qui n'arrivera jamais.
+      if (!configured && options.isProd) {
+        console.error(`[otp] Aucun provider ${isSms ? 'SMS' : 'email'} configuré en production — envoi refusé pour ${contact}`)
+        serviceUnavailable(
+          isSms
+            ? 'L’envoi par SMS n’est pas disponible pour le moment. Utilisez votre adresse email.'
+            : 'L’envoi par email n’est pas disponible pour le moment. Utilisez votre numéro de téléphone.',
+        )
       }
 
       const result = await generateOtp(contact)
@@ -116,16 +149,18 @@ export function createOtpService(repo: OtpRepository = otpRepository, delivery: 
 
       const expiresInMinutes = Math.floor(result.expiresInSeconds / 60)
       const message = `WorkTogo : votre code de vérification est ${result.code}. Il expire dans ${expiresInMinutes} minutes.`
-      const reallySent = method === 'phone' ? delivery.isSmsConfigured() : delivery.isEmailConfigured()
 
-      if (reallySent) {
-        const sent = method === 'phone'
+      if (configured) {
+        const sent = isSms
           ? await delivery.sendSms(contact, message)
           : await delivery.sendEmail(contact, 'Votre code de vérification WorkTogo', message)
         if (!sent.ok) {
-          console.error(`[otp] Échec d'envoi ${method === 'phone' ? 'du SMS' : "de l'email"} à ${contact} : ${sent.error}`)
+          console.error(`[otp] Échec d'envoi ${isSms ? 'du SMS' : "de l'email"} à ${contact} : ${sent.error}`)
+          // Rien n'est arrivé : on libère le cooldown pour autoriser une nouvelle
+          // demande immédiate au lieu d'un 429 après le 502.
+          await repo.deleteCode(contact)
           badGateway(
-            method === 'phone'
+            isSms
               ? 'Impossible d’envoyer le SMS pour le moment. Réessayez dans quelques instants.'
               : 'Impossible d’envoyer l’email pour le moment. Réessayez dans quelques instants.',
           )
@@ -138,7 +173,7 @@ export function createOtpService(repo: OtpRepository = otpRepository, delivery: 
       return {
         ok: true as const,
         expiresInSeconds: result.expiresInSeconds,
-        ...(!env.isProd && !reallySent ? { devCode: result.code } : {}),
+        ...(!options.isProd && !configured ? { devCode: result.code } : {}),
       }
     },
 

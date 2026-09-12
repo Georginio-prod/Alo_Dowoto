@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { prisma } from '../config/prisma'
 import { asyncHandler } from '../utils/asyncHandler'
+import { deliveryStatus } from '../utils/deliveryStatus'
 
 /**
  * Sondes de disponibilité. `/health` (liveness) ne dépend de rien ; `/health/db`
@@ -65,3 +66,26 @@ healthRoutes.get('/health/db', asyncHandler(async (_req, res) => {
   await prisma.$queryRaw`SELECT 1`
   res.json({ status: 'ok', database: 'postgres' })
 }))
+
+/**
+ * @openapi
+ * /health/delivery:
+ *   get:
+ *     tags: [Health]
+ *     summary: Canaux d'envoi OTP/notifications configurés
+ *     description: Indique le driver actif pour l'email et le SMS (`null` = aucun provider → repli `devCode` hors production, 503 en production). Aucun secret exposé, seulement le nom du driver.
+ *     responses:
+ *       200:
+ *         description: État des deux canaux.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: string, example: ok }
+ *                 email: { type: string, nullable: true, enum: [brevo], example: brevo }
+ *                 sms: { type: string, nullable: true, enum: [brevo, twilio], example: null }
+ */
+healthRoutes.get('/health/delivery', (_req, res) => {
+  res.json({ status: 'ok', ...deliveryStatus() })
+})

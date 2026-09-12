@@ -30,9 +30,17 @@ function brevoConfig() {
   return { apiKey, from, fromName: process.env.EMAIL_FROM_NAME || 'WorkTogo' }
 }
 
+/** Drivers email disponibles — sert au diagnostic (`/api/health/delivery`, log de démarrage). */
+export type EmailProvider = 'brevo'
+
+/** Nom du driver email actif, `null` si aucun n'est configuré. */
+export function emailProvider(): EmailProvider | null {
+  return brevoConfig() ? 'brevo' : null
+}
+
 /** Vrai si un provider email est configuré (les emails partent réellement). */
 export function isEmailConfigured(): boolean {
-  return brevoConfig() !== null
+  return emailProvider() !== null
 }
 
 /**

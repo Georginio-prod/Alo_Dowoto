@@ -15,6 +15,14 @@ describe('Squelette backend', () => {
     expect(res.body).toMatchObject({ status: 'ok', service: 'alo-dowoto-backend' })
   })
 
+  it('GET /health/delivery expose les canaux OTP sans secret (aucun provider en test)', async () => {
+    const res = await request(app).get('/health/delivery')
+    expect(res.status).toBe(200)
+    // vitest.config.mts vide les variables provider : les deux canaux sont à null.
+    expect(res.body).toEqual({ status: 'ok', email: null, sms: null })
+    expect(JSON.stringify(res.body)).not.toMatch(/xkeysib|AC[0-9a-f]{6,}/i)
+  })
+
   it('une route inconnue renvoie 404 au format d’erreur Nitro', async () => {
     const res = await request(app).get('/route-inexistante')
     expect(res.status).toBe(404)

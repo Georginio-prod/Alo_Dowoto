@@ -20,6 +20,16 @@ export default defineConfig({
       // le réactive ici pour que les tests de quotas/abonnements continuent de
       // le couvrir (le cas « flag désactivé » est testé via vi.resetModules).
       SUBSCRIPTION_ENABLED: 'true',
+      // Aucun provider SMS/email pendant les tests, même si `backend/.env` en
+      // configure un : les contrats OTP s'appuient sur `devCode` et aucun test
+      // ne doit envoyer un vrai message. `dotenv` n'écrase pas une variable déjà
+      // présente (même vide), ces valeurs priment donc sur le `.env` local.
+      BREVO_API_KEY: '',
+      BREVO_SMS_SENDER: '',
+      EMAIL_FROM: '',
+      TWILIO_ACCOUNT_SID: '',
+      TWILIO_AUTH_TOKEN: '',
+      TWILIO_FROM: '',
     },
   },
 })

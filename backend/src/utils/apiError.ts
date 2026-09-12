@@ -55,6 +55,15 @@ export function badGateway(message: string): never {
 }
 
 /**
+ * Fonctionnalité volontairement indisponible (503) : aucun provider configuré
+ * pour ce canal en production (ex. OTP par SMS sans Brevo/Twilio). Distinct du
+ * 502 : rien n'a été tenté, l'utilisateur doit passer par un autre canal.
+ */
+export function serviceUnavailable(message: string): never {
+  throw new HttpError(503, message)
+}
+
+/**
  * Erreur serveur explicite (500) portant un message destiné au client — à
  * réserver aux défauts de configuration côté serveur (ex. relais de mise à jour
  * non configuré). Une erreur 500 inattendue reste, elle, masquée par le

@@ -43,9 +43,19 @@ function twilioConfig() {
   return { accountSid, authToken, from }
 }
 
+/** Drivers SMS disponibles — sert au diagnostic (`/api/health/delivery`, log de démarrage). */
+export type SmsProvider = 'brevo' | 'twilio'
+
+/** Nom du driver SMS actif (Brevo prioritaire, Twilio en repli), `null` si aucun. */
+export function smsProvider(): SmsProvider | null {
+  if (brevoSmsConfig()) return 'brevo'
+  if (twilioConfig()) return 'twilio'
+  return null
+}
+
 /** Vrai si un provider SMS est configuré (les SMS partent réellement). */
 export function isSmsConfigured(): boolean {
-  return brevoSmsConfig() !== null || twilioConfig() !== null
+  return smsProvider() !== null
 }
 
 /**
