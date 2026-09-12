@@ -479,7 +479,8 @@
     "resendCta": "Renvoyer le code",
     "verifying": "Vérification…",
     "verifyCta": "Vérifier le code",
-    "errorInvalidCode": "Code invalide. Réessayez."
+    "errorInvalidCode": "Code invalide. Réessayez.",
+    "errorResendFailed": "Le renvoi du code a échoué. Réessayez dans quelques instants."
   },
   "authPasswordStep": {
     "signupLabel": "Créer votre mot de passe",
