@@ -15,6 +15,7 @@ const otp = ref<string[]>(['', '', '', '', '', ''])
 const otpError = ref('')
 const otpInvalid = ref(false)
 const isVerifying = ref(false)
+const isResending = ref(false)
 const resendSeconds = ref(RESEND_DELAY)
 let resendTimer: ReturnType<typeof setInterval> | null = null
 
@@ -29,9 +30,10 @@ const destinationPrefix = computed(() =>
 )
 const destination = computed(() => (props.method === 'phone' ? `+228 ${props.contactValue}` : props.contactValue))
 
-function startResendTimer() {
-  resendSeconds.value = RESEND_DELAY
+function startResendTimer(seconds = RESEND_DELAY) {
+  resendSeconds.value = seconds
   stopResendTimer()
+  if (seconds <= 0) return
   resendTimer = setInterval(() => {
     resendSeconds.value--
     if (resendSeconds.value <= 0) stopResendTimer()
@@ -44,19 +46,33 @@ function stopResendTimer() {
   resendTimer = null
 }
 
+/** Corps d'erreur API (format Nitro) tel qu'exposé par `$fetch` sous `error.data`. */
+interface ApiErrorBody {
+  data?: { data?: { retryAfterSeconds?: number } }
+}
+
 async function resendCode() {
-  if (resendSeconds.value > 0) return
+  if (resendSeconds.value > 0 || isResending.value) return
+  isResending.value = true
+  otpError.value = ''
+  otpInvalid.value = false
   try {
-    const { devCode } = await $fetch<{ devCode?: string }>('/api/auth/otp/send', {
+    const { devCode } = await apiFetch<{ devCode?: string }>('/api/auth/otp/send', {
       method: 'POST',
       body: { method: props.method, value: props.contactValue },
     })
     currentDevCode.value = devCode
-  } catch {
-    // Cooldown serveur (429) indépendant du timer local : on l'ignore, le
-    // bouton redevient actif au prochain tick.
+    startResendTimer()
+  } catch (error) {
+    // Le renvoi a échoué : l'utilisateur doit le savoir (502 provider en panne,
+    // 503 canal indisponible en production, 429 cooldown serveur). Sur un 429,
+    // le timer local se réaligne sur le délai annoncé par le serveur.
+    otpError.value = apiErrorMessage(error, t('authOtpStep.errorResendFailed'))
+    const retryAfter = (error as ApiErrorBody).data?.data?.retryAfterSeconds
+    startResendTimer(typeof retryAfter === 'number' && retryAfter > 0 ? retryAfter : RESEND_DELAY)
+  } finally {
+    isResending.value = false
   }
-  startResendTimer()
 }
 
 function onOtpChange(digits: string[]) {
@@ -116,7 +132,7 @@ onUnmounted(stopResendTimer)
 
     <p class="mt-3 text-center text-[13px] text-muted">
       <template v-if="resendSeconds > 0">{{ t('authOtpStep.resendIn', { seconds: resendSeconds }) }}</template>
-      <button v-else type="button" class="press font-semibold text-primary" @click="resendCode">
+      <button v-else type="button" class="press font-semibold text-primary disabled:opacity-45" :disabled="isResending" @click="resendCode">
         {{ t('authOtpStep.resendCta') }}
       </button>
     </p>

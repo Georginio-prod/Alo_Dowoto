@@ -12,6 +12,7 @@
 type Method = 'phone' | 'email'
 
 const { t } = useI18n({ useScope: 'global' })
+const { apiFetch } = useApi()
 
 export interface SignupProfile {
   username: string
@@ -162,7 +163,7 @@ async function submit() {
     // `devCode` n'est renvoyé que hors production (voir l'API OTP)
     // — en l'absence de provider SMS/email réel (#23), c'est le seul moyen de
     // tester le parcours sans lire les logs serveur.
-    const { devCode } = await $fetch<{ devCode?: string }>('/api/auth/otp/send', {
+    const { devCode } = await apiFetch<{ devCode?: string }>('/api/auth/otp/send', {
       method: 'POST',
       body: { method: method.value, value: contactValue.value },
     })
